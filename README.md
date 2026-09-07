@@ -38,7 +38,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. สร้างไฟล์ `.env` (ยังไม่มี)
+### 4. สร้างไฟล์ `.env` (ยังไม่ต้องทำ)
 คัดลอกจาก `.env.example` แล้วแก้ค่าตามเครื่องตัวเอง
 ```bash
 cp .env.example .env
