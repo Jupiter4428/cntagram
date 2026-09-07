@@ -1,9 +1,11 @@
 # FOR DEV
 
 ## Tech Stack
-- Python 3.x
+- Python
 - Django
--
+.
+.
+.
 
 ---
 
@@ -11,7 +13,7 @@
 
 ### 1. Clone โปรเจค
 ```bash
-git clone <repo-url>
+git clone https://github.com/Jupiter4428/projectdjango.git
 cd projectdjango
 ```
 
