@@ -1,11 +1,16 @@
+# Project Details
+.
+.
+.
+.
+
+
 # FOR DEV
 
 ## Tech Stack
 - Python
 - Django
-.
-.
-.
+- etc....
 
 ---
 
