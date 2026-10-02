@@ -100,7 +100,7 @@ git checkout -b feature/user-login
 
 ### 3. พัฒนาและ Commit
 - Commit บ่อยๆ เป็นก้อนเล็กๆ ที่มีความหมาย
-- เขียน commit message ให้ชัดเจน เช่น
+- เขียน commit message ตามรูปแบบใน [Commit Message Convention](#-commit-message-convention) ด้านล่าง เช่น
   ```
   feat: add login form validation
   fix: correct date format in invoice
@@ -138,13 +138,65 @@ git push origin feature/user-login
 
 ---
 
+## 📝 Commit Message Convention
+
+ทีมใช้รูปแบบ [Conventional Commits](https://www.conventionalcommits.org/) เพื่อให้ประวัติ commit อ่านง่ายและตรวจสอบย้อนหลังได้
+
+### รูปแบบ
+```
+<type>: <คำอธิบายสั้นๆ>
+
+[รายละเอียดเพิ่มเติม (ถ้าจำเป็น)]
+```
+
+### Type ที่ใช้
+| Type | ใช้เมื่อ | ตัวอย่าง |
+|---|---|---|
+| `feat` | เพิ่มฟีเจอร์ใหม่ | `feat: add user login page` |
+| `fix` | แก้บั๊ก | `fix: correct date format in invoice` |
+| `docs` | แก้ไขเอกสารเท่านั้น (README, CONTRIBUTING ฯลฯ) | `docs: update setup instructions` |
+| `style` | ปรับ format/โค้ดสไตล์ที่ไม่กระทบการทำงาน (เว้นวรรค, semicolon, CSS ล้วนๆ) | `style: format views.py with black` |
+| `refactor` | ปรับโครงสร้างโค้ดโดยไม่เพิ่มฟีเจอร์และไม่แก้บั๊ก | `refactor: extract order logic into service` |
+| `perf` | ปรับปรุงประสิทธิภาพ | `perf: add index to product table` |
+| `test` | เพิ่มหรือแก้ไข test | `test: add unit tests for login form` |
+| `chore` | งานจุกจิกที่ไม่เกี่ยวกับโค้ดหลัก (อัปเดต dependency, แก้ config) | `chore: update requirements.txt` |
+| `build` | เปลี่ยนแปลงระบบ build หรือ dependency ภายนอก | `build: upgrade Django to 5.0` |
+| `ci` | แก้ไข CI/CD pipeline | `ci: add GitHub Actions test workflow` |
+| `revert` | ย้อน commit ก่อนหน้า | `revert: revert "feat: add user login page"` |
+
+### กฎการเขียน
+- ใช้ **type เป็นตัวพิมพ์เล็กทั้งหมด** ตามด้วย `:` และเว้นวรรค 1 ครั้ง
+- คำอธิบายขึ้นต้นด้วย **คำกริยา** (add, fix, update, remove ...) และไม่ต้องลงท้ายด้วยจุด
+- ความยาวบรรทัดแรกไม่ควรเกิน **72 ตัวอักษร**
+- **1 commit = 1 เรื่อง** อย่ารวมหลายงานไว้ใน commit เดียว
+- ถ้าต้องการระบุขอบเขต สามารถใส่ scope ในวงเล็บได้ เช่น `feat(auth): add password reset`
+- ถ้าเกี่ยวข้องกับ task ให้อ้างอิงใน body หรือท้าย message เช่น `Refs #12`
+
+### ตัวอย่างที่ดี ✅
+```
+feat: add login form validation
+fix(auth): prevent null email on signup
+docs: add commit message convention
+refactor: split views into separate modules
+chore: remove unused imports
+```
+
+### ตัวอย่างที่ไม่ดี ❌
+```
+update                    # ไม่มี type และไม่บอกว่าแก้อะไร
+Fix bug.                  # type ตัวพิมพ์ใหญ่, ไม่ชัดเจน, มีจุดท้ายประโยค
+feat:add stuff and fix x  # ไม่เว้นวรรค และรวมหลายเรื่องใน commit เดียว
+```
+
+---
+
 ## ✅ Checklist ก่อนส่งโค้ด (ก่อนเปิด PR)
 
 - [ ] Pull โค้ดล่าสุดจาก `develop` และ merge/rebase เข้า branch ตัวเองแล้ว
 - [ ] รันโค้ดแล้วไม่มี error
 - [ ] รัน test ผ่านทั้งหมด
 - [ ] ไม่มีไฟล์ `.env`, `db.sqlite3`, หรือไฟล์ credential หลุดไปใน commit
-- [ ] Commit message สื่อความหมายชัดเจน
+- [ ] Commit message สื่อความหมายชัดเจน และตรงตาม Commit Message Convention
 - [ ] อัปเดต `requirements.txt` ถ้ามีการติดตั้ง package ใหม่
 - [ ] ลบ debug code / print ที่ไม่จำเป็นออก
 - [ ] ย้ายสถานะ task บน board ให้ตรงกับความคืบหน้าจริง
