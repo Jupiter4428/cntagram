@@ -15,13 +15,14 @@
 9. [Commit Message Convention](#-commit-message-convention)
 10. [Pull Request และ Code Review](#pull-request-และ-code-review)
 11. [Checklist ก่อนส่งโค้ด](#-checklist-ก่อนส่งโค้ด-ก่อนเปิด-pr)
-12. [Project Structure และ Branch Strategy](#project-structure)
+12. [Database และ Models](#database-และ-models)
+13. [Project Structure และ Branch Strategy](#project-structure)
 
 ---
 
 ## Tech Stack
 - Python 3.12+
-- Django 5.x (สถาปัตยกรรม MVT, ใช้ Function-Based Views เป็นหลัก)
+- Django 5.1 ขึ้นไป (สถาปัตยกรรม MVT, ใช้ Function-Based Views เป็นหลัก) — models ใช้ `CheckConstraint(condition=...)` ซึ่งมีตั้งแต่ 5.1
 - Bootstrap 5 (ผ่าน CDN) สำหรับ UI
 - SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
 - Git + GitHub (Pull Request, Projects, Actions)
@@ -92,12 +93,15 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 python manage.py migrate
 ```
 
-> ⚠️ **Custom User Model:** ถ้าโปรเจคใช้ `accounts.CustomUser` (สืบทอด `AbstractUser`) ต้องตั้ง `AUTH_USER_MODEL = 'accounts.CustomUser'` ใน `settings.py` **ก่อนสั่ง `migrate` ครั้งแรกสุดของโปรเจค** เพราะเปลี่ยนย้อนหลังทีหลังยากมากและเสี่ยงฐานข้อมูลพัง ถ้าไม่แน่ใจให้ถามทีมก่อน อย่าสร้าง migration ของ user เอง
+> ⚠️ **Custom User Model:** โปรเจคใช้ `accounts.User` (สืบทอด `AbstractBaseUser` + `PermissionsMixin`) และตั้ง `AUTH_USER_MODEL = 'accounts.User'` ใน `settings.py` ไว้แล้ว **ห้ามแก้หรือลบบรรทัดนี้** เพราะต้องตั้งก่อนสั่ง `migrate` ครั้งแรกสุดของโปรเจค การเปลี่ยนย้อนหลังทำให้ฐานข้อมูลพัง (`InconsistentMigrationHistory`) อย่าสร้าง migration ของ user เอง ถ้าไม่แน่ใจให้ถามทีมก่อน (ดูรายละเอียดที่ [Database และ Models](#database-และ-models))
 
 ### 6. สร้าง superuser (สำหรับเข้า admin panel)
+User ผูกกับภาควิชา (`department` ห้ามว่าง) จึงต้องมี Department อย่างน้อย 1 แถวก่อน
 ```bash
+python manage.py shell -c "from catalog.models import Department; Department.objects.get_or_create(code='CN', defaults={'name_th': 'วิศวกรรมคอมพิวเตอร์', 'name_en': 'Computer Engineering'})"
 python manage.py createsuperuser
 ```
+ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Student id (10 หลัก ตัวที่ 3–4 ต้องเป็น `10` เช่น `6710000001`), Nickname, Department (ใส่ id ของภาค เช่น `1`), Password
 
 ### 7. รันเซิร์ฟเวอร์
 ```bash
@@ -366,7 +370,7 @@ Conflict เกิดเมื่อสองคนแก้บรรทัด�
 ### Models
 - สืบทอด `models.Model` และ **เขียน `__str__()` ทุก Model** (Admin และ dropdown จะอ่านรู้เรื่อง)
 - ใช้ `class Meta` กำหนด `ordering`, `verbose_name`, `verbose_name_plural` (ชื่อไทยต้องกำหนดพหูพจน์เอง ไม่งั้น Admin เติม "s" ให้)
-- ฟิลด์ข้อความ **ไม่ใช้ `null=True`** ให้ใช้ `blank=True, default=""` (กัน NULL กับ "" ปนกัน)
+- ฟิลด์ข้อความ **ไม่ใช้ `null=True`** ให้ใช้ `blank=True, default=""` (กัน NULL กับ "" ปนกัน) ข้อยกเว้นเดียวคือฟิลด์ที่ต้อง `unique=True` และเว้นว่างได้ เช่น `User.personal_email` ต้องเป็น `null=True` เพราะ `""` สองแถวจะชน unique กันเอง
   - `null=True` = ระดับฐานข้อมูล, `blank=True` = ระดับ validation ของ Form
 - เงิน/เกรด/ค่าที่ต้องแม่นยำ ใช้ `DecimalField(max_digits=.., decimal_places=..)` **ห้ามใช้ `FloatField`**
 - ตัวเลือกคงที่ใช้ `models.TextChoices`
@@ -393,6 +397,8 @@ class Course(models.Model):
     def __str__(self):
         return f"{self.code} - {self.title}"
 ```
+
+> โค้ดตัวอย่างด้านบนใช้อธิบายสไตล์เท่านั้น ไม่ใช่ model จริงของโปรเจค (ของจริงอยู่ใน `catalog/models.py`)
 
 **ลำดับแปลง ERD เป็นโค้ด:** (1) Model ที่ไม่มี FK ก่อน → (2) Model ที่มี FK + `on_delete` → (3) Junction Model → (4) Constraints/Indexes
 
@@ -628,16 +634,84 @@ Closes #12
 
 ---
 
+## Database และ Models
+
+โครงสร้างตารางอ้างอิงจาก `database-design.md` (ERD 3NF, SP-0) ถ้าจะเพิ่ม/แก้ตาราง ให้แก้ไฟล์นี้กับ `models.py` **ใน PR เดียวกัน** ไม่ให้เอกสารกับโค้ดเพี้ยนกัน
+
+### แบ่ง app (Sprint 1)
+| App | Models | Story |
+|---|---|---|
+| `accounts` | `User`, `Role`, `UserRole` | US-1, US-2 |
+| `catalog` | `Department`, `Batch`, `Course`, `BatchCourse`, `SystemSetting` | US-3, US-4 |
+| `documents` | `DocType`, `ExamPeriod`, `Document`, `ExamDetail`, `DocumentVersion` | US-5 |
+
+- ตาราง Sprint 2 (`approval`, `download_log`, `audit_log`, `report`, `doc_type_required_role`) ยังไม่มีใน `models.py` ให้ตกลง app ปลายทางตอน Sprint 2 Planning
+- ลำดับพึ่งพา: `catalog` ไม่พึ่ง app ใดเลย → `accounts` พึ่ง `catalog` → `documents` พึ่งทั้งสอง
+- อ้างข้าม app ด้วย **string** เช่น `"catalog.Department"` และอ้างผู้ใช้ด้วย `settings.AUTH_USER_MODEL` ห้าม import model ข้าม app ที่หัวไฟล์ `models.py` (กัน circular import)
+
+### ข้อตกลงที่ห้ามฝ่าฝืน
+- **User:** login ด้วย `email` (`USERNAME_FIELD`), ฟิลด์ `password` ของ Django คือ `password_hash` ใน ERD (เก็บเป็น hash อยู่แล้ว), `is_staff` เพิ่มเพื่อเข้า Django admin สร้างผู้ใช้ด้วย `User.objects.create_user(email, password, student_id=..., nickname=..., department=...)` เท่านั้น
+- **ค่าที่คำนวณได้ห้ามเก็บเป็น column (3NF):** รหัสรุ่น `CN21` ใช้ `Batch.code`, ปีเข้าใช้ `User.entry_year`, เวอร์ชันล่าสุดใช้ `Document.current_version` ส่วนจำนวนดาวน์โหลดจะนับจาก `download_log` (Sprint 2)
+- **FK ทุกเส้นเป็น `on_delete=PROTECT`:** ลบข้อมูลที่ถูกอ้างอยู่จะเกิด `ProtectedError` ต้องดักใน view แล้วแสดงข้อความภาษาไทย (ตรงกับ AC ของ US-3/US-4)
+- **`UserRole.department`:** ใช้เฉพาะ role `moderator` (ภาคที่ดูแล) role อื่นเป็น `NULL` SQL ถือว่า `NULL ≠ NULL` จึงแยก UNIQUE เป็น 2 constraint (`uq_userrole_with_dept` / `uq_userrole_without_dept`) อย่ารวมกลับเป็นอันเดียว
+- **ฟิลด์ตัวเลือก** (`vault`, `status`, `scan_status`) ใช้ `TextChoices` คู่กับ `CheckConstraint` ถ้าเพิ่มค่าใหม่ต้องแก้ **ทั้งสองที่** แล้วสร้าง migration
+- `Role`, `DocType`, `ExamPeriod` ใช้ `SmallAutoField` ส่วน `ExamDetail` ใช้ `document` เป็น PK (OneToOne)
+
+### DB บังคับให้ vs. ต้องเขียนเอง
+| DB บังคับให้แล้ว (อย่าเขียนซ้ำ) | ต้องเขียนใน form/view/service |
+|---|---|
+| รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, เวอร์ชันซ้ำของเอกสาร | อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จาก local part ของอีเมล (US-1) |
+| `size_bytes` ≤ 50 MB, `status`/`vault`/`scan_status` นอกค่าที่กำหนด | ผู้ใช้อัปโหลดได้เฉพาะภาควิชาของตัวเอง ฝั่ง server ต้องเช็กด้วย (US-5) |
+| ลบ Department/Batch/Course ที่ยังถูกอ้างอยู่ไม่ได้ | รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น |
+| รูปแบบ `student_id` (10 หลัก, ตัวที่ 3–4 = `10`) เมื่อเรียก `full_clean()`/ผ่าน ModelForm (ไม่ใช่ระดับ DB) | role `moderator` ต้องมี `department`, Super Admin ต้องมีอย่างน้อย 2 คน |
+
+### `SystemSetting` (ค่ากำหนดปรับได้โดยไม่ deploy ใหม่)
+| key | ค่าเริ่มต้น | ใช้ทำอะไร |
+|---|---|---|
+| `legacy_batch_max` | `23` | รุ่นที่ ≤ ค่านี้ ให้ Super Admin จัดการเท่านั้น |
+| `max_upload_mb` | `50` | ขนาดไฟล์สูงสุดตอนอัปโหลด |
+
+```python
+from catalog.models import SystemSetting
+
+legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่า default ถ้ายังไม่มีแถวนี้
+```
+ข้อควรระวัง: `DocumentVersion` มี CHECK ขนาดไฟล์ 50 MB แบบ**ตายตัว** (`MAX_UPLOAD_BYTES` ใน `documents/models.py`) การแก้ `max_upload_mb` ใน DB ไม่เปลี่ยน CHECK นี้ ถ้าจะลดให้เช็กใน form ด้วย `get_int` ถ้าจะเพิ่มเกิน 50 MB ต้องแก้ค่าคงที่และสร้าง migration
+
+### ข้อมูลตั้งต้น (seed) ที่ระบบต้องมี
+| ตาราง | ข้อมูล |
+|---|---|
+| `Department` | CN, CE, ME, EE (ตาม AC ของ US-3) |
+| `Role` | `student`, `alumni`, `moderator`, `super_admin` |
+| `DocType` | `summary`, `cheatsheet`, `slide` (vault = `lecture`) และ `exam` (vault = `exam`) |
+| `ExamPeriod` | `midterm`, `final` |
+| `SystemSetting` | `legacy_batch_max`, `max_upload_mb` ตามตารางด้านบน |
+
+ตอนนี้ยังไม่มี script seed อัตโนมัติ ให้ใส่ผ่าน Django admin หรือ `manage.py shell` ถ้าจะทำเป็น data migration หรือ management command ให้เปิด issue ก่อน
+
+### Migration รอบแรก (`0001`)
+- ให้ **ผู้ดูแล ERD คนเดียว** สร้างและ push `0001_initial` ของ `accounts`, `catalog`, `documents` ใน PR แรก คนอื่นรอ PR นั้น merge แล้ว `pull` + `migrate` เท่านั้น **ห้ามรัน `makemigrations` เองก่อนหน้านั้น** ไม่งั้นจะได้ 0001 คนละชุดและชนกัน
+  ```bash
+  python manage.py makemigrations accounts catalog documents
+  python manage.py migrate
+  ```
+- ถ้าเครื่องคุณเคย `migrate` ก่อนมี `AUTH_USER_MODEL` จะเจอ `InconsistentMigrationHistory` กรณีนี้เท่านั้นที่ให้ลบ `db.sqlite3` (ไฟล์ในเครื่องคุณ ไม่อยู่ใน Git) แล้ว `migrate` ใหม่ได้ (ต้อง seed ใหม่ด้วย) ส่วนโฟลเดอร์ `migrations/` **ยังห้ามลบ** ตามกฎด้านบน
+
+---
+
 ## Project Structure
 ```
 projectdjango/
 ├── portal/          # Django project config (settings, urls, wsgi/asgi)
+├── accounts/        # User, Role, UserRole (US-1, US-2)
+├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
+├── documents/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
 ├── manage.py
 ├── requirements.txt
 └── README.md
 ```
 
-ภายในแต่ละ app (เช่น `courses/`, `accounts/`) ใช้โครงสร้างตามนี้
+ภายในแต่ละ app (เช่น `catalog/`, `accounts/`) ใช้โครงสร้างตามนี้
 ```
 <app>/
 ├── models.py
