@@ -2,6 +2,7 @@
 
 เอกสารนี้ใช้เป็น **SP-0 (ERD 3NF)** ของ Sprint 1
 สมมติฐาน: ใช้ RDBMS แบบ relational (MySQL/PostgreSQL) กับ Django ตาม SRS (`on_delete=PROTECT`)
+แนะนำ **PostgreSQL**: `user_role` ใช้ partial unique index ซึ่ง MySQL ไม่รองรับ (Django จะข้าม constraint นี้ จึงมีเช็กซ้ำใน model ด้วย)
 
 ---
 
@@ -18,6 +19,8 @@
 | ค่ากำหนด (รุ่น ≤ 23, ขนาดไฟล์ 50 MB) | ตาราง `system_setting` | ปรับได้โดยไม่ deploy ใหม่ |
 | ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | FR-2.2 อัปโหลดเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
 | จำนวนดาวน์โหลด | นับจาก `download_log` | ไม่เก็บตัวนับซ้ำ (ถ้าช้าค่อยเพิ่ม cache ทีหลังโดยเจตนา) |
+| ลบข้อมูลผู้ใช้ (PDPA) | **anonymize** แถวเดิม ไม่ลบจริง | FK เป็น `PROTECT` จึงลบผู้ใช้ที่มีเอกสารไม่ได้ ล้างอีเมล/รหัส/ชื่อเล่นแทน แล้วปิด `is_active` |
+| อีเมล / รหัสวิชา / รหัสภาค | เก็บเป็นรูปแบบเดียว (อีเมลตัวพิมพ์เล็ก, รหัสตัวพิมพ์ใหญ่) | กัน `Alice@x` กับ `alice@x`, `cn101` กับ `CN101` เป็นคนละค่าใน UNIQUE |
 
 ---
 
@@ -66,7 +69,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE) |
+| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE; เก็บตัวพิมพ์ใหญ่) |
 | name_th | VARCHAR(100) | NN |
 | name_en | VARCHAR(100) | NN |
 | is_active | BOOLEAN | NN, default true |
@@ -76,7 +79,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 |---|---|---|
 | id | BIGINT | PK |
 | department_id | BIGINT | FK → department, NN |
-| number | SMALLINT | NN (21, 22, …) |
+| number | SMALLINT | NN, CHECK ≥ 1 (21, 22, …) |
 | | | **UQ (department_id, number)** |
 
 > รหัสรุ่น `CN21` = `department.code || batch.number` (คำนวณ ไม่เก็บ)
@@ -85,7 +88,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326) |
+| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326; เก็บตัวพิมพ์ใหญ่) |
 | name_th | VARCHAR(150) | NULL |
 | name_en | VARCHAR(150) | NN |
 
@@ -103,16 +106,29 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| student_id | CHAR(10) | UQ, NN (จาก local part ของอีเมล; ตัวที่ 1–2 = ปีเข้า, 3–4 = คณะ ต้องเป็น `10`) |
+| student_id | CHAR(10) | UQ, NN (ระบบดึงจาก local part ของอีเมล ผู้ใช้ไม่กรอก; ตัวที่ 1–2 = ปีเข้า, 3–4 = คณะ ต้องเป็น `10`) |
 | email | VARCHAR(255) | UQ, NN (@student.tu.ac.th) |
 | personal_email | VARCHAR(255) | UQ, NULL (ผูกสำหรับ Alumni) |
 | password_hash | VARCHAR(255) | NN |
 | nickname | VARCHAR(50) | NN (แสดงแทนอีเมล — PDPA) |
-| department_id | BIGINT | FK → department, NN (ผู้ใช้เลือกเอง) |
+| department_id | BIGINT | FK → department, NN (ผู้ใช้กรอกตัวย่อภาค เช่น CN, CHE ตอนสมัคร/createsuperuser ระบบแปลงเป็น id; ภาควิชา admin ต้องสร้างไว้ก่อน ถ้าไม่มีจะแจ้งว่าไม่พบ) |
 | email_verified_at | TIMESTAMP | NULL |
 | pdpa_consent_at | TIMESTAMP | NN |
 | is_active | BOOLEAN | NN |
+| is_staff | BOOLEAN | NN, default false (เข้า Django admin) |
+| is_superuser | BOOLEAN | NN, default false (จาก `PermissionsMixin`) |
+| last_login | TIMESTAMP | NULL (จาก `AbstractBaseUser`) |
 | created_at | TIMESTAMP | NN |
+
+> **กฎของ app_user ที่บังคับใน model (DB ทำไม่ได้)**
+> - ผู้ใช้ไม่ต้องกรอก `student_id` ระบบดึงจากส่วนหน้า `@` ของ `email` ให้เอง (`User.validate_student_email()` ใน `accounts/models.py` เป็นที่เดียวที่เก็บกฎ; ฟอร์มสมัครและ `clean()` เรียกใช้ตัวเดียวกัน; ยกเว้น superuser)
+> - ลำดับเช็ก `email`: ซ้ำไหม → โดเมนต้องเป็น `@student.tu.ac.th` → ส่วนหน้า `@` ต้องเป็นเลขอารบิก 10 หลัก → หลักที่ 3–4 ต้องเป็น `10` (ไม่ใช่ = ไม่ได้อยู่คณะวิศวะ สมัครไม่ได้) → ผ่านแล้วบันทึกรหัสลง `student_id`
+> - `email` / `personal_email` เก็บตัวพิมพ์เล็กเสมอ, `personal_email` ว่างเก็บเป็น NULL (ตอนสมัครเช็กแค่รูปแบบอีเมลถูกต้อง และไม่ซ้ำเพราะเป็น UQ)
+> - `student_id` เป็นเลขอารบิก 10 หลักเท่านั้น (ไม่รับเลขไทย) และไม่แสดงในฟอร์ม (`editable=False`)
+> - `department` ผู้ใช้กรอกตัวย่อภาค (เช่น `CN`, `CHE`) ต้องมีในตาราง `department` ที่ Admin เพิ่มไว้และ `is_active`
+> - `nickname` ห้ามซ้ำกับคำสงวน (admin, moderator, แอดมิน ฯลฯ)
+> - `pdpa_consent_at` ต้องส่งมาจากการกดยอมรับจริง ระบบไม่เติมให้ (ยกเว้นสร้าง superuser ผ่าน CLI)
+> - ลบผู้ใช้ตาม PDPA ใช้ `anonymize()` (ล้างข้อมูลระบุตัวตน + ปิดบัญชี)
 
 **role**
 | Column | Type | Constraint |
@@ -132,7 +148,11 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | department_id | BIGINT | FK → department, **NULL** (ใช้เฉพาะ moderator = ภาคที่ดูแล; role อื่น = NULL) |
 | granted_by | BIGINT | FK → app_user, NULL |
 | granted_at | TIMESTAMP | NN |
-| | | **UQ (user_id, role_id, department_id)** |
+| | | **UQ (user_id, role_id, department_id) WHERE department_id IS NOT NULL** |
+| | | **UQ (user_id, role_id) WHERE department_id IS NULL** |
+
+> เหตุที่ UQ แยกเป็น 2 เงื่อนไข: SQL ถือว่า `NULL ≠ NULL` ถ้ามี UQ ตัวเดียว `(user, student, NULL)` จะซ้ำได้
+> กฎใน model: `department_id` ต้องมีค่าเมื่อ role = `moderator` และต้องเป็น NULL เมื่อเป็น role อื่น
 
 ### 3.3 เอกสารและไฟล์ (Sprint 1)
 
@@ -168,7 +188,9 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 |---|---|---|
 | document_id | BIGINT | PK, FK → document |
 | exam_period_id | SMALLINT | FK → exam_period, NN |
-| exam_year_be | SMALLINT | NN (ปี พ.ศ.) |
+| exam_year_be | SMALLINT | NN, CHECK 2500–2700 (ปี พ.ศ.) |
+
+> `exam_detail` ผูกได้เฉพาะ document ที่ `doc_type.vault = 'exam'` (เช็กใน model)
 
 **document_version**
 | Column | Type | Constraint |
@@ -176,15 +198,19 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | id | BIGINT | PK |
 | document_id | BIGINT | FK → document, NN |
 | version_no | SMALLINT | NN |
-| storage_path | VARCHAR(500) | NN (`vault/{dept}/{batch}/{course}/{type}/{uuid}.pdf`) |
+| storage_path | VARCHAR(500) | UQ, NN (path สัมพัทธ์เท่านั้น ห้าม `/` นำหน้า `..` `\`; `vault/{dept}/{batch}/{course}/{type}/{uuid}.pdf`) |
 | original_name | VARCHAR(255) | NN |
-| size_bytes | BIGINT | NN, CHECK ≤ 50 MB |
-| sha256 | CHAR(64) | NN |
+| size_bytes | BIGINT | NN, CHECK 0 < ค่า ≤ 50 MB (เพดานสูงสุด) |
+| sha256 | CHAR(64) | NN, INDEX (hex ตัวพิมพ์เล็ก 64 ตัว) |
 | scan_status | VARCHAR(10) | NN (`pending`, `clean`, `infected`) |
 | uploaded_at | TIMESTAMP | NN |
 | | | **UQ (document_id, version_no)** |
 
 > เวอร์ชันปัจจุบัน = `version_no` สูงสุดของ document นั้น
+>
+> - ออกเลขเวอร์ชันผ่าน `Document.add_version()` ซึ่งล็อกแถว document ก่อน กันเลขชนเมื่ออัปโหลดพร้อมกัน
+> - ขนาดไฟล์ที่ยอมรับจริง = `system_setting.max_upload_mb` (ต้องไม่เกิน 50) CHECK ใน DB เป็นเพดานสูงสุดเท่านั้น
+> - `original_name` ถูกล้าง path และอักขระควบคุมก่อนบันทึก
 
 ### 3.4 ตั้งค่าและกฎ (Sprint 1–2)
 
@@ -316,6 +342,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | batch_course | UQ (batch_id, course_id), IDX (course_id) | รวมวิชาเดียวกันจากทุกรุ่น |
 | document | IDX (batch_course_id, status), IDX (doc_type_id, status), IDX (uploader_id) | ค้นหา/กรอง, คิวอนุมัติ |
 | exam_detail | IDX (exam_period_id, exam_year_be) | กรองตามช่วงสอบ/ปี |
+| document_version | UQ (document_id, version_no), UQ (storage_path), IDX (sha256) | กันเวอร์ชัน/ไฟล์ซ้ำ, ตรวจไฟล์ที่ถูกรายงาน |
 | approval | UQ (document_id, approver_id) | กันอนุมัติซ้ำ |
 | user_role | UQ (user_id, role_id, department_id), IDX (role_id, department_id) | หา Moderator ของภาค |
 | download_log | IDX (document_id) | นับจำนวนดาวน์โหลด |
@@ -325,9 +352,10 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 - ลบ Department / Batch / Course ที่ยังมี batch_course หรือ document ผูกอยู่ไม่ได้ (FK RESTRICT/`PROTECT`)
 - รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, ผู้อนุมัติซ้ำคนเดิมในเอกสารเดียวกัน → ถูกบล็อกด้วย UQ
-- `size_bytes` เกิน 50 MB, `stars` นอก 1–5, `status` นอกค่าที่กำหนด → ถูกบล็อกด้วย CHECK
+- `size_bytes` ≤ 0 หรือเกิน 50 MB, `exam_year_be` นอก 2500–2700, `batch.number` < 1, `stars` นอก 1–5, `status` นอกค่าที่กำหนด → ถูกบล็อกด้วย CHECK
+- `storage_path` ซ้ำ → ถูกบล็อกด้วย UQ
 
-**ที่ต้องเขียนใน application (DB ทำไม่ได้):** ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, Super Admin ต้องมีอย่างน้อย 2 คน
+**ที่ต้องเขียนใน application (DB ทำไม่ได้):** ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, Super Admin ต้องมีอย่างน้อย 2 คน, กฎของ `app_user` (โดเมนอีเมล = student_id), moderator ต้องมีภาค / role อื่นห้ามมีภาค, `exam_detail` เฉพาะข้อสอบ, ขนาดไฟล์ตาม `max_upload_mb`
 
 ## 7. ลำดับสร้างตาราง (ตรงกับ Sprint)
 
@@ -335,3 +363,16 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
   *(map กับ US-1 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้)*
 - **Sprint 2:** doc_type_required_role, approval, download_log, audit_log, report
 - **Sprint 3+:** comment, rating, email verification token, คำขอถอนไฟล์ของ Alumni
+
+## 8. Django app ↔ ตาราง
+
+| App | Model | ตารางใน DB |
+|---|---|---|
+| `catalog` | Department, Batch, Course, BatchCourse, SystemSetting | department, batch, course, batch_course, system_setting |
+| `accounts` | User, Role, UserRole | app_user, role, user_role |
+| `materials` | DocType, ExamPeriod, Document, ExamDetail, DocumentVersion | doc_type, exam_period, document, exam_detail, document_version |
+
+- แอป `materials` ชื่อเดิมคือ `documents` ชื่อตารางไม่เปลี่ยนเพราะตั้ง `db_table` ไว้ทุก model ตรงกับ ERD
+- ตั้ง `AUTH_USER_MODEL = "accounts.User"` ก่อน `migrate` ครั้งแรก
+- ลำดับ migration: `catalog` → `accounts` → `materials`
+- ตาราง `auth_group`, `auth_permission` และ M2M ของ `PermissionsMixin` ถูกสร้างโดย Django เพิ่มเติม ไม่อยู่ใน ERD นี้ (สิทธิ์ของระบบใช้ `role` + `user_role` เป็นหลัก)
