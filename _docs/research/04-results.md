@@ -34,7 +34,7 @@
 - สร้าง Model และ migration ของตาราง Sprint 1 ครบ 13 ตาราง: department, batch, course, batch_course, system_setting, app_user, role, user_role, doc_type, exam_period, document, exam_detail, document_version
 - Custom User ล็อกอินด้วยอีเมล ดึง `student_id` จากอีเมลและตรวจรหัสคณะ (`User.validate_student_email()`), `anonymize()` สำหรับ PDPA
 - `Document.add_version()` ออกเลขเวอร์ชันแบบล็อกแถว, ตรวจ `storage_path` และล้างชื่อไฟล์
-- เอกสารโครงการ: ERD 3NF (SP-0), ADR 0001–0002, C4 Level 1–2, Product Backlog, แนวปฏิบัติทีม, GitHub issue/PR templates
+- เอกสารโครงการ: ERD 3NF (SP-0), ADR 0001–0002, C4 Level 1–2, Product Backlog, แนวปฏิบัติทีม (รวมโครงหัวข้อ issue/PR)
 - ยังไม่มี: URL/view/template ของฟีเจอร์ผู้ใช้, การ register model ใน admin (TD-3), automated test, CI (TD-1)
 
 ## 4.2 ผลการพัฒนาระบบ (ฟังก์ชันที่ส่งมอบ)

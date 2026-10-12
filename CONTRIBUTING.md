@@ -211,7 +211,10 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 | **Track** | Single select | `Feature` / `Tech Debt` |
 
 ### Issue
-- เปิดด้วย template ใน `.github/ISSUE_TEMPLATE/`: **Feature Story** (`[US-X]`), **Tech Debt / Refactoring Story** (`[TD-X]`), **Bug Report** (`[Bug]`) ส่วนงานสำรวจใช้ `[SP-X]`
+- repo ไม่มี Issue template ให้เลือก ตอนกด **New issue** ให้ตั้งชื่อตามประเภทและเขียนเนื้อหาให้มีหัวข้อตามนี้ ส่วนงานสำรวจใช้ `[SP-X]`
+  - **Feature Story** (`[US-X]`, label `story`): User Story แบบ As a / I want / So that, Epic, MoSCoW, Owner/Pair, Acceptance Criteria 3–5 ข้อ (checklist หรือ Given-When-Then), งานย่อยแบบ Vertical Slice และ checklist Definition of Ready
+  - **Tech Debt / Refactoring Story** (`[TD-X]`, label `tech-debt`): สิ่งที่จะ refactor, คุณค่าที่ได้, ปัญหาปัจจุบัน และ AC ที่ต้องรวมข้อ "พฤติกรรมเดิมเหมือนเดิม 100% (Regression-free)" และ ADR ถ้าเป็นการตัดสินใจเชิงสถาปัตยกรรม
+  - **Bug Report** (`[Bug]`, label `bug`): อาการ, ขั้นตอนทำซ้ำ, ผลที่คาดหวัง vs ผลจริง, branch/commit, screenshot/log และ AC ที่ต้องมีเทสต์จับบั๊ก (ล้มก่อนแก้ ผ่านหลังแก้)
 - ตั้ง Label: ประเภท (`story` / `spike` / `tech-debt` / `bug`), MoSCoW (`must` / `should` / `could`), ฝั่งงาน (`backend` / `frontend`)
 - ผูก Milestone `Sprint N` เมื่อถูกเลือกเข้า Sprint (ยังไม่เลือก = อยู่ใน Product Backlog)
 
@@ -251,7 +254,7 @@ git switch -c feature/issue-29-upload-sheet
 ```bash
 git push -u origin feature/issue-29-upload-sheet
 ```
-- เปิด PR เข้า `develop` (**base = develop, compare = branch ของเรา**) กรอกตาม PR template และเขียน **`Closes #29`**
+- เปิด PR เข้า `develop` (**base = develop, compare = branch ของเรา**) เขียนเนื้อหาตาม[หัวข้อที่ PR ต้องมี](#pull-request-และ-code-review) และเขียน **`Closes #29`** ทำผ่านหน้าเว็บ GitHub หรือ command line ก็ได้ (ดู[ขั้นตอน](#ขั้นตอนใน-github))
 - ย้ายการ์ดเป็น **In Review**
 - PR เล็ก รีวิวง่าย (ถ้าเกิน ~400–500 บรรทัด ให้พิจารณาแตก story)
 
@@ -448,7 +451,30 @@ feat:add stuff and fix x  # ไม่เว้นวรรค และรวม
 
 ## Pull Request และ Code Review
 
-PR template อยู่ที่ [`.github/pull_request_template.md`](./.github/pull_request_template.md) (GitHub เติมให้อัตโนมัติ) ต้องมี: ทำอะไร, วิธีทดสอบ, screenshot (UI) หรือ Before/After (refactor), checklist DoD และ **`Closes #N`**
+repo ไม่มี PR template ให้ GitHub เติมอัตโนมัติ ผู้เปิด PR ต้องเขียนเนื้อหาเองให้มีหัวข้อตามนี้ (คัดลอกไปใช้ได้เลย)
+
+```markdown
+## Summary of Changes
+- ทำอะไรไป
+- validation / กฎธุรกิจสำคัญที่เพิ่ม (อยู่ใน `services.py` ไหน)
+
+## วิธีทดสอบ
+1. ...
+2. รัน `python manage.py test`
+
+## Screenshot (ถ้าแก้ UI) / Before–After (ถ้าเป็น Refactor)
+
+## Checklist (Definition of Done)
+- [ ] ผ่าน Acceptance Criteria ครบทุกข้อของ issue
+- [ ] มี automated test และรันผ่านทั้งหมด
+- [ ] View บาง: business logic อยู่ใน `services.py` การอ่านข้อมูลอยู่ใน `selectors.py`
+- [ ] ไม่มี N+1 query และไม่มี circular import
+- [ ] ผ่าน security พื้นฐาน (CSRF, escape output, ตรวจสิทธิ์ฝั่ง server)
+- [ ] ถ้าแก้ Model: มี migration และอัปเดต `_docs/database-design.md` ใน PR นี้
+- [ ] อัปเดตเอกสารที่เกี่ยวข้อง (README / ADR) ถ้ามีการเปลี่ยน setup หรือสถาปัตยกรรม
+
+Closes #N
+```
 
 ### หน้าที่ของผู้เปิด PR (Author)
 - อธิบายเจตนาของ PR และสิ่งที่แก้ให้ชัดเจน
@@ -464,9 +490,35 @@ PR template อยู่ที่ [`.github/pull_request_template.md`](./.github
 - ให้คำแนะนำอย่างสร้างสรรค์และสุภาพ (Constructive Feedback)
 
 ### ขั้นตอนใน GitHub
-**Author:** push branch → **Compare & pull request** → base = `develop` → กรอก template → **Create pull request** → ย้ายการ์ดเป็น **In Review**
+**ผ่านหน้าเว็บ**
+
+**Author:** push branch → **Compare & pull request** → base = `develop` → เขียนเนื้อหาตามหัวข้อด้านบน → **Create pull request** → ย้ายการ์ดเป็น **In Review**
 **Reviewer:** แท็บ **Files changed** อ่าน diff → **Submit review** → **Approve** หรือ **Request changes**
 เมื่อ approve ครบ กด **Merge pull request** แล้วลบ branch
+
+**ผ่าน command line** (ใช้ [GitHub CLI](https://cli.github.com/) `gh` ติดตั้งแล้ว login ครั้งแรกด้วย `gh auth login`)
+
+Author: เซฟเนื้อหา PR ตามหัวข้อด้านบนเป็นไฟล์ เช่น `pr-body.md` (ไฟล์ชั่วคราว ไม่ต้อง commit) แล้วรัน
+```bash
+git push -u origin feature/issue-29-upload-sheet
+gh pr create --base develop --title "feat: upload sheet (US-5)" --body-file pr-body.md
+gh pr view --web                 # เปิด PR ที่เพิ่งสร้างในเบราว์เซอร์ (ถ้าต้องการ)
+```
+> ไม่ใส่ `--title` / `--body-file` ก็ได้ `gh pr create` จะถามทีละข้อและเปิด editor ให้เขียนเนื้อหา
+
+Reviewer:
+```bash
+gh pr list --base develop         # ดู PR ที่รอ review
+gh pr checkout 42                 # ดึง branch ของ PR #42 มารันเทสในเครื่อง
+gh pr diff 42                     # อ่าน diff
+gh pr review 42 --approve
+gh pr review 42 --request-changes --body "เหตุผลที่ขอให้แก้"
+```
+
+Merge (หลัง approve ครบ ห้าม self-merge):
+```bash
+gh pr merge 42 --squash --delete-branch    # หรือ --merge ตามที่ทีมตกลง
+```
 
 ---
 
@@ -828,7 +880,7 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 | `ExamPeriod` | `midterm`, `final` |
 | `SystemSetting` | `legacy_batch_max`, `max_upload_mb` ตามตารางด้านบน |
 
-ตอนนี้ยังไม่มี script seed อัตโนมัติ และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน (seed ภาควิชาเป็นงานของ US-3, seed รุ่น/วิชาเป็นงานของ US-4) การทำเป็น management command อยู่ใน Product Backlog แล้ว (TD-2, TD-3 ใน [`_docs/requirements.md`](./_docs/requirements.md))
+รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน (seed ภาควิชาครบชุดเป็นงานของ US-3) การทำเป็น management command อยู่ใน Product Backlog แล้ว (TD-2, TD-3 ใน [`_docs/requirements.md`](./_docs/requirements.md))
 
 ### Migration ที่มีอยู่
 - `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0003, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
