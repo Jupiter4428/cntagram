@@ -129,7 +129,7 @@ User ผูกกับภาควิชา (`department` ห้ามว่า
 
 > ตอนนี้ `admin.py` ของทุก app ยังไม่ได้ register model จึงยังไม่เห็นตารางของโปรเจคในหน้า admin
 ```bash
-python manage.py shell -c "from catalog.models import Department; Department.objects.get_or_create(code='CN', defaults={'name_th': 'วิศวกรรมคอมพิวเตอร์', 'name_en': 'Computer Engineering'})"
+python manage.py seed_catalog     # ภาค CN + รุ่น CN21–CN25 + วิชาตัวอย่าง (รันซ้ำได้ ไม่สร้างซ้ำ)
 python manage.py createsuperuser
 ```
 ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (พิมพ์ตัวย่อภาค เช่น `CN` ตัวพิมพ์เล็กก็ได้ ถ้ายังไม่มีภาคนี้จะแจ้งว่าไม่พบ), Password
@@ -173,7 +173,6 @@ cntagram/
 ├── accounts/        # User, Role, UserRole (US-1, US-2)
 ├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
 ├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
-├── .github/         # Issue templates และ Pull Request template
 ├── manage.py
 ├── requirements.txt
 ├── CONTRIBUTING.md
