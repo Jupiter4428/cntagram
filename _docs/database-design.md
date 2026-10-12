@@ -1,7 +1,8 @@
 # ออกแบบฐานข้อมูล (3NF) — เว็บบอร์ดรวมชีทสรุปคณะวิศวะ
 
-เอกสารนี้ใช้เป็น **SP-0 (ERD 3NF)** ของ Sprint 1
-สมมติฐาน: ใช้ RDBMS แบบ relational (MySQL/PostgreSQL) กับ Django ตาม SRS (`on_delete=PROTECT`)
+เอกสารนี้ใช้เป็น **SP-0 (ERD 3NF)** ของ Sprint 1 และอัปเดตใน PR เดียวกับที่แก้ `models.py` เสมอ
+Requirement ที่ตารางเหล่านี้รองรับอยู่ใน [`requirements.md`](./requirements.md) (อ้างด้วยรหัส story เช่น US-5) ขอบเขต app และการแยกชั้นโค้ดดู [ADR 0001](./adr/0001-modular-monolith-and-app-boundaries.md) และ [ADR 0002](./adr/0002-service-layer-and-selectors.md)
+สมมติฐาน: ใช้ RDBMS แบบ relational (MySQL/PostgreSQL) กับ Django และ FK ทุกเส้นเป็น `on_delete=PROTECT`
 แนะนำ **PostgreSQL**: `user_role` ใช้ partial unique index ซึ่ง MySQL ไม่รองรับ (Django จะข้าม constraint นี้ จึงมีเช็กซ้ำใน model ด้วย)
 
 ---
@@ -17,7 +18,7 @@
 | ชีทสรุป กับ ข้อสอบเก่า | ตาราง `document` ร่วมกัน + `exam_detail` (1:1) สำหรับข้อมูลเฉพาะข้อสอบ | หลีกเลี่ยง column ที่ว่างเป็นส่วนใหญ่ และรองรับ vault 2 แบบ |
 | กฎอนุมัติ | เก็บเป็นข้อมูลใน `doc_type_required_role` ไม่ hardcode | เปลี่ยนกฎ (ข้อสอบต้อง Moderator + Admin) โดยไม่แก้โค้ด |
 | ค่ากำหนด (รุ่น ≤ 23, ขนาดไฟล์ 50 MB) | ตาราง `system_setting` | ปรับได้โดยไม่ deploy ใหม่ |
-| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | FR-2.2 อัปโหลดเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
+| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | US-19 ส่งเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
 | จำนวนดาวน์โหลด | นับจาก `download_log` | ไม่เก็บตัวนับซ้ำ (ถ้าช้าค่อยเพิ่ม cache ทีหลังโดยเจตนา) |
 | ลบข้อมูลผู้ใช้ (PDPA) | **anonymize** แถวเดิม ไม่ลบจริง | FK เป็น `PROTECT` จึงลบผู้ใช้ที่มีเอกสารไม่ได้ ล้างอีเมล/รหัส/ชื่อเล่นแทน แล้วปิด `is_active` |
 | อีเมล / รหัสวิชา / รหัสภาค | เก็บเป็นรูปแบบเดียว (อีเมลตัวพิมพ์เล็ก, รหัสตัวพิมพ์ใหญ่) | กัน `Alice@x` กับ `alice@x`, `cn101` กับ `CN101` เป็นคนละค่าใน UNIQUE |
@@ -106,7 +107,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| student_id | CHAR(10) | UQ, NN (ระบบดึงจาก local part ของอีเมล ผู้ใช้ไม่กรอก; ตัวที่ 1–2 = ปีเข้า, 3–4 = คณะ ต้องเป็น `10`) |
+| student_id | VARCHAR(10) | UQ, NN (ระบบดึงจาก local part ของอีเมล ผู้ใช้ไม่กรอก; ตัวที่ 1–2 = ปีเข้า, 3–4 = คณะ ต้องเป็น `10`; superuser ที่ไม่ได้ใช้อีเมลนักศึกษาได้รหัสสำรอง `a` + เลข 9 หลัก, ผู้ใช้ที่ถูก anonymize ได้ `x` + เลข 9 หลัก) |
 | email | VARCHAR(255) | UQ, NN (@student.tu.ac.th) |
 | personal_email | VARCHAR(255) | UQ, NULL (ผูกสำหรับ Alumni) |
 | password_hash | VARCHAR(255) | NN |
@@ -121,7 +122,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | created_at | TIMESTAMP | NN |
 
 > **กฎของ app_user ที่บังคับใน model (DB ทำไม่ได้)**
-> - ผู้ใช้ไม่ต้องกรอก `student_id` ระบบดึงจากส่วนหน้า `@` ของ `email` ให้เอง (`User.validate_student_email()` ใน `accounts/models.py` เป็นที่เดียวที่เก็บกฎ; ฟอร์มสมัครและ `clean()` เรียกใช้ตัวเดียวกัน; ยกเว้น superuser)
+> - ผู้ใช้ไม่ต้องกรอก `student_id` ระบบดึงจากส่วนหน้า `@` ของ `email` ให้เอง (`User.validate_student_email()` ใน `accounts/models.py` เป็นที่เดียวที่เก็บกฎ; `clean()` และ `create_user()` เรียกใช้ตัวนี้ ฟอร์มสมัครของ US-1 ต้องเรียกตัวเดียวกัน; ยกเว้น superuser)
 > - ลำดับเช็ก `email`: ซ้ำไหม → โดเมนต้องเป็น `@student.tu.ac.th` → ส่วนหน้า `@` ต้องเป็นเลขอารบิก 10 หลัก → หลักที่ 3–4 ต้องเป็น `10` (ไม่ใช่ = ไม่ได้อยู่คณะวิศวะ สมัครไม่ได้) → ผ่านแล้วบันทึกรหัสลง `student_id`
 > - `email` / `personal_email` เก็บตัวพิมพ์เล็กเสมอ, `personal_email` ว่างเก็บเป็น NULL (ตอนสมัครเช็กแค่รูปแบบอีเมลถูกต้อง และไม่ซ้ำเพราะเป็น UQ)
 > - `student_id` เป็นเลขอารบิก 10 หลักเท่านั้น (ไม่รับเลขไทย) และไม่แสดงในฟอร์ม (`editable=False`)
@@ -180,7 +181,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | uploader_id | BIGINT | FK → app_user, NN |
 | title | VARCHAR(200) | NN |
 | description | TEXT | NN |
-| status | VARCHAR(15) | NN, CHECK in (`pending`, `published`, `rejected`, `hidden`) |
+| status | VARCHAR(15) | NN, CHECK in (`pending`, `published`, `rejected`, `hidden`), default `pending` |
 | created_at / updated_at | TIMESTAMP | NN |
 
 **exam_detail** (1:1 กับ document ที่เป็นข้อสอบ)
@@ -201,8 +202,8 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | storage_path | VARCHAR(500) | UQ, NN (path สัมพัทธ์เท่านั้น ห้าม `/` นำหน้า `..` `\`; `vault/{dept}/{batch}/{course}/{type}/{uuid}.pdf`) |
 | original_name | VARCHAR(255) | NN |
 | size_bytes | BIGINT | NN, CHECK 0 < ค่า ≤ 50 MB (เพดานสูงสุด) |
-| sha256 | CHAR(64) | NN, INDEX (hex ตัวพิมพ์เล็ก 64 ตัว) |
-| scan_status | VARCHAR(10) | NN (`pending`, `clean`, `infected`) |
+| sha256 | VARCHAR(64) | NN, INDEX (hex ตัวพิมพ์เล็ก 64 ตัว) |
+| scan_status | VARCHAR(10) | NN, CHECK in (`pending`, `clean`, `infected`), default `pending` |
 | uploaded_at | TIMESTAMP | NN |
 | | | **UQ (document_id, version_no)** |
 
@@ -286,7 +287,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ### 4.0 ตั้งต้น: ตาราง Unnormalized (UNF)
 
-ถ้าเอาข้อมูลจากตัวอย่างใน SRS มาใส่ตารางเดียว จะได้ประมาณนี้
+ถ้าเอาข้อมูลจากตัวอย่างใน SRS v1 ([archive](./archive/requirements-srs-v1.pdf)) มาใส่ตารางเดียว จะได้ประมาณนี้
 
 | file_name | dept_code | dept_name | batch_code | course_code | course_name | doc_type | exam_period | exam_year | uploader_email | uploader_roles | approvers |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -332,13 +333,13 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ---
 
-## 5. Index (ตาม NFR-1)
+## 5. Index (รองรับเป้าความเร็วหน้าค้นหาใน AC ของ US-7)
 
 | Table | Index | เพื่ออะไร |
 |---|---|---|
 | department | UQ (code) | ค้นภาควิชา |
 | batch | UQ (department_id, number) | ประกอบรหัสรุ่น |
-| course | UQ (code) | ค้นด้วยรหัสวิชา (FR-3.1) |
+| course | UQ (code) | ค้นด้วยรหัสวิชา (US-7) |
 | batch_course | UQ (batch_id, course_id), IDX (course_id) | รวมวิชาเดียวกันจากทุกรุ่น |
 | document | IDX (batch_course_id, status), IDX (doc_type_id, status), IDX (uploader_id) | ค้นหา/กรอง, คิวอนุมัติ |
 | exam_detail | IDX (exam_period_id, exam_year_be) | กรองตามช่วงสอบ/ปี |
@@ -355,14 +356,18 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 - `size_bytes` ≤ 0 หรือเกิน 50 MB, `exam_year_be` นอก 2500–2700, `batch.number` < 1, `stars` นอก 1–5, `status` นอกค่าที่กำหนด → ถูกบล็อกด้วย CHECK
 - `storage_path` ซ้ำ → ถูกบล็อกด้วย UQ
 
-**ที่ต้องเขียนใน application (DB ทำไม่ได้):** ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, Super Admin ต้องมีอย่างน้อย 2 คน, กฎของ `app_user` (โดเมนอีเมล = student_id), moderator ต้องมีภาค / role อื่นห้ามมีภาค, `exam_detail` เฉพาะข้อสอบ, ขนาดไฟล์ตาม `max_upload_mb`
+**ที่ต้องเขียนใน application (DB ทำไม่ได้):**
+- ใน **model** (`clean()`/`save()` ตรวจความถูกต้องของแถว): กฎของ `app_user` (โดเมนอีเมล = student_id), moderator ต้องมีภาค / role อื่นห้ามมีภาค, `exam_detail` เฉพาะข้อสอบ, ขนาดไฟล์ตาม `max_upload_mb`
+- ใน **service** (`services.py` กฎธุรกิจที่ต้องดูข้อมูลอื่น): ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้, Super Admin ต้องมีอย่างน้อย 2 คน, เขียน `audit_log` ใน transaction เดียวกับการกระทำ
 
-## 7. ลำดับสร้างตาราง (ตรงกับ Sprint)
+## 7. ลำดับสร้างตาราง (ตาม story)
 
-- **Sprint 1:** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting
-  *(map กับ US-1 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้)*
-- **Sprint 2:** doc_type_required_role, approval, download_log, audit_log, report
-- **Sprint 3+:** comment, rating, email verification token, คำขอถอนไฟล์ของ Alumni
+ตารางถูกสร้างเมื่อ story ที่ใช้ถูกดึงเข้า Sprint (ไม่สร้างล่วงหน้า) ลำดับด้านล่างเป็นแผนปัจจุบัน ปรับได้ตอน Sprint Planning
+
+- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting
+  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้)*
+- **ถัดไป:** approval (US-6, US-9, US-23), doc_type_required_role (US-9), download_log (US-8), audit_log (US-24), report (US-31)
+- **ภายหลัง:** comment / rating (US-28 – US-30), email verification token (US-11), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
 
 ## 8. Django app ↔ ตาราง
 

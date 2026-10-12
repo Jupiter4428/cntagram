@@ -2,24 +2,63 @@
 
 ระบบเว็บบอร์ดกลางสำหรับแชร์และค้นหาเอกสารสรุป/ชีทของนักศึกษาวิศวกรรม พัฒนาด้วย Django ตามแนวทาง Agile/Scrum ในรายวิชา CN331
 
+- **Requirements / Product Backlog:** [`_docs/requirements.md`](./_docs/requirements.md) (งานใน Sprint ดูที่ GitHub Project)
+- **ข้อมูลสำหรับเขียนเล่มรายงาน:** [`_docs/research/`](./_docs/research/)
+- **วิธีทำงานร่วมกัน:** [CONTRIBUTING.md](./CONTRIBUTING.md)
+
 ## สารบัญ
 1. [Tech Stack](#tech-stack)
-2. [Setup ก่อนเริ่มพัฒนา](#setup-ก่อนเริ่มพัฒนา-first-time-setup)
-3. [Sync ก่อนเริ่มงานทุกครั้ง](#ทุกครั้งที่-pull-โค้ดใหม่-sync-ก่อนเริ่มงาน)
-4. [Project Structure](#project-structure)
-5. [Branch Strategy](#branch-strategy)
-6. [For Contributing](#for-contributing)
+2. [Architecture](#architecture)
+3. [Setup ก่อนเริ่มพัฒนา](#setup-ก่อนเริ่มพัฒนา-first-time-setup)
+4. [Sync ก่อนเริ่มงานทุกครั้ง](#ทุกครั้งที่-pull-โค้ดใหม่-sync-ก่อนเริ่มงาน)
+5. [Project Structure](#project-structure)
+6. [Branch Strategy](#branch-strategy)
+7. [For Contributing](#for-contributing)
 
 ---
 
 ## Tech Stack
 - Python 3.12+
-- Django 5.1 ขึ้นไป (สถาปัตยกรรม MVT, ใช้ Function-Based Views เป็นหลัก) — models ใช้ `CheckConstraint(condition=...)` ซึ่งมีตั้งแต่ 5.1
+- Django 6.1 (ตาม `requirements.txt`, สถาปัตยกรรม MVT, ใช้ Function-Based Views เป็นหลัก) — models ใช้ `CheckConstraint(condition=...)` จึงต้องเป็น Django 5.1 ขึ้นไป
 - Bootstrap 5 (ผ่าน CDN) สำหรับ UI
 - SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
 - Git + GitHub (Pull Request, Projects, Actions)
 - Automated Tests ด้วย `python manage.py test`
 - CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2)
+
+---
+
+## Architecture
+
+**Modular Monolith:** Django project เดียว แบ่ง app ตามโดเมน (`catalog` ← `accounts` ← `materials` อ้างอิงทางเดียว) และในแต่ละ app แยกชั้น `views.py` → `services.py` / `selectors.py` → `models.py`
+
+```mermaid
+flowchart LR
+    U["👤 ผู้ใช้<br/>Web Browser<br/>HTML + Bootstrap 5"]
+    subgraph APP["Django 6.x Application (Modular Monolith)"]
+        V["views.py / forms.py"]
+        SV["services.py / selectors.py"]
+        V --> SV
+        subgraph APPS["Django Apps"]
+            CAT["catalog"]
+            ACC["accounts"]
+            MAT["materials"]
+        end
+        SV --> APPS
+    end
+    DB["🗄️ SQLite (dev) /<br/>PostgreSQL (prod)"]
+    FS["📁 File Storage<br/>PDF (ไม่เปิด Direct URL)"]
+    MAIL["✉️ Email Service"]
+
+    U -- "HTTPS" --> V
+    APPS -- "SQL / Django ORM" --> DB
+    SV -- "อ่าน/เขียนไฟล์" --> FS
+    SV -. "SMTP / API (ยังไม่สร้าง)" .-> MAIL
+```
+
+- C4 Context + Container Diagram ฉบับเต็ม: [`_docs/architecture/c4.md`](./_docs/architecture/c4.md)
+- เหตุผลของการออกแบบ: [ADR 0001 Modular Monolith](./_docs/adr/0001-modular-monolith-and-app-boundaries.md), [ADR 0002 Service Layer](./_docs/adr/0002-service-layer-and-selectors.md)
+- โครงสร้างฐานข้อมูล: [`_docs/database-design.md`](./_docs/database-design.md)
 
 ---
 
@@ -41,10 +80,10 @@ git config --list      # ตรวจสอบ
 ### 1. Clone โปรเจค
 ```bash
 git clone <repo-url>
-cd projectdjango
+cd cntagram
 ```
 
-**Repo นี้ default branch คือ `main`** หลัง clone เสร็จให้สลับไปที่ branch `develop` เองก่อนเริ่มงานทุกครั้ง (ห้ามทำงานหรือแตก branch จาก `main`):
+**Repo นี้ default branch คือ `develop`** หลัง clone จะอยู่ที่ `develop` อยู่แล้ว ให้ pull ล่าสุดก่อนเริ่มงานทุกครั้ง (ห้ามทำงานหรือแตก branch จาก `main`):
 ```bash
 git switch develop
 git pull origin develop
@@ -66,12 +105,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. สร้างไฟล์ `.env`
-คัดลอกจาก `.env.example` แล้วแก้ค่าตามเครื่องตัวเอง
-```bash
-cp .env.example .env
-```
-ตัวอย่างค่าที่ต้องตั้ง:
+### 4. ไฟล์ `.env` (ยังไม่ได้ใช้)
+ตอนนี้ `portal/settings.py` ยังตั้ง `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` ไว้ในไฟล์ตรงๆ สำหรับเครื่อง dev และยังไม่มี `.env.example` จึง**ข้ามขั้นนี้ไปได้** (`python-decouple` อยู่ใน `requirements.txt` แล้ว แต่ยังไม่ได้เชื่อมกับ settings)
+
+เมื่อเปลี่ยนไปอ่านค่าจาก `.env` แล้ว ค่าที่ต้องตั้งคือ:
 ```
 SECRET_KEY=your-secret-key-here
 DEBUG=True
@@ -89,11 +126,15 @@ python manage.py migrate
 
 ### 6. สร้าง superuser (สำหรับเข้า admin panel)
 User ผูกกับภาควิชา (`department` ห้ามว่าง) จึงต้องมี Department อย่างน้อย 1 แถวก่อน
+
+> ตอนนี้ `admin.py` ของทุก app ยังไม่ได้ register model จึงยังไม่เห็นตารางของโปรเจคในหน้า admin
 ```bash
 python manage.py shell -c "from catalog.models import Department; Department.objects.get_or_create(code='CN', defaults={'name_th': 'วิศวกรรมคอมพิวเตอร์', 'name_en': 'Computer Engineering'})"
 python manage.py createsuperuser
 ```
-ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Student id (10 หลัก ตัวที่ 3–4 ต้องเป็น `10` เช่น `6710000001`), Nickname, Department (ใส่ id ของภาค เช่น `1`), Password
+ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (พิมพ์ตัวย่อภาค เช่น `CN` ตัวพิมพ์เล็กก็ได้ ถ้ายังไม่มีภาคนี้จะแจ้งว่าไม่พบ), Password
+
+ระบบไม่ถามรหัสนักศึกษา ถ้าใช้อีเมล `@student.tu.ac.th` จะดึงรหัสจากหน้า @ ให้เอง ถ้าใช้อีเมลอื่นระบบจะตั้งรหัสสำรองให้
 
 ### 7. รันเซิร์ฟเวอร์
 ```bash
@@ -119,41 +160,62 @@ python manage.py migrate          # เผื่อมี migration ใหม่
 
 ## Project Structure
 ```
-projectdjango/
+cntagram/
+├── _docs/           # เอกสารทั้งหมดที่ไม่ใช่โค้ด (ขึ้นต้นด้วย _ ให้อยู่บนสุดของรายการโฟลเดอร์)
+│   ├── requirements.md       # Product Backlog: Vision, Epics, User Stories (แทน SRS v1)
+│   ├── database-design.md    # ERD 3NF (SP-0)
+│   ├── adr/                  # Architectural Decision Records
+│   ├── architecture/         # C4 Model diagrams
+│   ├── sprintN_retro.md      # บันทึก Retrospective ของแต่ละ Sprint (สร้างตอนจบ Sprint)
+│   ├── lecture-notes/        # สรุปเนื้อหาวิชา CN331 (แกนของกระบวนการและสถาปัตยกรรม)
+│   └── archive/              # SRS v1 (เลิกใช้แล้ว)
 ├── portal/          # Django project config (settings, urls, wsgi/asgi)
 ├── accounts/        # User, Role, UserRole (US-1, US-2)
 ├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
-├── documents/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
+├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
+├── .github/         # Issue templates และ Pull Request template
 ├── manage.py
 ├── requirements.txt
+├── CONTRIBUTING.md
 └── README.md
 ```
 
-ภายในแต่ละ app (เช่น `catalog/`, `accounts/`) ใช้โครงสร้างตามนี้
+ภายในแต่ละ app (เช่น `catalog/`, `accounts/`) ใช้โครงสร้างตามนี้ ([ADR 0002](./_docs/adr/0002-service-layer-and-selectors.md))
 ```
 <app>/
-├── models.py
-├── forms.py                      # Form / ModelForm
-├── views.py
+├── models.py                     # schema, constraint, ความถูกต้องของข้อมูล
+├── forms.py                      # Form / ModelForm (ตรวจรูปแบบ input)
+├── services.py                   # เขียนข้อมูล + กฎธุรกิจ + @transaction.atomic
+├── selectors.py                  # query อ่านข้อมูล (กัน N+1)
+├── views.py                      # รับ request → เรียก service/selector → response
 ├── urls.py                       # app_name + urlpatterns
 ├── admin.py
 ├── tests.py  (หรือโฟลเดอร์ tests/)
 ├── migrations/                   # commit ขึ้น Git
-└── templates/<app>/              # เช่น courses/templates/courses/course_detail.html
+└── templates/<app>/              # เช่น materials/templates/materials/document_detail.html
 templates/                        # base.html และ includes/_navbar.html (ส่วนกลาง)
 static/                           # css, js, img ส่วนกลาง
 ```
+ตอนนี้แต่ละ app มีแค่ `models.py`, `views.py`, `admin.py`, `apps.py`, `tests.py` และ `migrations/` ส่วน `forms.py`, `services.py`, `selectors.py`, `urls.py`, `templates/` รวมถึง `templates/` และ `static/` ส่วนกลาง ให้สร้างตามโครงสร้างนี้เมื่อเริ่มทำ story ที่ต้องใช้
 
 ## Branch Strategy
-| Branch | ใช้ทำอะไร |
-|---|---|
-| `main` | โค้ด production เท่านั้น |
-| `develop` | โค้ดล่าสุดของทีม รวม feature ที่เสร็จแล้ว |
-| `feature/*` | พัฒนา feature ใหม่ |
-| `bugfix/*` | แก้บั๊กที่ไม่เร่งด่วน |
-| `hotfix/*` | แก้บั๊กด่วนบน production |
+| Branch | ใช้ทำอะไร | แตกจาก → merge เข้า |
+|---|---|---|
+| `main` | โค้ดที่ผ่าน Sprint Review แล้ว (production) | — |
+| `develop` | โค้ดล่าสุดของทีม (default branch) รวม story ที่ Done แล้ว | — |
+| `feature/issue-<เลข>-<ชื่อ>` | พัฒนา User Story เช่น `feature/issue-29-upload-sheet` | `develop` → `develop` |
+| `refactor/issue-<เลข>-<ชื่อ>` | Refactoring / Tech Debt Story เช่น `refactor/issue-45-selectors` | `develop` → `develop` |
+| `bugfix/issue-<เลข>-<ชื่อ>` | แก้บั๊กที่ไม่เร่งด่วน | `develop` → `develop` |
+| `spike/issue-<เลข>-<ชื่อ>` | งานสำรวจ/ออกแบบ | `develop` → `develop` |
+| `docs/issue-<เลข>-<ชื่อ>` | แก้เอกสารอย่างเดียว | `develop` → `develop` |
+| `hotfix/<ชื่อ>` | แก้บั๊กด่วนบน production | `main` → `main` และ `develop` |
+
+- ทุก branch ตั้งชื่อตาม **เลข issue** และเปิด PR ที่มี `Closes #<เลข>`
+- จบ Sprint: หลัง Sprint Review เปิด PR `develop` → `main`
+- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch
+- Branch ที่เปิดไปแล้วด้วยชื่อแบบเดิม (`feat/US-X-...`) ใช้ต่อจน merge ได้
 
 ---
 
 ## For Contributing
-ขั้นตอนการทำงานแบบ Agile/Scrum, มาตรฐานโค้ด Django, Commit Convention, การเปิด PR และ Definition of Done อยู่ใน [CONTRIBUTING.md](./CONTRIBUTING.md) อ่านให้จบก่อนเปิด Pull Request ครั้งแรก
+ขั้นตอน Scrum (Sprint Planning, Standup, Review, Retro), DoR/DoD, การใช้ GitHub Projects, สถาปัตยกรรมและมาตรฐานโค้ด Django, Commit Convention และการเปิด PR อยู่ใน [CONTRIBUTING.md](./CONTRIBUTING.md) อ่านให้จบก่อนเปิด Pull Request ครั้งแรก
