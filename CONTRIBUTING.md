@@ -58,7 +58,7 @@ flowchart LR
 ### แผน 3 Sprint (ร่าง ปรับทุก Sprint Planning ตาม Velocity จริง)
 | Sprint | เนื้อหาหลัก | สิ่งที่ส่งมอบ |
 |---|---|---|
-| **Sprint 1** | Authentication, Core Models, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้จริง, Backlog บน GitHub |
+| **Sprint 1** | Authentication, Forms, Core Models, Dashboard, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้จริง, Backlog บน GitHub |
 | **Sprint 2** | Business Logic (Service Layer), Unit Testing, CI | ฟีเจอร์หลัก, **coverage > 80%**, CI, Refactoring Stories (**≥ 20% ของแต้ม**) |
 | **Sprint 3** | Security (OWASP), Cloud Deploy | ระบบที่ปลอดภัยและ deploy บน Cloud Server |
 | **Final** | Demo สัปดาห์ที่ 14 | Live Demo, Agile Metrics (Velocity, Burndown), ประเมินเพื่อนร่วมกลุ่ม |
@@ -828,7 +828,11 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 | `ExamPeriod` | `midterm`, `final` |
 | `SystemSetting` | `legacy_batch_max`, `max_upload_mb` ตามตารางด้านบน |
 
+<<<<<<< Updated upstream
 ตอนนี้ยังไม่มี script seed อัตโนมัติ และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน (seed ภาควิชาเป็นงานของ US-3, seed รุ่น/วิชาเป็นงานของ US-4) การทำเป็น management command อยู่ใน Product Backlog แล้ว (TD-2, TD-3 ใน [`_docs/requirements.md`](./_docs/requirements.md))
+=======
+รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน (seed ภาควิชาครบชุดเป็นงานของ US-3) seed `role` เป็นงานย่อยของ US-3 และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
+>>>>>>> Stashed changes
 
 ### Migration ที่มีอยู่
 - `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0003, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**

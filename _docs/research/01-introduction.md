@@ -76,7 +76,7 @@ E1 เข้าระบบอย่างปลอดภัย · E2 โคร�
 | ช่วง | กิจกรรม | ผลลัพธ์ |
 |---|---|---|
 | ก่อน Sprint 1 | วิเคราะห์ความต้องการ (SRS v1), ตั้งค่า repository และ Scrum board | SRS v1, Product Backlog เริ่มต้น |
-| Sprint 1 | Authentication, Core Models, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้, ERD 3NF |
+| Sprint 1 | Authentication, Forms, Core Models, Dashboard, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้, ERD 3NF |
 | Sprint 2 | Business Logic (Service Layer), Unit Testing, CI, Refactoring ≥ 20% ของแต้ม | ฟีเจอร์หลัก, coverage > 80%, CI |
 | Sprint 3 | Security (OWASP Top 10), Cloud Deploy, ระบบแจ้งลบเนื้อหา | ระบบที่ deploy บน Cloud |
 | สัปดาห์ที่ 14 | Live Demo และสรุป Agile Metrics | Demo, Velocity/Burndown, เล่มรายงาน |
