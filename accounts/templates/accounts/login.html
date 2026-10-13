@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Login | CNTAGRAM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-4">
+        <h1>Login</h1>
+        {% if rate_limited %}
+            <div class="alert alert-danger" role="alert">
+                Too many failed login attempts. Please try again later.
+            </div>
+        {% endif %}
+        <form method="post" action="{% url 'accounts:login' %}">
+            {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            {{ form.non_field_errors }}
+            <div class="mb-3">
+                {{ form.username.label_tag }}
+                {{ form.username }}
+                {{ form.username.errors }}
+            </div>
+            <div class="mb-3">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+                {{ form.password.errors }}
+            </div>
+            <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
