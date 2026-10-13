@@ -154,6 +154,8 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 > เหตุที่ UQ แยกเป็น 2 เงื่อนไข: SQL ถือว่า `NULL ≠ NULL` ถ้ามี UQ ตัวเดียว `(user, student, NULL)` จะซ้ำได้
 > กฎใน model: `department_id` ต้องมีค่าเมื่อ role = `moderator` และต้องเป็น NULL เมื่อเป็น role อื่น
+> แต่งตั้ง Moderator หลายภาค (US-10) = เพิ่มแถว `user_role` 1 แถวต่อ 1 ภาค **ไม่มีตาราง M:N user–department แยก**
+> แถว `role` ทั้ง 4 ค่า และ `user_role(super_admin)` ของ superuser คนแรก มาจาก seed ในงานย่อยของ US-3 (`createsuperuser` ตั้งแค่ `is_superuser` ไม่สร้าง `user_role`)
 
 ### 3.3 เอกสารและไฟล์ (Sprint 1)
 
@@ -230,7 +232,9 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 ตัวอย่างข้อมูล: `summary`/`slide`/`cheatsheet` → ต้องการ approver **1 คนจาก** moderator หรือ super_admin · `exam` → ต้องการ **ทั้ง** moderator **และ** super_admin
 (ต้องเพิ่ม column `mode` = `any` หรือ `all` ถ้าอยากเก็บกฎ "อย่างใดอย่างหนึ่ง" ให้อยู่ในข้อมูลทั้งหมด)
 
-### 3.5 การอนุมัติและการตรวจสอบ (Sprint 2)
+### 3.5 การอนุมัติและการตรวจสอบ (Sprint 1–2)
+
+> `approval` สร้างใน Sprint 1 กับ US-6 · `download_log` กับ US-8 (Stretch) · `report`, `audit_log` ใน Sprint 2
 
 **approval**
 | Column | Type | Constraint |
@@ -366,7 +370,9 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 - **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting
   *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้)*
-- **ถัดไป:** approval (US-6, US-9, US-23), doc_type_required_role (US-9), download_log (US-8), audit_log (US-24), report (US-31)
+  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4)
+- **Sprint 1 (ยังไม่สร้าง):** approval (US-6), doc_type_required_role (US-9), download_log (US-8)
+- **ถัดไป:** audit_log (US-24), report (US-31)
 - **ภายหลัง:** comment / rating (US-28 – US-30), email verification token (US-11), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
 
 ## 8. Django app ↔ ตาราง

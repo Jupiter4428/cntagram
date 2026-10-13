@@ -102,6 +102,19 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | US-9 | ข้อสอบเก่าต้องอนุมัติทั้ง Moderator และ Admin | E4 | Should | [#33](https://github.com/Jupiter4428/cntagram/issues/33) |
 | US-10 | แต่งตั้ง/ถอด Moderator | E4 | Should | [#27](https://github.com/Jupiter4428/cntagram/issues/27) |
 
+#### ขอบเขต Sprint 1 ตามหัวข้อของวิชา
+
+ทุกหัวข้อตัดเป็น Vertical Slice อยู่ใน story ด้านบน ไม่แยกเป็น story "ทำ Model ทั้งหมด" หรือ "ทำ Form ทั้งหมด" ([lecture 05: Vertical Slicing](./lecture-notes/05-agile-scrum-sprints.md#เทคนิคการซอยงาน-backlog-vertical-slicing-vs-horizontal-slicing))
+
+| หัวข้อ | อยู่ใน |
+|---|---|
+| **Authentication** | US-1 สมัคร (อีเมลคณะ + PDPA consent), US-2 login/logout/rate limit/บล็อก Guest, US-3 `super_admin_required` + seed `role` + Super Admin คนแรก, US-10 Moderator ตามภาค |
+| **Forms** (Django Form/ModelForm, validation ฝั่ง server เรียกกฎใน model ตัวเดียว) | US-1 `RegisterForm`, US-2 `LoginForm`, US-3 `DepartmentForm`, US-4 `BatchForm`/`CourseForm`/`BatchCourseForm`, US-5 `UploadForm`, US-6 `ReviewForm`, US-7 `SearchForm` |
+| **Core Models** | SP-0 ERD; model ที่สร้างแล้ว: `accounts` (User, Role, UserRole), `catalog` (Department, Batch, Course, BatchCourse, SystemSetting), `materials` (DocType, ExamPeriod, Document, ExamDetail, DocumentVersion); ที่เหลือ: Approval (US-6), DocTypeRequiredRole (US-9), download_log (US-8); ข้อมูลตั้งต้น: `role` ใน US-3, `doc_type`/`exam_period`/`system_setting` ใน US-5 |
+| **Dashboard** | US-2 หน้าแรก Guest + navbar, US-3 Dashboard หน้าแรก (เมนู Admin), US-6 Approval Queue ใน dashboard — ส่วน "ไฟล์ของฉัน + สถานะ" และจำนวนไฟล์รออนุมัติ (US-34) อยู่ใน Product Backlog รอ Sprint 2 |
+
+> **ปรับ 2026-10-13 ตามหลักใน lecture 05:** งานที่ค้นพบระหว่าง Sprint ไม่เพิ่มเป็น story ใหม่เข้า Sprint 1 (กัน Scope Creep และงานที่ยังไม่ผ่าน DoR) งานที่เป็น Blocker ของ story ใน Sprint (seed ข้อมูลตั้งต้น) ใส่เป็นงานย่อยของ story นั้นแทน ส่วนงานใหม่รอ Sprint 2 Planning ตาม Velocity จริง
+
 ### 6.2 Story ที่รอเข้า Sprint (ยังไม่เปิด issue)
 
 เรียงตามลำดับความสำคัญที่เสนอ PO ปรับได้ใน Sprint Planning แต่ละข้อมี **"ประเด็นที่ต้องคุย"** ซึ่งรวบรวมจาก SRS v1 ไว้เป็นจุดเริ่มต้นของบทสนทนา ไม่ใช่ AC สำเร็จรูป
@@ -139,7 +152,8 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | US-19 | **As a** ผู้อัปโหลด **I want** ส่งไฟล์เวอร์ชันใหม่ แก้คำอธิบาย หรือลบไฟล์ของตัวเอง **so that** ชีทของฉันถูกต้องและทันสมัย | Should |
 | US-20 | **As a** ผู้อัปโหลด **I want** ใส่แท็กให้ไฟล์ **so that** คนอื่นค้นเจอด้วยคำที่ไม่ใช่รหัสวิชา | Could |
 | US-21 | **As a** ผู้ใช้ **I want** ระบบปฏิเสธไฟล์ซ้ำ ไฟล์อันตราย หรือไฟล์ที่ติดไวรัส **so that** คลังไม่มีไฟล์ขยะหรือไฟล์ที่เป็นอันตราย | Should |
-| US-22 | **As a** ผู้อัปโหลด **I want** เห็นสถานะและเหตุผลที่ถูกปฏิเสธของไฟล์ที่ฉันส่ง **so that** แก้แล้วส่งใหม่ได้ | Must |
+
+> US-22 (เห็นสถานะและเหตุผลที่ถูกปฏิเสธของไฟล์ที่ฉันส่ง) เปิด issue แล้วในชื่อ US-34 Dashboard ([#34](https://github.com/Jupiter4428/cntagram/issues/34)) รวมจำนวนไฟล์รออนุมัติของ Moderator ด้วย อยู่ใน Product Backlog รอ Sprint 2 Planning (ยังไม่ประเมินแต้ม)
 
 ประเด็นที่ต้องคุย: อัปโหลดข้ามรุ่น/ข้ามภาคได้หรือไม่ (SRS v1: ได้เฉพาะของตัวเอง), เวอร์ชันใหม่ของไฟล์ที่เผยแพร่แล้วต้องรออนุมัติใหม่หรือไม่, ข้อสอบที่เผยแพร่แล้วผู้อัปโหลดลบเองได้ไหม, ขนาดไฟล์สูงสุด (เริ่มที่ 50 MB ปรับได้ใน `system_setting`)
 
@@ -189,10 +203,11 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | ID | Title | Value |
 |---|---|---|
 | TD-1 | Chore: ตั้ง CI ด้วย GitHub Actions รัน `python manage.py test` ทุก PR | กันโค้ดที่เทสต์ไม่ผ่านเข้า `develop` และเป็นฐานของ coverage > 80% |
-| TD-2 | Chore: management command สำหรับ seed ข้อมูลตั้งต้น (ภาควิชา, role, doc_type, exam_period, system_setting) | สมาชิกใหม่และเครื่อง CI ตั้งระบบได้ในคำสั่งเดียว |
-| TD-3 | Chore: register model ใน Django admin | Super Admin จัดการข้อมูลได้ระหว่างที่หน้าจอจริงยังไม่เสร็จ |
 | TD-4 | Docs: C4 Context/Container Diagram ให้ตรงกับระบบที่ deploy จริง | ทีมและผู้ประเมินเห็นสถาปัตยกรรมตรงกัน |
 | TD-5 | Refactor: ย้าย business logic ที่สะสมใน view ระหว่าง Sprint 1 เข้า `services.py` / `selectors.py` | View สั้น ทดสอบ logic ได้ตรงโดยไม่ผ่าน HTTP |
+
+> - TD-2 (seed ข้อมูลตั้งต้น) เป็น Blocker ของ story ใน Sprint 1 จึงย้ายเป็นงานย่อย: `role` + Super Admin คนแรก → US-3, `doc_type`/`exam_period`/`system_setting` → US-5 (issue [#35](https://github.com/Jupiter4428/cntagram/issues/35) ปิดแล้ว)
+> - TD-3 (Django admin) เปิด issue [#36](https://github.com/Jupiter4428/cntagram/issues/36) รอ Sprint 2 Planning นับเข้าโควตา Tech Debt ≥ 20%
 
 ### 6.3 Spike (ค้นคว้าก่อนตัดสินใจ)
 
@@ -229,7 +244,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | Sprint | Sprint Goal (ร่าง) | Epic หลัก |
 |---|---|---|
 | **Sprint 1** | นักศึกษา CN สมัคร ล็อกอิน อัปโหลดชีท และค้นหาชีทที่ Moderator อนุมัติแล้วได้ | E1, E2, E3, E4, E5 (US-1 – US-7) |
-| **Sprint 2** | ผู้ใช้เชื่อถือคลังได้: ไฟล์ทุกไฟล์ผ่านการคัดกรองที่ตรวจย้อนหลังได้ และระบบมี automated test + CI | E4, E3, TD (≥ 20% ของแต้ม) |
+| **Sprint 2** | ผู้ใช้เชื่อถือคลังได้: ไฟล์ทุกไฟล์ผ่านการคัดกรองที่ตรวจย้อนหลังได้ และระบบมี automated test + CI | E4, E3, TD (≥ 20% ของแต้ม) — ผู้สมัครเข้า Sprint: US-34 (#34), TD-3 (#36) |
 | **Sprint 3** | คลังพร้อมใช้งานจริงบน Cloud: ปลอดภัยตาม OWASP และเจ้าของลิขสิทธิ์แจ้งลบเนื้อหาได้ | E7, E1, SP-4 |
 | **Final (สัปดาห์ 14)** | Live Demo + Agile Metrics (Velocity, Burndown) | — |
 
@@ -242,3 +257,4 @@ Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็น
 | วันที่ | การเปลี่ยนแปลง |
 |---|---|
 | 2026-10-12 | แทน SRS v1 ด้วย Product Backlog แบบ Agile: แปลง FR เป็น Epic/User Story, แปลง NFR เป็น DoD/AC/Spike, ย้ายกฎที่ล็อกไว้ (R-1 – R-6, FR-2.4, FR-2.5) มาเป็นประเด็นที่ต้องคุยใต้ story, ย้ายประเด็นค้าง (O-1 – O-7) เป็น story/spike |
+| 2026-10-13 | ตรวจขอบเขต Sprint 1 (Authentication, Forms, Core Models, Dashboard) แล้วปรับตาม lecture 05 (ไม่เพิ่ม story ใหม่กลาง Sprint): US-34 Dashboard (#34, รวม US-22) และ TD-3 Django admin (#36) เข้า Product Backlog รอ Sprint 2, TD-2 seed (#35 ปิด) ย้ายเป็นงานย่อยของ US-3/US-5; DoD ในทุก issue เพิ่มข้อ View บาง / ไม่มี N+1 และ circular import / อัปเดตเอกสาร ตาม DoD ใน lecture; แก้ issue ให้ตรงกับ model จริง — US-1 เพิ่ม AC PDPA consent/ชื่อเล่น/ภาควิชา, US-5 ใช้ Document/ExamDetail/DocumentVersion แทน SheetFile, US-10 ใช้ `user_role` แทนตาราง M:N ใหม่, US-8 นับจาก `download_log`, US-4/US-7 index ตาม database-design §5; ระบุ Form ของแต่ละ story; DoD ใน issue เปลี่ยนเป็น merge เข้า `develop` |
