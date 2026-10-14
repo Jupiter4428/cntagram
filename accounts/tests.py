@@ -1,7 +1,9 @@
 import time
+from pathlib import Path
 
 from django.contrib.auth import SESSION_KEY
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.staticfiles import finders
 from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -40,6 +42,162 @@ class AuthenticationViewsTests(TestCase):
 
     def test_login_form_extends_django_authentication_form(self):
         self.assertTrue(issubclass(LoginForm, AuthenticationForm))
+
+    def test_home_renders_reusable_retro_layout(self):
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "base.html")
+        self.assertTemplateUsed(response, "includes/_navbar.html")
+        self.assertTemplateUsed(response, "includes/_sidebar.html")
+        self.assertTemplateUsed(response, "includes/_footer.html")
+        self.assertTemplateUsed(response, "includes/_marquee.html")
+        self.assertTemplateUsed(response, "includes/_music_player.html")
+        self.assertTemplateUsed(response, "includes/_visitor_counter.html")
+        self.assertTemplateUsed(response, "includes/_badges.html")
+        self.assertTemplateUsed(response, "includes/_archive.html")
+        self.assertTemplateUsed(response, "includes/_stickers.html")
+        self.assertTemplateUsed(response, "includes/_digital_ephemera.html")
+        self.assertContains(response, 'href="/static/css/retro.css"')
+        self.assertContains(response, 'src="/static/img/cyber-orb.svg"')
+        self.assertContains(response, "WELCOME TO CNTAGRAM!")
+        self.assertContains(response, "เว็บบอร์ดเด็กวิศวะ!")
+        self.assertContains(response, "RECENTLY UPDATED / ILLUSTRATIVE")
+        self.assertContains(response, "Decorative only")
+        self.assertContains(response, "COMING SOON")
+        self.assertContains(response, "A “COSMIC” CONNECTION")
+        self.assertContains(response, "404:<br>ความรู้ไม่พบ")
+        self.assertContains(response, "category-icon category-icon--notes")
+        self.assertContains(response, "category-icon category-icon--sheet")
+        self.assertContains(response, "category-icon category-icon--archive")
+        self.assertContains(response, "CNTAGRAM</b> ONLINE")
+        self.assertContains(response, "BRAIN.EXE</b> RUNNING")
+        self.assertContains(response, 'aria-hidden="true"')
+        self.assertContains(response, 'class="capsule-link retro-tab is-active"')
+        self.assertContains(response, 'class="retro-counter pixel-counter"')
+        self.assertContains(response, 'class="retro-badge web-badge')
+        self.assertContains(response, 'class="retro-sticker fun-sticker')
+        self.assertNotContains(response, "music-widget__controls")
+        self.assertNotContains(response, 'button type="button" disabled')
+        self.assertNotContains(response, "<audio")
+        self.assertContains(response, "ข้อมูลหน้าแรกเป็นตัวอย่าง FE-1")
+
+    def test_home_renders_blog_style_demo_content_without_fake_routes(self):
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(response, 'class="post-entry"', count=2)
+        self.assertContains(response, "สมุดบันทึกชุมชน — โพสต์ตัวอย่าง")
+        self.assertContains(response, "DEMO POST · ไม่มีหน้ารายละเอียด")
+        self.assertContains(response, "Community Archive")
+        self.assertContains(response, "ปีการศึกษา 2569")
+        self.assertContains(response, "ภาคเรียนที่ 1")
+        self.assertContains(response, "รายการนี้ใช้สาธิต navigation เท่านั้น")
+        self.assertNotContains(response, 'href="#"')
+
+    def test_old_web_demo_widgets_are_accessible_and_non_functional(self):
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(response, 'class="retro-marquee"')
+        self.assertContains(response, 'tabindex="0"')
+        self.assertContains(response, 'aria-hidden="true">WELCOME TO CNTAGRAM!')
+        self.assertContains(response, "Decorative UI only")
+        self.assertContains(response, "ไม่ใช่ยอดผู้เข้าชมจริง")
+        self.assertContains(response, "88×31-inspired decorative badges · DEMO")
+        self.assertContains(response, 'class="retro-widget music-widget compact-disclosure"')
+        self.assertContains(response, 'class="retro-widget counter-widget compact-disclosure"')
+        self.assertContains(response, "Web Badge Collection")
+        self.assertNotContains(response, "<script")
+        self.assertNotContains(response, "<audio")
+
+    def test_guest_navigation_only_shows_public_account_actions(self):
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(response, f'href="{reverse("accounts:login")}"')
+        self.assertContains(response, f'href="{reverse("accounts:register")}"')
+        self.assertNotContains(response, f'href="{reverse("materials:vault")}"')
+        self.assertNotContains(response, f'action="{reverse("accounts:logout")}"')
+
+    def test_authenticated_navigation_keeps_vault_and_post_logout(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(response, self.user.nickname)
+        self.assertContains(response, f'href="{reverse("materials:vault")}"')
+        self.assertContains(response, 'form method="post"')
+        self.assertContains(response, f'action="{reverse("accounts:logout")}"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+
+    def test_existing_pages_inherit_retro_base_template(self):
+        public_urls = ("accounts:login", "accounts:register")
+        for url_name in public_urls:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertTemplateUsed(response, "base.html")
+                self.assertContains(response, 'href="/static/css/retro.css"')
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("materials:vault"))
+        self.assertTemplateUsed(response, "base.html")
+        self.assertContains(response, 'href="/static/css/retro.css"')
+
+    def test_auth_pages_use_focused_help_sidebar(self):
+        for url_name in ("accounts:login", "accounts:register"):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertTemplateUsed(response, "auth_base.html")
+                self.assertTemplateUsed(response, "includes/_auth_help.html")
+                self.assertContains(response, 'class="site-layout container-xl site-layout--auth"')
+                self.assertContains(response, "Member Help")
+                self.assertContains(response, "กลับหน้าแรก")
+                self.assertNotContains(response, "Community Archive")
+                self.assertNotContains(response, "BGM Player")
+                self.assertNotContains(response, "Visitor Counter")
+
+    def test_retro_stylesheet_is_discoverable(self):
+        stylesheet_path = finders.find("css/retro.css")
+        orb_path = finders.find("img/cyber-orb.svg")
+        self.assertIsNotNone(stylesheet_path)
+        self.assertIsNotNone(orb_path)
+
+        stylesheet = Path(stylesheet_path).read_text(encoding="utf-8")
+        expected_tokens = {
+            "--cyber-black": "#090911",
+            "--tse-red": "#8C191C",
+            "--tse-yellow": "#FFD04F",
+            "--tse-charcoal": "#58595B",
+            "--chrome-silver": "#DDE3EE",
+            "--plastic-white": "#F8F9FF",
+            "--aero-blue": "#A9D8FF",
+            "--bubblegum-pink": "#FF78C8",
+            "--acid-lime": "#C7FF5E",
+            "--iridescent-purple": "#A88CFF",
+            "--midnight-navy": "#111423",
+            "--soft-indigo": "#1B1F35",
+        }
+        for token, value in expected_tokens.items():
+            with self.subTest(token=token):
+                self.assertIn(f"{token}: {value};", stylesheet)
+
+        for component_class in (
+            ".retro-widget",
+            ".retro-widget__header",
+            ".retro-widget__body",
+            ".retro-badge",
+            ".retro-sticker",
+            ".retro-counter",
+            ".retro-tab",
+            ".post-entry",
+            ".archive-widget",
+        ):
+            with self.subTest(component_class=component_class):
+                self.assertIn(component_class, stylesheet)
+
+        self.assertIn("@keyframes marquee-loop", stylesheet)
+        self.assertIn("@keyframes brain-blinkie", stylesheet)
+        self.assertIn(".category-icon--notes", stylesheet)
+        self.assertIn(".chrome-circuit-heart", stylesheet)
+        self.assertIn("@media (prefers-reduced-motion: reduce)", stylesheet)
 
     def test_guest_can_access_public_pages(self):
         for url_name in ("accounts:home", "accounts:login", "accounts:register"):

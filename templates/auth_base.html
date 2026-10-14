@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block body_class %}page-auth{% endblock %}
+{% block layout_class %}site-layout--auth{% endblock %}
+
+{% block sidebar %}
+    <aside class="site-sidebar site-sidebar--auth" aria-label="ความช่วยเหลือสำหรับสมาชิก">
+        {% include "includes/_auth_help.html" %}
+    </aside>
+{% endblock %}
