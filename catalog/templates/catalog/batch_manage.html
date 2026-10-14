@@ -1,0 +1,52 @@
+{# HTML เปล่า ยังไม่มี style รอฝั่ง front ออกแบบ #}
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <title>จัดการรุ่น {{ department.code }}</title>
+</head>
+<body>
+  <h1>รุ่นของภาค {{ department.code }} - {{ department.name_th }}</h1>
+
+  <nav>
+    {% for d in departments %}
+      <a href="{% url 'catalog:batch_manage' d.code %}">{{ d.code }}</a>
+    {% endfor %}
+  </nav>
+
+  {% for message in messages %}
+    <p class="message {{ message.tags }}">{{ message }}</p>
+  {% endfor %}
+
+  <table>
+    <thead>
+      <tr><th>รุ่น</th><th>จำนวนวิชา</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for batch in batches %}
+        <tr>
+          <td><a href="{% url 'catalog:batch_course_manage' batch.pk %}">{{ batch.code }}</a></td>
+          <td>{{ batch.course_count }}</td>
+          <td>
+            {% if batch.course_count == 0 %}
+              <form method="post" action="{% url 'catalog:batch_delete' batch.pk %}">
+                {% csrf_token %}
+                <button type="submit">ลบ</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3">ยังไม่มีรุ่น</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>เพิ่มรุ่น</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">เพิ่มรุ่น</button>
+  </form>
+</body>
+</html>
