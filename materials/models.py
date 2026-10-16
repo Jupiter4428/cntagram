@@ -68,6 +68,42 @@ class DocType(models.Model):
         return self.code
 
 
+class DocTypeRequiredRole(models.Model):
+    """กฎอนุมัติ: เอกสารประเภทนี้ต้องได้รับอนุมัติจาก role ใด
+
+    mode = any: role ใดก็ได้ 1 คนพอ (ชีทสรุป/สไลด์)
+    mode = all: ต้องครบทุก role ที่ระบุ (ข้อสอบ: moderator และ super_admin)
+    ทุกแถวของ doc_type เดียวกันควรใช้ mode เดียวกัน ถ้าปนกันจะถือว่าเป็น all
+    """
+
+    class Mode(models.TextChoices):
+        ANY = "any", "Any one of the roles"
+        ALL = "all", "Every role"
+
+    doc_type = models.ForeignKey(
+        DocType, on_delete=models.PROTECT, related_name="required_roles"
+    )
+    role = models.ForeignKey(
+        "accounts.Role", on_delete=models.PROTECT, related_name="required_by"
+    )
+    mode = models.CharField(max_length=3, choices=Mode.choices, default=Mode.ANY)
+
+    class Meta:
+        db_table = "doc_type_required_role"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["doc_type", "role"], name="uq_doctype_required_role"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(mode__in=["any", "all"]),
+                name="ck_doctype_required_role_mode",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.doc_type.code} needs {self.role.code} ({self.mode})"
+
+
 class ExamPeriod(models.Model):
     """midterm, final"""
 
@@ -274,3 +310,40 @@ class DocumentVersion(models.Model):
 
     def __str__(self):
         return f"{self.document_id} v{self.version_no}"
+
+
+class Approval(models.Model):
+    """การตัดสินของผู้อนุมัติ 1 คนต่อเอกสาร 1 ชิ้น (ใคร/บทบาทใด/เมื่อไร/ตัดสินอะไร)"""
+
+    class Decision(models.TextChoices):
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    document = models.ForeignKey(
+        Document, on_delete=models.PROTECT, related_name="approvals"
+    )
+    approver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="approvals"
+    )
+    approver_role = models.ForeignKey(
+        "accounts.Role", on_delete=models.PROTECT, related_name="approvals"
+    )
+    decision = models.CharField(max_length=10, choices=Decision.choices)
+    reason = models.TextField(null=True, blank=True)
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "approval"
+        constraints = [
+            # คนเดียวตัดสินเอกสารเดียวได้ครั้งเดียว: คนที่มีทั้ง 2 role จึงอนุมัติแทน 2 ฝ่ายไม่ได้
+            models.UniqueConstraint(
+                fields=["document", "approver"], name="uq_approval_doc_approver"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(decision__in=["approved", "rejected"]),
+                name="ck_approval_decision",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.document_id} {self.decision} by {self.approver_id}"
