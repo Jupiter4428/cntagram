@@ -226,15 +226,23 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 **doc_type_required_role** (กฎ: ประเภทเอกสารไหนต้องได้รับอนุมัติจาก role ใด)
 | Column | Type | Constraint |
 |---|---|---|
-| doc_type_id | SMALLINT | PK-part, FK → doc_type |
-| role_id | SMALLINT | PK-part, FK → role |
+| id | BIGINT | PK (Django ใช้ PK เดี่ยว) |
+| doc_type_id | SMALLINT | FK → doc_type, NN |
+| role_id | SMALLINT | FK → role, NN |
+| mode | VARCHAR(3) | NN, CHECK in (`any`, `all`), default `any` |
+| | | **UQ (doc_type_id, role_id)** |
 
-ตัวอย่างข้อมูล: `summary`/`slide`/`cheatsheet` → ต้องการ approver **1 คนจาก** moderator หรือ super_admin · `exam` → ต้องการ **ทั้ง** moderator **และ** super_admin
-(ต้องเพิ่ม column `mode` = `any` หรือ `all` ถ้าอยากเก็บกฎ "อย่างใดอย่างหนึ่ง" ให้อยู่ในข้อมูลทั้งหมด)
+ตัวอย่างข้อมูล: `summary`/`slide`/`cheatsheet` → moderator + super_admin โหมด `any` (approver **1 คนจาก** role ใดก็ได้) · `exam` → moderator + super_admin โหมด `all` (ต้อง**ครบทั้งสอง**)
+
+> กฎใน service (`materials.services.approve_document`, US-9)
+> - ทุกแถวของ doc_type เดียวกันควรใช้ `mode` เดียวกัน ถ้ามีแถวใดเป็น `all` จะถือว่าทั้ง doc_type เป็น `all`
+> - doc_type ที่ไม่มีแถวกฎ = ไม่มีใครอนุมัติได้
+> - ข้อสอบ (`vault = exam`) ของรุ่นที่ `batch.number ≤ system_setting.legacy_batch_max` (ค่าเริ่มต้น 23) ใช้กฎพิเศษ: super_admin อนุมัติได้คนเดียวและพอ
+> - moderator ใช้สิทธิ์ได้เฉพาะเอกสารของภาคที่ตัวเองดูแล (`user_role.department_id`)
 
 ### 3.5 การอนุมัติและการตรวจสอบ (Sprint 1–2)
 
-> `approval` สร้างใน Sprint 1 กับ US-6 · `download_log` กับ US-8 (Stretch) · `report`, `audit_log` ใน Sprint 2
+> `approval` สร้างใน Sprint 1 กับ US-9 (US-6 ใช้ร่วม) · `download_log` กับ US-8 (Stretch) · `report`, `audit_log` ใน Sprint 2
 
 **approval**
 | Column | Type | Constraint |
@@ -368,10 +376,10 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ตารางถูกสร้างเมื่อ story ที่ใช้ถูกดึงเข้า Sprint (ไม่สร้างล่วงหน้า) ลำดับด้านล่างเป็นแผนปัจจุบัน ปรับได้ตอน Sprint Planning
 
-- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting
-  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้)*
-  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4)
-- **Sprint 1 (ยังไม่สร้าง):** approval (US-6), doc_type_required_role (US-9), download_log (US-8)
+- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting, approval, doc_type_required_role
+  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้, US-9 → approval/doc_type_required_role)*
+  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role` ยังไม่มี seed
+- **Sprint 1 (ยังไม่สร้าง):** download_log (US-8)
 - **ถัดไป:** audit_log (US-24), report (US-31)
 - **ภายหลัง:** comment / rating (US-28 – US-30), email verification token (US-11), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
 
@@ -381,7 +389,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 |---|---|---|
 | `catalog` | Department, Batch, Course, BatchCourse, SystemSetting | department, batch, course, batch_course, system_setting |
 | `accounts` | User, Role, UserRole | app_user, role, user_role |
-| `materials` | DocType, ExamPeriod, Document, ExamDetail, DocumentVersion | doc_type, exam_period, document, exam_detail, document_version |
+| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval | doc_type, doc_type_required_role, exam_period, document, exam_detail, document_version, approval |
 
 - แอป `materials` ชื่อเดิมคือ `documents` ชื่อตารางไม่เปลี่ยนเพราะตั้ง `db_table` ไว้ทุก model ตรงกับ ERD
 - ตั้ง `AUTH_USER_MODEL = "accounts.User"` ก่อน `migrate` ครั้งแรก
