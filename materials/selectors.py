@@ -10,9 +10,8 @@ def upload_batches(*, department) -> QuerySet[Batch]:
 
 
 def upload_batch_courses(*, batch) -> QuerySet[BatchCourse]:
-    """วิชาในรุ่นสำหรับ dropdown ต่อเนื่อง (รุ่น → วิชา) โหลด course มาด้วยกัน N+1"""
-    return (
-        BatchCourse.objects.filter(batch=batch)
-        .select_related("course")
-        .order_by("course__code")
-    )
+    """วิชาในรุ่นสำหรับ dropdown ต่อเนื่อง (รุ่น → วิชา)
+
+    BatchCourseManager select_related course ให้อยู่แล้ว จึงไม่มี N+1
+    """
+    return BatchCourse.objects.filter(batch=batch).order_by("course__code")

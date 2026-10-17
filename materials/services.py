@@ -43,6 +43,12 @@ def _sha256(file):
     return digest.hexdigest()
 
 
+def ensure_can_upload_to(*, user, batch):
+    """ภาควิชาล็อกตามสังกัด: เลือก/ส่งรุ่นของภาคอื่นมาเอง = แก้ request ข้ามภาค → 403"""
+    if batch.department_id != user.department_id:
+        raise PermissionDenied("อัปโหลดได้เฉพาะรุ่น/วิชาในภาควิชาของตัวเอง")
+
+
 def upload_document(
     *,
     uploader,
@@ -59,9 +65,7 @@ def upload_document(
     ประเภทที่อยู่คลังข้อสอบต้องระบุช่วงสอบ + ปี พ.ศ. (เก็บใน ExamDetail)
     ไฟล์เก็บที่ vault/{ภาค}/{เลขรุ่น}/{รหัสวิชา}/{ประเภท}/{uuid}.pdf
     """
-    # ภาควิชาล็อกตามสังกัด: ส่ง batch_course ของภาคอื่นมาเอง = แก้ request ข้ามภาค
-    if batch_course.batch.department_id != uploader.department_id:
-        raise PermissionDenied("อัปโหลดได้เฉพาะรุ่น/วิชาในภาควิชาของตัวเอง")
+    ensure_can_upload_to(user=uploader, batch=batch_course.batch)
     is_exam = doc_type.vault == DocType.Vault.EXAM
     if is_exam:
         missing = {

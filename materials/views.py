@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods
@@ -8,13 +8,22 @@ from catalog.models import Batch
 
 from .forms import UploadForm
 from .selectors import upload_batch_courses, upload_batches
-from .services import upload_document
+from .services import ensure_can_upload_to, upload_document
 
 
 @login_required
 def vault(request):
     """Protected entry point for the document vault."""
     return render(request, "materials/vault.html")
+
+
+def _add_service_errors(form, exc):
+    """error ของ service ที่ key ไม่ตรงช่องในฟอร์ม (เช่น size_bytes จาก model) แสดงเป็น non-field"""
+    if not hasattr(exc, "error_dict"):
+        form.add_error(None, exc)
+        return
+    for field, errors in exc.message_dict.items():
+        form.add_error(field if field in form.fields else None, errors)
 
 
 @login_required
@@ -30,7 +39,7 @@ def upload(request):
         try:
             upload_document(uploader=request.user, **data)
         except ValidationError as exc:
-            form.add_error(None, exc)
+            _add_service_errors(form, exc)
         else:
             return redirect("materials:upload_done")
     department = request.user.department
@@ -56,8 +65,7 @@ def upload_done(request):
 def upload_course_options(request, batch_id):
     """JSON วิชาในรุ่น ให้ dropdown ต่อเนื่องของฟอร์มอัปโหลด (เฉพาะรุ่นในภาคของตัวเอง)"""
     batch = get_object_or_404(Batch, pk=batch_id)
-    if batch.department_id != request.user.department_id:
-        raise PermissionDenied("เลือกได้เฉพาะรุ่นในภาควิชาของตัวเอง")
+    ensure_can_upload_to(user=request.user, batch=batch)
     courses = [
         {"id": bc.pk, "code": bc.course.code, "name": bc.course.display_name}
         for bc in upload_batch_courses(batch=batch)

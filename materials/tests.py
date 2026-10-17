@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 from io import StringIO
+from unittest import mock
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
@@ -144,6 +145,16 @@ class UploadDocumentServiceTests(UploadTestCase):
         self.assertEqual(document.exam_detail.exam_period, self.midterm)
         self.assertEqual(document.exam_detail.exam_year_be, 2568)
 
+    def test_stored_file_is_removed_when_database_write_fails(self):
+        files_before = stored_file_count()
+
+        with mock.patch.object(Document, "add_version", side_effect=RuntimeError("db down")):
+            with self.assertRaises(RuntimeError):
+                self.upload()
+
+        self.assertEqual(stored_file_count(), files_before)
+        self.assertFalse(Document.objects.exists())
+
     def test_upload_into_another_department_is_denied(self):
         with self.assertRaises(PermissionDenied):
             self.upload(batch_course=self.me21_cn200)
@@ -241,6 +252,23 @@ class UploadViewTests(UploadTestCase):
         self.assertIn("exam_year_be", response.context["form"].errors)
         self.assertFalse(Document.objects.exists())
 
+    def test_model_error_outside_form_fields_is_shown_not_500(self):
+        error = ValidationError({"size_bytes": "File is larger than 50 MB"})
+        with mock.patch("materials.views.upload_document", side_effect=error):
+            response = self.post()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["form"].non_field_errors(), ["File is larger than 50 MB"]
+        )
+
+    def test_form_page_query_count_does_not_grow_with_batches(self):
+        for number in range(22, 27):
+            Batch.objects.create(department=self.cn, number=number)
+
+        with self.assertNumQueries(6):
+            self.client.get(reverse("materials:upload"))
+
     def test_non_pdf_shows_file_error(self):
         response = self.post(file=pdf_file(b"PK\x03\x04", name="sheet.docx"))
 
@@ -269,6 +297,17 @@ class UploadCourseOptionsViewTests(UploadTestCase):
                 ]
             },
         )
+
+    def test_course_options_query_count_does_not_grow_with_courses(self):
+        for code in ("CN201", "CN202", "CN203"):
+            BatchCourse.objects.create(
+                batch=self.cn21, course=Course.objects.create(code=code, name_en=code)
+            )
+
+        with self.assertNumQueries(4):
+            self.client.get(
+                reverse("materials:upload_course_options", args=[self.cn21.pk])
+            )
 
     def test_batch_of_another_department_is_403(self):
         response = self.client.get(
