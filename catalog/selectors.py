@@ -1,7 +1,12 @@
 """การอ่านข้อมูลของ catalog (รุ่น / วิชาในรุ่น) ตาม ADR 0002"""
 from django.db.models import Count, QuerySet
 
-from .models import Batch, BatchCourse
+from .models import Batch, BatchCourse, Department
+
+
+def active_department_list() -> QuerySet[Department]:
+    """ภาควิชาที่เปิดใช้งาน สำหรับเมนูสลับภาคในหน้าจัดการรุ่น"""
+    return Department.objects.filter(is_active=True)
 
 
 def batch_list(*, department) -> QuerySet[Batch]:

@@ -10,8 +10,8 @@ from django.views.decorators.http import require_POST
 from accounts.models import Role
 
 from .forms import BatchCourseForm, BatchForm
-from .models import Batch, BatchCourse, Department
-from .selectors import batch_course_list, batch_list
+from .models import Batch, BatchCourse
+from .selectors import active_department_list, batch_course_list, batch_list
 from .services import (
     add_course_to_batch,
     create_batch,
@@ -43,7 +43,9 @@ def super_admin_required(view_func):
 @super_admin_required
 def batch_manage(request, department_code):
     """รายการรุ่นของภาค + ฟอร์มเพิ่มรุ่น"""
-    department = get_object_or_404(Department, code=department_code.upper())
+    department = get_object_or_404(
+        active_department_list(), code=department_code.upper()
+    )
     form = BatchForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         try:
@@ -58,7 +60,7 @@ def batch_manage(request, department_code):
         "catalog/batch_manage.html",
         {
             "department": department,
-            "departments": Department.objects.filter(is_active=True),
+            "departments": active_department_list(),
             "batches": batch_list(department=department),
             "form": form,
         },

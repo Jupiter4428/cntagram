@@ -3,7 +3,7 @@ from django import forms
 
 
 class BatchForm(forms.Form):
-    number = forms.IntegerField(label="เลขรุ่น", min_value=1)
+    number = forms.IntegerField(label="เลขรุ่น", min_value=1, max_value=32767)  # PositiveSmallIntegerField
 
 
 class BatchCourseForm(forms.Form):

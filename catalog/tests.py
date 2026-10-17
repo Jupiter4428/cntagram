@@ -122,6 +122,33 @@ class RemoveCourseFromBatchTests(CatalogTestCase):
         self.assertFalse(BatchCourse.objects.exists())
         self.assertTrue(Course.objects.filter(code="CN200").exists())
 
+    def test_course_with_uploaded_documents_cannot_be_removed(self):
+        # tests เท่านั้นที่ import materials เพื่อสร้างเอกสารผูก batch_course (โค้ดจริงของ catalog ไม่ import)
+        from materials.models import DocType, Document
+
+        batch = create_batch(department=self.cn, number=21)
+        batch_course = add_course_to_batch(
+            batch=batch, code="CN200", name_en="Discrete Mathematics"
+        )
+        uploader = get_user_model().objects.create_user(
+            email="6610000000@student.tu.ac.th",
+            password="pw",
+            nickname="uploader",
+            department=self.cn,
+            pdpa_consent_at=timezone.now(),
+        )
+        Document.objects.create(
+            batch_course=batch_course,
+            doc_type=DocType.objects.create(code="summary", name_th="ชีทสรุป", vault="lecture"),
+            uploader=uploader,
+            title="ชีท",
+            description="-",
+        )
+
+        with self.assertRaisesMessage(ValidationError, "มีเอกสารอัปโหลดอยู่ในวิชานี้แล้ว"):
+            remove_course_from_batch(batch_course=batch_course)
+        self.assertTrue(BatchCourse.objects.filter(pk=batch_course.pk).exists())
+
 
 class SelectorTests(CatalogTestCase):
     def setUp(self):
@@ -202,6 +229,21 @@ class BatchViewTests(CatalogTestCase):
         response = self.client.post(reverse("catalog:batch_delete", args=[batch.pk]))
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Batch.objects.filter(pk=batch.pk).exists())
+
+    def test_batch_number_above_small_integer_range_is_a_form_error(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("catalog:batch_manage", args=["CN"]), {"number": 40000}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("number", response.context["form"].errors)
+        self.assertFalse(Batch.objects.exists())
+
+    def test_inactive_department_page_is_404(self):
+        Department.objects.filter(pk=self.ce.pk).update(is_active=False)
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:batch_manage", args=["CE"]))
+        self.assertEqual(response.status_code, 404)
 
     def test_admin_can_add_batch(self):
         self.client.force_login(self.admin)
