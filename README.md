@@ -172,7 +172,7 @@ cntagram/
 ├── portal/          # Django project config (settings, urls, wsgi/asgi)
 ├── accounts/        # User, Role, UserRole (US-1, US-2)
 ├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
-├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
+├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5), DocTypeRequiredRole, Approval (US-9)
 ├── .github/         # Issue templates และ Pull Request template
 ├── manage.py
 ├── requirements.txt

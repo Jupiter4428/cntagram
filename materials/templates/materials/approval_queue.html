@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% comment %}
+US-9 (FE): หน้าคิวอนุมัติ ตอนนี้เป็นข้อมูลตัวอย่าง ยังไม่ผูก view/url
+backend ที่ใช้: materials.services.approve_document(document=..., approver=...)
+  - PermissionDenied = ผู้ใช้ไม่มีสิทธิ์ (เช่น Moderator กับข้อสอบรุ่น <= legacy_batch_max)
+  - ValidationError = อนุมัติซ้ำ หรือเอกสารไม่ได้อยู่สถานะ pending
+{% endcomment %}
+
+{% block title %}Approval queue · CNTAGRAM{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">คิวรออนุมัติ</h1>
+
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>เอกสาร</th>
+                <th>รุ่น</th>
+                <th>ประเภท</th>
+                <th>อนุมัติแล้ว</th>
+                <th>รอใคร</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>CN200 Midterm 2568</td>
+                <td>CN25</td>
+                <td>ข้อสอบเก่า</td>
+                <td><span class="badge text-bg-success">Moderator</span></td>
+                <td><span class="badge text-bg-warning">รอ Admin อนุมัติ</span></td>
+                <td>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-primary" type="submit">อนุมัติ</button>
+                    </form>
+                </td>
+            </tr>
+            <tr>
+                <td>CN200 Final 2565</td>
+                <td>CN22</td>
+                <td>ข้อสอบเก่า</td>
+                <td>-</td>
+                <td><span class="badge text-bg-warning">รอ Super Admin อนุมัติ</span></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" type="button" disabled>อนุมัติ</button>
+                    <div class="form-text">ข้อสอบรุ่น 23 ลงไป Super Admin เท่านั้นที่อนุมัติได้</div>
+                </td>
+            </tr>
+            <tr>
+                <td>CN101 ชีทสรุปบทที่ 1</td>
+                <td>CN25</td>
+                <td>ชีทสรุป</td>
+                <td>-</td>
+                <td><span class="badge text-bg-warning">รอ Moderator หรือ Admin 1 คน</span></td>
+                <td>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-primary" type="submit">อนุมัติ</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
