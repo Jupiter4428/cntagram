@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>รายชื่อภาควิชา</title>
+</head>
+<body>
+    <h1>รายชื่อภาควิชา</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div>{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <a href="{% url 'catalog:department_create' %}">เพิ่มภาควิชา</a>
+
+    <ul>
+        {% for dept in departments %}
+            <li>{{ dept.code }} - {{ dept.name_th }}</li>
+        {% empty %}
+            <li>ไม่มีข้อมูลภาควิชา</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
