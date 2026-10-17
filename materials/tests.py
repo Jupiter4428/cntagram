@@ -1,4 +1,7 @@
+from io import StringIO
+
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
@@ -70,6 +73,20 @@ class ApproveDocumentTests(TestCase):
             uploader=self.uploader,
             title="CN200 Midterm",
             description="-",
+        )
+
+    def test_user_with_both_roles_completes_the_missing_side(self):
+        both = self._user("6610000004", "Both")
+        UserRole.objects.create(user=both, role=self.moderator_role, department=self.cn)
+        UserRole.objects.create(user=both, role=self.admin_role)
+        document = self._document()
+        approve_document(document=document, approver=self.moderator)
+
+        document = approve_document(document=document, approver=both)
+
+        self.assertEqual(document.status, Document.Status.PUBLISHED)
+        self.assertEqual(
+            Approval.objects.get(approver=both).approver_role, self.admin_role
         )
 
     def test_exam_approved_by_moderator_alone_stays_pending(self):
@@ -155,3 +172,25 @@ class ApproveDocumentTests(TestCase):
 
         document.refresh_from_db()
         self.assertEqual(document.status, Document.Status.PUBLISHED)
+
+
+class SeedApprovalRulesCommandTests(TestCase):
+    def test_exam_needs_both_roles_and_lecture_types_need_either(self):
+        DocType.objects.create(code="exam", name_th="ข้อสอบเก่า", vault="exam")
+        DocType.objects.create(code="summary", name_th="ชีทสรุป", vault="lecture")
+
+        call_command("seed_approval_rules", stdout=StringIO())
+        call_command("seed_approval_rules", stdout=StringIO())  # รันซ้ำต้องไม่สร้างซ้ำ
+
+        rules = set(
+            DocTypeRequiredRole.objects.values_list("doc_type__code", "role__code", "mode")
+        )
+        self.assertEqual(
+            rules,
+            {
+                ("exam", Role.MODERATOR, "all"),
+                ("exam", Role.SUPER_ADMIN, "all"),
+                ("summary", Role.MODERATOR, "any"),
+                ("summary", Role.SUPER_ADMIN, "any"),
+            },
+        )

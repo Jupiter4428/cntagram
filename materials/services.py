@@ -31,9 +31,12 @@ def approve_document(*, document, approver):
         for ur in approver.user_roles.all()
         if ur.department_id in (None, department_id)
     }
-    role = next((r for r in required_roles if r.pk in held), None)
-    if role is None:
+    eligible = [r for r in required_roles if r.pk in held]
+    if not eligible:
         raise PermissionDenied("You cannot approve this document")
+    # คนที่มีหลาย role ให้นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน ไม่งั้นกฎ all จะไม่มีวันครบ
+    approved_ids = _approved_role_ids(document)
+    role = next((r for r in eligible if r.pk not in approved_ids), eligible[0])
     if document.approvals.filter(approver=approver).exists():
         raise ValidationError("You have already decided on this document")
     Approval.objects.create(
@@ -65,12 +68,16 @@ def _is_legacy_exam(document):
     )
 
 
-def _rule_satisfied(document, required_roles, require_all):
-    approved = set(
+def _approved_role_ids(document):
+    return set(
         document.approvals.filter(decision=Approval.Decision.APPROVED).values_list(
             "approver_role_id", flat=True
         )
     )
+
+
+def _rule_satisfied(document, required_roles, require_all):
+    approved = _approved_role_ids(document)
     required_ids = {r.pk for r in required_roles}
     if require_all:
         return required_ids <= approved

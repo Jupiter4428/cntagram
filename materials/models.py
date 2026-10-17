@@ -329,7 +329,7 @@ class Approval(models.Model):
         "accounts.Role", on_delete=models.PROTECT, related_name="approvals"
     )
     decision = models.CharField(max_length=10, choices=Decision.choices)
-    reason = models.TextField(null=True, blank=True)
+    reason = models.TextField(blank=True, default="")
     decided_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

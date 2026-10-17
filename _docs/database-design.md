@@ -252,7 +252,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | approver_id | BIGINT | FK → app_user, NN |
 | approver_role_id | SMALLINT | FK → role, NN (ตัดสินในบทบาทใด) |
 | decision | VARCHAR(10) | NN (`approved`, `rejected`) |
-| reason | TEXT | NULL (บังคับเมื่อ rejected) |
+| reason | TEXT | NN, default "" (บังคับกรอกเมื่อ rejected) |
 | decided_at | TIMESTAMP | NN |
 | | | **UQ (document_id, approver_id)** |
 
@@ -378,7 +378,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 - **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting, approval, doc_type_required_role
   *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้, US-9 → approval/doc_type_required_role)*
-  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role` ยังไม่มี seed
+  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role` ด้วย `seed_approval_rules` (US-9 รันหลัง `seed_materials`)
 - **Sprint 1 (ยังไม่สร้าง):** download_log (US-8)
 - **ถัดไป:** audit_log (US-24), report (US-31)
 - **ภายหลัง:** comment / rating (US-28 – US-30), email verification token (US-11), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
