@@ -136,6 +136,17 @@ class SearchFormTests(SearchFixtureMixin, TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(form.errors["batch"], ["รุ่น CN22 ไม่ได้อยู่ในภาค CE"])
 
+    def test_batch_of_inactive_department_is_not_selectable(self):
+        ce = Department.objects.create(
+            code="CE", name_th="วิศวกรรมโยธา", name_en="Civil Engineering", is_active=False
+        )
+        ce22 = Batch.objects.create(department=ce, number=22)
+
+        form = SearchForm({"course_code": "CN200", "batch": ce22.pk})
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("batch", form.errors)
+
     def test_filters_are_optional_and_feed_the_selector(self):
         form = SearchForm({"course_code": "cn200"})
         self.assertTrue(form.is_valid(), form.errors)

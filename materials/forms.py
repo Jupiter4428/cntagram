@@ -20,7 +20,10 @@ class SearchForm(forms.Form):
         empty_label="ทุกภาค",
     )
     batch = forms.ModelChoiceField(
-        label="รุ่น", queryset=Batch.objects.all(), required=False, empty_label="ทุกรุ่น"
+        label="รุ่น",
+        queryset=Batch.objects.filter(department__is_active=True),  # ให้ตรงกับรายการภาค
+        required=False,
+        empty_label="ทุกรุ่น",
     )
     doc_type = forms.ModelChoiceField(
         label="ประเภท",

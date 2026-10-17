@@ -35,7 +35,7 @@ def document_preview(request, document_id):
         raise Http404("ยังไม่มีไฟล์ของเอกสารนี้")
     try:
         file = default_storage.open(version.storage_path, "rb")
-    except FileNotFoundError:
+    except OSError:  # ไม่พบไฟล์ หรือ path ใช้เปิดไม่ได้ ตอบ 404 แทน 500
         raise Http404("ไม่พบไฟล์ของเอกสารนี้")
     return FileResponse(
         file, content_type="application/pdf", filename=version.original_name
