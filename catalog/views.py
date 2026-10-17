@@ -1,7 +1,9 @@
 """หน้าจัดการรุ่นและวิชาในรุ่น (US-4) เฉพาะ Super Admin"""
+from functools import wraps
+
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
-from django.core.exceptions import ValidationError
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -25,7 +27,17 @@ def is_super_admin(user):
     )
 
 
-super_admin_required = user_passes_test(is_super_admin)
+def super_admin_required(view_func):
+    """guest ไปหน้า login, ผู้ใช้ที่ไม่ใช่ Super Admin ได้ 403"""
+
+    @login_required
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not is_super_admin(request.user):
+            raise PermissionDenied("เฉพาะ Super Admin เท่านั้น")
+        return view_func(request, *args, **kwargs)
+
+    return wrapped
 
 
 @super_admin_required

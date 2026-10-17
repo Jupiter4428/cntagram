@@ -6,6 +6,7 @@ from django.test import TestCase
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import Batch, BatchCourse, Course, Department
 from .selectors import batch_course_list, batch_list
@@ -180,6 +181,27 @@ class BatchViewTests(CatalogTestCase):
     def test_guest_is_redirected(self):
         response = self.client.get(reverse("catalog:batch_manage", args=["CN"]))
         self.assertEqual(response.status_code, 302)
+
+    def test_non_super_admin_gets_403(self):
+        student = get_user_model().objects.create_user(
+            email="6610000000@student.tu.ac.th",
+            password="pw",
+            nickname="student",
+            department=self.cn,
+            pdpa_consent_at=timezone.now(),
+        )
+        batch = create_batch(department=self.cn, number=21)
+        self.client.force_login(student)
+        urls = [
+            reverse("catalog:batch_manage", args=["CN"]),
+            reverse("catalog:batch_course_manage", args=[batch.pk]),
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 403)
+        response = self.client.post(reverse("catalog:batch_delete", args=[batch.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Batch.objects.filter(pk=batch.pk).exists())
 
     def test_admin_can_add_batch(self):
         self.client.force_login(self.admin)
