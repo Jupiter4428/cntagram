@@ -1,8 +1,35 @@
 {% extends "base.html" %}
+{# โครง HTML เปล่า ยังไม่มี css รอฝั่ง front ออกแบบ (US-7) #}
 
-{% block title %}Document vault | CNTAGRAM{% endblock %}
+{% block title %}ค้นหาเอกสาร | CNTAGRAM{% endblock %}
 
 {% block content %}
-<h1>Document vault</h1>
-<p>Browse shared engineering study materials.</p>
+<h1>ค้นหาเอกสาร</h1>
+
+<form method="get">
+  {{ form.as_p }}
+  <button type="submit">ค้นหา</button>
+</form>
+
+{% if documents is not None %}
+  <h2>ผลการค้นหา</h2>
+  <table>
+    <thead>
+      <tr><th>รุ่น</th><th>วิชา</th><th>ประเภท</th><th>ชื่อเอกสาร</th><th>ผู้อัปโหลด</th></tr>
+    </thead>
+    <tbody>
+      {% for document in documents %}
+        <tr>
+          <td>{{ document.batch_course.batch.code }}</td>
+          <td>{{ document.batch_course.course.code }} {{ document.batch_course.course.display_name }}</td>
+          <td>{{ document.doc_type.name_th }}</td>
+          <td><a href="{% url 'materials:document_detail' document.pk %}">{{ document.title }}</a></td>
+          <td>{{ document.uploader.nickname }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">ไม่พบเอกสาร</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
 {% endblock %}
