@@ -1,8 +1,65 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET, require_http_methods
+
+from catalog.models import Batch
+
+from .forms import UploadForm
+from .selectors import upload_batch_courses, upload_batches
+from .services import upload_document
 
 
 @login_required
 def vault(request):
     """Protected entry point for the document vault."""
     return render(request, "materials/vault.html")
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def upload(request):
+    """ฟอร์มอัปโหลดชีท (US-5) ภาควิชาล็อกตามสังกัดของผู้ใช้
+
+    PermissionDenied จาก service (แก้ request ข้ามภาค) ปล่อยให้ Django ตอบ 403
+    """
+    form = UploadForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        data = {k: v for k, v in form.cleaned_data.items() if k != "disclaimer"}
+        try:
+            upload_document(uploader=request.user, **data)
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            return redirect("materials:upload_done")
+    department = request.user.department
+    return render(
+        request,
+        "materials/upload.html",
+        {
+            "form": form,
+            "department": department,
+            "batches": upload_batches(department=department),
+        },
+    )
+
+
+@login_required
+@require_GET
+def upload_done(request):
+    return render(request, "materials/upload_done.html")
+
+
+@login_required
+@require_GET
+def upload_course_options(request, batch_id):
+    """JSON วิชาในรุ่น ให้ dropdown ต่อเนื่องของฟอร์มอัปโหลด (เฉพาะรุ่นในภาคของตัวเอง)"""
+    batch = get_object_or_404(Batch, pk=batch_id)
+    if batch.department_id != request.user.department_id:
+        raise PermissionDenied("เลือกได้เฉพาะรุ่นในภาควิชาของตัวเอง")
+    courses = [
+        {"id": bc.pk, "code": bc.course.code, "name": bc.course.display_name}
+        for bc in upload_batch_courses(batch=batch)
+    ]
+    return JsonResponse({"courses": courses})
