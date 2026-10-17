@@ -29,7 +29,9 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 ### 3.1.4 การจัดการ Source Code และ Workflow
 
 - Git branch strategy: `main` (production) / `develop` (integration, default branch) / feature branch แตกจาก `develop`
-- Pull Request + Peer Code Review ทุกงาน ใช้ PR template และ Issue template (Feature Story, Bug Report, Tech Debt) ใน `.github/`
+- Pull Request + Peer Code Review ทุกงาน โดยเขียน issue และ PR ตามโครงหัวข้อที่ทีมกำหนดใน `CONTRIBUTING.md`
+  - Issue 3 ประเภท: Feature Story (User Story + Acceptance Criteria + Definition of Ready), Tech Debt / Refactoring Story (ปัญหาปัจจุบัน + AC แบบ Regression-free) และ Bug Report (ขั้นตอนทำซ้ำ + ผลคาดหวัง vs ผลจริง + เทสต์จับบั๊ก)
+  - เนื้อหา PR: สรุปสิ่งที่เปลี่ยน วิธีทดสอบ screenshot หรือ Before/After และ checklist Definition of Done พร้อม `Closes #N` เพื่อผูกกับ issue
 - Commit message ตาม Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:` ฯลฯ)
 - GitHub Projects เป็น Scrum board พร้อม custom fields (Story Points, Sprint, Track)
 - กติกาการใช้ AI ช่วยเขียนโค้ด: ผู้ commit รับผิดชอบ 100%, ต้องรันเทสต์และอธิบายโค้ดได้ทุกบรรทัด

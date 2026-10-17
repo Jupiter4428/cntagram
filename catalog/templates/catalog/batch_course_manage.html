@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{# HTML เปล่า ยังไม่มี style รอฝั่ง front ออกแบบ #}
+
+{% block title %}วิชาในรุ่น {{ batch.code }} | CNTAGRAM{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'catalog:batch_manage' batch.department.code %}">กลับไปรายการรุ่น</a></p>
+<h1>วิชาในรุ่น {{ batch.code }}</h1>
+
+{% for message in messages %}
+  <p class="message {{ message.tags }}">{{ message }}</p>
+{% endfor %}
+
+<table>
+  <thead>
+    <tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for batch_course in batch_courses %}
+      <tr>
+        <td>{{ batch_course.course.code }}</td>
+        <td>{{ batch_course.course.display_name }}</td>
+        <td>
+          <form method="post" action="{% url 'catalog:batch_course_remove' batch_course.pk %}">
+            {% csrf_token %}
+            <button type="submit">ถอดออก</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="3">ยังไม่มีวิชาในรุ่นนี้</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>เพิ่มวิชาเข้ารุ่น</h2>
+<p>ถ้ารหัสวิชามีในระบบแล้วจะใช้วิชาเดิม ถ้ายังไม่มีต้องกรอกชื่ออังกฤษ</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">เพิ่มวิชา</button>
+</form>
+{% endblock %}
