@@ -131,6 +131,7 @@ User ผูกกับภาควิชา (`department` ห้ามว่า
 ```bash
 python manage.py shell -c "from catalog.models import Department; Department.objects.get_or_create(code='CN', defaults={'name_th': 'วิศวกรรมคอมพิวเตอร์', 'name_en': 'Computer Engineering'})"
 python manage.py createsuperuser
+python manage.py seed_materials   # ประเภทเอกสาร, ช่วงสอบ, system_setting (รันซ้ำได้ ไม่เขียนทับค่าที่แก้แล้ว)
 ```
 ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (พิมพ์ตัวย่อภาค เช่น `CN` ตัวพิมพ์เล็กก็ได้ ถ้ายังไม่มีภาคนี้จะแจ้งว่าไม่พบ), Password
 

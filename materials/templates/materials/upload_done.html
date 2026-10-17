@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{# โครง HTML เปล่า ยังไม่มี css รอฝั่ง front ออกแบบ (US-5) #}
+
+{% block title %}ส่งชีทแล้ว | CNTAGRAM{% endblock %}
+
+{% block content %}
+<h1>ส่งแล้ว รออนุมัติ</h1>
+<p>ชีทของคุณจะแสดงในคลังหลังจากผู้ดูแลอนุมัติ</p>
+<p><a href="{% url 'materials:upload' %}">อัปโหลดชีทอื่น</a></p>
+{% endblock %}
