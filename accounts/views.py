@@ -39,6 +39,7 @@ def home(request):
 @require_GET
 def register(request):
     """Public registration entry point owned by the registration story."""
+    # TODO(US-1): replace with RegisterForm view
     return render(request, "accounts/register.html")
 
 
