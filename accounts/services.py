@@ -2,7 +2,32 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from django.utils.crypto import salted_hmac
+
+from .models import Role, User, UserRole
+
+STUDENT_ROLE_NAME_TH = "นักศึกษา"
+
+
+@transaction.atomic
+def register_user(*, email, password, nickname, department, pdpa_consent_at):
+    """สร้างบัญชีนักศึกษาใหม่พร้อมผูก role 'student' (US-1)
+
+    อินพุตต้องผ่าน RegisterForm มาแล้ว ถ้าขั้นใดล้มเหลวจะ rollback ทั้งหมด
+    """
+    user = User.objects.create_user(
+        email=email,
+        password=password,
+        nickname=nickname,
+        department=department,
+        pdpa_consent_at=pdpa_consent_at,
+    )
+    student_role, _ = Role.objects.get_or_create(
+        code=Role.STUDENT, defaults={"name_th": STUDENT_ROLE_NAME_TH}
+    )
+    UserRole.objects.create(user=user, role=student_role)
+    return user
 
 
 @dataclass(frozen=True)
