@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from accounts.permissions import super_admin_required
+from portal.permissions import super_admin_required
 from .forms import BatchCourseForm, BatchForm, CourseForm, DepartmentForm
 from .models import Batch, BatchCourse
 from . import selectors, services
