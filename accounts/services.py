@@ -39,3 +39,35 @@ def clear_login_failures(*, identifier, client_ip):
     """Clear failures after a successful authentication."""
     key = _login_failure_key(identifier=identifier, client_ip=client_ip)
     cache.delete(key)
+
+
+# ==========================================
+# US-10: Moderator Services (วางต่อท้ายล่างสุด)
+# ==========================================
+from django.core.exceptions import ValidationError
+from accounts.models import Role, UserRole
+
+
+def assign_moderator(*, user, department, granted_by):
+    """แต่งตั้ง Moderator ประจำภาควิชา พร้อมบันทึกผู้แต่งตั้งและดักข้อมูลซ้ำ"""
+    moderator_role = Role.objects.get(code=Role.MODERATOR)
+
+    if UserRole.objects.filter(user=user, role=moderator_role, department=department).exists():
+        raise ValidationError(f"User {user.email} is already a moderator for {department.code}")
+
+    user_role = UserRole(
+        user=user,
+        role=moderator_role,
+        department=department,
+        granted_by=granted_by,
+    )
+    user_role.full_clean()
+    user_role.save()
+    return user_role
+
+
+def remove_moderator(*, user_role: UserRole):
+    """ถอดถอน Moderator ออกจากภาควิชา"""
+    if user_role.role.code != Role.MODERATOR:
+        raise ValidationError("Cannot remove role that is not Moderator")
+    user_role.delete()
