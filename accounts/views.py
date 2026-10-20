@@ -75,3 +75,56 @@ def logout(request):
     """End the current session; CSRF middleware protects this POST endpoint."""
     auth_logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
+
+
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404, redirect, render
+from accounts.models import Role, UserRole
+from accounts.permissions import super_admin_required
+from .forms import ModeratorAssignmentForm
+from . import selectors, services
+
+
+@super_admin_required
+def moderator_manage(request):
+    """หน้าจัดการและแสดงรายชื่อ Moderator ทั้งหมด (เข้าถึงได้เฉพาะ Super Admin)"""
+    if request.method == "POST":
+        form = ModeratorAssignmentForm(request.POST)
+        if form.is_valid():
+            try:
+                user = form.cleaned_data["user"]
+                dept = form.cleaned_data["department"]
+                services.assign_moderator(
+                    user=user,
+                    department=dept,
+                    granted_by=request.user,
+                )
+                messages.success(request, f"แต่งตั้ง {user.email} เป็น Moderator ภาควิชา {dept.code} สำเร็จแล้ว")
+                return redirect("accounts:moderator_manage")
+            except ValidationError as e:
+                messages.error(request, e.message)
+    else:
+        form = ModeratorAssignmentForm()
+
+    moderators = selectors.get_moderators_list()
+    return render(
+        request,
+        "accounts/moderator_manage.html",
+        {
+            "form": form,
+            "moderators": moderators,
+        },
+    )
+
+
+@super_admin_required
+def moderator_remove(request, pk):
+    """ถอดถอน Moderator ออกจากภาควิชา"""
+    if request.method == "POST":
+        user_role = get_object_or_404(UserRole, pk=pk, role__code=Role.MODERATOR)
+        user_email = user_role.user.email
+        dept_code = user_role.department.code if user_role.department else ""
+        services.remove_moderator(user_role=user_role)
+        messages.success(request, f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว")
+    return redirect("accounts:moderator_manage")
