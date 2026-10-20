@@ -145,6 +145,7 @@ class DepartmentTests(CatalogTestCase):
         self.assertEqual(Course.objects.count(), 4)
         self.assertEqual(BatchCourse.objects.count(), 5 * 4)
 
+
 class BatchTests(CatalogTestCase):
     def test_create_batch_builds_code_from_department(self):
         """เลือกภาค CN แล้วใส่เลข 21 → ได้รุ่น CN21 แสดงในหน้ารายการรุ่น"""
@@ -186,7 +187,6 @@ class BatchTests(CatalogTestCase):
         response = self.client.post(reverse("catalog:batch_delete", args=[batch.pk]), follow=True)
         self.assertTrue(Batch.objects.filter(pk=batch.pk).exists())
         self.assertContains(response, "ลบรุ่น CN21 ไม่ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้")
-
 
 
 class CatalogPermissionTests(CatalogTestCase):
@@ -268,7 +268,7 @@ class BatchCourseTests(CatalogTestCase):
         response = self.add(self.cn21, self.cn200)
 
         self.assertEqual(BatchCourse.objects.filter(batch=self.cn21).count(), 1)
-        self.assertTrue(response.context["form"].errors)
+        self.assertFormError(response.context["form"], "course", "วิชานี้อยู่ในรุ่นนี้แล้ว")
 
     def test_remove_course_from_batch_keeps_course(self):
         """ถอด CN200 ออกจาก CN21 → CN22 ยังมี CN200 และข้อมูลวิชายังอยู่"""
@@ -285,3 +285,16 @@ class BatchCourseTests(CatalogTestCase):
         self.assertFalse(BatchCourse.objects.filter(batch=self.cn21).exists())
         self.assertTrue(BatchCourse.objects.filter(batch=self.cn22, course=self.cn200).exists())
         self.assertTrue(Course.objects.filter(pk=self.cn200.pk).exists())
+
+    def test_list_pages_have_no_n_plus_one(self):
+        """จำนวน query คงที่ไม่ว่าจะมีกี่รุ่น/กี่วิชา (session, user, เช็กสิทธิ์ + query ของหน้า)"""
+        for i, number in enumerate([23, 24, 25]):
+            batch = Batch.objects.create(department=self.dept_cn, number=number)
+            course = Course.objects.create(code=f"CN10{i}", name_en=f"Course {i}")
+            BatchCourse.objects.create(batch=self.cn21, course=course)
+            BatchCourse.objects.create(batch=batch, course=course)
+
+        with self.assertNumQueries(4):
+            self.client.get(reverse("catalog:batch_list"))
+        with self.assertNumQueries(6):  # + รุ่น, วิชาในรุ่น, ตัวเลือกวิชาในฟอร์ม
+            self.client.get(reverse("catalog:batch_course_manage", args=[self.cn21.pk]))
