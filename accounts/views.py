@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
+from django.db import IntegrityError
 from django.shortcuts import redirect, render, resolve_url
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -52,15 +53,18 @@ def register(request):
     form = RegisterForm(request.POST if request.method == "POST" else None)
     if form.is_bound and form.is_valid():
         data = form.cleaned_data
-        register_user(
-            email=data["email"],
-            password=data["password"],
-            nickname=data["nickname"],
-            department=data["department"],
-            pdpa_consent_at=timezone.now(),
-        )
-        messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
-        return redirect("accounts:login")
+        try:
+            register_user(
+                email=data["email"],
+                password=data["password"],
+                nickname=data["nickname"],
+                department=data["department"],
+                pdpa_consent_at=timezone.now(),
+            )
+            messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
+            return redirect("accounts:login")
+        except IntegrityError:
+            form.add_error("email", "อีเมลนี้ถูกใช้สมัครแล้ว")
 
     return render(request, "accounts/register.html", {"form": form})
 

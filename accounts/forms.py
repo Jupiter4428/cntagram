@@ -1,11 +1,14 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from catalog.selectors import active_department_list
 
-from .models import User, validate_nickname
+from .models import validate_nickname
+
+User = get_user_model()
 
 
 class LoginForm(AuthenticationForm):

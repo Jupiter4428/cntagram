@@ -209,6 +209,9 @@ class RegistrationTestMixin:
             name_en="Closed Department",
             is_active=False,
         )
+        cls.role_student, _ = Role.objects.get_or_create(
+            code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
+        )
 
     def payload(self, **overrides):
         data = {
@@ -269,7 +272,8 @@ class RegisterFormTests(RegistrationTestMixin, TestCase):
     def test_rejects_reserved_nickname(self):
         for nickname in ("admin", "Ad-Min", "MODERATOR", "แอดมิน"):
             with self.subTest(nickname=nickname):
-                self.assertFieldError(self.payload(nickname=nickname), "nickname")
+                form = self.assertFieldError(self.payload(nickname=nickname), "nickname")
+                self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0])
 
     def test_requires_pdpa_consent(self):
         form = self.assertFieldError(self.payload(pdpa_consent=None), "pdpa_consent")
@@ -316,6 +320,7 @@ class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
         user = self.register(pdpa_consent_at=consent_at)
 
         self.assertEqual(user.student_id, "6610612345")
+        self.assertEqual(user.entry_year, 66)
         self.assertEqual(user.department, self.department)
         self.assertEqual(user.pdpa_consent_at, consent_at)
         self.assertTrue(user.check_password(VALID_PASSWORD))
@@ -323,21 +328,20 @@ class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
-    def test_creates_student_role_when_missing(self):
-        self.assertFalse(Role.objects.filter(code=Role.STUDENT).exists())
+    def test_entry_year_extracted_from_student_id_67(self):
+        user = self.register(email="6710619999@student.tu.ac.th")
+        self.assertEqual(user.student_id, "6710619999")
+        self.assertEqual(user.entry_year, 67)
 
+    def test_assigns_student_role(self):
         user = self.register()
-
         role_codes = list(user.user_roles.values_list("role__code", flat=True))
         self.assertEqual(role_codes, [Role.STUDENT])
 
-    def test_reuses_existing_student_role(self):
-        role = Role.objects.create(code=Role.STUDENT, name_th="นักศึกษา")
-
-        user = self.register()
-
-        self.assertEqual(Role.objects.filter(code=Role.STUDENT).count(), 1)
-        self.assertTrue(UserRole.objects.filter(user=user, role=role).exists())
+    def test_raises_error_when_student_role_missing(self):
+        Role.objects.filter(code=Role.STUDENT).delete()
+        with self.assertRaises(Role.DoesNotExist):
+            self.register()
 
     def test_rolls_back_user_when_role_assignment_fails(self):
         with mock.patch.object(
@@ -370,6 +374,7 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
         self.assertContains(response, "สมัครสมาชิกสำเร็จ")
         user = User.objects.get(email="6610612345@student.tu.ac.th")
         self.assertEqual(user.student_id, "6610612345")
+        self.assertEqual(user.entry_year, 66)
         self.assertEqual(user.nickname, "Ploy")
         self.assertIsNotNone(user.pdpa_consent_at)
         self.assertTrue(user.user_roles.filter(role__code=Role.STUDENT).exists())
@@ -407,7 +412,15 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
         self.assertContains(response, "is-invalid")
 
     def test_rejects_reserved_nickname(self):
-        self.assertRegistrationRejected(self.payload(nickname="Admin"), "nickname")
+        response = self.assertRegistrationRejected(self.payload(nickname="Admin"), "nickname")
+        self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", response.context["form"].errors["nickname"][0])
+
+    def test_concurrent_registration_integrity_error_adds_email_error(self):
+        with mock.patch.object(User.objects, "create_user", side_effect=IntegrityError("duplicate")):
+            response = self.client.post(self.url, self.payload())
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("email", response.context["form"].errors)
+            self.assertIn("อีเมลนี้ถูกใช้สมัครแล้ว", response.context["form"].errors["email"])
 
     def test_rejects_missing_pdpa_consent(self):
         self.assertRegistrationRejected(self.payload(pdpa_consent=None), "pdpa_consent")

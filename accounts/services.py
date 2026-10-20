@@ -1,13 +1,14 @@
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db import transaction
 from django.utils.crypto import salted_hmac
 
-from .models import Role, User, UserRole
+from .models import Role, UserRole
 
-STUDENT_ROLE_NAME_TH = "นักศึกษา"
+User = get_user_model()
 
 
 @transaction.atomic
@@ -23,9 +24,7 @@ def register_user(*, email, password, nickname, department, pdpa_consent_at):
         department=department,
         pdpa_consent_at=pdpa_consent_at,
     )
-    student_role, _ = Role.objects.get_or_create(
-        code=Role.STUDENT, defaults={"name_th": STUDENT_ROLE_NAME_TH}
-    )
+    student_role = Role.objects.get(code=Role.STUDENT)
     UserRole.objects.create(user=user, role=student_role)
     return user
 
