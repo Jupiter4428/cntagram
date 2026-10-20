@@ -1,12 +1,15 @@
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
+from django.db import IntegrityError
 from django.shortcuts import redirect, render, resolve_url
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from .forms import LoginForm
-from .services import attempt_login
+from .forms import LoginForm, RegisterForm
+from .services import attempt_login, register_user
 
 
 def _client_ip(request):
@@ -41,11 +44,29 @@ def home(request):
     return render(request, "accounts/home.html")
 
 
-@require_GET
+@require_http_methods(["GET", "POST"])
 def register(request):
-    """Public registration entry point owned by the registration story."""
-    # TODO(US-1): replace with RegisterForm view
-    return render(request, "accounts/register.html")
+    """Register a new student account with a faculty email (US-1)."""
+    if request.user.is_authenticated:
+        return redirect("accounts:home")
+
+    form = RegisterForm(request.POST if request.method == "POST" else None)
+    if form.is_bound and form.is_valid():
+        data = form.cleaned_data
+        try:
+            register_user(
+                email=data["email"],
+                password=data["password"],
+                nickname=data["nickname"],
+                department=data["department"],
+                pdpa_consent_at=timezone.now(),
+            )
+            messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
+            return redirect("accounts:login")
+        except IntegrityError:
+            form.add_error("email", "อีเมลนี้ถูกใช้สมัครแล้ว")
+
+    return render(request, "accounts/register.html", {"form": form})
 
 
 @require_http_methods(["GET", "POST"])
