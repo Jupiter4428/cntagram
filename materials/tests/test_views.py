@@ -7,7 +7,7 @@ from accounts.models import Role, UserRole
 from catalog.models import Batch, BatchCourse, Course, Department
 
 from ..models import Document, DocType
-from .base import UploadTestCase, pdf_file
+from .base import UploadTestCase, pdf_file, stored_file_count
 
 User = get_user_model()
 
@@ -80,6 +80,25 @@ class UploadViewTests(UploadTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("exam_year_be", response.context["form"].errors)
         self.assertFalse(Document.objects.exists())
+
+    def test_model_error_outside_form_fields_is_shown_not_500(self):
+        """รหัสภาคมี zero-width space (U+200B) ที่ระบบไฟล์รับ แต่ DocumentVersion ปฏิเสธ storage_path
+
+        error key storage_path ไม่ใช่ช่องในฟอร์ม จึงต้องแสดงเป็น non-field error
+        """
+        dept = Department.objects.create(code="C​N", name_th="ภาครหัสผิด", name_en="Bad code")
+        batch = Batch.objects.create(department=dept, number=21)
+        batch_course = BatchCourse.objects.create(batch=batch, course=self.cn21_cn200.course)
+        self.student.department = dept
+        self.student.save()
+        files_before = stored_file_count()
+
+        response = self.post(batch_course=batch_course.pk)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"].non_field_errors(), ["Unsafe storage_path."])
+        self.assertFalse(Document.objects.exists())
+        self.assertEqual(stored_file_count(), files_before)
 
     def test_form_page_query_count_does_not_grow_with_batches(self):
         for number in range(22, 27):
