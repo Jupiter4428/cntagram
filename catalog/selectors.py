@@ -14,7 +14,6 @@ def batch_list():
     )
 
 
-
 def course_list():
     return Course.objects.order_by("code")
 

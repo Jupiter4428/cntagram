@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.permissions import super_admin_required
 from .forms import BatchCourseForm, BatchForm, CourseForm, DepartmentForm
+from .models import Batch, BatchCourse
 from . import selectors, services
 
 
@@ -80,7 +81,7 @@ def batch_create(request):
 
 @super_admin_required
 def batch_delete(request, pk):
-    batch = get_object_or_404(selectors.batch_list(), pk=pk)
+    batch = get_object_or_404(Batch, pk=pk)
     if request.method == "POST":
         code = batch.code
         try:
@@ -95,7 +96,7 @@ def batch_delete(request, pk):
 
 @super_admin_required
 def batch_course_manage(request, pk):
-    batch = get_object_or_404(selectors.batch_list(), pk=pk)
+    batch = get_object_or_404(Batch, pk=pk)
     if request.method == "POST":
         form = BatchCourseForm(request.POST, batch=batch)
         if form.is_valid():
@@ -115,7 +116,7 @@ def batch_course_manage(request, pk):
 @super_admin_required
 @require_POST
 def batch_course_remove(request, pk, batch_course_pk):
-    batch_course = get_object_or_404(selectors.batch_course_list(batch=pk), pk=batch_course_pk)
+    batch_course = get_object_or_404(BatchCourse, pk=batch_course_pk, batch_id=pk)
     code = batch_course.course.code
     try:
         services.remove_course_from_batch(batch_course=batch_course)

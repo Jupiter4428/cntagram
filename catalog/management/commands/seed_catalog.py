@@ -1,9 +1,11 @@
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from catalog.models import Batch, BatchCourse, Course, Department
 
 class Command(BaseCommand):
     help = "Seed initial departments (CN, CE, ME, EE) and sample batches CN21-CN25 with shared courses"
 
+    @transaction.atomic
     def handle(self, *args, **kwargs):
         # รายการภาควิชาเริ่มต้นตามเงื่อนไขใน Ticket
         departments_data = [

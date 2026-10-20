@@ -31,7 +31,6 @@ class BatchForm(forms.ModelForm):
         self.fields["department"].queryset = Department.objects.filter(is_active=True)
 
 
-
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
@@ -49,6 +48,11 @@ class BatchCourseForm(forms.ModelForm):
     class Meta:
         model = BatchCourse
         fields = ["course"]
+        error_messages = {
+            "course": {
+                "invalid_choice": "วิชานี้อยู่ในรุ่นนี้แล้ว",
+            },
+        }
 
     def __init__(self, *args, batch, **kwargs):
         super().__init__(*args, instance=BatchCourse(batch=batch), **kwargs)
