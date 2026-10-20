@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
-from catalog.models import Department
+from catalog.models import Batch, BatchCourse, Course, Department
 
 class Command(BaseCommand):
-    help = "Seed initial departments (CN, CE, ME, EE)"
+    help = "Seed initial departments (CN, CE, ME, EE) and sample batches CN21-CN25 with shared courses"
 
     def handle(self, *args, **kwargs):
         # รายการภาควิชาเริ่มต้นตามเงื่อนไขใน Ticket
@@ -27,3 +27,24 @@ class Command(BaseCommand):
             self.stdout.write(f"[{status}] {dept.code}: {dept.name_th}")
 
         self.stdout.write(self.style.SUCCESS("Successfully seeded departments!"))
+
+        # รุ่นตัวอย่างให้ US-5 อัปโหลดชีทได้เลย ทุกรุ่นผูกวิชาชุดเดียวกัน (Course สร้างครั้งเดียว)
+        courses_data = [
+            ("CN101", "Introduction to Computer Programming"),
+            ("CN200", "Discrete Mathematics"),
+            ("CN201", "Data Structures and Algorithms"),
+            ("SC135", "General Physics"),
+        ]
+        courses = [
+            Course.objects.get_or_create(code=code, defaults={"name_en": name_en})[0]
+            for code, name_en in courses_data
+        ]
+        cn = Department.objects.get(code="CN")
+        for number in range(21, 26):
+            batch, created = Batch.objects.get_or_create(department=cn, number=number)
+            for course in courses:
+                BatchCourse.objects.get_or_create(batch=batch, course=course)
+            status = "Created" if created else "Already exists"
+            self.stdout.write(f"[{status}] {batch.code}")
+
+        self.stdout.write(self.style.SUCCESS("Successfully seeded batches and courses!"))
