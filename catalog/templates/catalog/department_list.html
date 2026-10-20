@@ -1,26 +1,25 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <title>รายชื่อภาควิชา</title>
-</head>
-<body>
-    <h1>รายชื่อภาควิชา</h1>
+{% extends "base.html" %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <div>{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+{% block title %}รายชื่อภาควิชา{% endblock %}
 
-    <a href="{% url 'catalog:department_create' %}">เพิ่มภาควิชา</a>
+{% block content %}
+  <h1>รายชื่อภาควิชา</h1>
 
-    <ul>
-        {% for dept in departments %}
-            <li>{{ dept.code }} - {{ dept.name_th }}</li>
-        {% empty %}
-            <li>ไม่มีข้อมูลภาควิชา</li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+  {% for message in messages %}
+    <div class="alert">{{ message }}</div>
+  {% endfor %}
+
+  <a href="{% url 'catalog:department_create' %}">เพิ่มภาควิชา</a>
+
+  <ul>
+    {% for dept in departments %}
+      <li>
+        {{ dept.code }} - {{ dept.name_th }}
+        <a href="{% url 'catalog:department_update' dept.pk %}">แก้ไข</a>
+        <a href="{% url 'catalog:department_delete' dept.pk %}">ลบ</a>
+      </li>
+    {% empty %}
+      <li>ไม่มีข้อมูลภาควิชา</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
