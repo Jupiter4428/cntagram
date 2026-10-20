@@ -1,6 +1,16 @@
+from dataclasses import dataclass
+
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.crypto import salted_hmac
+
+
+@dataclass(frozen=True)
+class LoginAttempt:
+    """Outcome of one login submission: authenticated user, throttled, or failed."""
+
+    user: object = None
+    rate_limited: bool = False
 
 
 def _login_failure_key(*, identifier, client_ip):
@@ -39,3 +49,20 @@ def clear_login_failures(*, identifier, client_ip):
     """Clear failures after a successful authentication."""
     key = _login_failure_key(identifier=identifier, client_ip=client_ip)
     cache.delete(key)
+
+
+def attempt_login(*, form, client_ip):
+    """Process a bound LoginForm: throttle first, then validate and record.
+
+    The throttle check runs before validation so a blocked identity never
+    reaches authenticate(), even with the correct password.
+    """
+    identifier = form.submitted_username
+    if is_login_rate_limited(identifier=identifier, client_ip=client_ip):
+        return LoginAttempt(rate_limited=True)
+    if form.is_valid():
+        clear_login_failures(identifier=identifier, client_ip=client_ip)
+        return LoginAttempt(user=form.get_user())
+    if form.has_credentials:
+        record_login_failure(identifier=identifier, client_ip=client_ip)
+    return LoginAttempt()

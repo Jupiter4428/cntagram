@@ -7,11 +7,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .forms import LoginForm
 from portal.permissions import is_super_admin
-from .services import (
-    clear_login_failures,
-    is_login_rate_limited,
-    record_login_failure,
-)
+from .services import attempt_login
 
 
 def _client_ip(request):
@@ -19,9 +15,9 @@ def _client_ip(request):
     return request.META.get("REMOTE_ADDR", "")
 
 
-def _safe_login_redirect(request):
+def _safe_login_redirect(request, next_url=""):
     """Return an internal `next` target, or the configured home page."""
-    redirect_to = request.POST.get("next") or request.GET.get("next")
+    redirect_to = next_url or request.GET.get("next")
     if redirect_to and url_has_allowed_host_and_scheme(
         redirect_to,
         allowed_hosts={request.get_host()},
@@ -29,6 +25,15 @@ def _safe_login_redirect(request):
     ):
         return redirect_to
     return resolve_url(settings.LOGIN_REDIRECT_URL)
+
+
+def _rate_limited_response(request, form):
+    """HTTP 429 login page with Retry-After, keeping the typed username."""
+    limited_form = LoginForm(request=request, initial={"username": form.submitted_username})
+    context = {"form": limited_form, "next": form.next_url, "rate_limited": True}
+    response = render(request, "accounts/login.html", context, status=429)
+    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+    return response
 
 
 @require_GET
@@ -47,47 +52,22 @@ def register(request):
 @require_http_methods(["GET", "POST"])
 def login(request):
     """Authenticate a user while throttling repeated failures."""
-    if request.user.is_authenticated:
-        return redirect(_safe_login_redirect(request))
-
-    if request.method == "GET":
-        return render(
-            request,
-            "accounts/login.html",
-            {"form": LoginForm(request=request), "next": request.GET.get("next", "")},
-        )
-
-    username = request.POST.get("username", "")
-    client_ip = _client_ip(request)
-    if is_login_rate_limited(identifier=username, client_ip=client_ip):
-        form = LoginForm(request=request, initial={"username": username})
-        response = render(
-            request,
-            "accounts/login.html",
-            {
-                "form": form,
-                "next": request.POST.get("next", ""),
-                "rate_limited": True,
-            },
-            status=429,
-        )
-        response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-        return response
-
-    form = LoginForm(request=request, data=request.POST)
-    if form.is_valid():
-        clear_login_failures(identifier=username, client_ip=client_ip)
-        auth_login(request, form.get_user())
-        return redirect(_safe_login_redirect(request))
-
-    if username and request.POST.get("password"):
-        record_login_failure(identifier=username, client_ip=client_ip)
-
-    return render(
-        request,
-        "accounts/login.html",
-        {"form": form, "next": request.POST.get("next", "")},
+    is_post = request.method == "POST"
+    form = LoginForm(
+        request=request,
+        data=request.POST if is_post else None,
+        initial={"next": request.GET.get("next", "")},
     )
+    if request.user.is_authenticated:
+        return redirect(_safe_login_redirect(request, form.next_url))
+    if is_post:
+        attempt = attempt_login(form=form, client_ip=_client_ip(request))
+        if attempt.user:
+            auth_login(request, attempt.user)
+            return redirect(_safe_login_redirect(request, form.next_url))
+        if attempt.rate_limited:
+            return _rate_limited_response(request, form)
+    return render(request, "accounts/login.html", {"form": form, "next": form.next_url})
 
 
 @require_POST

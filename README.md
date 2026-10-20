@@ -23,7 +23,7 @@
 - Bootstrap 5 (ผ่าน CDN) สำหรับ UI
 - SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
 - Git + GitHub (Pull Request, Projects, Actions)
-- Automated Tests ด้วย `python manage.py test`
+- Automated Tests ด้วย Django `TestCase` (`python manage.py test`) และวัด coverage ด้วย Coverage.py (เป้าหมาย ≥ 80% ตั้งแต่ Sprint 2)
 - CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2)
 
 ---
@@ -142,6 +142,12 @@ python manage.py runserver
 ```
 เข้าใช้งานที่ `http://127.0.0.1:8000/` (หน้า admin ที่ `/admin/`)
 
+### 8. รันเทสต์
+```bash
+python manage.py test             # ทุกเทสต์ ต้องผ่านหมดก่อนเริ่มงาน
+```
+Django สร้างฐานข้อมูลทดสอบแยกให้เอง ไม่แตะ `db.sqlite3` คำสั่งย่อย, coverage และวิธีเขียนเทสต์ดูที่ [Testing](./CONTRIBUTING.md#testing)
+
 ---
 
 ## ทุกครั้งที่ pull โค้ดใหม่ (Sync ก่อนเริ่มงาน)
@@ -190,7 +196,7 @@ cntagram/
 ├── views.py                      # รับ request → เรียก service/selector → response
 ├── urls.py                       # app_name + urlpatterns
 ├── admin.py
-├── tests.py  (หรือโฟลเดอร์ tests/)
+├── tests.py  (ยาวแล้วแตกเป็น tests/test_models.py, test_services.py, test_views.py ...)
 ├── migrations/                   # commit ขึ้น Git
 └── templates/<app>/              # เช่น materials/templates/materials/document_detail.html
 templates/                        # base.html และ includes/_navbar.html (ส่วนกลาง)
