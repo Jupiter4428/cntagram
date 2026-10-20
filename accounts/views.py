@@ -6,6 +6,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .forms import LoginForm
+from portal.permissions import is_super_admin
 from .services import attempt_login
 
 
@@ -38,7 +39,7 @@ def _rate_limited_response(request, form):
 @require_GET
 def home(request):
     """Public landing page for guests and authenticated users."""
-    return render(request, "accounts/home.html")
+    return render(request, "accounts/home.html", {"is_super_admin": is_super_admin(request.user)})
 
 
 @require_GET
