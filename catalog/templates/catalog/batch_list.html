@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}รายการรุ่น{% endblock %}
+
+{% block content %}
+  <h1>รายการรุ่น</h1>
+
+  {% for message in messages %}
+    <div class="alert">{{ message }}</div>
+  {% endfor %}
+
+  <a href="{% url 'catalog:batch_create' %}">เพิ่มรุ่น</a>
+
+  {% regroup batches by department as department_batches %}
+  {% for group in department_batches %}
+    <h2>{{ group.grouper }}</h2>
+    <ul>
+      {% for batch in group.list %}
+        <li>
+          {{ batch.code }} ({{ batch.course_count }} วิชา)
+          <a href="{% url 'catalog:batch_course_manage' batch.pk %}">จัดการวิชา</a>
+          <a href="{% url 'catalog:batch_delete' batch.pk %}">ลบ</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% empty %}
+    <p>ไม่มีข้อมูลรุ่น</p>
+  {% endfor %}
+{% endblock %}
