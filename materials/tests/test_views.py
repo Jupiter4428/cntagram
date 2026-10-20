@@ -36,6 +36,11 @@ class UploadViewTests(UploadTestCase):
 
         self.assertRedirects(response, f"{reverse('accounts:login')}?next={url}")
 
+    def test_navbar_links_to_upload_page(self):
+        response = self.client.get(reverse("materials:vault"))
+
+        self.assertContains(response, f'href="{reverse("materials:upload")}"')
+
     def test_form_locks_department_and_lists_only_its_batches(self):
         response = self.client.get(reverse("materials:upload"))
 

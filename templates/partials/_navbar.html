@@ -4,6 +4,7 @@
         <div class="d-flex gap-2 align-items-center">
             {% if request.user.is_authenticated %}
                 <a class="btn btn-outline-primary" href="{% url 'materials:vault' %}">Vault</a>
+                <a class="btn btn-outline-primary" href="{% url 'materials:upload' %}">Upload</a>
                 <span>{{ request.user.nickname }}</span>
                 <form method="post" action="{% url 'accounts:logout' %}">
                     {% csrf_token %}
