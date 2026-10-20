@@ -1,4 +1,7 @@
+from unittest import mock
+
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -99,6 +102,16 @@ class UploadViewTests(UploadTestCase):
         self.assertEqual(response.context["form"].non_field_errors(), ["Unsafe storage_path."])
         self.assertFalse(Document.objects.exists())
         self.assertEqual(stored_file_count(), files_before)
+
+    def test_error_without_field_names_is_shown_not_500(self):
+        """storage (ระบบภายนอก) ปฏิเสธไฟล์ด้วย ValidationError ที่ไม่มีชื่อช่อง"""
+        error = ValidationError("Storage rejected the file.")
+        with mock.patch("materials.services.default_storage.save", side_effect=error):
+            response = self.post()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"].non_field_errors(), ["Storage rejected the file."])
+        self.assertFalse(Document.objects.exists())
 
     def test_form_page_query_count_does_not_grow_with_batches(self):
         for number in range(22, 27):
