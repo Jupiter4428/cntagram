@@ -5,7 +5,7 @@ from django.db.models import Q
 from accounts.models import Role, UserRole
 
 from .models import Approval, Document
-from .selectors import approval_rule, approved_role_ids
+from .selectors import approval_rule, approved_role_ids, missing_roles
 
 
 @transaction.atomic
@@ -48,7 +48,7 @@ def review_document(*, document, approver, decision, reason=None):
     )
 
     if decision == Approval.Decision.APPROVED:
-        if _rule_satisfied(approved_ids | {approver_role.pk}, rule):
+        if not missing_roles(rule=rule, approved_ids=approved_ids | {approver_role.pk}):
             locked_doc.status = Document.Status.PUBLISHED
             locked_doc.save(update_fields=["status", "updated_at"])
     elif decision == Approval.Decision.REJECTED:
@@ -56,13 +56,6 @@ def review_document(*, document, approver, decision, reason=None):
         locked_doc.save(update_fields=["status", "updated_at"])
 
     return approval
-
-
-def _rule_satisfied(approved, rule):
-    required_ids = {role.pk for role in rule.roles}
-    if rule.require_all:
-        return required_ids <= approved
-    return bool(required_ids & approved)
 
 
 def _eligible_roles(document, approver, required_roles):

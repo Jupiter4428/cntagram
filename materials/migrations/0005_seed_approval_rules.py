@@ -5,6 +5,8 @@ doc_type ที่ seed ทีหลังให้รัน `python manage.py s
 """
 from django.db import migrations
 
+# ค่าชุดเดียวกับ materials/management/commands/seed_approval_rules.py แก้ที่หนึ่งต้องแก้อีกที่
+# (migration ห้าม import โค้ดของ app เพราะโค้ดเปลี่ยนได้ แต่ migration ต้องรันได้เหมือนเดิม)
 APPROVER_ROLES = [("moderator", "ผู้ดูแลเนื้อหา"), ("super_admin", "ผู้ดูแลระบบ")]
 MODE_BY_VAULT = {"exam": "all", "lecture": "any"}
 
