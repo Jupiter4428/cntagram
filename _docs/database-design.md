@@ -240,7 +240,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 > - ข้อสอบ (`vault = exam`) ของรุ่นที่ `batch.number ≤ system_setting.legacy_batch_max` (ค่าเริ่มต้น 23) ใช้กฎพิเศษ: super_admin คนเดียวพิจารณาได้และพอ
 > - moderator ใช้สิทธิ์ได้เฉพาะเอกสารของภาคที่ตัวเองดูแล (`user_role.department_id`) · คนที่ถือหลาย role นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน
 > - ปฏิเสธ 1 ครั้งจากฝ่ายใดก็ได้ = `rejected`
-> - หน้าจอถามสถานะได้จาก `materials.selectors.approval_progress` (เอกสารเดียว) หรือ `approval_progress_for` (หน้าคิว 3 query ไม่ว่ากี่แถว) คืน role ที่อนุมัติแล้ว / ยังรอ เอกสารที่ไม่ใช่ `pending` ได้ "ยังรอ" เป็นว่าง
+> - หน้าจอถามสถานะได้จาก `materials.selectors.approval_progress` (เอกสารเดียว) หรือ `approval_progress_for` (หน้าคิว ไม่เกิน 3 query ไม่ว่ากี่แถว) คืน role ที่อนุมัติแล้ว / ยังรอ และ `approvable` (False = ไม่ใช่ `pending` หรือกฎไม่มี role ที่อนุมัติได้)
 
 ### 3.5 การอนุมัติและการตรวจสอบ (Sprint 1–2)
 
