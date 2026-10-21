@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('mode', models.CharField(choices=[('any', 'Any one of the roles'), ('all', 'Every role')], default='any', max_length=3)),
                 ('doc_type', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='required_roles', to='materials.doctype')),
-                ('role', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='required_by', to='accounts.role')),
+                ('role', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='required_by_doc_types', to='accounts.role')),
             ],
             options={
                 'db_table': 'doc_type_required_role',

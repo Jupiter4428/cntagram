@@ -29,6 +29,8 @@ def review_document(*, document, approver, decision, reason=None):
     required_roles, require_all = _approval_rule(locked_doc)
     eligible = _eligible_roles(locked_doc, approver, required_roles)
     if not eligible:
+        if _is_legacy_exam(locked_doc):
+            raise PermissionDenied("ข้อสอบของรุ่นนี้ให้ Super Admin เท่านั้นเป็นผู้พิจารณา")
         raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
     if locked_doc.approvals.filter(approver=approver).exists():
         raise ValidationError("คุณพิจารณาเอกสารนี้ไปแล้ว")
@@ -46,7 +48,7 @@ def review_document(*, document, approver, decision, reason=None):
     )
 
     if decision == Approval.Decision.APPROVED:
-        if _rule_satisfied(locked_doc, required_roles, require_all):
+        if _rule_satisfied(approved_ids | {approver_role.pk}, required_roles, require_all):
             locked_doc.status = Document.Status.PUBLISHED
             locked_doc.save(update_fields=["status", "updated_at"])
     elif decision == Approval.Decision.REJECTED:
@@ -84,8 +86,7 @@ def _approved_role_ids(document):
     )
 
 
-def _rule_satisfied(document, required_roles, require_all):
-    approved = _approved_role_ids(document)
+def _rule_satisfied(approved, required_roles, require_all):
     required_ids = {role.pk for role in required_roles}
     if require_all:
         return required_ids <= approved

@@ -312,6 +312,11 @@ class ApprovalServiceTests(ApprovalBaseTestCase):
 class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
     """US-9: approval rules come from doc_type_required_role"""
 
+    def create_exam_of_batch(self, number):
+        batch = Batch.objects.create(department=self.dept_cn, number=number)
+        batch_course = BatchCourse.objects.create(batch=batch, course=self.course_cn)
+        return self.create_document(batch_course=batch_course, doc_type=self.doc_type_exam)
+
     def test_doc_type_without_rules_cannot_be_approved(self):
         doc_type_slide = DocType.objects.create(
             code="slide", name_th="สไลด์", vault=DocType.Vault.LECTURE
@@ -345,16 +350,12 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
         doc.refresh_from_db()
         self.assertEqual(doc.status, Document.Status.PUBLISHED)
 
-    def create_exam_of_batch(self, number):
-        batch = Batch.objects.create(department=self.dept_cn, number=number)
-        batch_course = BatchCourse.objects.create(batch=batch, course=self.course_cn)
-        return self.create_document(batch_course=batch_course, doc_type=self.doc_type_exam)
-
     def test_moderator_cannot_approve_exam_of_legacy_batch(self):
         doc = self.create_exam_of_batch(23)
 
-        with self.assertRaises(PermissionDenied):
+        with self.assertRaises(PermissionDenied) as ctx:
             review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        self.assertIn("Super Admin เท่านั้น", str(ctx.exception))
 
     def test_super_admin_alone_publishes_exam_of_legacy_batch(self):
         doc = self.create_exam_of_batch(22)
@@ -554,6 +555,21 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         doc.refresh_from_db()
         self.assertEqual(doc.status, Document.Status.PUBLISHED)
         self.assertTrue(Approval.objects.filter(document=doc, approver=self.mod_cn).exists())
+
+    def test_second_approve_of_same_exam_shows_error_instead_of_crashing(self):
+        doc = self.create_document(doc_type=self.doc_type_exam)
+        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.post(
+            reverse("materials:approval_review", kwargs={"document_id": doc.pk}),
+            {"decision": Approval.Decision.APPROVED, "reason": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "materials/approval_review.html")
+        self.assertContains(response, "คุณพิจารณาเอกสารนี้ไปแล้ว")
+        self.assertEqual(Approval.objects.filter(document=doc).count(), 1)
 
     def test_approval_review_post_reject_without_reason_shows_error(self):
         doc = self.create_document(batch_course=self.bc_cn)

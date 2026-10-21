@@ -85,7 +85,7 @@ class DocTypeRequiredRole(models.Model):
         DocType, on_delete=models.PROTECT, related_name="required_roles"
     )
     role = models.ForeignKey(
-        "accounts.Role", on_delete=models.PROTECT, related_name="required_by"
+        "accounts.Role", on_delete=models.PROTECT, related_name="required_by_doc_types"
     )
     mode = models.CharField(max_length=3, choices=Mode.choices, default=Mode.ANY)
 
