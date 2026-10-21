@@ -43,6 +43,7 @@ def approval_review(request, document_id):
         raise Http404("ไม่พบเอกสารนี้ในระบบ")
 
     form = ReviewForm(request.POST or None)
+    status = 200
     if request.method == "POST" and form.is_valid():
         try:
             review_document(
@@ -53,10 +54,17 @@ def approval_review(request, document_id):
             )
         except ValidationError as e:
             form.add_error(None, e)
+        except PermissionDenied as e:
+            # บอกเหตุผลบนฟอร์ม (เช่น ข้อสอบรุ่นเก่าให้ Super Admin เท่านั้น) แต่ยังตอบ 403
+            form.add_error(None, str(e))
+            status = 403
         else:
             messages.success(request, f"บันทึกผลการพิจารณาเอกสาร '{document.title}' เรียบร้อยแล้ว")
             return redirect("materials:approval_queue")
 
     return render(
-        request, "materials/approval_review.html", {"document": document, "form": form}
+        request,
+        "materials/approval_review.html",
+        {"document": document, "form": form},
+        status=status,
     )

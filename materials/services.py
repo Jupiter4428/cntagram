@@ -26,10 +26,11 @@ def review_document(*, document, approver, decision, reason=None):
     if locked_doc.status != Document.Status.PENDING:
         raise ValidationError("พิจารณาได้เฉพาะเอกสารที่รออนุมัติ")
 
-    required_roles, require_all = _approval_rule(locked_doc)
+    legacy = _is_legacy_exam(locked_doc)
+    required_roles, require_all = _approval_rule(locked_doc, legacy)
     eligible = _eligible_roles(locked_doc, approver, required_roles)
     if not eligible:
-        if _is_legacy_exam(locked_doc):
+        if legacy:
             raise PermissionDenied("ข้อสอบของรุ่นนี้ให้ Super Admin เท่านั้นเป็นผู้พิจารณา")
         raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
     if locked_doc.approvals.filter(approver=approver).exists():
@@ -58,14 +59,14 @@ def review_document(*, document, approver, decision, reason=None):
     return approval
 
 
-def _approval_rule(document):
+def _approval_rule(document, legacy):
     """คืน (role ที่พิจารณาได้, ต้องครบทุก role หรือไม่) จาก doc_type_required_role
 
     ยกเว้นข้อสอบรุ่นเก่า (<= legacy_batch_max) ที่ Super Admin ตัดสินคนเดียว
     """
     rules = list(document.doc_type.required_roles.select_related("role"))
     roles = [rule.role for rule in rules]
-    if _is_legacy_exam(document):
+    if legacy:
         return [role for role in roles if role.code == Role.SUPER_ADMIN], False
     return roles, any(rule.mode == DocTypeRequiredRole.Mode.ALL for rule in rules)
 
