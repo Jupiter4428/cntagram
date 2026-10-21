@@ -17,6 +17,7 @@ from .forms import ReviewForm
 from .models import Approval, DocType, DocTypeRequiredRole, Document, DocumentVersion
 from .selectors import (
     approval_progress,
+    approval_progress_for,
     get_document_for_review,
     pending_documents_for_moderator,
 )
@@ -277,6 +278,28 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
         self.assertEqual(progress.missing_roles, [self.role_super_admin])
         self.assertTrue(progress.require_all)
 
+    def test_rejected_exam_awaits_nobody(self):
+        doc = self.create_document(doc_type=self.doc_type_exam)
+        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.super_admin, decision=Approval.Decision.REJECTED, reason="ละเมิดลิขสิทธิ์"
+        )
+        doc.refresh_from_db()
+
+        progress = approval_progress(document=doc)
+
+        self.assertEqual(progress.approved_roles, [self.role_moderator])
+        self.assertEqual(progress.missing_roles, [])
+
+    def test_doc_type_without_rules_awaits_nobody(self):
+        doc_type_slide = DocType.objects.create(code="slide", name_th="สไลด์", vault=DocType.Vault.LECTURE)
+        doc = self.create_document(doc_type=doc_type_slide)
+
+        progress = approval_progress(document=doc)
+
+        self.assertEqual(progress.approved_roles, [])
+        self.assertEqual(progress.missing_roles, [])
+
     def test_pending_sheet_awaits_either_role(self):
         doc = self.create_document(doc_type=self.doc_type_summary)
 
@@ -311,6 +334,22 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
         # rules, legacy_batch_max, approvals
         with self.assertNumQueries(3):
             approval_progress(document=doc)
+
+
+class ApprovalProgressForQueueTests(ApprovalBaseTestCase):
+    def test_queue_progress_matches_single_document_progress_in_three_queries(self):
+        exam = self.create_document(doc_type=self.doc_type_exam)
+        review_document(document=exam, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        self.create_document(doc_type=self.doc_type_summary)
+        self.create_exam_of_batch(22)
+        documents = list(pending_documents_for_moderator(user=self.super_admin))
+
+        with self.assertNumQueries(3):
+            progress = approval_progress_for(documents=documents)
+
+        self.assertEqual(
+            progress, {d.pk: approval_progress(document=d) for d in documents}
+        )
 
 
 class ApprovalServiceTests(ApprovalBaseTestCase):
