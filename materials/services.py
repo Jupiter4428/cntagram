@@ -3,9 +3,9 @@ from django.db import transaction
 from django.db.models import Q
 
 from accounts.models import Role, UserRole
-from catalog.models import SystemSetting
 
-from .models import Approval, DocType, DocTypeRequiredRole, Document
+from .models import Approval, Document
+from .selectors import approval_rule, approved_role_ids
 
 
 @transaction.atomic
@@ -26,18 +26,17 @@ def review_document(*, document, approver, decision, reason=None):
     if locked_doc.status != Document.Status.PENDING:
         raise ValidationError("พิจารณาได้เฉพาะเอกสารที่รออนุมัติ")
 
-    legacy = _is_legacy_exam(locked_doc)
-    required_roles, require_all = _approval_rule(locked_doc, legacy)
-    eligible = _eligible_roles(locked_doc, approver, required_roles)
+    rule = approval_rule(document=locked_doc)
+    eligible = _eligible_roles(locked_doc, approver, rule.roles)
     if not eligible:
-        if legacy:
+        if rule.legacy:
             raise PermissionDenied("ข้อสอบของรุ่นนี้ให้ Super Admin เท่านั้นเป็นผู้พิจารณา")
         raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
     if locked_doc.approvals.filter(approver=approver).exists():
         raise ValidationError("คุณพิจารณาเอกสารนี้ไปแล้ว")
 
     # คนที่มีหลาย role ให้นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน ไม่งั้นกฎ all จะไม่มีวันครบ
-    approved_ids = _approved_role_ids(locked_doc)
+    approved_ids = approved_role_ids(document=locked_doc)
     approver_role = next((r for r in eligible if r.pk not in approved_ids), eligible[0])
 
     approval = Approval.objects.create(
@@ -49,7 +48,7 @@ def review_document(*, document, approver, decision, reason=None):
     )
 
     if decision == Approval.Decision.APPROVED:
-        if _rule_satisfied(approved_ids | {approver_role.pk}, required_roles, require_all):
+        if _rule_satisfied(approved_ids | {approver_role.pk}, rule):
             locked_doc.status = Document.Status.PUBLISHED
             locked_doc.save(update_fields=["status", "updated_at"])
     elif decision == Approval.Decision.REJECTED:
@@ -59,37 +58,9 @@ def review_document(*, document, approver, decision, reason=None):
     return approval
 
 
-def _approval_rule(document, legacy):
-    """คืน (role ที่พิจารณาได้, ต้องครบทุก role หรือไม่) จาก doc_type_required_role
-
-    ยกเว้นข้อสอบรุ่นเก่า (<= legacy_batch_max) ที่ Super Admin ตัดสินคนเดียว
-    """
-    rules = list(document.doc_type.required_roles.select_related("role"))
-    roles = [rule.role for rule in rules]
-    if legacy:
-        return [role for role in roles if role.code == Role.SUPER_ADMIN], False
-    return roles, any(rule.mode == DocTypeRequiredRole.Mode.ALL for rule in rules)
-
-
-def _is_legacy_exam(document):
-    legacy_max = SystemSetting.get_int(SystemSetting.LEGACY_BATCH_MAX, 23)
-    return (
-        document.doc_type.vault == DocType.Vault.EXAM
-        and document.batch_course.batch.number <= legacy_max
-    )
-
-
-def _approved_role_ids(document):
-    return set(
-        document.approvals.filter(decision=Approval.Decision.APPROVED).values_list(
-            "approver_role_id", flat=True
-        )
-    )
-
-
-def _rule_satisfied(approved, required_roles, require_all):
-    required_ids = {role.pk for role in required_roles}
-    if require_all:
+def _rule_satisfied(approved, rule):
+    required_ids = {role.pk for role in rule.roles}
+    if rule.require_all:
         return required_ids <= approved
     return bool(required_ids & approved)
 
