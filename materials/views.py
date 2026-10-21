@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods
@@ -43,16 +43,28 @@ def approval_review(request, document_id):
         raise Http404("ไม่พบเอกสารนี้ในระบบ")
 
     form = ReviewForm(request.POST or None)
+    status = 200
     if request.method == "POST" and form.is_valid():
-        review_document(
-            document=document,
-            approver=request.user,
-            decision=form.cleaned_data["decision"],
-            reason=form.cleaned_data.get("reason"),
-        )
-        messages.success(request, f"บันทึกผลการพิจารณาเอกสาร '{document.title}' เรียบร้อยแล้ว")
-        return redirect("materials:approval_queue")
+        try:
+            review_document(
+                document=document,
+                approver=request.user,
+                decision=form.cleaned_data["decision"],
+                reason=form.cleaned_data.get("reason"),
+            )
+        except ValidationError as e:
+            form.add_error(None, e)
+        except PermissionDenied as e:
+            # บอกเหตุผลบนฟอร์ม (เช่น ข้อสอบรุ่นเก่าให้ Super Admin เท่านั้น) แต่ยังตอบ 403
+            form.add_error(None, str(e))
+            status = 403
+        else:
+            messages.success(request, f"บันทึกผลการพิจารณาเอกสาร '{document.title}' เรียบร้อยแล้ว")
+            return redirect("materials:approval_queue")
 
     return render(
-        request, "materials/approval_review.html", {"document": document, "form": form}
+        request,
+        "materials/approval_review.html",
+        {"document": document, "form": form},
+        status=status,
     )
