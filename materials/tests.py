@@ -1,5 +1,7 @@
+from importlib import import_module
 from io import StringIO
 
+from django.apps import apps as django_apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.management import call_command
@@ -13,7 +15,11 @@ from catalog.models import Batch, BatchCourse, Course, Department, SystemSetting
 
 from .forms import ReviewForm
 from .models import Approval, DocType, DocTypeRequiredRole, Document, DocumentVersion
-from .selectors import get_document_for_review, pending_documents_for_moderator
+from .selectors import (
+    approval_progress,
+    get_document_for_review,
+    pending_documents_for_moderator,
+)
 from .services import review_document
 
 User = get_user_model()
@@ -258,6 +264,55 @@ class ApprovalSelectorTests(ApprovalBaseTestCase):
             get_document_for_review(document_id=doc_cn.pk, user=self.normal_student)
 
 
+class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
+    """US-9: who has approved and who is still awaited, for the FE"""
+
+    def test_exam_approved_by_moderator_awaits_super_admin(self):
+        doc = self.create_document(doc_type=self.doc_type_exam)
+        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+
+        progress = approval_progress(document=doc)
+
+        self.assertEqual(progress.approved_roles, [self.role_moderator])
+        self.assertEqual(progress.missing_roles, [self.role_super_admin])
+        self.assertTrue(progress.require_all)
+
+    def test_pending_sheet_awaits_either_role(self):
+        doc = self.create_document(doc_type=self.doc_type_summary)
+
+        progress = approval_progress(document=doc)
+
+        self.assertEqual(progress.approved_roles, [])
+        self.assertCountEqual(progress.missing_roles, [self.role_moderator, self.role_super_admin])
+        self.assertFalse(progress.require_all)
+
+    def test_sheet_approved_by_one_role_awaits_nobody(self):
+        doc = self.create_document(doc_type=self.doc_type_summary)
+        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+
+        progress = approval_progress(document=doc)
+
+        self.assertEqual(progress.approved_roles, [self.role_moderator])
+        self.assertEqual(progress.missing_roles, [])
+
+    def test_legacy_exam_awaits_super_admin_only(self):
+        doc = self.create_exam_of_batch(22)
+
+        progress = approval_progress(document=doc)
+
+        self.assertEqual(progress.missing_roles, [self.role_super_admin])
+        self.assertFalse(progress.require_all)
+
+    def test_exam_progress_uses_three_queries(self):
+        doc = Document.objects.select_related("doc_type", "batch_course__batch").get(
+            pk=self.create_document(doc_type=self.doc_type_exam).pk
+        )
+
+        # rules, legacy_batch_max, approvals
+        with self.assertNumQueries(3):
+            approval_progress(document=doc)
+
+
 class ApprovalServiceTests(ApprovalBaseTestCase):
     def test_uploader_cannot_approve_their_own_document(self):
         # Even if uploader somehow also has moderator role for that department
@@ -481,6 +536,27 @@ class SeedApprovalRulesCommandTests(TestCase):
 
         self.assertIn("seed_materials", out.getvalue())
         self.assertFalse(DocTypeRequiredRole.objects.exists())
+
+
+class SeedApprovalRulesMigrationTests(TestCase):
+    """0005 seeds rules for doc types already in the database when it is migrated"""
+
+    def test_existing_doc_types_get_rules_by_vault(self):
+        DocType.objects.create(code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM)
+        DocType.objects.create(code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE)
+        migration = import_module("materials.migrations.0005_seed_approval_rules")
+
+        migration.seed_rules(django_apps, None)
+
+        self.assertEqual(
+            set(DocTypeRequiredRole.objects.values_list("doc_type__code", "role__code", "mode")),
+            {
+                ("exam", Role.MODERATOR, "all"),
+                ("exam", Role.SUPER_ADMIN, "all"),
+                ("summary", Role.MODERATOR, "any"),
+                ("summary", Role.SUPER_ADMIN, "any"),
+            },
+        )
 
 
 class ApprovalViewsTests(ApprovalBaseTestCase):
