@@ -277,6 +277,7 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
         self.assertEqual(progress.approved_roles, [self.role_moderator])
         self.assertEqual(progress.missing_roles, [self.role_super_admin])
         self.assertTrue(progress.require_all)
+        self.assertTrue(progress.approvable)
 
     def test_rejected_exam_awaits_nobody(self):
         doc = self.create_document(doc_type=self.doc_type_exam)
@@ -299,6 +300,7 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
 
         self.assertEqual(progress.approved_roles, [])
         self.assertEqual(progress.missing_roles, [])
+        self.assertFalse(progress.approvable)
 
     def test_pending_sheet_awaits_either_role(self):
         doc = self.create_document(doc_type=self.doc_type_summary)
@@ -337,18 +339,23 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
 
 
 class ApprovalProgressForQueueTests(ApprovalBaseTestCase):
-    def test_queue_progress_matches_single_document_progress_in_three_queries(self):
+    def test_queue_progress_of_every_document_in_three_queries(self):
         exam = self.create_document(doc_type=self.doc_type_exam)
         review_document(document=exam, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
-        self.create_document(doc_type=self.doc_type_summary)
-        self.create_exam_of_batch(22)
+        sheet = self.create_document(doc_type=self.doc_type_summary)
+        legacy = self.create_exam_of_batch(22)
         documents = list(pending_documents_for_moderator(user=self.super_admin))
 
         with self.assertNumQueries(3):
             progress = approval_progress_for(documents=documents)
 
         self.assertEqual(
-            progress, {d.pk: approval_progress(document=d) for d in documents}
+            {pk: (p.approved_roles, p.missing_roles) for pk, p in progress.items()},
+            {
+                exam.pk: ([self.role_moderator], [self.role_super_admin]),
+                sheet.pk: ([], [self.role_moderator, self.role_super_admin]),
+                legacy.pk: ([], [self.role_super_admin]),
+            },
         )
 
 
