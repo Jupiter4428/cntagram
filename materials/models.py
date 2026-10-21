@@ -68,6 +68,43 @@ class DocType(models.Model):
         return self.code
 
 
+class DocTypeRequiredRole(models.Model):
+    """กฎอนุมัติ: เอกสารประเภทนี้ต้องได้รับอนุมัติจาก role ใด (US-9)
+
+    mode = any: role ใดก็ได้ 1 คนพอ (ชีทสรุป/สไลด์)
+    mode = all: ต้องครบทุก role ที่ระบุ (ข้อสอบ: moderator และ super_admin)
+    ทุกแถวของ doc_type เดียวกันควรใช้ mode เดียวกัน ถ้าปนกันจะถือว่าเป็น all
+    ประเภทที่ไม่มีแถวเลยจะไม่มีใครอนุมัติได้
+    """
+
+    class Mode(models.TextChoices):
+        ANY = "any", "Any one of the roles"
+        ALL = "all", "Every role"
+
+    doc_type = models.ForeignKey(
+        DocType, on_delete=models.PROTECT, related_name="required_roles"
+    )
+    role = models.ForeignKey(
+        "accounts.Role", on_delete=models.PROTECT, related_name="required_by"
+    )
+    mode = models.CharField(max_length=3, choices=Mode.choices, default=Mode.ANY)
+
+    class Meta:
+        db_table = "doc_type_required_role"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["doc_type", "role"], name="uq_doctype_required_role"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(mode__in=["any", "all"]),
+                name="ck_doctype_required_role_mode",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.doc_type.code} needs {self.role.code} ({self.mode})"
+
+
 class ExamPeriod(models.Model):
     """midterm, final"""
 
