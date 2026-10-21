@@ -960,7 +960,7 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) กฎอนุมัติ (US-9) seed ด้วย `python manage.py seed_approval_rules` หลังมี `doc_type` แล้ว (ข้อสอบต้องทั้ง moderator และ super_admin ชีทใช้คนใดคนหนึ่ง รันซ้ำได้ ถ้าไม่ seed จะไม่มีใครอนุมัติได้ ส่วน `doc_type` ที่มีอยู่แล้วตอน `migrate` ได้กฎจาก migration `0005` อัตโนมัติ) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน (seed ภาควิชาครบชุดเป็นงานของ US-3) seed `role` เป็นงานย่อยของ US-3 และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
 
 ### Migration ที่มีอยู่
-- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0003, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
+- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0003, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
   ```

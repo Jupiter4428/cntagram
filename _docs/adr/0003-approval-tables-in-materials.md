@@ -10,7 +10,7 @@ ADR 0001 ให้ตกลงว่าตาราง Sprint 2 อยู่ app
 ทั้งสองตารางอ้าง `document` / `doc_type` (อยู่ใน `materials`) และ `role` (อยู่ใน `accounts`) และกฎ "ครบตามกฎแล้วเปลี่ยนเป็น `published`" ต้องเขียน `approval` กับ `document.status` ใน transaction เดียวกัน
 
 ## Decision
-`Approval` และ `DocTypeRequiredRole` อยู่ใน `materials/models.py` กฎอนุมัติอยู่ใน `materials/services.py` (`review_document`) และ `materials/selectors.py` (`approval_rule`, `approval_progress`)
+`Approval` และ `DocTypeRequiredRole` อยู่ใน `materials/models.py` กฎอนุมัติ (เขียน) อยู่ใน `materials/services.py` และการอ่านกฎ/สถานะอนุมัติอยู่ใน `materials/selectors.py`
 
 ## Alternatives considered
 - **app ใหม่ `approvals`**: แยกชัด แต่ `approvals` ต้อง import `materials` (เพื่อเปลี่ยน `document.status`) และ `materials` ไม่ควร import กลับ ได้ app ที่เล็กมากและทุก story อนุมัติต้องแก้สอง app
