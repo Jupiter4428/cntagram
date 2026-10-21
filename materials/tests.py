@@ -144,6 +144,12 @@ class ApprovalBaseTestCase(TestCase):
         return doc
 
 
+    def create_exam_of_batch(self, number):
+        batch = Batch.objects.create(department=self.dept_cn, number=number)
+        batch_course = BatchCourse.objects.create(batch=batch, course=self.course_cn)
+        return self.create_document(batch_course=batch_course, doc_type=self.doc_type_exam)
+
+
 class ApprovalModelTests(ApprovalBaseTestCase):
     def test_approval_creation_and_clean_validation(self):
         doc = self.create_document()
@@ -311,11 +317,6 @@ class ApprovalServiceTests(ApprovalBaseTestCase):
 
 class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
     """US-9: approval rules come from doc_type_required_role"""
-
-    def create_exam_of_batch(self, number):
-        batch = Batch.objects.create(department=self.dept_cn, number=number)
-        batch_course = BatchCourse.objects.create(batch=batch, course=self.course_cn)
-        return self.create_document(batch_course=batch_course, doc_type=self.doc_type_exam)
 
     def test_doc_type_without_rules_cannot_be_approved(self):
         doc_type_slide = DocType.objects.create(
@@ -570,6 +571,18 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         self.assertTemplateUsed(response, "materials/approval_review.html")
         self.assertContains(response, "คุณพิจารณาเอกสารนี้ไปแล้ว")
         self.assertEqual(Approval.objects.filter(document=doc).count(), 1)
+
+    def test_moderator_posting_on_legacy_exam_is_forbidden_and_told_why(self):
+        doc = self.create_exam_of_batch(22)
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.post(
+            reverse("materials:approval_review", kwargs={"document_id": doc.pk}),
+            {"decision": Approval.Decision.APPROVED, "reason": ""},
+        )
+
+        self.assertContains(response, "Super Admin เท่านั้น", status_code=403)
+        self.assertFalse(Approval.objects.filter(document=doc).exists())
 
     def test_approval_review_post_reject_without_reason_shows_error(self):
         doc = self.create_document(batch_course=self.bc_cn)
