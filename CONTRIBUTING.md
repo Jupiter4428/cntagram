@@ -263,7 +263,7 @@ git push -u origin feature/issue-29-upload-sheet
 #### Story ที่มีทั้งงาน Backend และ Frontend
 issue ส่วนใหญ่มีทั้งงาน Frontend และ Backend ถ้างานยังไม่เสร็จทั้งสองฝั่ง ให้แยกเปิด PR เป็นฝั่ง Frontend กับ Backend ไม่ต้องรอให้เสร็จพร้อมกัน ฝั่งไหนเสร็จก่อนเปิด PR ก่อนได้เลย เหตุผลคือ PR ของแต่ละฝั่งเล็กลงและรีวิวง่ายขึ้น เพราะผู้ตรวจดู logic ฝั่ง server กับหน้าตาฝั่ง UI แยกกันได้ และฝั่งที่เสร็จแล้วไม่ต้องค้าง branch ไว้รออีกฝั่ง
 - **Backend เปิด PR ก่อน** (เพราะเป็นตัวกำหนด view/URL ที่ฝั่ง Frontend ใช้) เขียน **`Refs #29`** ไม่ใช่ `Closes` เพื่อให้ issue ยังเปิดอยู่ template ที่ใส่มาเป็นแค่โครงพื้นฐานให้ view และ test ทำงานได้
-- **Frontend แตก branch ของตัวเองจาก `develop` หลัง PR ของ Backend merge แล้ว** (ไม่ push ต่อบน branch ของคนอื่น) แล้วเปิด PR แยกโดยเขียน **`Closes #29`**
+- **Frontend แตก branch ของตัวเองจาก `develop` หลัง PR ของ Backend merge แล้ว** (ไม่ push ต่อบน branch ของคนอื่น) แล้วเปิด PR แยกโดยเขียน **`Closes #29`** PR นี้เป็นขั้น**วาดเส้น**ตาม[กติกา template](#templates) ส่วนขั้น**ลงสี**ทำใน issue แยก ไม่ต้องรอให้เสร็จก่อนปิด story ([ADR 0004](./_docs/adr/0004-own-css-and-sketch-first-templates.md))
 - ใน issue ทำ checklist ของแต่ละฝั่งไว้ เช่น `- [ ] Backend #39` / `- [ ] Frontend #<เลข PR>` ทุกคนจะได้เห็นว่ายังเหลืออะไร
 - Story ยังไม่ **Done** จนกว่า PR ของทั้งสองฝั่งจะ merge ครบ (การ์ดอยู่ **In Review** / **In Progress** ไปก่อน)
 - ถ้า story เล็ก (เช่น เพิ่มฟิลด์เดียวแล้วแสดงบนหน้า) หรือคนเดียวทำทั้งสองฝั่งแล้วเสร็จในวันสองวัน รวมเป็น PR เดียวใส่ `Closes #29` ได้
@@ -768,7 +768,10 @@ urlpatterns = [
 - **ห้ามใช้ `|safe` กับข้อมูลที่มาจากผู้ใช้** (คอมเมนต์, ชื่อ, ค่าจากฟอร์ม) เพราะปิดระบบกัน XSS
 - ไฟล์ static ใช้ `{% load static %}` + `{% static 'css/app.css' %}` ไม่ hardcode path
 - ใช้ `{% for %}...{% empty %}...{% endfor %}` แทนการครอบ `{% if %}` เอง
-- UI ใช้ **Bootstrap 5** (Grid 12 คอลัมน์: `col-12 col-md-6 col-lg-4`), ใส่ class ให้ widget ของฟอร์มผ่าน `attrs` หรือ `django-crispy-forms`
+- **ไม่ใช้ Bootstrap** หน้าตาทั้งหมดมาจาก CSS ของทีมใน `static/css/retro.css` ไฟล์เดียว ([ADR 0004](./_docs/adr/0004-own-css-and-sketch-first-templates.md))
+- ทำ template เป็นสองขั้น เหมือนวาดรูปก่อนแล้วค่อยระบายสี
+  - **วาดเส้น** (ทำพร้อมฟีเจอร์): ใช้ tag ตรงความหมาย (`<form>`, `<label>`, `<button>`, `<table>`, `<nav>`, `<h1>`–`<h3>`) ไม่ใช้ `<div>` แทนปุ่ม ตั้ง class ตามความหมาย เช่น `doc-card`, `field-error`, `status-pending` ไม่ตั้งตามหน้าตาอย่าง `red-box` ห้ามใส่ `style="..."` ห้ามใช้ class ของ Bootstrap และไม่แก้ `retro.css` เอง พฤติกรรมต้องครบตั้งแต่ขั้นนี้ ได้แก่ error ใต้ช่องของฟอร์ม, `{% csrf_token %}`, escape output, ซ่อนปุ่มที่ไม่มีสิทธิ์ และหน้า 403 และหน้าต้องไม่ล้นจอกว้าง ~360px
+  - **ลงสี** (issue แยก): เขียน CSS ให้ class จากขั้นวาดเส้นใน `retro.css` แตะ HTML ให้น้อยที่สุด เทสต์เดิมต้องผ่านโดยไม่ต้องแก้ ถ้าขั้นวาดเส้นต้องการ style ใหม่ ให้เปิด issue หรือ comment ถึงเจ้าของ `retro.css` แทนการแก้เอง
 
 ### ความปลอดภัย (สรุป)
 | ภัย | วิธีป้องกันในโปรเจคเรา |
@@ -874,7 +877,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 4. ใช้เวลากับขั้น Requirements/Design (AC ที่ชัดสั่ง AI ได้แม่นกว่า) และขั้น Test/Review ให้มากขึ้น
 5. ตั้งไฟล์กฎของเครื่องมือที่ใช้ (เช่น `.cursorrules`) ในโปรเจค เพื่อให้ AI ทำตามมาตรฐานเดียวกับทีม ตัวอย่าง:
    ```
-   - Python 3.12, Django 6.1, Function-Based Views เป็นหลัก, Bootstrap 5
+   - Python 3.12, Django 6.1, Function-Based Views เป็นหลัก, CSS ของทีมใน retro.css (ไม่ใช้ Bootstrap)
    - business logic ใน services.py (@transaction.atomic), query ใน selectors.py, view บาง
    - กัน N+1 ด้วย select_related/prefetch_related, ห้าม import ย้อนทิศ catalog <- accounts <- materials
    - ทุก Model ต้องมี __str__ และ class Meta, ห้าม side-effect ภายนอกใน save()

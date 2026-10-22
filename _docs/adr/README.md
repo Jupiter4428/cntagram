@@ -7,6 +7,7 @@
 |---|---|---|
 | [0001](./0001-modular-monolith-and-app-boundaries.md) | Modular Monolith และขอบเขต Django Apps | Accepted |
 | [0002](./0002-service-layer-and-selectors.md) | Service Layer และ Selectors | Accepted |
+| [0004](./0004-own-css-and-sketch-first-templates.md) | ใช้ CSS ของทีมแทน Bootstrap และทำ template แบบวาดเส้นก่อนลงสี | Proposed |
 
 ## กติกา
 - เปิด ADR ใหม่เมื่อการตัดสินใจ**เปลี่ยนยาก**ภายหลัง หรือทีมเถียงเรื่องเดิมซ้ำ (เช่น เพิ่ม app ใหม่, เลือกวิธีเก็บไฟล์, เลือกบริการส่งอีเมล)
