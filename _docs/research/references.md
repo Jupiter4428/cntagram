@@ -33,7 +33,6 @@
 
 - **[DJANGODOCS]** Django Software Foundation. *Django Documentation* (version 6.1). https://docs.djangoproject.com/
 - **[PYTHONDOCS]** Python Software Foundation. *Python 3 Documentation.* https://docs.python.org/3/
-- **[BOOTSTRAP]** Bootstrap Team. *Bootstrap 5 Documentation.* https://getbootstrap.com/docs/5.3/
 - **[POSTGRES]** The PostgreSQL Global Development Group. *PostgreSQL Documentation.* https://www.postgresql.org/docs/
 
 ## ความปลอดภัยและกฎหมาย

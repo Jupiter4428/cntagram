@@ -142,7 +142,7 @@ UNF (ตารางเดียวจากตัวอย่างใน SRS v
 |---|---|---|
 | ภาษา | Python | 3.12+ |
 | Web framework | Django | 6.1.2 |
-| UI | Bootstrap (CDN) | 5 |
+| UI | HTML + CSS ของทีม (`static/css/retro.css`) | - |
 | ฐานข้อมูล | SQLite (dev), PostgreSQL (production) | **[เติม: เวอร์ชัน PostgreSQL]** |
 | ไลบรารีอื่น | Pillow 12.3.0, python-decouple 3.8 | |
 | Version control / PM | Git, GitHub (Issues, Projects, Pull Request, Actions) | |

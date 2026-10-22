@@ -32,7 +32,7 @@
 - **Custom User Model** (`AbstractBaseUser` + `PermissionsMixin`) ต้องตั้ง `AUTH_USER_MODEL` ก่อน migrate ครั้งแรก
 - Migrations สำหรับจัดการการเปลี่ยนแปลง schema แบบมีเวอร์ชัน
 
-**การนำมาใช้ในโครงงาน:** Django 6.1, ใช้ FBV เป็นหลัก, custom User ที่ล็อกอินด้วยอีเมลแทน username และดึงรหัสนักศึกษาจากอีเมลอัตโนมัติ, UI ด้วย Bootstrap 5
+**การนำมาใช้ในโครงงาน:** Django 6.1, ใช้ FBV เป็นหลัก, custom User ที่ล็อกอินด้วยอีเมลแทน username และดึงรหัสนักศึกษาจากอีเมลอัตโนมัติ, UI ด้วย HTML + CSS ที่ทีมเขียนเอง (ไม่ใช้ Bootstrap)
 
 ## 2.3 สถาปัตยกรรมซอฟต์แวร์
 

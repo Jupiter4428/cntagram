@@ -20,7 +20,7 @@
 ## Tech Stack
 - Python 3.12+
 - Django 6.1 (ตาม `requirements.txt`, สถาปัตยกรรม MVT, ใช้ Function-Based Views เป็นหลัก) — models ใช้ `CheckConstraint(condition=...)` จึงต้องเป็น Django 5.1 ขึ้นไป
-- Bootstrap 5 (ผ่าน CDN) สำหรับ UI
+- HTML + CSS ของทีม (`static/css/retro.css`) สำหรับ UI ไม่ใช้ Bootstrap ([ADR 0004](./_docs/adr/0004-own-css-and-sketch-first-templates.md))
 - SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
 - Git + GitHub (Pull Request, Projects, Actions)
 - Automated Tests ด้วย Django `TestCase` (`python manage.py test`) และวัด coverage ด้วย Coverage.py (เป้าหมาย ≥ 80% ตั้งแต่ Sprint 2)
@@ -34,7 +34,7 @@
 
 ```mermaid
 flowchart LR
-    U["👤 ผู้ใช้<br/>Web Browser<br/>HTML + Bootstrap 5"]
+    U["👤 ผู้ใช้<br/>Web Browser<br/>HTML + CSS ของทีม"]
     subgraph APP["Django 6.x Application (Modular Monolith)"]
         V["views.py / forms.py"]
         SV["services.py / selectors.py"]
