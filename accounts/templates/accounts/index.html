@@ -151,12 +151,4 @@
     </div>
 </section>
 
-{% if is_super_admin %}
-    <h2>Admin</h2>
-    <ul>
-        <li><a href="{% url 'catalog:department_list' %}">จัดการภาควิชา</a></li>
-        <li><a href="{% url 'catalog:batch_list' %}">จัดการรุ่นและวิชาในรุ่น</a></li>
-        <li><a href="{% url 'catalog:course_list' %}">จัดการรายวิชา</a></li>
-    </ul>
-{% endif %}
 {% endblock %}

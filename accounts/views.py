@@ -43,8 +43,11 @@ def _rate_limited_response(request, form):
 
 @require_GET
 def home(request):
-    """Public landing page for guests and authenticated users."""
-    return render(request, "accounts/home.html", {"is_super_admin": is_super_admin(request.user)})
+    """Public landing page; Super Admins get their own admin index."""
+    if is_super_admin(request.user):
+        dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
+        return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
+    return render(request, "accounts/index.html")
 
 
 @require_GET
