@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% comment %}หน้าของ Super Admin: base.html เดิม + admin.css + แถบเมนูผู้ดูแลระบบทางซ้าย{% endcomment %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}
+
+{% block layout_class %}site-layout--admin{% endblock %}
+
+{% block sidebar %}
+    <aside class="site-sidebar" aria-label="เมนูผู้ดูแลระบบ">
+        {% include "includes/_admin_sidebar.html" %}
+        {% block admin_sidebar_extra %}{% endblock %}
+    </aside>
+{% endblock %}

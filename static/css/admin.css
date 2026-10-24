@@ -1,0 +1,383 @@
+/* หน้า Dashboard ของ Super Admin: ใช้ร่วมกับ retro.css (โหลดผ่าน block extra_css) */
+.site-layout--admin {
+    grid-template-columns: minmax(235px, 265px) minmax(0, 1fr);
+    grid-template-areas: "sidebar content";
+    --slice-1: #3f9f6b;
+    --slice-2: #7b5cf0;
+    --slice-3: #4d7296;
+    --slice-4: #d39b1f;
+    --slice-5: #c2477a;
+}
+
+.site-layout--admin .site-content {
+    display: grid;
+    gap: 0.72rem;
+    align-content: start;
+}
+
+/* ---------- Sidebar menu ---------- */
+.admin-menu__label {
+    margin: 0.6rem 0 0.25rem;
+    color: #653054;
+    font-family: "Courier New", monospace;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admin-menu__label:first-child { margin-top: 0; }
+
+.admin-menu__link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.25rem;
+    padding: 0.4rem 0.55rem;
+    color: var(--panel-ink);
+    font-size: 0.84rem;
+    text-decoration: none;
+    background: rgb(255 255 255 / 45%);
+    border: 1px solid rgb(78 91 119 / 20%);
+    border-radius: 4px;
+}
+
+.admin-menu__link > span { width: 1rem; color: var(--tse-red); text-align: center; }
+
+.admin-menu__link:hover,
+.admin-menu__link:focus-visible {
+    color: var(--panel-ink);
+    background: #fff;
+    border-color: var(--tse-red);
+}
+
+.admin-menu__link.is-active {
+    color: #fff;
+    font-weight: 700;
+    background: linear-gradient(100deg, var(--tse-red), #763158);
+    border-color: var(--tse-red);
+}
+
+.admin-menu__link.is-active > span { color: var(--tse-yellow); }
+
+.admin-account {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-account .profile-bubble { flex-shrink: 0; margin: 0; }
+
+/* ผู้ใช้ใหม่ วัน/สัปดาห์/เดือน/ปี/ทั้งหมด (ใต้การ์ดชื่อผู้ดูแล) */
+.admin-new-users {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin: 0;
+}
+
+.admin-new-users > div {
+    padding: 0.4rem 0.55rem;
+    background: rgb(255 255 255 / 50%);
+    border: 1px solid rgb(78 91 119 / 20%);
+    border-radius: 4px;
+}
+
+.admin-new-users dt {
+    color: #653054;
+    font-family: "Courier New", monospace;
+    font-size: 0.68rem;
+    font-weight: 900;
+}
+
+.admin-new-users dd {
+    margin: 0;
+    color: var(--panel-ink);
+    font-family: var(--display-font);
+    font-size: 1.3rem;
+    line-height: 1.2;
+}
+
+.admin-new-users__all {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: baseline;
+    justify-content: space-between;
+    color: #fff;
+}
+
+.admin-new-users > .admin-new-users__all {
+    background: linear-gradient(100deg, var(--tse-red), #763158);
+    border-color: var(--tse-red);
+}
+
+.admin-new-users__all dt { color: var(--tse-yellow); }
+.admin-new-users__all dd { color: #fff; }
+
+/* ---------- Stat cards ---------- */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.72rem;
+}
+
+.admin-stat {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.8rem 0.9rem;
+    color: var(--panel-ink);
+    text-decoration: none;
+    border-top: 4px solid var(--accent);
+    transition: transform 0.15s ease;
+}
+
+a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
+
+.admin-stat__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 0.35rem;
+    color: #fff;
+    font-weight: 900;
+    background: var(--accent);
+    border: 2px outset rgb(255 255 255 / 60%);
+    border-radius: 4px;
+}
+
+.admin-stat__value { font-family: var(--display-font); font-size: 1.7rem; line-height: 1.1; }
+.admin-stat__label { color: #505872; font-size: 0.78rem; }
+.admin-stat--red { --accent: var(--tse-red); }
+.admin-stat--violet { --accent: #6b5bb5; }
+.admin-stat--blue { --accent: #4d7296; }
+.admin-stat--green { --accent: #3f9f6b; }
+.admin-stat--amber { --accent: #d39b1f; }
+
+/* ---------- Rows ---------- */
+.admin-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 0.72rem;
+    align-items: start;
+}
+
+.admin-row .glass-module + .glass-module { margin-top: 0; }
+
+/* ---------- Bar chart (CSS ล้วน) ---------- */
+.admin-bars {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0.6rem;
+    height: 210px;
+    padding-top: 0.5rem;
+}
+
+.admin-bars__col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.admin-bars__count { font-size: 0.75rem; font-weight: 700; }
+
+.admin-bars__bar {
+    width: min(42px, 100%);
+    min-height: 3px;
+    max-height: calc(100% - 2.6rem);
+    background: linear-gradient(180deg, #4d7296, #a9d8ff);
+    border: 1px solid rgb(37 40 58 / 35%);
+    border-radius: 3px 3px 0 0;
+}
+
+.admin-bars__month {
+    width: 100%;
+    margin-top: 0.3rem;
+    padding-top: 0.25rem;
+    color: #505872;
+    font-size: 0.7rem;
+    text-align: center;
+    border-top: 1px solid rgb(37 40 58 / 30%);
+}
+
+/* ---------- Donut ---------- */
+.admin-donut {
+    width: min(170px, 100%);
+    aspect-ratio: 1;
+    margin: 0.25rem auto 0.9rem;
+    border-radius: 50%;
+    -webkit-mask: radial-gradient(circle, transparent 54%, #000 55%);
+    mask: radial-gradient(circle, transparent 54%, #000 55%);
+}
+
+.admin-legend { margin: 0; padding: 0; list-style: none; }
+.admin-legend li { display: flex; align-items: center; gap: 0.45rem; padding: 0.2rem 0; font-size: 0.8rem; }
+.admin-legend strong { margin-left: auto; }
+.admin-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ---------- Table ---------- */
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; }
+
+.admin-table th {
+    padding: 0.4rem 0.5rem;
+    color: #653054;
+    font-family: "Courier New", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+    border-bottom: 2px ridge #dce6f4;
+}
+
+.admin-table td { padding: 0.45rem 0.5rem; vertical-align: middle; border-bottom: 1px dashed rgb(78 91 119 / 25%); }
+.admin-table tr:last-child td { border-bottom: 0; }
+
+.admin-person {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.admin-person:hover,
+.admin-person:focus-visible { background: rgb(255 255 255 / 70%); border-color: var(--tse-red); }
+.admin-person small { display: block; color: #505872; font-size: 0.7rem; }
+
+.admin-person__avatar {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    color: #fff;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4d7296, #8e557d);
+    border-radius: 50%;
+}
+
+.admin-badge {
+    display: inline-block;
+    margin: 1px 2px 1px 0;
+    padding: 0.05rem 0.5rem;
+    color: #505872;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgb(255 255 255 / 60%);
+    border: 1px solid rgb(78 91 119 / 25%);
+    border-radius: 999px;
+}
+
+.admin-badge--red { color: var(--tse-red); border-color: rgb(140 25 28 / 35%); }
+.admin-badge--violet { color: #6b5bb5; border-color: rgb(107 91 181 / 35%); }
+.admin-badge--green { color: #2c7a50; border-color: rgb(63 159 107 / 40%); }
+.admin-badge--amber { color: #9a6a06; border-color: rgb(211 155 31 / 45%); }
+
+/* ---------- Pager (หน้าละ 7 คน) ---------- */
+.admin-pager {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.3rem;
+    margin-top: 0.75rem;
+}
+
+.admin-pager__page,
+.admin-pager__gap {
+    display: grid;
+    place-items: center;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 0.4rem;
+    color: var(--panel-ink);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.admin-pager__page {
+    background: rgb(255 255 255 / 55%);
+    border: 2px outset #f8f9ff;
+    border-radius: 4px;
+}
+
+.admin-pager__page:hover { color: var(--panel-ink); border-color: var(--tse-red); }
+
+.admin-pager__page.is-current {
+    color: #fff;
+    background: linear-gradient(100deg, var(--tse-red), #763158);
+    border-style: inset;
+}
+
+/* ---------- User popup (HTML popover ไม่ใช้ JS) ---------- */
+.admin-popup {
+    width: min(440px, calc(100vw - 2rem));
+    padding: 0;
+    margin: auto;
+}
+
+.admin-popup::backdrop { background: rgb(9 9 17 / 65%); }
+.admin-popup .module-heading { display: flex; align-items: center; gap: 0.5rem; }
+.admin-popup .module-heading > span:nth-child(2) { flex: 1; }
+
+.admin-popup__close {
+    padding: 0 0.45rem;
+    color: #fff;
+    font-size: 1.2rem;
+    line-height: 1.3;
+    background: rgb(255 255 255 / 15%);
+    border: 1px solid rgb(255 255 255 / 45%);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.admin-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.4rem 0.9rem;
+    margin: 0;
+    font-size: 0.84rem;
+}
+
+.admin-facts dt {
+    color: #653054;
+    font-family: "Courier New", monospace;
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+
+.admin-facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* ตัวเลขผู้ใช้/รุ่นในรายการภาควิชา: ของ retro.css เล็กเกินอ่าน (0.48rem) */
+.site-layout--admin .directory-list b { font-size: 0.7rem; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+    .admin-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .admin-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 899.98px) {
+    .site-layout--admin {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "sidebar"
+            "content";
+    }
+
+    .site-layout--admin .site-sidebar { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 420px) {
+    .admin-stats { grid-template-columns: minmax(0, 1fr); }
+}
