@@ -56,11 +56,7 @@ def clear_login_failures(*, identifier, client_ip):
 
 
 def attempt_login(*, form, client_ip):
-    """Process a bound LoginForm: throttle first, then validate and record.
-
-    The throttle check runs before validation so a blocked identity never
-    reaches authenticate(), even with the correct password.
-    """
+    """Process a bound LoginForm: throttle first, then validate and record."""
     identifier = form.submitted_username
     if is_login_rate_limited(identifier=identifier, client_ip=client_ip):
         return LoginAttempt(rate_limited=True)
@@ -80,11 +76,11 @@ def assign_moderator(*, user, department, granted_by):
         department=department,
         granted_by=granted_by,
     )
-    user_role.full_clean()
     try:
+        user_role.full_clean()
         with transaction.atomic():
             user_role.save()
-    except IntegrityError as e:
+    except (IntegrityError, ValidationError) as e:
         raise ValidationError(
             f"{user.email} เป็น Moderator ภาควิชา {department.code} อยู่แล้ว"
         ) from e

@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404, redirect, render, resolve_url
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -13,29 +13,49 @@ from .forms import LoginForm, ModeratorAssignmentForm
 from .models import Role, UserRole
 
 
+@require_GET
 def home(request):
     return render(request, "base.html")
 
 
+@require_http_methods(["GET", "POST"])
 def login(request):
     if request.user.is_authenticated:
         return redirect("accounts:home")
+
     form = LoginForm(request, data=request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        user = form.get_user()
-        auth_login(request, user)
-        next_url = request.GET.get("next") or request.POST.get("next")
-        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-            return redirect(next_url)
-        return redirect("accounts:home")
+    if request.method == "POST":
+        client_ip = request.META.get("REMOTE_ADDR")
+        attempt = services.attempt_login(form=form, client_ip=client_ip)
+        if attempt.rate_limited:
+            form.add_error(None, "Too many failed login attempts")
+            response = render(
+                request,
+                "accounts/login.html",
+                {"form": form, "rate_limited": True, "error": "Too many failed login attempts"},
+                status=429,
+            )
+            response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+            return response
+        if attempt.user:
+            auth_login(request, attempt.user)
+            next_url = form.next_url or request.GET.get("next", "")
+            if next_url and url_has_allowed_host_and_scheme(
+                next_url, allowed_hosts={request.get_host()}
+            ):
+                return redirect(next_url)
+            return redirect("accounts:home")
+
     return render(request, "accounts/login.html", {"form": form})
 
 
+@require_POST
 def logout(request):
     auth_logout(request)
     return redirect("accounts:home")
 
 
+@require_GET
 def register(request):
     return render(request, "accounts/register.html")
 

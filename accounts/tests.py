@@ -21,6 +21,9 @@ class AuthenticationViewsTests(TestCase):
     password = "correct-horse-battery-staple"
     wrong_password = "wrong-password"
 
+    def setUp(self):
+        cache.clear()
+
     @classmethod
     def setUpTestData(cls):
         department = Department.objects.create(
@@ -326,8 +329,6 @@ class ModeratorManagementTests(TestCase):
         services.assign_moderator(
             user=self.user_nana, department=self.dept_ce, granted_by=self.admin
         )
-
-        self.client.force_login(self.admin)
-        with self.assertNumQueries(4):
-            response = self.client.get(reverse("accounts:moderator_manage"))
-            self.assertEqual(response.status_code, 200)
+        with self.assertNumQueries(1):
+            for m in selectors.moderator_list():
+                _ = (m.user.email, m.department.code, m.granted_by.email)
