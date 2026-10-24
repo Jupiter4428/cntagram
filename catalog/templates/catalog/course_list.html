@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}รายการวิชา{% endblock %}
+
+{% block content %}
+  <h1>รายการวิชา</h1>
+
+  {% for message in messages %}
+    <div class="alert">{{ message }}</div>
+  {% endfor %}
+
+  <a href="{% url 'catalog:course_create' %}">เพิ่มวิชา</a>
+
+  <ul>
+    {% for course in courses %}
+      <li>{{ course.code }} {{ course.display_name }}</li>
+    {% empty %}
+      <li>ไม่มีข้อมูลวิชา</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
