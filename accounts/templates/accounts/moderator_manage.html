@@ -1,57 +1,83 @@
-{% extends "base.html" %}
+{% extends "admin_page.html" %}
 
-{% block title %}จัดการ Moderator ประจำภาควิชา{% endblock %}
+{% block title %}จัดการ Moderator | CNTAGRAM{% endblock %}
 
 {% block content %}
-  <h1>กำหนด Moderator ประจำภาควิชา</h1>
+<section class="retro-widget glass-module admin-greeting" aria-labelledby="moderator-page-title">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>ADMIN / MODERATORS</small> จัดการ Moderator</span>
+        <span class="tech-index">{{ moderators|length }}</span>
+    </div>
+    <div class="retro-widget__body module-body compact-copy">
+        <h1 class="h5" id="moderator-page-title">กำหนด Moderator ประจำภาควิชา</h1>
+        <p class="mb-0">Moderator ดูแลเนื้อหาได้เฉพาะภาควิชาที่ได้รับแต่งตั้ง คนหนึ่งดูแลได้หลายภาค</p>
+    </div>
+</section>
 
-  {% for message in messages %}
-    <div class="alert">{{ message }}</div>
-  {% endfor %}
+{% for message in messages %}
+    {% if message.tags == "error" %}
+        <div class="alert alert-danger" role="alert">{{ message }}</div>
+    {% else %}
+        <div class="alert alert-success" role="status">{{ message }}</div>
+    {% endif %}
+{% endfor %}
 
-  <section>
-    <h2>แต่งตั้ง Moderator</h2>
-    <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit">แต่งตั้ง</button>
+<section class="retro-widget glass-module" aria-labelledby="assign-title">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>ASSIGN</small> <span id="assign-title">แต่งตั้ง Moderator</span></span>
+        <span class="tech-index">01</span>
+    </div>
+    <form class="retro-widget__body module-body" method="post">
+        {% csrf_token %}
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-5">
+                {{ form.user.label_tag }} {{ form.user }} {{ form.user.errors }}
+            </div>
+            <div class="col-12 col-md-5">
+                {{ form.department.label_tag }} {{ form.department }} {{ form.department.errors }}
+            </div>
+            <div class="col-12 col-md-2">
+                <button class="chrome-button chrome-button--brand w-100" type="submit">แต่งตั้ง</button>
+            </div>
+        </div>
     </form>
-  </section>
+</section>
 
-  <hr>
-
-  <section>
-    <h2>รายชื่อ Moderator ปัจจุบัน</h2>
-    <table border="1">
-      <thead>
-        <tr>
-          <th>ภาควิชา</th>
-          <th>อีเมลผู้ใช้</th>
-          <th>ผู้แต่งตั้ง</th>
-          <th>วันที่แต่งตั้ง</th>
-          <th>การจัดการ</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in moderators %}
-          <tr>
-            <td>{{ m.department.code }} - {{ m.department.name_th }}</td>
-            <td>{{ m.user.email }}</td>
-            <td>{{ m.granted_by.email|default:"-" }}</td>
-            <td>{{ m.granted_at|date:"Y-m-d H:i" }}</td>
-            <td>
-              <form method="post" action="{% url 'accounts:moderator_remove' m.pk %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" onclick="return confirm('ยืนยันการถอดถอนหรือไม่?');">ถอดถอน</button>
-              </form>
-            </td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="5">ยังไม่มีการแต่งตั้ง Moderator</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
+<section class="retro-widget glass-module" aria-labelledby="moderators-title">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>CURRENT MODERATORS</small> <span id="moderators-title">รายชื่อ Moderator ปัจจุบัน</span></span>
+        <span class="tech-index">02</span>
+    </div>
+    <div class="retro-widget__body module-body">
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>ภาควิชา</th><th>ผู้ใช้</th><th>ผู้แต่งตั้ง</th><th>วันที่แต่งตั้ง</th><th><span class="visually-hidden">การจัดการ</span></th></tr>
+                </thead>
+                <tbody>
+                    {% for m in moderators %}
+                        <tr>
+                            <td><span class="admin-badge admin-badge--violet">{{ m.department.code }}</span> {{ m.department.name_th }}</td>
+                            <td><strong>{{ m.user.nickname }}</strong><br><small>{{ m.user.email }}</small></td>
+                            <td>{{ m.granted_by.nickname|default:"-" }}</td>
+                            <td>{{ m.granted_at|date:"j M Y H:i" }}</td>
+                            <td>
+                                <form method="post" action="{% url 'accounts:moderator_remove' m.pk %}"
+                                      onsubmit="return confirm('ยืนยันถอดถอน {{ m.user.nickname|escapejs }} จาก Moderator ภาควิชา {{ m.department.code|escapejs }}?');">
+                                    {% csrf_token %}
+                                    <button class="chrome-button chrome-button--quiet" type="submit">ถอดถอน</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5">ยังไม่มีการแต่งตั้ง Moderator</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 {% endblock %}

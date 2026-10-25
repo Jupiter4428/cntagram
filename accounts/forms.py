@@ -49,14 +49,23 @@ class LoginForm(AuthenticationForm):
         return source.get("next", "")
 
 
+class UserChoiceField(forms.ModelChoiceField):
+    """ชื่อเล่นซ้ำกันได้ จึงแสดงอีเมลต่อท้ายให้เลือกถูกคน"""
+
+    def label_from_instance(self, obj):
+        return f"{obj.nickname} ({obj.email})"
+
+
 class ModeratorAssignmentForm(forms.Form):
-    user = forms.ModelChoiceField(
+    user = UserChoiceField(
         queryset=User.objects.filter(is_active=True).order_by("email"),
         label="เลือกผู้ใช้",
         empty_label="-- กรุณาเลือกผู้ใช้ --",
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
     department = forms.ModelChoiceField(
         queryset=Department.objects.filter(is_active=True).order_by("code"),
         label="เลือกภาควิชา",
         empty_label="-- กรุณาเลือกภาควิชา --",
+        widget=forms.Select(attrs={"class": "form-select"}),
     )

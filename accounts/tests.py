@@ -14,7 +14,7 @@ from django.utils import timezone
 from accounts import selectors, services
 from catalog.models import Batch, Course, Department
 
-from .forms import LoginForm
+from .forms import LoginForm, ModeratorAssignmentForm
 from .models import Role, UserRole
 from .selectors import admin_dashboard
 from .services import is_login_rate_limited
@@ -738,3 +738,77 @@ class ModeratorManagementTests(TestCase):
         with self.assertNumQueries(1):
             for m in selectors.moderator_list():
                 _ = (m.user.email, m.department.code, m.granted_by.email)
+
+    def test_moderator_page_uses_admin_layout_with_its_menu_link_active(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("accounts:moderator_manage"))
+
+        self.assertTemplateUsed(response, "admin_page.html")
+        self.assertTemplateUsed(response, "includes/_admin_sidebar.html")
+        self.assertContains(
+            response,
+            f'<a class="admin-menu__link is-active" href="{reverse("accounts:moderator_manage")}">',
+        )
+
+    def test_admin_dashboard_menu_links_to_moderator_page(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(
+            response,
+            f'<a class="admin-menu__link" href="{reverse("accounts:moderator_manage")}">',
+        )
+
+    def test_user_choices_show_nickname_and_email(self):
+        form = ModeratorAssignmentForm()
+
+        labels = [label for _, label in form.fields["user"].choices]
+
+        self.assertIn("momo (6510610001@student.tu.ac.th)", labels)
+
+    def test_moderator_page_lists_each_moderator_with_a_remove_form(self):
+        ur_cn = services.assign_moderator(
+            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
+        )
+        services.assign_moderator(
+            user=self.user_nana, department=self.dept_ce, granted_by=self.admin
+        )
+        self.client.force_login(self.admin)
+
+        with self.assertNumQueries(6):
+            response = self.client.get(reverse("accounts:moderator_manage"))
+
+        self.assertEqual(len(response.context["moderators"]), 2)
+        self.assertContains(response, "วิศวกรรมโยธา")
+        self.assertContains(response, "6510610002@student.tu.ac.th")
+        self.assertContains(
+            response, f'action="{reverse("accounts:moderator_remove", args=[ur_cn.pk])}"'
+        )
+
+    def test_moderator_page_escapes_nickname_in_remove_confirm(self):
+        user = User.objects.create_user(
+            email="6510610003@student.tu.ac.th",
+            password="password123",
+            nickname="a'b<",
+            department=self.dept_cn,
+            pdpa_consent_at=self.now,
+        )
+        services.assign_moderator(user=user, department=self.dept_cn, granted_by=self.admin)
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("accounts:moderator_manage"))
+
+        self.assertContains(response, r"ยืนยันถอดถอน a\u0027b\u003C")
+        self.assertNotContains(response, "a'b<")
+
+    def test_invalid_assign_shows_field_errors(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("accounts:moderator_manage"), {"user": "", "department": ""}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "errorlist", count=2)
