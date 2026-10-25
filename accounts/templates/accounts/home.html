@@ -1,21 +1,63 @@
 {% extends "base.html" %}
-
-{% block title %}Home | CNTAGRAM{% endblock %}
-
+{% block title %}หน้าแรก | CNTAGRAM{% endblock %}
 {% block content %}
-<h1>CNTAGRAM</h1>
-<p>Share and discover study materials from the engineering community.</p>
-{% if request.user.is_authenticated %}
-    <a class="btn btn-primary" href="{% url 'materials:vault' %}">Open document vault</a>
-{% else %}
-    <a class="btn btn-primary" href="{% url 'accounts:login' %}">Login</a>
-{% endif %}
-{% if is_super_admin %}
-    <h2>Admin</h2>
-    <ul>
-        <li><a href="{% url 'catalog:department_list' %}">จัดการภาควิชา</a></li>
-        <li><a href="{% url 'catalog:batch_list' %}">จัดการรุ่นและวิชาในรุ่น</a></li>
-        <li><a href="{% url 'catalog:course_list' %}">จัดการรายวิชา</a></li>
-    </ul>
-{% endif %}
+<div class="row g-4">
+    <div class="col-lg-9">
+        <section class="y2k-panel hero-panel" aria-labelledby="home-heading">
+            <div class="hero-grid">
+                <div>
+                    <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> WELCOME.HTML / COMMUNITY WEBBOARD / 2000s EDITION</div>
+                    <div class="welcome-note">WELCOME TO</div>
+                    <h1 id="home-heading" class="chrome-logo hero-logo">CNTAGRAM</h1>
+                    <p class="hero-kicker">เว็บบอร์ดเด็กวิศวะ!</p>
+                    <h2 class="hero-heading">พื้นที่แชร์ชีทของชาววิศวะ ♥</h2>
+                    <p class="hero-copy">แหล่งรวมชีท โน้ต และความทรงจำฉบับเด็กวิศวะ — ค้นหาเอกสารเรียนและแบ่งปันความรู้ไปด้วยกัน</p>
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        {% if request.user.is_authenticated %}
+                            <a class="btn y2k-button y2k-button-red y2k-button-large" href="{% url 'materials:vault' %}">เข้าสู่คลังเอกสาร ↗</a>
+                        {% else %}
+                            <a class="btn y2k-button y2k-button-red y2k-button-large" href="{% url 'accounts:register' %}">สมัครสมาชิก ↗</a>
+                            <a class="btn y2k-button y2k-button-dark y2k-button-large" href="{% url 'accounts:login' %}">เข้าสู่ระบบ</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hero-art" aria-hidden="true">
+                    <div class="star star-one">✦</div><div class="star star-two">✧</div>
+                    <div class="hero-orb"><span>CN</span><small>2000s</small></div>
+                    <div class="pixel-chip">✦ COMMUNITY<br>ARCHIVE</div>
+                    <div class="star star-three">★</div>
+                </div>
+            </div>
+            <div class="hero-status"><span>TXT READY</span><span>COMMUNITY EDITION</span><span>STATUS: UNDER CONSTRUCTION</span></div>
+        </section>
+
+        <div class="y2k-notice mt-3"><strong>✦ WEBBOARD NOTICE</strong><span>ยินดีต้อนรับสู่ CNTAGRAM — ฟีเจอร์คลังเอกสารอยู่ระหว่างการพัฒนา</span></div>
+
+        <section class="y2k-panel mt-3" aria-labelledby="board-heading">
+            <div class="panel-heading"><span>▣ <span id="board-heading">หมวดหมู่คลังความรู้</span></span><small>COMMUNITY ARCHIVE</small></div>
+            <div class="board-row"><span class="board-icon">L</span><div><h3>Lecture Notes</h3><p>ชีทสรุป บันทึกในห้องเรียน และสไลด์ประกอบการเรียน</p></div><span class="demo-label">COMING SOON</span></div>
+            <div class="board-row"><span class="board-icon purple">C</span><div><h3>Cheat Sheets</h3><p>สูตรสำคัญและสรุปเนื้อหาแบบอ่านเร็วสำหรับทบทวน</p></div><span class="demo-label">COMING SOON</span></div>
+            <div class="board-row"><span class="board-icon pale">E</span><div><h3>Exam Archive</h3><p>พื้นที่จัดหมวดข้อสอบเก่าเพื่อช่วยเตรียมตัวสอบ</p></div><span class="demo-label">COMING SOON</span></div>
+        </section>
+
+        <section class="y2k-panel mt-3" aria-labelledby="news-heading">
+            <div class="panel-heading purple-heading"><span>✉ <span id="news-heading">Community News</span></span><small>NOTICE BOARD</small></div>
+            <div class="news-entry"><span class="news-date">25<br>OCT<br>2026</span><div><h3>ยินดีต้อนรับสู่ CNTAGRAM เว็บบอร์ดเด็กวิศวะ</h3><p>พื้นที่ของนักศึกษาสำหรับค้นหาและแบ่งปันความรู้ร่วมกัน ฟีเจอร์บางส่วนยังอยู่ระหว่างการพัฒนา</p></div></div>
+        </section>
+
+        {% if is_super_admin %}
+        <section class="y2k-panel mt-3" aria-labelledby="admin-heading">
+            <div class="panel-heading"><span id="admin-heading">▣ เครื่องมือผู้ดูแลระบบ</span></div>
+            <div class="p-3 d-flex flex-wrap gap-2">
+                <a class="btn y2k-button y2k-button-dark" href="{% url 'catalog:department_list' %}">จัดการภาควิชา</a>
+                <a class="btn y2k-button y2k-button-dark" href="{% url 'catalog:batch_list' %}">จัดการรุ่นและวิชาในรุ่น</a>
+                <a class="btn y2k-button y2k-button-dark" href="{% url 'catalog:course_list' %}">จัดการรายวิชา</a>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+    <aside class="col-lg-3 sidebar-stack" aria-label="ข้อมูลชุมชน">
+        {% include "partials/_community_sidebar.html" %}
+    </aside>
+</div>
 {% endblock %}

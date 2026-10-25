@@ -1,15 +1,31 @@
+{% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#171b35">
     <title>{% block title %}CNTAGRAM{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/cntagram-y2k.css' %}" rel="stylesheet">
 </head>
-<body>
+<body class="y2k-body">
+    <a class="skip-link" href="#main-content">ข้ามไปยังเนื้อหา</a>
     {% include "partials/_navbar.html" %}
-    <main class="container py-5">
+    <main id="main-content" class="site-main container py-4 py-lg-5">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
+    <footer class="site-footer">
+        <div class="container d-flex flex-wrap justify-content-between gap-2">
+            <span><strong>CNTAGRAM</strong> · พื้นที่แบ่งปันความรู้ของชุมชนวิศวกรรมศาสตร์</span>
+            <span>ENGINEERING COMMUNITY ARCHIVE · EST. 2026</span>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
