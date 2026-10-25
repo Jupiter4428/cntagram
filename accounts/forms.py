@@ -1,5 +1,9 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm
+from catalog.models import Department
+
+User = get_user_model()
 
 
 class LoginForm(AuthenticationForm):
@@ -43,3 +47,16 @@ class LoginForm(AuthenticationForm):
         """Untrusted `next` target: submitted value when bound, else initial."""
         source = self.data if self.is_bound else self.initial
         return source.get("next", "")
+
+
+class ModeratorAssignmentForm(forms.Form):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by("email"),
+        label="เลือกผู้ใช้",
+        empty_label="-- กรุณาเลือกผู้ใช้ --",
+    )
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True).order_by("code"),
+        label="เลือกภาควิชา",
+        empty_label="-- กรุณาเลือกภาควิชา --",
+    )

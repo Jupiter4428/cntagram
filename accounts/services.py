@@ -2,7 +2,11 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.utils.crypto import salted_hmac
+
+from accounts.models import Role, UserRole
 
 
 @dataclass(frozen=True)
@@ -66,3 +70,29 @@ def attempt_login(*, form, client_ip):
     if form.has_credentials:
         record_login_failure(identifier=identifier, client_ip=client_ip)
     return LoginAttempt()
+
+
+def assign_moderator(*, user, department, granted_by):
+    """แต่งตั้ง Moderator ประจำภาควิชา พร้อมบันทึกผู้แต่งตั้ง"""
+    user_role = UserRole(
+        user=user,
+        role=Role.objects.get(code=Role.MODERATOR),
+        department=department,
+        granted_by=granted_by,
+    )
+    try:
+        user_role.full_clean()
+        with transaction.atomic():
+            user_role.save()
+    except (IntegrityError, ValidationError) as e:
+        raise ValidationError(
+            f"{user.email} เป็น Moderator ภาควิชา {department.code} อยู่แล้ว"
+        ) from e
+    return user_role
+
+
+def remove_moderator(*, user_role: UserRole):
+    """ถอดถอน Moderator ออกจากภาควิชา"""
+    if user_role.role.code != Role.MODERATOR:
+        raise ValidationError("ไม่สามารถถอดถอนบทบาทที่ไม่ใช่ Moderator ได้")
+    user_role.delete()
