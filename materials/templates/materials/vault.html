@@ -1,35 +1,62 @@
 {% extends "base.html" %}
-{# โครง HTML เปล่า ยังไม่มี css รอฝั่ง front ออกแบบ (US-7) #}
-
-{% block title %}ค้นหาเอกสาร | CNTAGRAM{% endblock %}
-
+{% load static %}
+{% block title %}ค้นหาชีทและเอกสาร | CNTAGRAM{% endblock %}
 {% block content %}
-<h1>ค้นหาเอกสาร</h1>
-
-<form method="get">
-  {{ form.as_p }}
-  <button type="submit">ค้นหา</button>
-</form>
-
+<link rel="stylesheet" href="{% static 'materials/vault.css' %}">
+<div class="document-vault">
+<section class="mb-4 dv-hero">
+  <p class="text-uppercase small fw-bold text-secondary mb-1">CNTAGRAM / DOCUMENT VAULT</p>
+  <h1 class="display-6 fw-bold">ค้นหาชีทและเอกสาร</h1>
+  <p class="dv-subtitle mb-0">ค้นหาตามรหัสวิชา เพื่อดูเอกสารจากทุกรุ่นในที่เดียว</p>
+</section>
+<section class="card shadow-sm mb-4 dv-panel" aria-labelledby="search-heading">
+  <div class="card-body">
+    <h2 class="h5" id="search-heading">ค้นหาเอกสาร</h2>
+    <form method="get" action="{% url 'materials:vault' %}">
+      {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="row g-3">
+        {% for field in form %}
+          <div class="col-12 col-md-6 col-xl-3">
+            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="text-danger small" role="alert">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button type="submit" class="btn dv-action">ค้นหาเอกสาร</button>
+        <a href="{% url 'materials:vault' %}" class="btn btn-outline-secondary">ล้างตัวกรอง</a>
+      </div>
+    </form>
+  </div>
+</section>
 {% if documents is not None %}
-  <h2>ผลการค้นหา</h2>
-  <table>
-    <thead>
-      <tr><th>รุ่น</th><th>วิชา</th><th>ประเภท</th><th>ชื่อเอกสาร</th><th>ผู้อัปโหลด</th></tr>
-    </thead>
-    <tbody>
-      {% for document in documents %}
-        <tr>
-          <td>{{ document.batch_course.batch.code }}</td>
-          <td>{{ document.batch_course.course.code }} {{ document.batch_course.course.display_name }}</td>
-          <td>{{ document.doc_type.name_th }}</td>
-          <td><a href="{% url 'materials:document_detail' document.pk %}">{{ document.title }}</a></td>
-          <td>{{ document.uploader.nickname }}</td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="5">ไม่พบเอกสาร</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<section aria-labelledby="results-heading">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h2 class="h4 mb-0" id="results-heading">ผลการค้นหา</h2>
+    <span class="badge text-bg-secondary">{{ documents|length }} รายการ</span>
+  </div>
+  <div class="row g-3">
+    {% for document in documents %}
+      <div class="col-12 col-lg-6">
+        <article class="card h-100 shadow-sm dv-panel dv-result">
+          <div class="card-body">
+            <div class="d-flex justify-content-between gap-2">
+              <h3 class="h5"><a href="{% url 'materials:document_detail' document.pk %}">{{ document.title }}</a></h3>
+              <span class="badge text-bg-light border">{{ document.batch_course.batch.code }}</span>
+            </div>
+            {% include "materials/_document_meta.html" with document=document layout="compact" %}
+            <a class="btn btn-sm btn-outline-primary mt-3" href="{% url 'materials:document_detail' document.pk %}">เปิดอ่าน PDF</a>
+          </div>
+        </article>
+      </div>
+    {% empty %}
+      <div class="col-12"><div class="alert alert-info" role="status">ไม่พบเอกสารที่ตรงกับเงื่อนไข ลองเปลี่ยนรหัสวิชาหรือตัวกรอง</div></div>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<p class="text-secondary">กรอกรหัสวิชา เช่น CN200 แล้วกดค้นหาเพื่อเริ่มต้น</p>
 {% endif %}
+</div>
 {% endblock %}

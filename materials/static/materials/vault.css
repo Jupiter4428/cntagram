@@ -1,0 +1,19 @@
+/* Scoped Y2K document archive theme (Issue #77). */
+.document-vault{--dv-ink:#273451;--dv-paper:#e9effb;color:var(--dv-ink)}
+.document-vault .dv-hero{background:linear-gradient(115deg,#253c66,#492d61 70%,#8c2949);border:2px solid #a9b6d3;border-radius:8px;color:#f4f6ff;padding:clamp(1rem,3vw,2rem);box-shadow:0 5px 0 #19213a}
+.document-vault .dv-hero h1{color:#fff;text-shadow:2px 3px #1c1a34}
+.document-vault .dv-hero .dv-subtitle{color:#e5ddef}
+.document-vault .dv-panel{background:var(--dv-paper);border:2px solid #9aa9c9;box-shadow:0 4px 0 #303a59;border-radius:7px;overflow:hidden}
+.document-vault .dv-panel .card-body{padding:clamp(1rem,2.5vw,1.5rem)}
+.document-vault .dv-panel-title{background:linear-gradient(100deg,#304c7b,#6b3b73);color:#fff;padding:.8rem 1rem;font-weight:700}
+.document-vault .dv-panel-title h2{color:#fff;margin:0}
+.document-vault .dv-panel input,.document-vault .dv-panel select{display:block;width:100%;min-height:42px;border:1px solid #8d9dbf;border-radius:4px;padding:.55rem .7rem;background:#fff;color:#253451}
+.document-vault .dv-panel input:focus,.document-vault .dv-panel select:focus{outline:3px solid #d4a8d9;outline-offset:1px}
+.document-vault .dv-action{background:linear-gradient(#e16d8b,#a12d52);border:1px solid #842240;color:#fff;font-weight:700}
+.document-vault .dv-action:hover,.document-vault .dv-action:focus{background:#86213f;color:#fff}
+.document-vault .dv-result{transition:box-shadow .15s ease}
+.document-vault .dv-result:hover{box-shadow:0 6px 14px #2e3e6533}
+.document-vault .dv-result a,.document-vault .dv-meta{overflow-wrap:anywhere}
+.document-vault .dv-preview{width:100%;height:70vh;min-height:360px;border:0;display:block;background:#fff}
+@media(max-width:575.98px){.document-vault .dv-hero{padding:1.1rem}.document-vault .dv-hero h1{font-size:1.8rem}.document-vault .dv-preview{height:65vh;min-height:320px}.document-vault .dv-panel .card-body{padding:1rem}}
+@media(prefers-reduced-motion:reduce){.document-vault .dv-result{transition:none}}

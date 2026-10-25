@@ -1,0 +1,16 @@
+{# Shared metadata partial used by vault and document detail; no extra database queries. #}
+{% if layout == "detail" %}
+<dl class="row mb-0 dv-meta">
+  <dt class="col-sm-3">วิชา</dt><dd class="col-sm-9">{{ document.batch_course.course.code }} — {{ document.batch_course.course.display_name }}</dd>
+  <dt class="col-sm-3">รุ่น</dt><dd class="col-sm-9">{{ document.batch_course.batch.code }}</dd>
+  <dt class="col-sm-3">ประเภท</dt><dd class="col-sm-9">{{ document.doc_type.name_th }}</dd>
+  <dt class="col-sm-3">ผู้อัปโหลด</dt><dd class="col-sm-9">{{ document.uploader.nickname }}</dd>
+</dl>
+{% else %}
+<ul class="list-unstyled small text-secondary mb-0 dv-meta">
+  <li><strong>วิชา:</strong> {{ document.batch_course.course.code }} — {{ document.batch_course.course.display_name }}</li>
+  <li><strong>รุ่น:</strong> {{ document.batch_course.batch.code }}</li>
+  <li><strong>ประเภท:</strong> {{ document.doc_type.name_th }}</li>
+  <li><strong>ผู้อัปโหลด:</strong> {{ document.uploader.nickname }}</li>
+</ul>
+{% endif %}
