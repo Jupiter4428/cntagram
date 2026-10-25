@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ document.title }} | CNTAGRAM{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'materials/vault.css' %}">
+<div class="document-vault">
+<nav aria-label="breadcrumb" class="mb-3">
+  <a href="{% url 'materials:vault' %}?course_code={{ document.batch_course.course.code|urlencode }}">← กลับไปผลค้นหา</a>
+</nav>
+<article>
+  <header class="mb-4 dv-hero">
+    <p class="small text-secondary text-uppercase fw-bold mb-1">CNTAGRAM / DOCUMENT DETAIL</p>
+    <h1 class="display-6 fw-bold">{{ document.title }}</h1>
+    <div class="card shadow-sm mt-3 dv-panel"><div class="card-body">
+      {% include "materials/_document_meta.html" with document=document layout="detail" %}
+    </div></div>
+  </header>
+  {% if document.description %}
+    <section class="mb-4" aria-label="คำอธิบายเอกสาร">
+      <h2 class="h5">รายละเอียด</h2>
+      <p>{{ document.description|linebreaksbr }}</p>
+    </section>
+  {% endif %}
+  <section aria-labelledby="preview-heading">
+    <h2 class="h5" id="preview-heading">ตัวอย่างเอกสาร PDF</h2>
+    <div class="border rounded overflow-hidden bg-white">
+      <iframe src="{% url 'materials:document_preview' document.pk %}" title="ตัวอย่าง PDF: {{ document.title }}" class="dv-preview" loading="lazy"></iframe>
+    </div>
+    <p class="small text-secondary mt-2">หากตัวอย่างไม่แสดง อาจเป็นเพราะไฟล์ยังไม่พร้อมหรือเบราว์เซอร์ไม่รองรับ PDF</p>
+  </section>
+</article>
+</div>
+{% endblock %}
