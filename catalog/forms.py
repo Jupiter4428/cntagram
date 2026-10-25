@@ -44,6 +44,10 @@ class CourseForm(forms.ModelForm):
             },
         }
 
+    @property
+    def code_taken(self):
+        return self.has_error("code", "unique")
+
 
 class BatchCourseForm(forms.ModelForm):
     """ผูกวิชาที่มีอยู่แล้วเข้ารุ่น วิชาเดียวจึงใช้ร่วมได้หลายรุ่นโดยไม่สร้างซ้ำ"""

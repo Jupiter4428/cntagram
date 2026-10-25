@@ -10,7 +10,9 @@
         <span class="tech-index">+</span>
     </div>
     <div class="retro-widget__body module-body">
+        {% if form.code_taken %}
         <p class="admin-hint mb-3">ถ้ารหัสวิชามีอยู่ในระบบแล้ว ไม่ต้องสร้างใหม่ ให้<a href="{% url 'catalog:batch_list' %}">ผูกวิชาเดิมเข้ารุ่น</a>ที่หน้าจัดการวิชาในรุ่นแทน</p>
+        {% endif %}
 
         <form class="admin-form" method="post">
             {% csrf_token %}

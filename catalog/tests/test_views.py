@@ -188,13 +188,37 @@ class CourseTests(CatalogTestCase):
         self.assertFormError(response.context["form"], "code", "รหัสวิชานี้มีอยู่ในระบบแล้ว")
         self.assertContains(response, "รหัสวิชานี้มีอยู่ในระบบแล้ว")
 
-    def test_course_form_points_to_batch_pages_for_existing_courses(self):
-        """ฟอร์มเพิ่มวิชาบอกว่าวิชาที่มีอยู่แล้วให้ไปผูกในหน้าจัดการรุ่น ไม่ต้องสร้างซ้ำ"""
+    def test_empty_course_form_has_no_bind_hint(self):
+        """ฟอร์มเพิ่มวิชาที่ยังไม่กรอก ไม่แสดงคำแนะนำให้ผูกวิชาเดิม"""
         self.client.force_login(self.admin)
 
         response = self.client.get(reverse("catalog:course_create"))
 
+        self.assertNotContains(response, "ผูกวิชาเดิมเข้ารุ่น")
+
+    def test_duplicate_course_code_shows_bind_hint(self):
+        """รหัสวิชาซ้ำ → แนะนำให้ไปผูกวิชาเดิมเข้ารุ่นแทนการสร้างใหม่"""
+        Course.objects.create(code="CN200", name_en="Discrete Mathematics")
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("catalog:course_create"),
+            {"code": "CN200", "name_th": "", "name_en": "Discrete Math 2"},
+        )
+
         self.assertContains(response, "ผูกวิชาเดิมเข้ารุ่น")
+
+    def test_missing_course_code_has_no_bind_hint(self):
+        """ไม่กรอกรหัสวิชา → แจ้ง error ของช่องนั้น แต่ไม่แนะนำให้ผูกวิชาเดิม"""
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("catalog:course_create"),
+            {"code": "", "name_th": "", "name_en": "Discrete Mathematics"},
+        )
+
+        self.assertFormError(response.context["form"], "code", "This field is required.")
+        self.assertNotContains(response, "ผูกวิชาเดิมเข้ารุ่น")
 
     def test_course_list_shows_thai_and_english_names(self):
         """หน้ารายการวิชาแสดงทั้งชื่อไทยและชื่ออังกฤษ"""
