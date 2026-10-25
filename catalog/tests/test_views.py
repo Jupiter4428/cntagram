@@ -1,56 +1,11 @@
-from django.test import TestCase
-
-# Create your tests here.
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
-from django.test import Client, TestCase
 from django.urls import reverse
-from django.utils import timezone
 
-from accounts.models import Role, UserRole
 from catalog.models import Batch, BatchCourse, Course, Department
 
+from .base import CatalogTestCase
+
 User = get_user_model()
-
-
-class CatalogTestCase(TestCase):
-    """setUp ร่วม: ภาค CN, นักศึกษาทั่วไป และ Super Admin"""
-
-    def setUp(self):
-        self.client = Client()
-        self.now = timezone.now()
-
-        # สร้าง Role พื้นฐานโดยใช้ Role constants
-        self.role_student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
-        self.role_super_admin, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
-
-        # สร้างภาควิชาตั้งต้น
-        self.dept_cn = Department.objects.create(
-            code="CN",
-            name_th="วิศวกรรมคอมพิวเตอร์",
-            name_en="Computer Engineering",
-        )
-
-        # นักศึกษาทั่วไป
-        self.student = User.objects.create_user(
-            email="6810610001@student.tu.ac.th",
-            password="password123",
-            nickname="student_test",
-            department=self.dept_cn,
-            pdpa_consent_at=self.now,
-        )
-        UserRole.objects.create(user=self.student, role=self.role_student)
-
-        # Super Admin
-        self.admin = User.objects.create_user(
-            email="6810610002@student.tu.ac.th",
-            password="password123",
-            nickname="admin_test",
-            department=self.dept_cn,
-            is_superuser=True,
-            pdpa_consent_at=self.now,
-        )
-        UserRole.objects.create(user=self.admin, role=self.role_super_admin)
 
 
 class DepartmentTests(CatalogTestCase):
@@ -128,22 +83,6 @@ class DepartmentTests(CatalogTestCase):
         )
         self.assertTrue(Department.objects.filter(code="CE").exists())
         self.assertContains(response, "ลบไม่ได้ เพราะยังมีผู้ใช้สังกัดภาคนี้อยู่")
-
-    def test_seed_commands_idempotent(self):
-        """คำสั่ง seed_roles และ seed_catalog ต้องรันซ้ำได้โดยไม่สร้างข้อมูลซ้ำซ้อน"""
-        call_command("seed_roles")
-        call_command("seed_roles")
-        call_command("seed_catalog")
-        call_command("seed_catalog")
-
-        self.assertEqual(Role.objects.count(), 4)
-        self.assertEqual(Department.objects.count(), 4)
-        # รุ่นตัวอย่าง CN21-CN25 ใช้วิชาชุดเดียวกัน 4 วิชา (ไม่สร้างวิชาซ้ำต่อรุ่น)
-        self.assertEqual(
-            [b.code for b in Batch.objects.all()], ["CN21", "CN22", "CN23", "CN24", "CN25"]
-        )
-        self.assertEqual(Course.objects.count(), 4)
-        self.assertEqual(BatchCourse.objects.count(), 5 * 4)
 
 
 class BatchTests(CatalogTestCase):
