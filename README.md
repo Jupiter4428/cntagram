@@ -127,7 +127,7 @@ python manage.py migrate
 ### 6. สร้าง superuser (สำหรับเข้า admin panel)
 User ผูกกับภาควิชา (`department` ห้ามว่าง) จึงต้องมี Department อย่างน้อย 1 แถวก่อน
 
-> ตอนนี้ `admin.py` ของทุก app ยังไม่ได้ register model จึงยังไม่เห็นตารางของโปรเจคในหน้า admin
+> หน้า `/admin/` ดู/แก้ตารางของทุก app ได้ (เครื่องมือภายในสำหรับ dev และ demo) แต่เพิ่มหรือลบ User ผ่าน admin ไม่ได้ (เพิ่มต้องสมัครผ่านหน้าเว็บหรือใช้ `createsuperuser` ส่วนลบต้องใช้ `anonymize()` ตาม PDPA)
 ```bash
 python manage.py seed_catalog     # ภาค CN/CE/ME/EE + รุ่น CN21–CN25 + วิชาตัวอย่าง (รันซ้ำได้ ไม่สร้างซ้ำ)
 python manage.py createsuperuser
