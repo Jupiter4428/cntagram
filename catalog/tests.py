@@ -169,6 +169,20 @@ class BatchTests(CatalogTestCase):
         )
         self.assertEqual(Batch.objects.filter(department=self.dept_cn, number=21).count(), 1)
         self.assertFormError(response.context["form"], None, "รุ่นนี้มีอยู่แล้ว")
+        self.assertContains(response, "รุ่นนี้มีอยู่แล้ว")
+
+    def test_batch_list_groups_batches_under_their_department(self):
+        """หน้ารายการรุ่นแยกตามภาควิชา: รุ่นของแต่ละภาคอยู่ใต้ชื่อภาคนั้น"""
+        dept_ee = Department.objects.create(code="EE", name_th="วิศวกรรมไฟฟ้า", name_en="Electrical Engineering")
+        Batch.objects.create(department=dept_ee, number=24)
+        Batch.objects.create(department=self.dept_cn, number=21)
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("catalog:batch_list"))
+
+        html = response.content.decode()
+        positions = [html.index(text) for text in ["วิศวกรรมคอมพิวเตอร์", "CN21", "วิศวกรรมไฟฟ้า", "EE24"]]
+        self.assertEqual(positions, sorted(positions))
 
     def test_delete_empty_batch(self):
         """ลบรุ่นที่ยังไม่มีวิชาได้"""
@@ -233,6 +247,25 @@ class CourseTests(CatalogTestCase):
         )
         self.assertEqual(Course.objects.filter(code="CN200").count(), 1)
         self.assertFormError(response.context["form"], "code", "รหัสวิชานี้มีอยู่ในระบบแล้ว")
+        self.assertContains(response, "รหัสวิชานี้มีอยู่ในระบบแล้ว")
+
+    def test_course_form_points_to_batch_pages_for_existing_courses(self):
+        """ฟอร์มเพิ่มวิชาบอกว่าวิชาที่มีอยู่แล้วให้ไปผูกในหน้าจัดการรุ่น ไม่ต้องสร้างซ้ำ"""
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("catalog:course_create"))
+
+        self.assertContains(response, "ผูกวิชาเดิมเข้ารุ่น")
+
+    def test_course_list_shows_thai_and_english_names(self):
+        """หน้ารายการวิชาแสดงทั้งชื่อไทยและชื่ออังกฤษ"""
+        Course.objects.create(code="CN200", name_th="คณิตศาสตร์ดิสครีต", name_en="Discrete Mathematics")
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("catalog:course_list"))
+
+        self.assertContains(response, "คณิตศาสตร์ดิสครีต")
+        self.assertContains(response, "Discrete Mathematics")
 
 
 class BatchCourseTests(CatalogTestCase):
@@ -269,6 +302,7 @@ class BatchCourseTests(CatalogTestCase):
 
         self.assertEqual(BatchCourse.objects.filter(batch=self.cn21).count(), 1)
         self.assertFormError(response.context["form"], "course", "วิชานี้อยู่ในรุ่นนี้แล้ว")
+        self.assertContains(response, "วิชานี้อยู่ในรุ่นนี้แล้ว")
 
     def test_remove_course_from_batch_keeps_course(self):
         """ถอด CN200 ออกจาก CN21 → CN22 ยังมี CN200 และข้อมูลวิชายังอยู่"""
