@@ -697,7 +697,7 @@ query ทั้งหมดที่ซับซ้อนอยู่ใน `sel
 - สถิติรายแถวใช้ `annotate()` สถิติทั้งตารางใช้ `aggregate()` **ไม่ดึง `.all()` มาวนลูปนับใน Python**
 - เงื่อนไข OR/NOT หรือค้นหาแบบมีตัวกรองหลายตัว ใช้ `Q()` (เริ่มจาก `Q()` เปล่าแล้วต่อเงื่อนไขตามตัวกรองที่ผู้ใช้เลือก)
 - อัปเดตค่าจากค่าเดิม (นับยอด, บวกลบ) ใช้ `F()` ไม่อ่านมาบวกใน Python แล้ว save (Race Condition)
-- เช็กว่ามีข้อมูลไหมใช้ `.exists()` นับใช้ `.count()` ไม่ใช้ `len(qs)`
+- เช็กว่ามีข้อมูลไหมใช้ `.exists()` นับใช้ `.count()` ไม่ใช้ `len(qs)` ยกเว้นใน template ที่ต้องวนแสดงทุกแถวอยู่แล้ว ใช้ `{{ qs|length }}` ได้ เพราะใช้ผลที่โหลดมาแล้ว ไม่ยิง `COUNT` เพิ่ม
 - filter ข้าม M2M แล้วได้แถวซ้ำ ให้ใส่ `.distinct()`
 - ป้องกัน N+1 กลับมาด้วยเทสต์ `self.assertNumQueries(n)` ใน view/selector ที่แสดงรายการ
 
@@ -796,8 +796,8 @@ urlpatterns = [
 ```bash
 python manage.py test                                    # รันทั้งหมด
 python manage.py test catalog                            # เฉพาะ app
-python manage.py test catalog.tests.BatchTests           # เฉพาะ class
-python manage.py test catalog.tests.BatchTests.test_xxx  # เฉพาะ method
+python manage.py test catalog.tests.test_views.BatchTests           # เฉพาะ class
+python manage.py test catalog.tests.test_views.BatchTests.test_xxx  # เฉพาะ method
 python manage.py test --keepdb -v 2                      # ใช้ test DB เดิม (เร็วขึ้น) และแสดงชื่อทุกเทสต์
 python manage.py test --failfast                         # หยุดทันทีที่เจอเทสต์แรกที่ล้ม
 ```
