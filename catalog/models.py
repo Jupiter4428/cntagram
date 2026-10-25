@@ -1,12 +1,23 @@
 #..\catalog\models.py
 # Create your models here.
+from django.core.validators import RegexValidator
 from django.db import models
 
 
 class Department(models.Model):
     """ภาควิชา เช่น CN, CE, ME, EE"""
 
-    code = models.CharField("Department code", max_length=5, unique=True)
+    # รหัสภาคไปอยู่ใน path ไฟล์ (vault/{code}/...) จึงรับแค่ A-Z กันอักขระมองไม่เห็น
+    code = models.CharField(
+        "Department code",
+        max_length=5,
+        unique=True,
+        validators=[
+            RegexValidator(
+                r"^[A-Z]{2,5}\Z", "รหัสภาควิชาต้องเป็นตัวอักษรภาษาอังกฤษ A-Z 2-5 ตัว"
+            )
+        ],
+    )
     name_th = models.CharField("Thai name", max_length=100)
     name_en = models.CharField("English name", max_length=100)
     is_active = models.BooleanField("Active", default=True)
@@ -17,12 +28,15 @@ class Department(models.Model):
 
     def _normalize(self):
         # เก็บเป็นตัวพิมพ์ใหญ่เสมอ กัน "cn" กับ "CN" กลายเป็นคนละภาค
+        # upper เฉพาะ ASCII ไม่งั้น "ß" กลายเป็น "SS" แล้วผ่าน validator
         if self.code:
-            self.code = self.code.strip().upper()
+            self.code = self.code.strip()
+            if self.code.isascii():
+                self.code = self.code.upper()
 
-    def clean(self):
-        super().clean()
-        self._normalize()  # ต้องทำก่อน validate_unique()
+    def clean_fields(self, exclude=None):
+        self._normalize()  # ต้องทำก่อน validator ของ code และ validate_unique()
+        super().clean_fields(exclude)
 
     def save(self, *args, **kwargs):
         self._normalize()
@@ -76,7 +90,18 @@ class Batch(models.Model):
 class Course(models.Model):
     """ข้อมูลวิชา (ไม่ผูกกับรุ่น) เช่น CN101, SC135"""
 
-    code = models.CharField("Course code", max_length=10, unique=True)
+    # อักษรภาค + เลขวิชาไม่เกิน 3 หลัก (CN201) และอยู่ใน path ไฟล์ เหมือน Department.code
+    code = models.CharField(
+        "Course code",
+        max_length=10,
+        unique=True,
+        validators=[
+            RegexValidator(
+                r"^[A-Z]+[0-9]{1,3}\Z",
+                "รหัสวิชาต้องเป็นตัวอักษรภาษาอังกฤษ A-Z ตามด้วยตัวเลข 1-3 หลัก เช่น CN201",
+            )
+        ],
+    )
     name_th = models.CharField("Thai name", max_length=150, null=True, blank=True)
     name_en = models.CharField("English name", max_length=150)
 
@@ -86,13 +111,15 @@ class Course(models.Model):
 
     def _normalize(self):
         if self.code:
-            self.code = self.code.strip().upper()
+            self.code = self.code.strip()
+            if self.code.isascii():  # เหตุผลเดียวกับ Department._normalize
+                self.code = self.code.upper()
         # ชื่อไทยที่ว่างต้องเป็น NULL ไม่ใช่ ""
         self.name_th = (self.name_th or "").strip() or None
 
-    def clean(self):
-        super().clean()
-        self._normalize()
+    def clean_fields(self, exclude=None):
+        self._normalize()  # ต้องทำก่อน validator ของ code
+        super().clean_fields(exclude)
 
     def save(self, *args, **kwargs):
         self._normalize()
