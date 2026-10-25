@@ -1,8 +1,8 @@
 /* CNTAGRAM Y2K Cyber Webboard — scoped frontend styling */
 :root{--night:#161a32;--deep:#22223f;--wine:#571c3e;--navy:#293c67;--purple:#60477c;--paper:#dbe4f5;--ink:#263452;--border:#8793b3;--red:#9f202a}
-*{box-sizing:border-box}
+body.y2k-body,body.y2k-body *,body.y2k-body *::before,body.y2k-body *::after{box-sizing:border-box}
 body.y2k-body{margin:0;min-height:100vh;display:flex;flex-direction:column;color:#eaf0ff;font-family:Tahoma,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 0 35%,#344360 0,transparent 42%),radial-gradient(ellipse at 100% 65%,#442642 0,transparent 48%),#161a30;font-size:15px}
-a{color:#25518b}a:hover{color:#ae294a}
+.site-main a:not(.btn):not(.nav-link){color:#25518b}.site-main a:not(.btn):not(.nav-link):hover{color:#ae294a}
 .skip-link{position:absolute;top:-100px;left:1rem;background:#fff;color:#111;padding:8px;z-index:9999}.skip-link:focus{top:8px}
 .site-header{background:linear-gradient(165deg,#273957 0%,#1b213d 54%,#4d1d3a 100%);border-top:4px solid #a22d45;border-bottom:3px solid #8996b9;box-shadow:0 8px 20px #0d10244d}
 .topline{display:flex;justify-content:space-between;gap:1rem;border:1px solid #67718c;background:linear-gradient(#475471,#29324f);padding:5px 12px;color:#e0e5f6;font:10px Consolas,monospace;letter-spacing:1px;margin-top:8px}
