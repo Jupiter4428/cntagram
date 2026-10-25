@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{# โครง HTML เปล่า ยังไม่มี css รอฝั่ง front ออกแบบ (US-5) #}
+
+{% block title %}อัปโหลดชีท | CNTAGRAM{% endblock %}
+
+{% block content %}
+<h1>อัปโหลดชีท</h1>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <p>
+    <label for="id_department">ภาควิชา</label>
+    <select id="id_department" disabled>
+      <option>{{ department.code }} - {{ department.name_th }}</option>
+    </select>
+  </p>
+  <p>
+    <label for="id_batch">รุ่น</label>
+    <select id="id_batch"
+            data-courses-url="{% url 'materials:upload_course_options' 0 %}">
+      <option value="">เลือกรุ่น</option>
+      {% for batch in batches %}
+        <option value="{{ batch.pk }}">{{ batch.code }}</option>
+      {% endfor %}
+    </select>
+  </p>
+  <p>
+    {{ form.batch_course.errors }}
+    <label for="id_batch_course">วิชา</label>
+    <select name="batch_course" id="id_batch_course" required>
+      <option value="">เลือกรุ่นก่อน</option>
+    </select>
+  </p>
+  {% for field in form %}
+    {% if field.name != "batch_course" %}
+      <p>{{ field.errors }}{{ field.label_tag }} {{ field }}</p>
+    {% endif %}
+  {% endfor %}
+  <button type="submit">อัปโหลด</button>
+</form>
+
+<script>
+  // dropdown ต่อเนื่อง: เลือกรุ่นแล้วดึงวิชาในรุ่นจาก endpoint
+  const batchSelect = document.getElementById("id_batch");
+  const courseSelect = document.getElementById("id_batch_course");
+  batchSelect.addEventListener("change", async () => {
+    courseSelect.replaceChildren(new Option("เลือกวิชา", ""));
+    if (!batchSelect.value) return;
+    const url = batchSelect.dataset.coursesUrl.replace("/0/", `/${batchSelect.value}/`);
+    const { courses } = await (await fetch(url)).json();
+    for (const course of courses) {
+      courseSelect.add(new Option(`${course.code} ${course.name}`, course.id));
+    }
+  });
+</script>
+{% endblock %}

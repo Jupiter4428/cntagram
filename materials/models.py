@@ -14,6 +14,14 @@ from catalog.models import SystemSetting
 # ซึ่งเช็กใน DocumentVersion.clean() และต้องไม่เกินค่านี้
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB (ตาม CHECK ใน ERD)
 
+def max_upload_mb():
+    """ขนาดไฟล์สูงสุดที่รับได้ (MB) จาก system_setting แต่ไม่เกินเพดาน CHECK ของ DB"""
+    limit_mb = SystemSetting.get_int(SystemSetting.MAX_UPLOAD_MB, 50)
+    if limit_mb <= 0:  # ค่าตั้งผิด ให้ถอยกลับเป็นค่าเริ่มต้น
+        limit_mb = 50
+    return min(limit_mb, MAX_UPLOAD_BYTES // (1024 * 1024))
+
+
 sha256_validator = RegexValidator(
     regex=r"^[0-9a-f]{64}\Z",
     message="sha256 must be 64 lowercase hex characters.",
@@ -258,11 +266,8 @@ class DocumentVersion(models.Model):
                 except ValidationError as exc:
                     raise ValidationError({field: exc.messages})
         if self.size_bytes is not None:
-            limit_mb = SystemSetting.get_int(SystemSetting.MAX_UPLOAD_MB, 50)
-            if limit_mb <= 0:  # ค่าตั้งผิด ให้ถอยกลับเป็นค่าเริ่มต้น
-                limit_mb = 50
-            limit = min(limit_mb * 1024 * 1024, MAX_UPLOAD_BYTES)
-            if self.size_bytes > limit:
+            limit_mb = max_upload_mb()
+            if self.size_bytes > limit_mb * 1024 * 1024:
                 raise ValidationError(
                     {"size_bytes": f"File is larger than {limit_mb} MB"}
                 )
