@@ -24,6 +24,9 @@ class AuthenticationViewsTests(TestCase):
     def setUp(self):
         cache.clear()
 
+    def tearDown(self):
+        cache.clear()
+
     @classmethod
     def setUpTestData(cls):
         department = Department.objects.create(
@@ -40,6 +43,7 @@ class AuthenticationViewsTests(TestCase):
         )
 
     def post_login(self, password=None, *, client=None, username=None, **extra):
+        """POST to the login view as self.user (correct password by default)."""
         data = {
             "username": username or self.user.email,
             "password": self.password if password is None else password,
@@ -76,9 +80,13 @@ class AuthenticationViewsTests(TestCase):
         response = self.post_login(self.wrong_password)
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(SESSION_KEY, self.client.session)
+        self.assertContains(response, "Please enter a correct")
 
-    def test_successful_logout_clears_session_and_redirects_home(self):
+    def test_logout_requires_post_and_invalidates_session(self):
         self.client.force_login(self.user)
+        get_response = self.client.get(reverse("accounts:logout"))
+        self.assertEqual(get_response.status_code, 405)
+
         post_response = self.client.post(reverse("accounts:logout"))
         self.assertRedirects(post_response, reverse("accounts:home"))
         self.assertNotIn(SESSION_KEY, self.client.session)
@@ -101,12 +109,21 @@ class AuthenticationViewsTests(TestCase):
         self.assertNotIn(SESSION_KEY, csrf_client.session)
 
     def test_login_honors_safe_internal_next_url(self):
-        response = self.post_login(next=reverse("materials:vault"))
-        self.assertRedirects(response, reverse("materials:vault"))
+        vault_url = reverse("materials:vault")
+        response = self.client.post(
+            f"{reverse('accounts:login')}?next={vault_url}",
+            {"username": self.user.email, "password": self.password, "next": vault_url},
+        )
+        self.assertRedirects(response, vault_url)
 
     def test_login_rejects_external_next_url(self):
         response = self.post_login(next="https://attacker.example/phishing")
         self.assertRedirects(response, reverse("accounts:home"))
+
+    def test_login_page_keeps_next_from_query_string(self):
+        vault_url = reverse("materials:vault")
+        response = self.client.get(f"{reverse('accounts:login')}?next={vault_url}")
+        self.assertContains(response, f'name="next" value="{vault_url}"')
 
     @override_settings(
         LOGIN_RATE_LIMIT_ATTEMPTS=3,
@@ -234,7 +251,7 @@ class ModeratorManagementTests(TestCase):
             selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
         )
 
-    def test_moderator_cannot_moderate_other_departments(self):
+    def test_is_moderator_of_department_is_scoped_to_assigned_department(self):
         services.assign_moderator(
             user=self.user_momo, department=self.dept_cn, granted_by=self.admin
         )
@@ -289,8 +306,7 @@ class ModeratorManagementTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(UserRole.objects.count(), initial_count)
-        messages_list = list(response.context["messages"])
-        self.assertTrue(any("อยู่แล้ว" in str(m) for m in messages_list))
+        self.assertContains(response, "อยู่แล้ว")
 
     def test_remove_moderator_via_view(self):
         ur = services.assign_moderator(
@@ -316,6 +332,16 @@ class ModeratorManagementTests(TestCase):
         response = self.client.post(reverse("accounts:moderator_remove", args=[ur.pk]))
         self.assertEqual(response.status_code, 403)
         self.assertTrue(UserRole.objects.filter(pk=ur.pk).exists())
+
+    def test_non_super_admin_cannot_open_or_post_manage_page(self):
+        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+        self.client.force_login(self.user_momo)
+        url = reverse("accounts:moderator_manage")
+
+        self.assertEqual(self.client.get(url).status_code, 403)
+        response = self.client.post(url, {"user": self.user_nana.pk, "department": self.dept_ce.pk})
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(UserRole.objects.filter(user=self.user_nana, role=self.role_moderator).exists())
 
     def test_anonymous_user_redirected_to_login(self):
         response = self.client.get(reverse("accounts:moderator_manage"))
