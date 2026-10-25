@@ -8,10 +8,11 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts import selectors, services
-from accounts.models import Role, UserRole
 from catalog.models import Department
+
+from . import selectors, services
 from .forms import LoginForm
+from .models import Role, UserRole
 from .services import is_login_rate_limited
 
 User = get_user_model()
@@ -20,12 +21,6 @@ User = get_user_model()
 class AuthenticationViewsTests(TestCase):
     password = "correct-horse-battery-staple"
     wrong_password = "wrong-password"
-
-    def setUp(self):
-        cache.clear()
-
-    def tearDown(self):
-        cache.clear()
 
     @classmethod
     def setUpTestData(cls):
@@ -42,8 +37,18 @@ class AuthenticationViewsTests(TestCase):
             pdpa_consent_at=timezone.now(),
         )
 
+    def setUp(self):
+        cache.clear()
+
+    def tearDown(self):
+        cache.clear()
+
     def post_login(self, password=None, *, client=None, username=None, **extra):
-        """POST to the login view as self.user (correct password by default)."""
+        """POST to the login view as self.user (correct password by default).
+
+        `extra` keys that are valid form data (e.g. `next`) go into the POST body;
+        anything uppercase (e.g. REMOTE_ADDR) is passed to the test client.
+        """
         data = {
             "username": username or self.user.email,
             "password": self.password if password is None else password,
@@ -66,24 +71,47 @@ class AuthenticationViewsTests(TestCase):
 
     def test_guest_is_redirected_from_vault_to_login(self):
         vault_url = reverse("materials:vault")
+
         response = self.client.get(vault_url)
+
         expected = f"{reverse('accounts:login')}?next={vault_url}"
         self.assertRedirects(response, expected)
 
     def test_successful_login_creates_session_and_redirects_home(self):
         response = self.post_login(username=self.user.email.upper())
+
         self.assertRedirects(response, reverse("accounts:home"))
         self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
         self.assertEqual(self.client.get(reverse("materials:vault")).status_code, 200)
 
     def test_failed_login_does_not_authenticate_user(self):
         response = self.post_login(self.wrong_password)
+
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(SESSION_KEY, self.client.session)
         self.assertContains(response, "Please enter a correct")
 
+    def test_login_honors_safe_internal_next_url(self):
+        response = self.post_login(next=reverse("materials:vault"))
+
+        self.assertRedirects(response, reverse("materials:vault"))
+
+    def test_login_rejects_external_next_url(self):
+        response = self.post_login(next="https://attacker.example/phishing")
+
+        self.assertRedirects(response, reverse("accounts:home"))
+
+    def test_login_page_keeps_next_from_query_string(self):
+        vault_url = reverse("materials:vault")
+
+        response = self.client.get(f"{reverse('accounts:login')}?next={vault_url}")
+
+        self.assertContains(response, f'name="next" value="{vault_url}"')
+
     def test_logout_requires_post_and_invalidates_session(self):
         self.client.force_login(self.user)
+        self.assertIn(SESSION_KEY, self.client.session)
+
         get_response = self.client.get(reverse("accounts:logout"))
         self.assertEqual(get_response.status_code, 405)
 
@@ -98,32 +126,19 @@ class AuthenticationViewsTests(TestCase):
     def test_logout_is_csrf_protected(self):
         csrf_client = Client(enforce_csrf_checks=True)
         csrf_client.force_login(self.user)
+
         response = csrf_client.post(reverse("accounts:logout"))
+
         self.assertEqual(response.status_code, 403)
         self.assertIn(SESSION_KEY, csrf_client.session)
 
     def test_login_is_csrf_protected(self):
         csrf_client = Client(enforce_csrf_checks=True)
+
         response = self.post_login(client=csrf_client)
+
         self.assertEqual(response.status_code, 403)
         self.assertNotIn(SESSION_KEY, csrf_client.session)
-
-    def test_login_honors_safe_internal_next_url(self):
-        vault_url = reverse("materials:vault")
-        response = self.client.post(
-            f"{reverse('accounts:login')}?next={vault_url}",
-            {"username": self.user.email, "password": self.password, "next": vault_url},
-        )
-        self.assertRedirects(response, vault_url)
-
-    def test_login_rejects_external_next_url(self):
-        response = self.post_login(next="https://attacker.example/phishing")
-        self.assertRedirects(response, reverse("accounts:home"))
-
-    def test_login_page_keeps_next_from_query_string(self):
-        vault_url = reverse("materials:vault")
-        response = self.client.get(f"{reverse('accounts:login')}?next={vault_url}")
-        self.assertContains(response, f'name="next" value="{vault_url}"')
 
     @override_settings(
         LOGIN_RATE_LIMIT_ATTEMPTS=3,
@@ -135,6 +150,7 @@ class AuthenticationViewsTests(TestCase):
             self.assertEqual(response.status_code, 200)
 
         response = self.post_login(REMOTE_ADDR="192.0.2.1")
+
         self.assertEqual(response.status_code, 429)
         self.assertEqual(response.headers["Retry-After"], "120")
         self.assertContains(
@@ -148,7 +164,9 @@ class AuthenticationViewsTests(TestCase):
     def test_rate_limit_is_scoped_by_client_ip(self):
         for _ in range(3):
             self.post_login(self.wrong_password, REMOTE_ADDR="192.0.2.1")
+
         response = self.post_login(REMOTE_ADDR="192.0.2.2")
+
         self.assertRedirects(response, reverse("accounts:home"))
 
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3)
@@ -156,7 +174,9 @@ class AuthenticationViewsTests(TestCase):
         client_ip = "192.0.2.1"
         for _ in range(2):
             self.post_login(self.wrong_password, REMOTE_ADDR=client_ip)
+
         self.post_login(REMOTE_ADDR=client_ip)
+
         self.assertFalse(
             is_login_rate_limited(identifier=self.user.email, client_ip=client_ip)
         )
@@ -173,6 +193,7 @@ class AuthenticationViewsTests(TestCase):
 
         time.sleep(1.1)
         response = self.post_login(REMOTE_ADDR=client_ip)
+
         self.assertRedirects(response, reverse("accounts:home"))
 
 
@@ -249,6 +270,19 @@ class ModeratorManagementTests(TestCase):
         )
         self.assertTrue(
             selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
+        )
+
+    def test_department_can_have_many_moderators(self):
+        services.assign_moderator(
+            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
+        )
+        services.assign_moderator(
+            user=self.user_nana, department=self.dept_cn, granted_by=self.admin
+        )
+
+        moderators = selectors.moderator_list().filter(department=self.dept_cn)
+        self.assertEqual(
+            {m.user for m in moderators}, {self.user_momo, self.user_nana}
         )
 
     def test_is_moderator_of_department_is_scoped_to_assigned_department(self):
@@ -332,6 +366,15 @@ class ModeratorManagementTests(TestCase):
         response = self.client.post(reverse("accounts:moderator_remove", args=[ur.pk]))
         self.assertEqual(response.status_code, 403)
         self.assertTrue(UserRole.objects.filter(pk=ur.pk).exists())
+
+    def test_remove_view_rejects_non_moderator_role(self):
+        admin_role = UserRole.objects.get(user=self.admin, role=self.role_super_admin)
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse("accounts:moderator_remove", args=[admin_role.pk]))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(UserRole.objects.filter(pk=admin_role.pk).exists())
 
     def test_non_super_admin_cannot_open_or_post_manage_page(self):
         services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)

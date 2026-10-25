@@ -8,85 +8,78 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from portal.permissions import is_super_admin, super_admin_required
+
 from . import selectors, services
 from .forms import LoginForm, ModeratorAssignmentForm
 from .models import Role, UserRole
+from .services import attempt_login
 
 
 def _client_ip(request):
-    """Extract client IP from request headers or remote address."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "unknown")
+    """Return the direct peer address without trusting spoofable proxy headers."""
+    return request.META.get("REMOTE_ADDR", "")
 
 
-def _safe_login_redirect(request, target_url):
-    """Redirect to target_url if safe, else fall back to LOGIN_REDIRECT_URL."""
-    if target_url and url_has_allowed_host_and_scheme(
-        target_url,
+def _safe_login_redirect(request, next_url=""):
+    """Return an internal `next` target, or the configured home page."""
+    redirect_to = next_url or request.GET.get("next")
+    if redirect_to and url_has_allowed_host_and_scheme(
+        redirect_to,
         allowed_hosts={request.get_host()},
         require_https=request.is_secure(),
     ):
-        return redirect(target_url)
-    return redirect(settings.LOGIN_REDIRECT_URL)
+        return redirect_to
+    return resolve_url(settings.LOGIN_REDIRECT_URL)
 
 
 def _rate_limited_response(request, form):
-    """Return 429 response when login attempts exceed threshold."""
-    unbound_form = LoginForm(initial={"username": form.submitted_username})
-    response = render(
-        request,
-        "accounts/login.html",
-        {
-            "form": unbound_form,
-            "rate_limited": True,
-            "retry_after_seconds": settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
-            "next": request.GET.get("next") or request.POST.get("next", ""),
-        },
-        status=429,
-    )
+    """HTTP 429 login page with Retry-After, keeping the typed username."""
+    limited_form = LoginForm(request=request, initial={"username": form.submitted_username})
+    context = {"form": limited_form, "next": form.next_url, "rate_limited": True}
+    response = render(request, "accounts/login.html", context, status=429)
     response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
     return response
 
 
 @require_GET
 def home(request):
-    """Landing page: public for guests, personalized for authenticated users."""
-    context = {"is_super_admin": is_super_admin(request.user)}
-    return render(request, "accounts/home.html", context)
-
-
-@require_http_methods(["GET", "POST"])
-def login(request):
-    """Authenticate and log in a user."""
-    next_url = request.GET.get("next") or request.POST.get("next", "")
-    if request.user.is_authenticated:
-        return _safe_login_redirect(request, next_url)
-
-    form = LoginForm(request, data=request.POST or None)
-    if request.method == "POST":
-        attempt = services.attempt_login(form=form, client_ip=_client_ip(request))
-        if attempt.rate_limited:
-            return _rate_limited_response(request, form)
-        if attempt.user:
-            auth_login(request, attempt.user)
-            return _safe_login_redirect(request, form.next_url or next_url)
-
-    return render(request, "accounts/login.html", {"form": form, "next": next_url})
-
-
-@require_POST
-def logout(request):
-    """Log out the current user."""
-    auth_logout(request)
-    return redirect(settings.LOGOUT_REDIRECT_URL)
+    """Public landing page for guests and authenticated users."""
+    return render(request, "accounts/home.html", {"is_super_admin": is_super_admin(request.user)})
 
 
 @require_GET
 def register(request):
-    """Registration placeholder."""
+    """Public registration entry point owned by the registration story."""
+    # TODO(US-1): replace with RegisterForm view
     return render(request, "accounts/register.html")
+
+
+@require_http_methods(["GET", "POST"])
+def login(request):
+    """Authenticate a user while throttling repeated failures."""
+    is_post = request.method == "POST"
+    form = LoginForm(
+        request=request,
+        data=request.POST if is_post else None,
+        initial={"next": request.GET.get("next", "")},
+    )
+    if request.user.is_authenticated:
+        return redirect(_safe_login_redirect(request, form.next_url))
+    if is_post:
+        attempt = attempt_login(form=form, client_ip=_client_ip(request))
+        if attempt.user:
+            auth_login(request, attempt.user)
+            return redirect(_safe_login_redirect(request, form.next_url))
+        if attempt.rate_limited:
+            return _rate_limited_response(request, form)
+    return render(request, "accounts/login.html", {"form": form, "next": form.next_url})
+
+
+@require_POST
+def logout(request):
+    """End the current session; CSRF middleware protects this POST endpoint."""
+    auth_logout(request)
+    return redirect(settings.LOGOUT_REDIRECT_URL)
 
 
 @super_admin_required
