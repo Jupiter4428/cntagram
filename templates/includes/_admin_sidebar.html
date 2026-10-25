@@ -10,6 +10,9 @@
         <a class="admin-menu__link{% if url_name == 'home' %} is-active{% endif %}" href="{% url 'accounts:home' %}">
             <span aria-hidden="true">▦</span> Dashboard
         </a>
+        <a class="admin-menu__link" href="{% url 'materials:approval_queue' %}">
+            <span aria-hidden="true">✓</span> คิวรออนุมัติเอกสาร
+        </a>
         <a class="admin-menu__link{% if url_name|slice:':10' == 'department' %} is-active{% endif %}" href="{% url 'catalog:department_list' %}">
             <span aria-hidden="true">▤</span> จัดการภาควิชา
         </a>

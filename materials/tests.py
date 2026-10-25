@@ -1,10 +1,14 @@
 import datetime
+import shutil
+import tempfile
 
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
 from django.template import Context, Template
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -555,3 +559,123 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         self.assertEqual(response.status_code, 403)
         doc.refresh_from_db()
         self.assertEqual(doc.status, Document.Status.PENDING)
+
+
+class ApprovalQueueEntryTests(ApprovalBaseTestCase):
+    """ทางเข้า Approval Queue ใน Dashboard หน้าแรก (#69)"""
+
+    def setUp(self):
+        self.queue_link = f'href="{reverse("materials:approval_queue")}"'
+
+    def test_moderator_home_links_to_the_approval_queue(self):
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertTemplateUsed(response, "accounts/index.html")
+        self.assertContains(response, self.queue_link)
+
+    def test_django_superuser_without_a_role_home_links_to_the_approval_queue(self):
+        superuser = User.objects.create_superuser(
+            email="6610000009@student.tu.ac.th",
+            password="password123",
+            nickname="Root",
+            department=self.dept_cn,
+            pdpa_consent_at=self.now,
+        )
+        self.client.force_login(superuser)
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(response, self.queue_link)
+
+    def test_student_home_has_no_approval_queue_link(self):
+        self.client.force_login(self.normal_student)
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertNotContains(response, self.queue_link)
+
+    def test_super_admin_sidebar_links_to_the_approval_queue(self):
+        self.client.force_login(self.super_admin)
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertTemplateUsed(response, "includes/_admin_sidebar.html")
+        self.assertContains(response, self.queue_link)
+
+
+class ApprovalPreviewViewTests(ApprovalBaseTestCase):
+    """preview PDF เวอร์ชันปัจจุบันในหน้าพิจารณา (#69)"""
+
+    pdf_bytes = b"%PDF-1.4 test"
+
+    def setUp(self):
+        media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media_root, ignore_errors=True)
+        media = override_settings(MEDIA_ROOT=media_root)
+        media.enable()
+        self.addCleanup(media.disable)
+        self.doc = self.create_document()
+        default_storage.save(self.doc.current_version.storage_path, ContentFile(self.pdf_bytes))
+        self.url = reverse("materials:approval_preview", kwargs={"document_id": self.doc.pk})
+
+    def test_department_moderator_gets_the_current_version_inline(self):
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertTrue(response["Content-Disposition"].startswith("inline"))
+        self.assertEqual(response["X-Frame-Options"], "SAMEORIGIN")
+        self.assertEqual(b"".join(response.streaming_content), self.pdf_bytes)
+
+    def test_guest_is_redirected_to_login(self):
+        response = self.client.get(self.url)
+
+        self.assertRedirects(response, f'{reverse("accounts:login")}?next={self.url}')
+
+    def test_moderator_of_other_department_is_forbidden(self):
+        self.client.force_login(self.mod_me)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+
+    def test_document_without_a_version_is_not_found(self):
+        self.doc.versions.all().delete()
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_file_missing_from_storage_is_not_found(self):
+        default_storage.delete(self.doc.current_version.storage_path)
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_review_page_embeds_the_preview(self):
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(reverse("materials:approval_review", kwargs={"document_id": self.doc.pk}))
+
+        self.assertContains(response, f'<iframe src="{self.url}"')
+
+
+class ForbiddenPageTests(ApprovalBaseTestCase):
+    """หน้า 403 สำหรับคนที่ไม่มีสิทธิ์พิจารณา (#69)"""
+
+    def test_student_opening_the_queue_sees_the_403_page_with_the_reason(self):
+        self.client.force_login(self.normal_student)
+
+        response = self.client.get(reverse("materials:approval_queue"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+        self.assertContains(response, "เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้", status_code=403)

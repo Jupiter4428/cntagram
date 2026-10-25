@@ -19,6 +19,9 @@
         <div class="cyber-hero__actions">
             {% if request.user.is_authenticated %}
                 <a class="chrome-button chrome-button--brand chrome-button--large" href="{% url 'materials:vault' %}">เข้าสู่คลังเอกสาร <span aria-hidden="true">↗</span></a>
+                {% if can_review %}
+                    <a class="chrome-button chrome-button--holo chrome-button--large" href="{% url 'materials:approval_queue' %}">คิวรออนุมัติเอกสาร</a>
+                {% endif %}
             {% else %}
                 <a class="chrome-button chrome-button--brand chrome-button--large" href="{% url 'accounts:login' %}">เข้าสู่ระบบ <span aria-hidden="true">↗</span></a>
                 <a class="chrome-button chrome-button--holo chrome-button--large" href="{% url 'accounts:register' %}">สมัครสมาชิก</a>

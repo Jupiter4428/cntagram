@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render, resolve_url
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from portal.permissions import is_super_admin
+from portal.permissions import can_review, is_super_admin
 
 from . import selectors
 from .forms import LoginForm
@@ -44,7 +44,7 @@ def home(request):
     if is_super_admin(request.user):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
-    return render(request, "accounts/index.html")
+    return render(request, "accounts/index.html", {"can_review": can_review(request.user)})
 
 
 @require_GET
