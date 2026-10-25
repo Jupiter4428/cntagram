@@ -1,58 +1,212 @@
 {% extends "base.html" %}
-{# โครง HTML เปล่า ยังไม่มี css รอฝั่ง front ออกแบบ (US-5) #}
 
-{% block title %}อัปโหลดชีท | CNTAGRAM{% endblock %}
+{% block title %}อัปโหลดชีทสรุป | CNTAGRAM{% endblock %}
 
 {% block content %}
-<h1>อัปโหลดชีท</h1>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <h2 class="card-title text-center mb-4 fw-bold">อัปโหลดชีทสรุป</h2>
 
-<form method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  {{ form.non_field_errors }}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
 
-  <p>
-    <label for="id_department">ภาควิชา</label>
-    <select id="id_department" disabled>
-      <option>{{ department.code }} - {{ department.name_th }}</option>
-    </select>
-  </p>
-  <p>
-    <label for="id_batch">รุ่น</label>
-    <select id="id_batch"
-            data-courses-url="{% url 'materials:upload_course_options' 0 %}">
-      <option value="">เลือกรุ่น</option>
-      {% for batch in batches %}
-        <option value="{{ batch.pk }}">{{ batch.code }}</option>
-      {% endfor %}
-    </select>
-  </p>
-  <p>
-    {{ form.batch_course.errors }}
-    <label for="id_batch_course">วิชา</label>
-    <select name="batch_course" id="id_batch_course" required>
-      <option value="">เลือกรุ่นก่อน</option>
-    </select>
-  </p>
-  {% for field in form %}
-    {% if field.name != "batch_course" %}
-      <p>{{ field.errors }}{{ field.label_tag }} {{ field }}</p>
-    {% endif %}
-  {% endfor %}
-  <button type="submit">อัปโหลด</button>
-</form>
+          <form id="uploadForm" method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <!-- ภาควิชา (ล็อกตามสังกัด) -->
+            <div class="mb-3">
+              <label for="id_department" class="form-label fw-semibold">ภาควิชา</label>
+              <select id="id_department" class="form-select" disabled>
+                <option>{{ department.code }} - {{ department.name_th }}</option>
+              </select>
+              <div class="form-text text-muted">ภาควิชาถูกล็อกตามสังกัดของคุณ</div>
+            </div>
+
+            <!-- รุ่น (Batch) -->
+            <div class="mb-3">
+              <label for="id_batch" class="form-label fw-semibold">รุ่น</label>
+              <select id="id_batch" class="form-select" data-courses-url="{% url 'materials:upload_course_options' 0 %}">
+                <option value="">-- เลือกรุ่น --</option>
+                {% for batch in batches %}
+                  <option value="{{ batch.pk }}">{{ batch.code }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- วิชา (Cascading Dropdown โหลดตามรุ่น) -->
+            <div class="mb-3">
+              <label for="id_batch_course" class="form-label fw-semibold">วิชา <span class="text-danger">*</span></label>
+              <select name="batch_course" id="id_batch_course" class="form-select" required disabled>
+                <option value="">กรุณาเลือกรุ่นก่อน</option>
+              </select>
+              {% if form.batch_course.errors %}
+                <div class="text-danger small mt-1">{{ form.batch_course.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- ฟิลด์อื่น ๆ ของฟอร์ม -->
+            {% for field in form %}
+              {% if field.name != "batch_course" %}
+                <div class="mb-3 dynamic-field-wrapper" id="wrapper_{{ field.name }}">
+                  <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                  </label>
+                  
+                  {{ field }}
+                  
+                  {% if field.name == "file" %}
+                    <div id="file-client-error" class="text-danger small mt-1 d-none"></div>
+                    <div class="form-text">รองรับเฉพาะไฟล์ PDF ขนาดไม่เกินที่ระบบกำหนด</div>
+                  {% endif %}
+
+                  {% if field.errors %}
+                    <div class="text-danger small mt-1">{{ field.errors }}</div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+
+            <!-- Checkbox Disclaimer -->
+            <div class="form-check my-4 p-3 bg-light rounded border">
+              <input class="form-check-input ms-0 me-2" type="checkbox" id="disclaimerCheck" required>
+              <label class="form-check-label small text-secondary" for="disclaimerCheck">
+                ข้าพเจ้าขอยืนยันว่าเอกสารนี้เป็นชีทสรุปที่จัดทำขึ้นอย่างถูกต้อง ไม่ละเมิดลิขสิทธิ์ และยินยอมให้เผยแพร่ภายใต้เงื่อนไขของระบบ
+              </label>
+            </div>
+
+            <!-- ปุ่ม Submit (ตั้งต้น Disabled ไว้) -->
+            <div class="d-grid gap-2">
+              <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" disabled>
+                อัปโหลดชีทสรุป
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-  // dropdown ต่อเนื่อง: เลือกรุ่นแล้วดึงวิชาในรุ่นจาก endpoint
+document.addEventListener("DOMContentLoaded", function () {
+  // 1. Cascading Dropdown: เลือกรุ่น -> โหลดวิชา
   const batchSelect = document.getElementById("id_batch");
   const courseSelect = document.getElementById("id_batch_course");
-  batchSelect.addEventListener("change", async () => {
-    courseSelect.replaceChildren(new Option("เลือกวิชา", ""));
-    if (!batchSelect.value) return;
-    const url = batchSelect.dataset.coursesUrl.replace("/0/", `/${batchSelect.value}/`);
-    const { courses } = await (await fetch(url)).json();
-    for (const course of courses) {
-      courseSelect.add(new Option(`${course.code} ${course.name}`, course.id));
-    }
+
+  if (batchSelect && courseSelect) {
+    batchSelect.addEventListener("change", function () {
+      const batchId = this.value;
+      const baseUrl = batchSelect.getAttribute("data-courses-url");
+
+      if (!batchId) {
+        courseSelect.innerHTML = '<option value="">กรุณาเลือกรุ่นก่อน</option>';
+        courseSelect.disabled = true;
+        return;
+      }
+
+      courseSelect.disabled = true;
+      courseSelect.innerHTML = '<option value="">กำลังโหลดรายวิชา...</option>';
+
+      const fetchUrl = baseUrl.replace(/0\/?$/, batchId + "/");
+
+      fetch(fetchUrl)
+        .then((response) => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.json();
+        })
+        .then((data) => {
+          courseSelect.innerHTML = '<option value="">-- เลือกวิชา --</option>';
+          if (data.courses && data.courses.length > 0) {
+            data.courses.forEach((c) => {
+              const opt = document.createElement("option");
+              opt.value = c.id;
+              opt.textContent = `${c.code} - ${c.name}`;
+              courseSelect.appendChild(opt);
+            });
+            courseSelect.disabled = false;
+          } else {
+            courseSelect.innerHTML = '<option value="">ไม่มีวิชาในรุ่นนี้</option>';
+          }
+        })
+        .catch(() => {
+          courseSelect.innerHTML = '<option value="">โหลดข้อมูลวิชาไม่สำเร็จ</option>';
+        });
+    });
+  }
+
+  // 2. Client-side Validation: ตรวจชนิดไฟล์ (.pdf) และขนาด
+  const fileInput = document.querySelector('input[type="file"]');
+  const fileError = document.getElementById("file-client-error");
+  const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+
+  if (fileInput) {
+    fileInput.classList.add("form-control");
+    fileInput.addEventListener("change", function () {
+      fileError.classList.add("d-none");
+      fileError.textContent = "";
+
+      if (this.files && this.files[0]) {
+        const file = this.files[0];
+        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+        if (!isPdf) {
+          fileError.textContent = "กรุณาเลือกไฟล์ PDF เท่านั้น";
+          fileError.classList.remove("d-none");
+          this.value = "";
+          return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+          fileError.textContent = "ขนาดไฟล์ต้องไม่เกิน 25 MB";
+          fileError.classList.remove("d-none");
+          this.value = "";
+          return;
+        }
+      }
+    });
+  }
+
+  // 3. Dynamic Fields: แสดง/ซ่อน ช่วงสอบ + ปี พ.ศ. ตามประเภทไฟล์
+  const docTypeSelect = document.querySelector('[name="doc_type"]');
+  const examPeriodWrapper = document.getElementById("wrapper_exam_period");
+  const academicYearWrapper = document.getElementById("wrapper_academic_year");
+
+  function toggleExamFields() {
+    if (!docTypeSelect) return;
+    const selectedText = docTypeSelect.options[docTypeSelect.selectedIndex]?.text || "";
+    // ถ้าประเภทเอกสารเป็นข้อสอบ หรือมีคำว่า exam ให้แสดง
+    const isExam = selectedText.includes("ข้อสอบ") || docTypeSelect.value.toLowerCase().includes("exam");
+
+    if (examPeriodWrapper) examPeriodWrapper.style.display = isExam ? "" : "none";
+    if (academicYearWrapper) academicYearWrapper.style.display = isExam ? "" : "none";
+  }
+
+  if (docTypeSelect) {
+    docTypeSelect.addEventListener("change", toggleExamFields);
+    toggleExamFields();
+  }
+
+  // 4. Disclaimer Checkbox: คุมการกดปุ่ม Submit
+  const disclaimerCheck = document.getElementById("disclaimerCheck");
+  const submitBtn = document.getElementById("submitBtn");
+
+  if (disclaimerCheck && submitBtn) {
+    disclaimerCheck.addEventListener("change", function () {
+      submitBtn.disabled = !this.checked;
+    });
+  }
+
+  // ใส่ Bootstrap Class ให้ Input ทั้งหมดอัตโนมัติ
+  document.querySelectorAll("form input:not([type='checkbox']):not([type='file']), form select, form textarea").forEach((el) => {
+    el.classList.add("form-control");
   });
+});
 </script>
 {% endblock %}
