@@ -1,0 +1,6 @@
+/* Issue #32: document download presentation; no client-side authorization. */
+.document-vault .dv-download-panel{padding:1.2rem;border:2px solid #9aa9c9;border-radius:8px;background:#f3f5ff;box-shadow:0 3px 0 #303a59}
+.document-vault .dv-download-panel h2{color:#273451;font-weight:700}
+.document-vault .dv-download-button{min-width:180px;padding:.7rem 1.2rem}
+.document-vault .dv-download-button:focus-visible{outline:3px solid #5d3677;outline-offset:3px}
+@media(max-width:575.98px){.document-vault .dv-download-button{width:100%}}

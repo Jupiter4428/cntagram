@@ -3,6 +3,7 @@
 {% block title %}{{ document.title }} | CNTAGRAM{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'materials/vault.css' %}">
+<link rel="stylesheet" href="{% static 'materials/download.css' %}">
 <div class="document-vault">
 <nav aria-label="breadcrumb" class="mb-3">
   <a href="{% url 'materials:vault' %}?course_code={{ document.batch_course.course.code|urlencode }}">← กลับไปผลค้นหา</a>
@@ -21,6 +22,29 @@
       <p>{{ document.description|linebreaksbr }}</p>
     </section>
   {% endif %}
+  {# US-8: The backend supplies an authorized URL and a download count. #}
+  <section class="dv-download-panel mb-4" aria-labelledby="download-heading">
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+      <div>
+        <h2 class="h5 mb-1" id="download-heading">ดาวน์โหลดเอกสาร</h2>
+        {% if download_count is not None %}
+          <p class="mb-0 small text-secondary">ดาวน์โหลดแล้ว {{ download_count }} ครั้ง</p>
+        {% else %}
+          <p class="mb-0 small text-secondary">ยังไม่มีข้อมูลจำนวนดาวน์โหลด</p>
+        {% endif %}
+      </div>
+      {% if download_url %}
+        <a class="btn dv-action dv-download-button" href="{{ download_url }}" download aria-label="ดาวน์โหลด {{ document.title }}">ดาวน์โหลด PDF</a>
+      {% else %}
+        <button class="btn btn-secondary dv-download-button" type="button" disabled aria-describedby="download-unavailable">ยังดาวน์โหลดไม่ได้</button>
+      {% endif %}
+    </div>
+    {% if download_error %}
+      <p class="alert alert-warning mt-3 mb-0" role="alert">{{ download_error }}</p>
+    {% elif not download_url %}
+      <p class="small text-secondary mt-3 mb-0" id="download-unavailable">การดาวน์โหลดจะเปิดใช้งานเมื่อระบบตรวจสอบสิทธิ์และไฟล์พร้อมให้ดาวน์โหลด</p>
+    {% endif %}
+  </section>
   <section aria-labelledby="preview-heading">
     <h2 class="h5" id="preview-heading">ตัวอย่างเอกสาร PDF</h2>
     <div class="border rounded overflow-hidden bg-white">
