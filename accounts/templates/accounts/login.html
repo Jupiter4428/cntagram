@@ -1,32 +1,40 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
 {% block title %}Login | CNTAGRAM{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-12 col-md-6 col-lg-4">
-        <h1>Login</h1>
-        {% if rate_limited %}
-            <div class="alert alert-danger" role="alert">
-                Too many failed login attempts. Please try again later.
-            </div>
-        {% endif %}
-        <form method="post" action="{% url 'accounts:login' %}">
-            {% csrf_token %}
-            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-            {{ form.non_field_errors }}
-            <div class="mb-3">
-                {{ form.username.label_tag }}
-                {{ form.username }}
-                {{ form.username.errors }}
-            </div>
-            <div class="mb-3">
-                {{ form.password.label_tag }}
-                {{ form.password }}
-                {{ form.password.errors }}
-            </div>
-            <button class="btn btn-primary" type="submit">Login</button>
-        </form>
-    </div>
+<div class="auth-shell">
+    <section class="retro-widget auth-surface" aria-labelledby="login-title">
+        <div class="auth-surface__halo" aria-hidden="true"></div>
+        <header class="retro-widget__header auth-surface__head">
+            <span class="tech-label">SECURE CONNECTION / TSE NODE</span>
+            <h1 id="login-title">เข้าสู่ระบบ <em>Login</em></h1>
+            <p>ใช้บัญชีอีเมลนักศึกษาเพื่อเข้าสู่คลัง CNTAGRAM</p>
+        </header>
+        <div class="retro-widget__body auth-surface__body">
+            {% if rate_limited %}
+                <div class="alert alert-danger" role="alert">
+                    Too many failed login attempts. Please try again later.
+                </div>
+            {% endif %}
+            <form method="post" action="{% url 'accounts:login' %}">
+                {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                {{ form.non_field_errors }}
+                <div class="mb-3">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                    {{ form.username.errors }}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label_tag }}
+                    {{ form.password }}
+                    {{ form.password.errors }}
+                </div>
+                <button class="chrome-button chrome-button--brand chrome-button--large w-100" type="submit">เข้าสู่ระบบ <span aria-hidden="true">↗</span></button>
+            </form>
+        </div>
+        <footer class="auth-surface__foot"><span>ENCRYPTED SESSION</span><span>AUTH / 02</span></footer>
+    </section>
 </div>
 {% endblock %}
