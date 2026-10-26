@@ -65,10 +65,11 @@ def register(request):
                 department=data["department"],
                 pdpa_consent_at=timezone.now(),
             )
-            messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
-            return redirect("accounts:login")
         except ValidationError as exc:
             form.add_error(None, exc)
+        else:
+            messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
+            return redirect("accounts:login")
 
     return render(request, "accounts/register.html", {"form": form})
 

@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils.crypto import salted_hmac
 
-from .models import Role, UserRole
+from accounts.models import Role, UserRole
 
 User = get_user_model()
 
@@ -27,6 +27,8 @@ def register_user(*, email, password, nickname, department, pdpa_consent_at):
             pdpa_consent_at=pdpa_consent_at,
         )
     except IntegrityError as exc:
+        # สองคนสมัครอีเมลเดียวกันพร้อมกันจนผ่านเช็กซ้ำในฟอร์มทั้งคู่
+        # UNIQUE ที่ชนได้มีแค่ email กับ student_id ซึ่งได้มาจาก email จึงแจ้งที่ช่อง email
         raise ValidationError({"email": "อีเมลนี้ถูกใช้สมัครแล้ว"}) from exc
 
     student_role = Role.objects.get(code=Role.STUDENT)
