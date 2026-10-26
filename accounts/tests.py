@@ -258,6 +258,14 @@ class AuthenticationViewsTests(TestCase):
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
         self.assertContains(response, self.hero)
 
+    def test_super_admin_home_with_an_invalid_page_shows_the_first_page(self):
+        self.client.force_login(self.create_super_admin())
+
+        response = self.client.get(reverse("accounts:home"), {"page": "abc"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["dashboard"]["users_page"].number, 1)
+
     def test_super_admin_home_uses_the_admin_dashboard(self):
         self.client.force_login(self.create_super_admin())
 
