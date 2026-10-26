@@ -12,24 +12,27 @@ class SearchForm(forms.Form):
     cleaned_data ส่งเข้า selectors.search_documents(**cleaned_data) ได้เลย
     """
 
-    course_code = forms.CharField(label="รหัสวิชา", max_length=10)
+    course_code = forms.CharField(label="รหัสวิชา", max_length=10, widget=forms.TextInput(attrs={"class": "form-control"}))
     department = forms.ModelChoiceField(
         label="ภาควิชา",
         queryset=Department.objects.filter(is_active=True),
         required=False,
         empty_label="ทุกภาค",
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
     batch = forms.ModelChoiceField(
         label="รุ่น",
         queryset=Batch.objects.filter(department__is_active=True),  # ให้ตรงกับรายการภาค
         required=False,
         empty_label="ทุกรุ่น",
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
     doc_type = forms.ModelChoiceField(
         label="ประเภท",
         queryset=DocType.objects.order_by("code"),
         required=False,
         empty_label="ทุกประเภท",
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
     def clean(self):
