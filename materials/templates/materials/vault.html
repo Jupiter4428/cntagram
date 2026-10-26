@@ -41,10 +41,7 @@
       <div class="col-12 col-lg-6">
         <article class="card h-100 shadow-sm dv-panel dv-result">
           <div class="card-body">
-            <div class="d-flex justify-content-between gap-2">
-              <h3 class="h5"><a href="{% url 'materials:document_detail' document.pk %}">{{ document.title }}</a></h3>
-              <span class="badge text-bg-light border">{{ document.batch_course.batch.code }}</span>
-            </div>
+            <h3 class="h5"><a href="{% url 'materials:document_detail' document.pk %}">{{ document.title }}</a></h3>
             {% include "materials/_document_meta.html" with document=document layout="compact" %}
             <a class="btn btn-sm btn-outline-primary mt-3" href="{% url 'materials:document_detail' document.pk %}">เปิดอ่าน PDF</a>
           </div>
@@ -55,7 +52,7 @@
     {% endfor %}
   </div>
 </section>
-{% else %}
+{% elif not form.errors %}
 <p class="text-secondary">กรอกรหัสวิชา เช่น CN200 แล้วกดค้นหาเพื่อเริ่มต้น</p>
 {% endif %}
 </div>

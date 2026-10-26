@@ -98,6 +98,12 @@ class VaultViewTests(SearchTestCase):
         self.assertContains(response, "รุ่น CN22 ไม่ได้อยู่ในภาค CE")
         self.assertNotContains(response, "ผลการค้นหา")
 
+    def test_invalid_search_shows_the_error_without_the_start_hint(self):
+        response = self.client.get(reverse("materials:vault"), {"course_code": ""})
+
+        self.assertContains(response, "This field is required")
+        self.assertNotContains(response, "กรอกรหัสวิชา เช่น CN200")
+
     def test_escapes_document_titles(self):
         self.make_document(self.cn200[21], title="<script>alert(1)</script>")
 
@@ -113,8 +119,23 @@ class VaultViewTests(SearchTestCase):
 
         self.assertContains(response, reverse("materials:document_detail", args=[document.pk]))
 
+    def test_results_use_the_shared_document_meta_partial(self):
+        self.make_document(self.cn200[21], title="ชีท CN21")
+
+        response = self.client.get(reverse("materials:vault"), {"course_code": "CN200"})
+
+        self.assertTemplateUsed(response, "materials/_document_meta.html")
+
 
 class DocumentDetailViewTests(SearchTestCase):
+    def test_document_page_uses_the_shared_document_meta_partial(self):
+        document = self.make_document(self.cn200[22], title="ชีท CN22")
+        self.client.force_login(self.uploader)
+
+        response = self.client.get(reverse("materials:document_detail", args=[document.pk]))
+
+        self.assertTemplateUsed(response, "materials/_document_meta.html")
+
     def test_published_document_page_embeds_the_pdf_preview(self):
         document = self.make_document(self.cn200[22], title="ชีท CN22")
         self.client.force_login(self.uploader)
