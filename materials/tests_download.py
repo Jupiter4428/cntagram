@@ -72,3 +72,38 @@ class ProtectedDownloadTests(TestCase):
                 self.assertEqual(DownloadLog.objects.filter(document=self.document).count(), 1)
                 detail = self.client.get(reverse("materials:document_detail", args=[self.document.pk]))
                 self.assertContains(detail, "ดาวน์โหลดแล้ว 1 ครั้ง")
+
+    def test_guest_detail_does_not_download_or_log(self):
+        detail_url = reverse("materials:document_detail", args=[self.document.pk])
+        response = self.client.get(detail_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(DownloadLog.objects.count(), 0)
+
+    def test_missing_storage_file_does_not_log(self):
+        self.document.add_version(
+            storage_path="missing-us8-file.pdf", original_name="missing.pdf",
+            size_bytes=10, sha256="0" * 64,
+        )
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.assertEqual(DownloadLog.objects.count(), 0)
+
+    def test_repeated_downloads_log_each_request_and_refresh_count(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            with override_settings(MEDIA_ROOT=temp):
+                content = b"%PDF-1.4\n% repeated downloads\n"
+                path = default_storage.save("us8-repeat.pdf", ContentFile(content))
+                self.document.add_version(
+                    storage_path=path, original_name="repeat.pdf",
+                    size_bytes=len(content), sha256=hashlib.sha256(content).hexdigest(),
+                )
+                self.client.force_login(self.user)
+                for count in (1, 2):
+                    response = self.client.get(self.url)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response["Cache-Control"], "private, no-store")
+                    self.assertEqual(b"".join(response.streaming_content), content)
+                    self.assertEqual(DownloadLog.objects.filter(document=self.document).count(), count)
+                    detail = self.client.get(reverse("materials:document_detail", args=[self.document.pk]))
+                    self.assertContains(detail, f"ดาวน์โหลดแล้ว {count} ครั้ง")
