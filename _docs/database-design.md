@@ -70,7 +70,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE; เก็บตัวพิมพ์ใหญ่) |
+| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE; เก็บตัวพิมพ์ใหญ่; รับแค่ A-Z 2-5 ตัว เพราะอยู่ใน path ไฟล์) |
 | name_th | VARCHAR(100) | NN |
 | name_en | VARCHAR(100) | NN |
 | is_active | BOOLEAN | NN, default true |
@@ -89,7 +89,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326; เก็บตัวพิมพ์ใหญ่) |
+| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326; เก็บตัวพิมพ์ใหญ่; A-Z ตามด้วยเลข 1-3 หลัก เพราะอยู่ใน path ไฟล์) |
 | name_th | VARCHAR(150) | NULL |
 | name_en | VARCHAR(150) | NN |
 
