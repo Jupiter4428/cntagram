@@ -372,6 +372,13 @@ class AuthenticationViewsTests(TestCase):
 VALID_PASSWORD = "Cn331-Strong-Passw0rd"
 
 
+class RoleSeedMigrationTests(TestCase):
+    def test_migrations_create_all_roles(self):
+        codes = set(Role.objects.values_list("code", flat=True))
+
+        self.assertEqual(codes, {Role.STUDENT, Role.ALUMNI, Role.MODERATOR, Role.SUPER_ADMIN})
+
+
 class RegistrationTestMixin:
     """ข้อมูลตั้งต้นและ payload ที่ถูกต้องสำหรับทดสอบการสมัครสมาชิก"""
 

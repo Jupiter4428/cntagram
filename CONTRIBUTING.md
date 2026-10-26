@@ -981,10 +981,10 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 | `ExamPeriod` | `midterm`, `final` |
 | `SystemSetting` | `legacy_batch_max`, `max_upload_mb` ตามตารางด้านบน |
 
-รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน seed `role` เป็นงานย่อยของ US-3 และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
+รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน ตาราง `role` ถูก seed อัตโนมัติด้วย data migration `accounts` 0004_seed_roles ตอน `migrate` (`seed_roles` ยังใช้ผูก super_admin ให้ superuser) และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
 
 ### Migration ที่มีอยู่
-- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0003, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
+- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
   ```
