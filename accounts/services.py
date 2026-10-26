@@ -1,8 +1,39 @@
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.utils.crypto import salted_hmac
+
+from accounts.models import Role, UserRole
+
+User = get_user_model()
+
+
+@transaction.atomic
+def register_user(*, email, password, nickname, department, pdpa_consent_at):
+    """สร้างบัญชีนักศึกษาใหม่พร้อมผูก role 'student' (US-1)
+
+    อินพุตต้องผ่าน RegisterForm มาแล้ว ถ้าขั้นใดล้มเหลวจะ rollback ทั้งหมด
+    """
+    try:
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            nickname=nickname,
+            department=department,
+            pdpa_consent_at=pdpa_consent_at,
+        )
+    except IntegrityError as exc:
+        # สองคนสมัครอีเมลเดียวกันพร้อมกันจนผ่านเช็กซ้ำในฟอร์มทั้งคู่
+        # UNIQUE ที่ชนได้มีแค่ email กับ student_id ซึ่งได้มาจาก email จึงแจ้งที่ช่อง email
+        raise ValidationError({"email": "อีเมลนี้ถูกใช้สมัครแล้ว"}) from exc
+
+    student_role = Role.objects.get(code=Role.STUDENT)
+    UserRole.objects.create(user=user, role=student_role)
+    return user
 
 
 @dataclass(frozen=True)
@@ -66,3 +97,34 @@ def attempt_login(*, form, client_ip):
     if form.has_credentials:
         record_login_failure(identifier=identifier, client_ip=client_ip)
     return LoginAttempt()
+
+
+def assign_moderator(*, user, department, granted_by):
+    """แต่งตั้ง Moderator ประจำภาควิชา พร้อมบันทึกผู้แต่งตั้ง"""
+    user_role = UserRole(
+        user=user,
+        role=Role.objects.get(code=Role.MODERATOR),
+        department=department,
+        granted_by=granted_by,
+    )
+    try:
+        user_role.full_clean()
+        with transaction.atomic():
+            user_role.save()
+    except IntegrityError as e:
+        raise ValidationError(
+            f"{user.email} เป็น Moderator ภาควิชา {department.code} อยู่แล้ว"
+        ) from e
+    except ValidationError as e:
+        msg_str = str(e)
+        if "already has this role" in msg_str or "uq_userrole_with_dept" in msg_str:
+            raise ValidationError(
+                f"{user.email} เป็น Moderator ภาควิชา {department.code} อยู่แล้ว"
+            ) from e
+        raise
+    return user_role
+
+
+def remove_moderator(*, user_role):
+    """ถอดถอน Moderator ออกจากภาควิชา"""
+    user_role.delete()

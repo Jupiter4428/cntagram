@@ -1,8 +1,82 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
-{% block title %}Register | CNTAGRAM{% endblock %}
+{% block title %}สมัครสมาชิก | CNTAGRAM{% endblock %}
 
 {% block content %}
-<h1>Register</h1>
-<p>The registration form will be provided by the account registration story.</p>
+<div class="auth-shell">
+    <section class="retro-widget auth-surface" aria-labelledby="register-title">
+        <div class="auth-surface__halo" aria-hidden="true"></div>
+        <header class="retro-widget__header auth-surface__head">
+            <span class="tech-label">NEW IDENTITY CHANNEL / TSE NODE</span>
+            <h1 id="register-title">สมัครสมาชิก <em>Register</em></h1>
+            <p>ใช้อีเมลนักศึกษาคณะวิศวกรรมศาสตร์ <strong>@student.tu.ac.th</strong> เท่านั้น</p>
+        </header>
+        <div class="retro-widget__body auth-surface__body">
+            <form method="post" action="{% url 'accounts:register' %}" novalidate id="register-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    {% if not form.email.errors %}<div class="form-text text-muted">รหัสนักศึกษา 10 หลัก โดยหลักที่ 3–4 ต้องเป็น 10</div>{% endif %}
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                        {{ form.password }}
+                        {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" for="{{ form.password_confirm.id_for_label }}">{{ form.password_confirm.label }}</label>
+                        {{ form.password_confirm }}
+                        {% for error in form.password_confirm.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" for="{{ form.nickname.id_for_label }}">{{ form.nickname.label }}</label>
+                        {{ form.nickname }}
+                        {% for error in form.nickname.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" for="{{ form.department.id_for_label }}">{{ form.department.label }}</label>
+                        {{ form.department }}
+                        {% for error in form.department.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="pdpa-box border p-3 mb-2" style="max-height: 9rem; overflow-y: auto; font-size: .875rem; background: rgba(255, 255, 255, 0.05); border-radius: .6rem;">
+                        <p class="fw-semibold mb-1">นโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA)</p>
+                        <ul class="mb-0 ps-3">
+                            <li>ระบบเก็บอีเมลนักศึกษา รหัสนักศึกษา ชื่อเล่น และภาควิชา เพื่อยืนยันว่าคุณเป็นนักศึกษาคณะวิศวกรรมศาสตร์</li>
+                            <li>อีเมลและรหัสนักศึกษาจะไม่แสดงต่อผู้ใช้อื่น ผู้อื่นจะเห็นเพียงชื่อเล่นของคุณ</li>
+                            <li>คุณขอลบหรือปิดบังข้อมูลส่วนบุคคลของคุณได้ตลอดเวลา</li>
+                        </ul>
+                    </div>
+                    <div class="form-check">
+                        {{ form.pdpa_consent }}
+                        <label class="form-check-label" for="{{ form.pdpa_consent.id_for_label }}">{{ form.pdpa_consent.label }}</label>
+                        {% for error in form.pdpa_consent.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <button class="chrome-button chrome-button--brand chrome-button--large w-100" type="submit" id="register-submit">สมัครสมาชิก <span aria-hidden="true">↗</span></button>
+            </form>
+        </div>
+        <footer class="auth-surface__foot">
+            <span>มีบัญชีอยู่แล้ว? <a href="{% url 'accounts:login' %}">เข้าสู่ระบบ</a></span>
+            <span>REG / 01</span>
+        </footer>
+    </section>
+</div>
 {% endblock %}

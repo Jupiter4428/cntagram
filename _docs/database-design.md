@@ -214,6 +214,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 > - ออกเลขเวอร์ชันผ่าน `Document.add_version()` ซึ่งล็อกแถว document ก่อน กันเลขชนเมื่ออัปโหลดพร้อมกัน
 > - ขนาดไฟล์ที่ยอมรับจริง = `system_setting.max_upload_mb` (ต้องไม่เกิน 50) CHECK ใน DB เป็นเพดานสูงสุดเท่านั้น
 > - `original_name` ถูกล้าง path และอักขระควบคุมก่อนบันทึก
+> - `storage_path` สัมพัทธ์กับ `MEDIA_ROOT` (โฟลเดอร์ `media/`) และเปิดได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ([ADR 0003](./adr/0003-document-storage-and-protected-preview.md))
 
 ### 3.4 ตั้งค่าและกฎ (Sprint 1–2)
 
@@ -352,6 +353,8 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | user_role | UQ (user_id, role_id, department_id), IDX (role_id, department_id) | หา Moderator ของภาค |
 | download_log | IDX (document_id) | นับจำนวนดาวน์โหลด |
 | audit_log | IDX (actor_id), IDX (target_type, target_id), IDX (created_at) | filter หน้า Audit Log |
+
+> **การค้นหาของ US-7** (`materials.selectors.search_documents`) ใช้ index ที่มีอยู่แล้วทั้งหมด จึงไม่ต้องเพิ่ม migration: เทียบ `course.code` แบบตรงตัว (ตัวพิมพ์ใหญ่) เพื่อใช้ UQ (code) → `batch_course` ผ่าน IDX (course_id) → `document` ผ่าน IDX (batch_course_id, status) / IDX (doc_type_id, status) ส่วนรุ่นไม่ได้เก็บรหัส `CN21` จึงกรองผ่าน `batch_course__batch` ผลค้นหาทั้งหน้าโหลดด้วย query เดียว (`select_related`) ตรวจด้วย `assertNumQueries(1)`
 
 ## 6. กฎทางธุรกิจที่ฐานข้อมูลบังคับให้เอง
 
