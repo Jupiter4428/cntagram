@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render
+from django.db.models import Count
+from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from .forms import SearchForm
@@ -20,7 +22,12 @@ def vault(request):
 def document_detail(request, document_id):
     """หน้าเอกสาร + preview PDF (เอกสารที่ไม่ published ตอบ 404)"""
     document = get_object_or_404(published_documents(), pk=document_id)
-    return render(request, "materials/document_detail.html", {"document": document})
+    document = published_documents().annotate(download_count=Count("download_logs")).get(pk=document.pk)
+    return render(request, "materials/document_detail.html", {
+        "document": document,
+        "download_count": document.download_count,
+        "download_url": reverse("materials:document_download", args=[document.pk]) if document.current_version else None,
+    })
 
 
 @login_required
