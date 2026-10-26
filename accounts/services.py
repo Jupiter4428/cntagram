@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.utils import timezone
 from django.utils.crypto import salted_hmac
 
 from .models import Role, UserRole
@@ -14,14 +13,11 @@ User = get_user_model()
 
 
 @transaction.atomic
-def register_user(*, email, password, nickname, department, pdpa_consent_at=None):
+def register_user(*, email, password, nickname, department, pdpa_consent_at):
     """สร้างบัญชีนักศึกษาใหม่พร้อมผูก role 'student' (US-1)
 
     อินพุตต้องผ่าน RegisterForm มาแล้ว ถ้าขั้นใดล้มเหลวจะ rollback ทั้งหมด
     """
-    if pdpa_consent_at is None:
-        pdpa_consent_at = timezone.now()
-
     try:
         user = User.objects.create_user(
             email=email,

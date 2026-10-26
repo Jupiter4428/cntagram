@@ -544,6 +544,18 @@ class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
         self.assertIn("email", ctx.exception.message_dict)
         self.assertIn("อีเมลนี้ถูกใช้สมัครแล้ว", ctx.exception.message_dict["email"])
 
+    def test_requires_explicit_pdpa_consent_time(self):
+        # service ต้องไม่เติมเวลายินยอม PDPA ให้เอง
+        with self.assertRaises(TypeError):
+            register_user(
+                email="6610612345@student.tu.ac.th",
+                password=VALID_PASSWORD,
+                nickname="Ploy",
+                department=self.department,
+            )
+
+        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+
 
 class RegisterViewTests(RegistrationTestMixin, TestCase):
     def setUp(self):
@@ -583,6 +595,7 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
             password=VALID_PASSWORD,
             nickname="Ploy",
             department=self.department,
+            pdpa_consent_at=timezone.now(),
         )
 
         # Act: perform the login action
@@ -624,6 +637,7 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
             password=VALID_PASSWORD,
             nickname="First",
             department=self.department,
+            pdpa_consent_at=timezone.now(),
         )
         response = self.client.post(self.url, self.payload(email="6610612345@student.tu.ac.th"))
         self.assertEqual(response.status_code, 200)

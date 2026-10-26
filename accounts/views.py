@@ -4,6 +4,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -62,6 +63,7 @@ def register(request):
                 password=data["password"],
                 nickname=data["nickname"],
                 department=data["department"],
+                pdpa_consent_at=timezone.now(),
             )
             messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
             return redirect("accounts:login")
