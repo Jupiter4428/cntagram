@@ -25,7 +25,6 @@
                 <div class="web-statusbar" aria-label="ข้อมูลเว็บไซต์">
                     <span>WWW.CNTAGRAM.TSE</span>
                     <span>BEST VIEWED WITH CURIOSITY ★</span>
-                    <span class="web-statusbar__counter">DEMO VISITOR 000038</span>
                 </div>
                 <a class="site-brand" href="{% url 'accounts:home' %}" aria-label="CNTAGRAM หน้าแรก">
                     <span class="site-brand__eyebrow">TSE DIGITAL COMMUNITY / EST. 2000s STYLE</span>
@@ -56,6 +55,7 @@
             {% block sidebar %}
                 <aside class="site-sidebar" aria-label="เมนูเสริม">
                     {% include "includes/_sidebar.html" %}
+                    {% block sidebar_extra %}{% endblock %}
                 </aside>
             {% endblock %}
         </div>

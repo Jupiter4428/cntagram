@@ -39,7 +39,7 @@ This issue covers **base layout, theme, reusable UI modules, and demonstrative p
 - Added an archive tree based on year → semester → subject, implemented with accessible `<details>` / `<summary>` elements.
 - Added marquee, stickers, 88×31-style badges, nostalgic microcopy, visitor-counter display, and music-player visual shell.
 - Made secondary widgets collapsible to reduce mobile-page length.
-- Marked illustrative content and counters as **DEMO / illustrative** so that they are not mistaken for live data.
+- Marked illustrative content and counters as **DEMO / illustrative** so that they are not mistaken for live data. These widgets (archive, music player, visitor counter, directory, badges) render on the Home page only (`includes/_home_widgets.html`); the shared layout carries no DEMO content (#88).
 - Did not implement real audio playback or visitor analytics.
 
 ### 2.4 Authentication pages

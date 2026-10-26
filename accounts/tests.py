@@ -165,6 +165,20 @@ class AuthenticationViewsTests(TestCase):
         self.assertTemplateUsed(response, "base.html")
         self.assertContains(response, 'href="/static/css/retro.css"')
 
+    def test_vault_shared_layout_has_no_demo_content(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("materials:vault"))
+
+        self.assertNotContains(response, "DEMO")
+        for template in (
+            "includes/_archive.html",
+            "includes/_music_player.html",
+            "includes/_visitor_counter.html",
+            "includes/_badges.html",
+        ):
+            self.assertTemplateNotUsed(response, template)
+
     def test_auth_pages_use_focused_help_sidebar(self):
         for url_name in ("accounts:login", "accounts:register"):
             with self.subTest(url_name=url_name):
