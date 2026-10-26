@@ -203,6 +203,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | ID | Title | Value |
 |---|---|---|
 | TD-1 | Chore: ตั้ง CI ด้วย GitHub Actions รัน `python manage.py test` ทุก PR | กันโค้ดที่เทสต์ไม่ผ่านเข้า `develop` และเป็นฐานของ coverage > 80% |
+| TD-8 | Chore: เพิ่มด่าน Static Analysis ใน CI (`black --check`, `flake8` + `.flake8`, `bandit`) ตาม [lecture 07](./lecture-notes/07-ci-cd-and-static-analysis.md) — ทำใน **Sprint 3** | โค้ดใน `develop` มีรูปแบบเดียวกัน ไม่มี import/ตัวแปรที่ไม่ใช้ และไม่มี hardcoded secret ก่อน deploy ขึ้น Cloud |
 | TD-4 | Docs: C4 Context/Container Diagram ให้ตรงกับระบบที่ deploy จริง | ทีมและผู้ประเมินเห็นสถาปัตยกรรมตรงกัน |
 | TD-5 | Refactor: ย้าย business logic ที่สะสมใน view ระหว่าง Sprint 1 เข้า `services.py` / `selectors.py` | View สั้น ทดสอบ logic ได้ตรงโดยไม่ผ่าน HTTP |
 | TD-7 | Refactor: แยก partial ข้อมูลเอกสารที่ซ้ำใน `vault.html` / `document_detail.html` ([#40](https://github.com/Jupiter4428/cntagram/issues/40)) | แก้ฟิลด์ที่แสดงของเอกสารที่เดียว มีผลทั้งหน้าค้นหาและหน้าเอกสาร |
@@ -246,7 +247,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 |---|---|---|
 | **Sprint 1** | นักศึกษา CN สมัคร ล็อกอิน อัปโหลดชีท และค้นหาชีทที่ Moderator อนุมัติแล้วได้ | E1, E2, E3, E4, E5 (US-1 – US-7) |
 | **Sprint 2** | ผู้ใช้เชื่อถือคลังได้: ไฟล์ทุกไฟล์ผ่านการคัดกรองที่ตรวจย้อนหลังได้ และระบบมี automated test + CI | E4, E3, TD (≥ 20% ของแต้ม) — ผู้สมัครเข้า Sprint: US-34 (#34), TD-3 (#36) |
-| **Sprint 3** | คลังพร้อมใช้งานจริงบน Cloud: ปลอดภัยตาม OWASP และเจ้าของลิขสิทธิ์แจ้งลบเนื้อหาได้ | E7, E1, SP-4 |
+| **Sprint 3** | คลังพร้อมใช้งานจริงบน Cloud: ปลอดภัยตาม OWASP และเจ้าของลิขสิทธิ์แจ้งลบเนื้อหาได้ | E7, E1, SP-4, TD-8 |
 | **Final (สัปดาห์ 14)** | Live Demo + Agile Metrics (Velocity, Burndown) | — |
 
 Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็นประโยคเดียวที่ **เน้นผู้ใช้, สาธิตได้ใน Sprint Review, และแต้มรวมไม่เกิน Velocity**
@@ -260,3 +261,4 @@ Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็น
 | 2026-10-12 | แทน SRS v1 ด้วย Product Backlog แบบ Agile: แปลง FR เป็น Epic/User Story, แปลง NFR เป็น DoD/AC/Spike, ย้ายกฎที่ล็อกไว้ (R-1 – R-6, FR-2.4, FR-2.5) มาเป็นประเด็นที่ต้องคุยใต้ story, ย้ายประเด็นค้าง (O-1 – O-7) เป็น story/spike |
 | 2026-10-13 | ตรวจขอบเขต Sprint 1 (Authentication, Forms, Core Models, Dashboard) แล้วปรับตาม lecture 05 (ไม่เพิ่ม story ใหม่กลาง Sprint): US-34 Dashboard (#34, รวม US-22) และ TD-3 Django admin (#36) เข้า Product Backlog รอ Sprint 2, TD-2 seed (#35 ปิด) ย้ายเป็นงานย่อยของ US-3/US-5; DoD ในทุก issue เพิ่มข้อ View บาง / ไม่มี N+1 และ circular import / อัปเดตเอกสาร ตาม DoD ใน lecture; แก้ issue ให้ตรงกับ model จริง — US-1 เพิ่ม AC PDPA consent/ชื่อเล่น/ภาควิชา, US-5 ใช้ Document/ExamDetail/DocumentVersion แทน SheetFile, US-10 ใช้ `user_role` แทนตาราง M:N ใหม่, US-8 นับจาก `download_log`, US-4/US-7 index ตาม database-design §5; ระบุ Form ของแต่ละ story; DoD ใน issue เปลี่ยนเป็น merge เข้า `develop` |
 | 2026-10-16 | US-7 (#31): ต้นแบบ SP-3 (preview ผ่าน view ที่ตรวจสิทธิ์ ไม่มี `MEDIA_URL`) บันทึกเป็น ADR 0003 (Proposed); `SearchForm` ปฏิเสธรุ่นที่ไม่อยู่ในภาคที่เลือก; การเช็ก `scan_status` และชนิดไฟล์ก่อน preview ย้ายไปเป็นงานของ US-21; เพิ่ม TD-7 (#40) แยก partial ข้อมูลเอกสารจาก code review |
+| 2026-10-26 | เพิ่ม TD-8 (Static Analysis ใน CI: Black, Flake8, Bandit) ตาม lecture 07 สัปดาห์ที่ 12 กำหนดทำใน Sprint 3; TD-1 คงขอบเขตเดิม (เทสต์ + coverage ใน Sprint 2) |
