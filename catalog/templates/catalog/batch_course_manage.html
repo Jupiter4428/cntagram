@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}วิชาในรุ่น {{ batch.code }}{% endblock %}
+
+{% block content %}
+  <h1>วิชาในรุ่น {{ batch.code }}</h1>
+
+
+  <ul>
+    {% for batch_course in batch_courses %}
+      <li>
+        {{ batch_course.course.code }} {{ batch_course.course.display_name }}
+        <form method="post" action="{% url 'catalog:batch_course_remove' batch.pk batch_course.pk %}">
+          {% csrf_token %}
+          <button type="submit">ถอดออก</button>
+        </form>
+      </li>
+    {% empty %}
+      <li>ยังไม่มีวิชาในรุ่นนี้</li>
+    {% endfor %}
+  </ul>
+
+  <h2>เพิ่มวิชาเข้ารุ่น</h2>
+  <p>ถ้ายังไม่มีวิชาในรายการ <a href="{% url 'catalog:course_create' %}">สร้างวิชาใหม่</a> ก่อน</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">เพิ่มวิชา</button>
+  </form>
+
+  <a href="{% url 'catalog:batch_list' %}">กลับหน้ารายการรุ่น</a>
+{% endblock %}

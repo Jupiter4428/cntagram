@@ -1,27 +1,73 @@
+{% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090911">
     <title>{% block title %}CNTAGRAM{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/retro.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
-<body>
-    {% include "partials/_navbar.html" %}
-    <main class="container py-5">
-        {% if messages %}
-            <div class="messages mb-4">
-                {% for message in messages %}
-                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
+<body class="{% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
+
+    <div class="site-frame">
+        <div class="ambient-orb ambient-orb--violet" aria-hidden="true"></div>
+        <div class="ambient-orb ambient-orb--red" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="brand-rail" aria-hidden="true">
+                <span></span><span></span><span></span>
             </div>
-        {% endif %}
-        {% block content %}{% endblock %}
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+            <div class="site-masthead container-xl">
+                <div class="web-statusbar" aria-label="ข้อมูลเว็บไซต์">
+                    <span>WWW.CNTAGRAM.TSE</span>
+                    <span>BEST VIEWED WITH CURIOSITY ★</span>
+                </div>
+                <a class="site-brand" href="{% url 'accounts:home' %}" aria-label="CNTAGRAM หน้าแรก">
+                    <span class="site-brand__eyebrow">TSE DIGITAL COMMUNITY / EST. 2000s STYLE</span>
+                    <strong class="site-brand__wordmark">CNTAGRAM</strong>
+                    <span class="site-brand__tagline">CONNECT · SHARE · REMEMBER</span>
+                </a>
+
+                <div class="masthead-graphic" aria-hidden="true">
+                    <span class="masthead-graphic__ring"></span>
+                    <span class="masthead-graphic__core">TSE</span>
+                    <span class="masthead-graphic__flare"></span>
+                    <span class="masthead-graphic__pixel">+ +</span>
+                </div>
+
+                <div class="masthead-status" aria-label="สถานะเว็บไซต์">
+                    <span class="status-light" aria-hidden="true"></span>
+                    <span><strong>COMMUNITY</strong> / ONLINE</span>
+                </div>
+            </div>
+            {% include "includes/_navbar.html" %}
+            {% include "includes/_marquee.html" %}
+        </header>
+
+        <div class="site-layout container-xl {% block layout_class %}{% endblock %}">
+            <main id="main-content" class="site-content" tabindex="-1">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+            {% block sidebar %}
+                <aside class="site-sidebar" aria-label="เมนูเสริม">
+                    {% include "includes/_sidebar.html" %}
+                    {% block sidebar_extra %}{% endblock %}
+                </aside>
+            {% endblock %}
+        </div>
+
+        {% include "includes/_footer.html" %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

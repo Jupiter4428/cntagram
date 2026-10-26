@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+from django.contrib import messages
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -98,9 +100,15 @@ LOGOUT_REDIRECT_URL = "accounts:home"
 LOGIN_RATE_LIMIT_ATTEMPTS = 5
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300
 
+# แม็ประดับ error ของ messages ไปเป็น class "danger" ของ alert
+MESSAGE_TAGS = {messages.ERROR: 'danger'}
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'OPTIONS': {
+            'user_attributes': ('email', 'nickname'),
+        },
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
@@ -130,6 +138,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# ไฟล์เอกสารที่อัปโหลด (DocumentVersion.storage_path สัมพัทธ์กับโฟลเดอร์นี้)
+# ตั้งใจไม่มี MEDIA_URL: เปิดไฟล์ได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ไม่มี Direct URL
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # Email
@@ -140,3 +153,10 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+from django.contrib.messages import constants as message_constants
+
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}
+

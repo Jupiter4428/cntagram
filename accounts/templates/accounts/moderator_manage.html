@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}จัดการ Moderator ประจำภาควิชา{% endblock %}
+
+{% block content %}
+  <h1>กำหนด Moderator ประจำภาควิชา</h1>
+
+
+  <section>
+    <h2>แต่งตั้ง Moderator</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">แต่งตั้ง</button>
+    </form>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>รายชื่อ Moderator ปัจจุบัน</h2>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>ภาควิชา</th>
+          <th>อีเมลผู้ใช้</th>
+          <th>ผู้แต่งตั้ง</th>
+          <th>วันที่แต่งตั้ง</th>
+          <th>การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in moderators %}
+          <tr>
+            <td>{{ m.department.code }} - {{ m.department.name_th }}</td>
+            <td>{{ m.user.email }}</td>
+            <td>{{ m.granted_by.email|default:"-" }}</td>
+            <td>{{ m.granted_at|date:"Y-m-d H:i" }}</td>
+            <td>
+              <form method="post" action="{% url 'accounts:moderator_remove' m.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" onclick="return confirm('ยืนยันการถอดถอนหรือไม่?');">ถอดถอน</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">ยังไม่มีการแต่งตั้ง Moderator</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

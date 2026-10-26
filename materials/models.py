@@ -318,4 +318,4 @@ class Approval(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.document_id} - {self.approver_id} ({self.decision})"
+        return f"{self.document_id} - {self.approver_id} ({self.decision})"

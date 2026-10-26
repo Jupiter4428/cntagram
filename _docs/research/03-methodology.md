@@ -1,6 +1,6 @@
 # บทที่ 3 วิธีดำเนินงาน
 
-> แหล่งข้อมูล: [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (Scrum, DoR/DoD, Workflow, Testing) · [`requirements.md`](../requirements.md) · [`database-design.md`](../database-design.md) · [ADR 0001](../adr/0001-modular-monolith-and-app-boundaries.md), [ADR 0002](../adr/0002-service-layer-and-selectors.md) · [`architecture/c4.md`](../architecture/c4.md) · โค้ดใน `catalog/`, `accounts/`, `materials/`
+> แหล่งข้อมูล: [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (Scrum, DoR/DoD, Workflow, Testing) · [`requirements.md`](../requirements.md) · [`database-design.md`](../database-design.md) · [ADR 0001](../adr/0001-modular-monolith-and-app-boundaries.md), [ADR 0002](../adr/0002-service-layer-and-selectors.md), [ADR 0003](../adr/0003-document-storage-and-protected-preview.md) · [`architecture/c4.md`](../architecture/c4.md) · โค้ดใน `catalog/`, `accounts/`, `materials/`
 >
 > บทนี้ยาวที่สุดและมีข้อมูลพร้อมแล้วมากที่สุด เวลาเรียบเรียงลงเล่มให้ใช้ตาราง/รูปจากเอกสารต้นทางโดยตรง แล้วเขียนคำอธิบายประกอบ
 
@@ -134,7 +134,7 @@ UNF (ตารางเดียวจากตัวอย่างใน SRS v
 1. **สมัครสมาชิก (US-1):** ตรวจอีเมลซ้ำ → โดเมน → local part เป็นเลข 10 หลัก → หลัก 3–4 = `10` → บันทึก `student_id` และเวลายอมรับ PDPA
 2. **อัปโหลดเอกสาร (US-5):** เลือกรายวิชาในรุ่น → ตรวจขนาด/ชนิดไฟล์ → คำนวณ sha256 → ล้างชื่อไฟล์ → `Document.add_version()` (ล็อกแถว) → สถานะ `pending`
 3. **อนุมัติเอกสาร (US-6, US-9):** Moderator/Super Admin ตัดสิน → บันทึก `approval` → ตรวจว่าครบ `doc_type_required_role` → `published` (หรือ `rejected` พร้อมเหตุผล)
-4. **ค้นหาและดาวน์โหลด (US-7, US-8):** ค้นด้วยรหัสวิชาข้ามทุกรุ่น → แสดงเฉพาะ `published` → ดาวน์โหลดผ่าน view ที่ตรวจสิทธิ์ → บันทึก `download_log`
+4. **ค้นหาและดาวน์โหลด (US-7, US-8):** ค้นด้วยรหัสวิชาข้ามทุกรุ่น (กรองภาค/รุ่น/ประเภทได้) → แสดงเฉพาะ `published` → เปิด preview PDF ใน iframe ผ่าน view ที่ตรวจสิทธิ์ (ADR 0003) → ดาวน์โหลดผ่าน view ที่ตรวจสิทธิ์ → บันทึก `download_log`
 
 ## 3.6 เครื่องมือและเทคโนโลยี
 
