@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{# โครง HTML เปล่า ยังไม่มี css รอฝั่ง front ออกแบบ (US-7) #}
+
+{% block title %}{{ document.title }} | CNTAGRAM{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'materials:vault' %}?course_code={{ document.batch_course.course.code|urlencode }}">กลับไปผลค้นหา</a></p>
+
+<h1>{{ document.title }}</h1>
+<dl>
+  <dt>วิชา</dt><dd>{{ document.batch_course.course.code }} {{ document.batch_course.course.display_name }}</dd>
+  <dt>รุ่น</dt><dd>{{ document.batch_course.batch.code }}</dd>
+  <dt>ประเภท</dt><dd>{{ document.doc_type.name_th }}</dd>
+  <dt>ผู้อัปโหลด</dt><dd>{{ document.uploader.nickname }}</dd>
+</dl>
+<p>{{ document.description|linebreaksbr }}</p>
+
+<iframe src="{% url 'materials:document_preview' document.pk %}" title="{{ document.title }}" width="100%" height="800"></iframe>
+{% endblock %}
