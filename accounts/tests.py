@@ -715,10 +715,11 @@ class AdminDashboardSelectorTests(TestCase):
 
         self.assertEqual(admin_dashboard()["new_users"]["all"], before + 1)
 
-    def test_all_users_count_does_not_drop_when_a_user_is_deleted(self):
+    def test_all_users_count_does_not_drop_when_the_newest_user_is_deleted(self):
         before = admin_dashboard()["new_users"]["all"]
-        UserRole.objects.filter(user=self.users[0]).delete()
-        User.objects.filter(pk=self.users[0].pk).delete()
+        newest = User.objects.latest("pk")
+        UserRole.objects.filter(user=newest).delete()
+        newest.delete()
 
         dashboard = admin_dashboard()
 
@@ -780,7 +781,7 @@ class AdminDashboardSelectorTests(TestCase):
         )
 
     def test_dashboard_runs_a_fixed_number_of_queries(self):
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(10):
             dashboard = admin_dashboard()
             for user in dashboard["users_page"]:
                 [r.role.name_th for r in user.user_roles.all()]

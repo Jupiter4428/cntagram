@@ -1,12 +1,12 @@
 import datetime
 
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from catalog.models import Batch, Course, Department
 
-from .models import Role, User, UserRole
+from .models import Role, User, UserCounter, UserRole
 
 
 def moderator_list():
@@ -53,9 +53,9 @@ def _role_counts():
 
 
 def _new_user_counts(today):
-    """ผู้ใช้ใหม่วันนี้ / สัปดาห์นี้ (เริ่มจันทร์) / เดือนนี้ / ปีนี้ / ทั้งหมด ใน query เดียว
+    """ผู้ใช้ใหม่วันนี้ / สัปดาห์นี้ (เริ่มจันทร์) / เดือนนี้ / ปีนี้ ใน aggregate เดียว และยอดสะสมทั้งหมด
 
-    "ทั้งหมด" = ยอดสะสมผู้ใช้ที่เคยถูกสร้าง (pk ล่าสุด) เพิ่มทีละหนึ่งต่อการสร้าง ไม่ลดเมื่อลบหรือปิดใช้งาน
+    "ทั้งหมด" = ยอดสะสมผู้ใช้ที่เคยถูกสร้างจาก UserCounter ไม่ลดเมื่อลบหรือปิดใช้งาน
     """
 
     def since(day):
@@ -69,9 +69,8 @@ def _new_user_counts(today):
     }
     counts = User.objects.aggregate(
         **{key: Count("pk", filter=Q(created_at__gte=since(day))) for key, day in starts.items()},
-        all=Max("pk"),
     )
-    counts["all"] = counts["all"] or 0  # ยังไม่มีผู้ใช้ Max ได้ None
+    counts["all"] = UserCounter.objects.get(pk=1).total  # แถว pk=1 สร้างใน migration 0004
     return counts
 
 
