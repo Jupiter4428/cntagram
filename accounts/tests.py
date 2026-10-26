@@ -429,6 +429,10 @@ class RegisterFormTests(RegistrationTestMixin, TestCase):
             with self.subTest(email=email):
                 self.assertFieldError(self.payload(email=email), "email")
 
+    def test_malformed_email_shows_thai_error(self):
+        form = self.assertFieldError(self.payload(email="not-an-email"), "email")
+        self.assertEqual(form.errors["email"], ["รูปแบบอีเมลไม่ถูกต้อง"])
+
     def test_rejects_local_part_that_is_not_10_digits(self):
         for email in (
             "661061234@student.tu.ac.th",
@@ -461,6 +465,12 @@ class RegisterFormTests(RegistrationTestMixin, TestCase):
                 form = self.assertFieldError(self.payload(nickname=nickname), "nickname")
                 self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0])
 
+    def test_blank_required_fields_show_thai_error(self):
+        for field in ("email", "nickname", "department", "password", "password_confirm"):
+            with self.subTest(field=field):
+                form = self.assertFieldError(self.payload(**{field: ""}), field)
+                self.assertEqual(form.errors[field], ["กรุณากรอกข้อมูลช่องนี้"])
+
     def test_requires_pdpa_consent(self):
         form = self.assertFieldError(self.payload(pdpa_consent=None), "pdpa_consent")
         self.assertIn("PDPA", form.errors["pdpa_consent"][0])
@@ -492,9 +502,12 @@ class RegisterFormTests(RegistrationTestMixin, TestCase):
         queryset = RegisterForm().fields["department"].queryset
         self.assertIn(self.department, queryset)
         self.assertNotIn(self.inactive_department, queryset)
-        self.assertFieldError(
+
+    def test_rejects_inactive_department_with_thai_error(self):
+        form = self.assertFieldError(
             self.payload(department=str(self.inactive_department.pk)), "department"
         )
+        self.assertEqual(form.errors["department"], ["กรุณาเลือกภาควิชาจากรายการ"])
 
     def test_invalid_fields_get_bootstrap_invalid_class(self):
         form = self.assertFieldError(self.payload(nickname="admin"), "nickname")

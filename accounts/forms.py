@@ -9,6 +9,8 @@ from catalog.selectors import active_department_list
 
 User = get_user_model()
 
+REQUIRED_ERROR = {"required": "กรุณากรอกข้อมูลช่องนี้"}
+
 
 class LoginForm(AuthenticationForm):
     """Authenticate against the custom email-based user model."""
@@ -62,6 +64,7 @@ class RegisterForm(forms.ModelForm):
     password = forms.CharField(
         label="รหัสผ่าน",
         strip=False,
+        error_messages=REQUIRED_ERROR,
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "new-password",
@@ -73,6 +76,7 @@ class RegisterForm(forms.ModelForm):
     password_confirm = forms.CharField(
         label="ยืนยันรหัสผ่าน",
         strip=False,
+        error_messages=REQUIRED_ERROR,
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "new-password",
@@ -116,7 +120,13 @@ class RegisterForm(forms.ModelForm):
         }
         error_messages = {
             "email": {
-                "unique": "อีเมลนี้ถูกใช้สมัครแล้ว",
+                **REQUIRED_ERROR,
+                "invalid": "รูปแบบอีเมลไม่ถูกต้อง",
+            },
+            "nickname": REQUIRED_ERROR,
+            "department": {
+                **REQUIRED_ERROR,
+                "invalid_choice": "กรุณาเลือกภาควิชาจากรายการ",
             },
         }
 
