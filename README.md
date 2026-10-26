@@ -178,7 +178,8 @@ cntagram/
 ├── portal/          # Django project config (settings, urls, wsgi/asgi)
 ├── accounts/        # User, Role, UserRole (US-1, US-2)
 ├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
-├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
+├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5, US-7)
+├── media/           # ไฟล์เอกสารที่อัปโหลด (MEDIA_ROOT) สร้างเองตอนมีไฟล์แรก อยู่ใน .gitignore และเปิดได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น (ADR 0003)
 ├── .github/         # Issue templates และ Pull Request template
 ├── manage.py
 ├── requirements.txt

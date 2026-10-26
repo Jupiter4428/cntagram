@@ -1,21 +1,59 @@
 {% extends "base.html" %}
-
-{% block title %}Document vault | CNTAGRAM{% endblock %}
-
+{% load static %}
+{% block title %}ค้นหาชีทและเอกสาร | CNTAGRAM{% endblock %}
 {% block content %}
-{# TODO(US-7): replace placeholder with course search and document list #}
-<section class="retro-widget forum-panel vault-panel" aria-labelledby="vault-title">
-    <div class="retro-widget__header forum-panel__head">
-        <div>
-            <span class="tech-label">PROTECTED KNOWLEDGE NODE</span>
-            <h1 id="vault-title">Document Vault</h1>
-        </div>
-        <span class="cyber-badge cyber-badge--red">MEMBERS ONLY</span>
-    </div>
-    <div class="empty-state">
-        <div class="chrome-glyph" aria-hidden="true">PDF</div>
-        <h2>คลังเอกสารพร้อมใช้งาน</h2>
-        <p class="mb-0">รายการเอกสารจะถูกเพิ่มโดย User Story ของระบบคลัง</p>
-    </div>
+<link rel="stylesheet" href="{% static 'materials/vault.css' %}">
+<div class="document-vault">
+<section class="mb-4 dv-hero">
+  <p class="text-uppercase small fw-bold text-secondary mb-1">CNTAGRAM / DOCUMENT VAULT</p>
+  <h1 class="display-6 fw-bold">ค้นหาชีทและเอกสาร</h1>
+  <p class="dv-subtitle mb-0">ค้นหาตามรหัสวิชา เพื่อดูเอกสารจากทุกรุ่นในที่เดียว</p>
 </section>
+<section class="card shadow-sm mb-4 dv-panel" aria-labelledby="search-heading">
+  <div class="card-body">
+    <h2 class="h5" id="search-heading">ค้นหาเอกสาร</h2>
+    <form method="get" action="{% url 'materials:vault' %}">
+      {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="row g-3">
+        {% for field in form %}
+          <div class="col-12 col-md-6 col-xl-3">
+            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="text-danger small" role="alert">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button type="submit" class="btn dv-action">ค้นหาเอกสาร</button>
+        <a href="{% url 'materials:vault' %}" class="btn btn-outline-secondary">ล้างตัวกรอง</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% if documents is not None %}
+<section aria-labelledby="results-heading">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h2 class="h4 mb-0" id="results-heading">ผลการค้นหา</h2>
+    <span class="badge text-bg-secondary">{{ documents|length }} รายการ</span>
+  </div>
+  <div class="row g-3">
+    {% for document in documents %}
+      <div class="col-12 col-lg-6">
+        <article class="card h-100 shadow-sm dv-panel dv-result">
+          <div class="card-body">
+            <h3 class="h5"><a href="{% url 'materials:document_detail' document.pk %}">{{ document.title }}</a></h3>
+            {% include "materials/_document_meta.html" with document=document layout="compact" %}
+            <a class="btn btn-sm btn-outline-primary mt-3" href="{% url 'materials:document_detail' document.pk %}">เปิดอ่าน PDF</a>
+          </div>
+        </article>
+      </div>
+    {% empty %}
+      <div class="col-12"><div class="alert alert-info" role="status">ไม่พบเอกสารที่ตรงกับเงื่อนไข ลองเปลี่ยนรหัสวิชาหรือตัวกรอง</div></div>
+    {% endfor %}
+  </div>
+</section>
+{% elif not form.errors %}
+<p class="text-secondary">กรอกรหัสวิชา เช่น CN200 แล้วกดค้นหาเพื่อเริ่มต้น</p>
+{% endif %}
+</div>
 {% endblock %}
