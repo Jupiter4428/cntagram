@@ -1,4 +1,4 @@
-"""
+﻿"""
 URL configuration for portal project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -21,6 +21,6 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("accounts.urls")),
-    path("catalog/", include("catalog.urls")),  # <-- ต้องมีบรรทัดนี้
+    path("catalog/", include("catalog.urls")),
     path("materials/", include("materials.urls")),
 ]

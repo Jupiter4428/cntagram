@@ -1,51 +1,47 @@
-{% extends "base.html" %}
-{% block title %}เข้าสู่ระบบ | CNTAGRAM{% endblock %}
+{% extends "auth_base.html" %}
+
+{% block title %}Login | CNTAGRAM{% endblock %}
+
 {% block content %}
-<div class="row g-4 align-items-start login-layout">
-    <div class="col-lg-9">
-        <section class="login-window" aria-labelledby="login-heading">
-            <div class="login-window-heading">
-                <span class="eyebrow">SECURE CONNECTION / CNTAGRAM NODE</span>
-                <h1 id="login-heading">เข้าสู่ระบบ <em>Login</em></h1>
-                <p>ใช้บัญชีอีเมลนักศึกษาเพื่อเข้าสู่คลัง CNTAGRAM</p>
-            </div>
-            <div class="login-window-body">
-                {% if rate_limited %}
-                <div class="alert alert-danger" role="alert" aria-live="assertive">
-                    <strong>ลองเข้าสู่ระบบหลายครั้งเกินไป</strong>
-                    <p class="mb-1">กรุณารอสักครู่แล้วลองอีกครั้ง เพื่อความปลอดภัยของบัญชี</p>
-                    <small>Too many failed login attempts. Please try again later.</small>
-                </div>
-                {% endif %}
-                {% if form.non_field_errors and not rate_limited %}
+<div class="auth-shell">
+    <section class="retro-widget auth-surface" aria-labelledby="login-title">
+        <div class="auth-surface__halo" aria-hidden="true"></div>
+        <header class="retro-widget__header auth-surface__head">
+            <span class="tech-label">SECURE CONNECTION / TSE NODE</span>
+            <h1 id="login-title">เข้าสู่ระบบ <em>Login</em></h1>
+            <p>ใช้บัญชีอีเมลนักศึกษาเพื่อเข้าสู่คลัง CNTAGRAM</p>
+        </header>
+        <div class="retro-widget__body auth-surface__body">
+            {% if rate_limited %}
                 <div class="alert alert-danger" role="alert">
-                    <strong>เข้าสู่ระบบไม่สำเร็จ</strong>
-                    <div class="mt-1">{{ form.non_field_errors }}</div>
+                    <strong>ลองเข้าสู่ระบบหลายครั้งเกินไป</strong>
+                    <p class="mb-0">กรุณารอสักครู่แล้วลองอีกครั้ง เพื่อความปลอดภัยของบัญชี</p><small>Too many failed login attempts. Please try again later.</small>
                 </div>
+            {% endif %}
+            <form method="post" action="{% url 'accounts:login' %}">
+                {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                {% if form.non_field_errors and not rate_limited %}
+                    <div class="alert alert-danger" role="alert">
+                        <strong>เข้าสู่ระบบไม่สำเร็จ</strong>
+                        {{ form.non_field_errors }}
+                    </div>
                 {% endif %}
-                <form method="post" action="{% url 'accounts:login' %}">
-                    {% csrf_token %}
-                    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-                    <div class="mb-3">
-                        <label class="form-label" for="{{ form.username.id_for_label }}">อีเมลนักศึกษา <small>Student email</small></label>
-                        {{ form.username }}
-                        {% if form.username.errors %}<div class="text-danger small mt-1" role="alert">{{ form.username.errors }}</div>{% endif %}
-                        <div class="form-text">ใช้อีเมลมหาวิทยาลัย @student.tu.ac.th</div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label" for="{{ form.password.id_for_label }}">รหัสผ่าน <small>Password</small></label>
-                        {{ form.password }}
-                        {% if form.password.errors %}<div class="text-danger small mt-1" role="alert">{{ form.password.errors }}</div>{% endif %}
-                    </div>
-                    <button type="submit" class="btn y2k-button y2k-button-red w-100 y2k-button-large">เข้าสู่ระบบ ↗</button>
-                </form>
-                <p class="text-center mt-4 mb-0 small">ยังไม่มีบัญชี? <a href="{% url 'accounts:register' %}">สมัครสมาชิก</a></p>
-            </div>
-            <div class="login-window-footer"><span>SECURE SESSION</span><span>AUTH / 02</span></div>
-        </section>
-    </div>
-    <aside class="col-lg-3 sidebar-stack" aria-label="ข้อมูลสำหรับสมาชิก">
-        {% include "partials/_community_sidebar.html" %}
-    </aside>
+                <div class="mb-3">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                    {% if form.username.errors %}<div class="text-danger small" role="alert">{{ form.username.errors }}</div>{% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label_tag }}
+                    {{ form.password }}
+                    {% if form.password.errors %}<div class="text-danger small" role="alert">{{ form.password.errors }}</div>{% endif %}
+                </div>
+                <button class="chrome-button chrome-button--brand chrome-button--large w-100" type="submit">เข้าสู่ระบบ <span aria-hidden="true">↗</span></button>
+            </form>
+            <p class="text-center mt-3 mb-0">ยังไม่มีบัญชี? <a href="{% url 'accounts:register' %}">สมัครสมาชิก</a></p>
+        </div>
+        <footer class="auth-surface__foot"><span>ENCRYPTED SESSION</span><span>AUTH / 02</span></footer>
+    </section>
 </div>
 {% endblock %}

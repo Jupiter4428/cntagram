@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" role="img" aria-labelledby="title desc">
+  <title id="title">Holographic computer engineering CPU</title>
+  <desc id="desc">An original Y2K chrome processor with circuit traces, metallic pins, stars, and holographic reflections.</desc>
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.22" stop-color="#DDE3EE"/>
+      <stop offset="0.43" stop-color="#68758D"/>
+      <stop offset="0.51" stop-color="#FFFFFF"/>
+      <stop offset="0.72" stop-color="#7E899D"/>
+      <stop offset="1" stop-color="#E9F6FF"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#374263"/>
+      <stop offset="0.48" stop-color="#171B30"/>
+      <stop offset="1" stop-color="#512443"/>
+    </linearGradient>
+    <linearGradient id="holo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F8F9FF"/>
+      <stop offset="0.18" stop-color="#A9D8FF"/>
+      <stop offset="0.42" stop-color="#A88CFF"/>
+      <stop offset="0.64" stop-color="#FF78C8"/>
+      <stop offset="0.82" stop-color="#FFD04F"/>
+      <stop offset="1" stop-color="#C7FF5E"/>
+    </linearGradient>
+    <radialGradient id="core" cx="32%" cy="22%" r="90%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.28" stop-color="#BCEBFF"/>
+      <stop offset="0.56" stop-color="#9E82F2"/>
+      <stop offset="0.8" stop-color="#C84B9E"/>
+      <stop offset="1" stop-color="#461D3B"/>
+    </radialGradient>
+    <pattern id="grid" width="18" height="18" patternUnits="userSpaceOnUse">
+      <path d="M18 0H0v18" fill="none" stroke="#DDE3EE" stroke-opacity="0.13" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="190%">
+      <feDropShadow dx="0" dy="20" stdDeviation="15" flood-color="#090911" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <g fill="none" stroke-linecap="round">
+    <ellipse cx="280" cy="280" rx="246" ry="91" transform="rotate(-14 280 280)" stroke="#A9D8FF" stroke-width="2" opacity="0.48"/>
+    <ellipse cx="280" cy="280" rx="220" ry="68" transform="rotate(29 280 280)" stroke="#FF78C8" stroke-width="2" stroke-dasharray="5 10" opacity="0.45"/>
+  </g>
+
+  <g stroke="url(#chrome)" stroke-width="12" stroke-linecap="square">
+    <path d="M174 102V65M228 102V54M280 102V64M332 102V54M386 102V65"/>
+    <path d="M174 458v37M228 458v48M280 458v38M332 458v48M386 458v37"/>
+    <path d="M102 174H65M102 228H54M102 280H64M102 332H54M102 386H65"/>
+    <path d="M458 174h37M458 228h48M458 280h38M458 332h48M458 386h37"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="102" y="102" width="356" height="356" rx="42" fill="#111423" stroke="url(#chrome)" stroke-width="10"/>
+    <rect x="116" y="116" width="328" height="328" rx="32" fill="url(#chip)" stroke="#F8F9FF" stroke-opacity="0.55" stroke-width="2"/>
+    <rect x="116" y="116" width="328" height="328" rx="32" fill="url(#grid)"/>
+
+    <g fill="none" stroke-width="4" opacity="0.85">
+      <path d="M128 170h62l27 27" stroke="#A9D8FF"/>
+      <path d="M128 224h45l32 32" stroke="#FF78C8"/>
+      <path d="M128 390h61l31-31" stroke="#FFD04F"/>
+      <path d="M432 170h-62l-27 27" stroke="#C7FF5E"/>
+      <path d="M432 224h-45l-32 32" stroke="#A88CFF"/>
+      <path d="M432 390h-61l-31-31" stroke="#FF78C8"/>
+      <path d="M170 128v42l27 27M390 128v42l-27 27M170 432v-42l27-27M390 432v-42l-27-27" stroke="#DDE3EE"/>
+    </g>
+
+    <g fill="#F8F9FF">
+      <circle cx="128" cy="170" r="5"/><circle cx="128" cy="224" r="5"/><circle cx="128" cy="390" r="5"/>
+      <circle cx="432" cy="170" r="5"/><circle cx="432" cy="224" r="5"/><circle cx="432" cy="390" r="5"/>
+    </g>
+
+    <rect x="184" y="174" width="192" height="212" rx="27" fill="url(#holo)" stroke="url(#chrome)" stroke-width="8"/>
+    <rect x="201" y="191" width="158" height="178" rx="20" fill="url(#core)" stroke="#FFFFFF" stroke-opacity="0.68" stroke-width="2"/>
+    <path d="M211 214h138" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" opacity="0.34"/>
+    <path d="M214 344h132" stroke="#421838" stroke-width="2" opacity="0.5"/>
+
+    <g font-family="Arial Black, Arial, sans-serif" text-anchor="middle">
+      <text x="280" y="281" fill="#FFFFFF" font-size="66" font-style="italic" letter-spacing="-5">CPU</text>
+      <text x="280" y="311" fill="#25182E" font-size="17" letter-spacing="7">TSE·CN</text>
+    </g>
+    <g font-family="Courier New, monospace" font-weight="700" text-anchor="middle">
+      <text x="280" y="337" fill="#25182E" font-size="10" letter-spacing="2">COMPUTER ENGINEERING</text>
+      <text x="280" y="410" fill="#A9D8FF" font-size="10" letter-spacing="3">0110 / FE-038 / DEMO</text>
+    </g>
+  </g>
+
+  <g fill="url(#chrome)" filter="url(#glow)">
+    <path d="M91 69l7 25 25 7-25 7-7 25-7-25-25-7 25-7z"/>
+    <path d="M472 379l10 35 35 10-35 10-10 35-10-35-35-10 35-10z"/>
+    <path d="M471 75l6 20 20 6-20 6-6 20-6-20-20-6 20-6z"/>
+  </g>
+
+  <g fill="#FF78C8" stroke="#F8F9FF" stroke-width="2">
+    <path d="M68 301c-17-14-38 9 0 35 38-26 17-49 0-35z"/>
+    <path d="M491 203c-12-10-27 7 0 25 27-18 12-35 0-25z"/>
+  </g>
+
+  <g font-family="Courier New, monospace" font-weight="700" text-anchor="middle">
+    <text x="280" y="528" fill="#F8F9FF" font-size="14" letter-spacing="4">CNTAGRAM PROCESSOR</text>
+    <text x="280" y="547" fill="#C7FF5E" font-size="9" letter-spacing="3">ENGINEER INSIDE / DEMO</text>
+  </g>
+</svg>

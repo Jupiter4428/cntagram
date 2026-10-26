@@ -1,63 +1,166 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block title %}หน้าแรก | CNTAGRAM{% endblock %}
+
+{% block sidebar_extra %}
+    {% include "includes/_home_widgets.html" %}
+{% endblock %}
+
 {% block content %}
-<div class="row g-4">
-    <div class="col-lg-9">
-        <section class="y2k-panel hero-panel" aria-labelledby="home-heading">
-            <div class="hero-grid">
-                <div>
-                    <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> WELCOME.HTML / COMMUNITY WEBBOARD / 2000s EDITION</div>
-                    <div class="welcome-note">WELCOME TO</div>
-                    <h1 id="home-heading" class="chrome-logo hero-logo">CNTAGRAM</h1>
-                    <p class="hero-kicker">เว็บบอร์ดเด็กวิศวะ!</p>
-                    <h2 class="hero-heading">พื้นที่แชร์ชีทของชาววิศวะ ♥</h2>
-                    <p class="hero-copy">แหล่งรวมชีท โน้ต และความทรงจำฉบับเด็กวิศวะ — ค้นหาเอกสารเรียนและแบ่งปันความรู้ไปด้วยกัน</p>
-                    <div class="d-flex flex-wrap gap-2 mt-4">
-                        {% if request.user.is_authenticated %}
-                            <a class="btn y2k-button y2k-button-red y2k-button-large" href="{% url 'materials:vault' %}">เข้าสู่คลังเอกสาร ↗</a>
-                        {% else %}
-                            <a class="btn y2k-button y2k-button-red y2k-button-large" href="{% url 'accounts:register' %}">สมัครสมาชิก ↗</a>
-                            <a class="btn y2k-button y2k-button-dark y2k-button-large" href="{% url 'accounts:login' %}">เข้าสู่ระบบ</a>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="hero-art" aria-hidden="true">
-                    <div class="star star-one">✦</div><div class="star star-two">✧</div>
-                    <div class="hero-orb"><span>CN</span><small>2000s</small></div>
-                    <div class="pixel-chip">✦ COMMUNITY<br>ARCHIVE</div>
-                    <div class="star star-three">★</div>
-                </div>
-            </div>
-            <div class="hero-status"><span>TXT READY</span><span>COMMUNITY EDITION</span><span>STATUS: UNDER CONSTRUCTION</span></div>
-        </section>
-
-        <div class="y2k-notice mt-3"><strong>✦ WEBBOARD NOTICE</strong><span>ยินดีต้อนรับสู่ CNTAGRAM — ฟีเจอร์คลังเอกสารอยู่ระหว่างการพัฒนา</span></div>
-
-        <section class="y2k-panel mt-3" aria-labelledby="board-heading">
-            <div class="panel-heading"><span>▣ <span id="board-heading">หมวดหมู่คลังความรู้</span></span><small>COMMUNITY ARCHIVE</small></div>
-            <div class="board-row"><span class="board-icon">L</span><div><h3>Lecture Notes</h3><p>ชีทสรุป บันทึกในห้องเรียน และสไลด์ประกอบการเรียน</p></div><span class="demo-label">COMING SOON</span></div>
-            <div class="board-row"><span class="board-icon purple">C</span><div><h3>Cheat Sheets</h3><p>สูตรสำคัญและสรุปเนื้อหาแบบอ่านเร็วสำหรับทบทวน</p></div><span class="demo-label">COMING SOON</span></div>
-            <div class="board-row"><span class="board-icon pale">E</span><div><h3>Exam Archive</h3><p>พื้นที่จัดหมวดข้อสอบเก่าเพื่อช่วยเตรียมตัวสอบ</p></div><span class="demo-label">COMING SOON</span></div>
-        </section>
-
-        <section class="y2k-panel mt-3" aria-labelledby="news-heading">
-            <div class="panel-heading purple-heading"><span>✉ <span id="news-heading">Community News</span></span><small>NOTICE BOARD</small></div>
-            <div class="news-entry"><span class="news-date">25<br>OCT<br>2026</span><div><h3>ยินดีต้อนรับสู่ CNTAGRAM เว็บบอร์ดเด็กวิศวะ</h3><p>พื้นที่ของนักศึกษาสำหรับค้นหาและแบ่งปันความรู้ร่วมกัน ฟีเจอร์บางส่วนยังอยู่ระหว่างการพัฒนา</p></div></div>
-        </section>
-
-        {% if is_super_admin %}
-        <section class="y2k-panel mt-3" aria-labelledby="admin-heading">
-            <div class="panel-heading"><span id="admin-heading">▣ เครื่องมือผู้ดูแลระบบ</span></div>
-            <div class="p-3 d-flex flex-wrap gap-2">
-                <a class="btn y2k-button y2k-button-dark" href="{% url 'catalog:department_list' %}">จัดการภาควิชา</a>
-                <a class="btn y2k-button y2k-button-dark" href="{% url 'catalog:batch_list' %}">จัดการรุ่นและวิชาในรุ่น</a>
-                <a class="btn y2k-button y2k-button-dark" href="{% url 'catalog:course_list' %}">จัดการรายวิชา</a>
-            </div>
-        </section>
-        {% endif %}
+<section class="cyber-hero welcome-board" aria-labelledby="hero-title">
+    <div class="cyber-hero__copy">
+        <div class="hero-coordinate"><span></span> WELCOME.HTML / COMMUNITY WEBBOARD / DEMO</div>
+        <h1 id="hero-title">
+            <span>WELCOME TO</span>
+            <strong>CNTAGRAM</strong>
+            <em>เว็บบอร์ดเด็กวิศวะ!</em>
+        </h1>
+        <p class="cyber-hero__thai">พื้นที่แชร์ชีทของชาววิศวะ ♥</p>
+        <p class="cyber-hero__lead">
+            แหล่งรวมชีท โน้ต และความทรงจำฉบับเด็กวิศวะ — รุ่นพี่ส่งต่อ รุ่นน้องไม่ต้องเริ่มจากศูนย์
+        </p>
+        <div class="cyber-hero__actions">
+            {% if request.user.is_authenticated %}
+                <a class="chrome-button chrome-button--brand chrome-button--large" href="{% url 'materials:vault' %}">เข้าสู่คลังเอกสาร <span aria-hidden="true">↗</span></a>
+            {% else %}
+                <a class="chrome-button chrome-button--brand chrome-button--large" href="{% url 'accounts:login' %}">เข้าสู่ระบบ <span aria-hidden="true">↗</span></a>
+                <a class="chrome-button chrome-button--holo chrome-button--large" href="{% url 'accounts:register' %}">สมัครสมาชิก</a>
+            {% endif %}
+        </div>
+        <div class="web-stamps" aria-label="สถานะเว็บไซต์">
+            <span><b>Y2K</b> READY</span>
+            <span><b>DEMO</b> CONTENT</span>
+            <span><b>NEW!</b> WEBBOARD</span>
+        </div>
     </div>
-    <aside class="col-lg-3 sidebar-stack" aria-label="ข้อมูลชุมชน">
-        {% include "partials/_community_sidebar.html" %}
-    </aside>
+
+    <figure class="cyber-hero__visual" aria-hidden="true">
+        {% include "includes/_digital_ephemera.html" %}
+        {% include "includes/_stickers.html" %}
+        <div class="hero-starburst hero-starburst--one">✦</div>
+        <div class="hero-starburst hero-starburst--two">✦</div>
+        <div class="orbital-track orbital-track--outer"></div>
+        <div class="orbital-track orbital-track--inner"></div>
+        <img src="{% static 'img/cyber-orb.svg' %}" alt="" width="560" height="560">
+        <figcaption>
+            <span>HARDWARE MODULE / ORIGINAL</span>
+            <strong>TSE ★ CPU CORE</strong>
+        </figcaption>
+    </figure>
+
+    <div class="hero-spec" aria-hidden="true">
+        <span>SERIAL FE-038</span><span>STATUS: UNDER CONSTRUCTION</span><span>HTML / TSE-CN</span>
+    </div>
+</section>
+
+<div class="transmission-note" role="note">
+    <span class="transmission-note__icon" aria-hidden="true">✦</span>
+    <span class="tech-label">WEBBOARD NOTICE</span>
+    <p>ข้อมูลหน้าแรกเป็นตัวอย่าง FE-1 · ไม่มีโพสต์ ยอดอ่าน หรือไฟล์จริง · พร้อมสอบไหม? ไม่พร้อมก็ต้องพร้อม</p>
+    <span class="transmission-note__code">[ INFO ]</span>
 </div>
+
+<section class="retro-widget community-feed" aria-labelledby="community-feed-title">
+    <div class="retro-widget__header module-heading">
+        <span class="pixel-folder" aria-hidden="true">▤</span>
+        <span><small>RECENTLY UPDATED / ILLUSTRATIVE</small><span id="community-feed-title">สมุดบันทึกชุมชน — โพสต์ตัวอย่าง</span></span>
+        <span class="tech-index">2 POSTS</span>
+    </div>
+    <div class="retro-widget__body community-feed__body">
+        <article class="post-entry" aria-labelledby="welcome-post-title">
+            <header class="post-entry__header">
+                <time class="post-date" datetime="2026-10-14"><b>14</b><span>OCT 2026</span></time>
+                <div>
+                    <span class="tech-label">วันพุธ · COMMUNITY LOG · DEMONSTRATION</span>
+                    <h2 id="welcome-post-title">ยินดีต้อนรับสู่ CNTAGRAM เว็บบอร์ดเด็กวิศวะ</h2>
+                </div>
+                <span class="cyber-badge cyber-badge--pink">NEW!</span>
+            </header>
+            <div class="post-entry__body">
+                <p>พื้นที่ทดลองสำหรับส่งต่อชีท โน้ต และเรื่องเล่าจากห้องเรียน รูปแบบนี้สาธิตบรรยากาศบล็อกและเว็บบอร์ดไทยยุค 2000s เท่านั้น ยังไม่มีโพสต์หรือยอดอ่านจริง</p>
+                <p class="post-entry__aside"><span aria-hidden="true">♥</span> รุ่นพี่ส่งต่อ รุ่นน้องไม่ต้องเริ่มจากศูนย์ · brain.exe still running</p>
+            </div>
+            <footer class="post-entry__meta">
+                <span>เขียนโดย <b>CNTAGRAM TEAM</b></span>
+                <span>หมวด: ประกาศชุมชน</span>
+                <span class="post-entry__demo">DEMO POST · ไม่มีหน้ารายละเอียด</span>
+            </footer>
+        </article>
+
+        <article class="post-entry" aria-labelledby="notes-post-title">
+            <header class="post-entry__header">
+                <time class="post-date post-date--gold" datetime="2026-10-10"><b>10</b><span>OCT 2026</span></time>
+                <div>
+                    <span class="tech-label">วันเสาร์ · STUDY DIARY · DEMONSTRATION</span>
+                    <h2 id="notes-post-title">เตรียมชีทให้พร้อม ก่อน Midterm จะมาถึง</h2>
+                </div>
+                <span class="cyber-badge">DEMO</span>
+            </header>
+            <div class="post-entry__body">
+                <p>ตัวอย่างโพสต์สั้นแบบ Blogger/Xanga: หัวข้อชัด เนื้อหาอ่านต่อเนื่อง และ metadata อยู่ท้ายโพสต์ เพื่อให้พื้นที่ชุมชนดูแน่นและใช้งานจริงมากขึ้นโดยไม่สร้างลิงก์ปลอม</p>
+                <ul class="post-entry__list">
+                    <li>CN101 Starter Notes — รายการสาธิต ไม่มีไฟล์จริง</li>
+                    <li>Engineering Math Cheat Sheet — รายการสาธิต ไม่มีไฟล์จริง</li>
+                </ul>
+            </div>
+            <footer class="post-entry__meta">
+                <span>สถานะ: <b>SLEEP DEPRIVED CERTIFIED</b></span>
+                <span>อารมณ์: midterm survival mode</span>
+                <span class="post-entry__demo">ILLUSTRATIVE CONTENT</span>
+            </footer>
+        </article>
+    </div>
+</section>
+
+<section class="retro-widget forum-panel" aria-labelledby="board-index-title">
+    <div class="retro-widget__header forum-panel__head">
+        <div>
+            <span class="tech-label">★ MAIN WEBBOARD DIRECTORY</span>
+            <h2 id="board-index-title">หมวดเว็บบอร์ดตัวอย่าง</h2>
+        </div>
+        <span class="cyber-badge">03 DEMO BOARDS</span>
+    </div>
+    <div class="channel-list" role="list">
+        <article class="channel-card" role="listitem">
+            <div class="channel-card__index">01</div>
+            <span class="category-icon category-icon--notes" aria-hidden="true"><i>N</i></span>
+            <div class="channel-card__copy">
+                <span class="tech-label">ACADEMIC BOARD <b class="new-sticker">NEW!</b></span>
+                <h3>Lecture Notes</h3>
+                <p>ชีทสรุป บันทึกในห้องเรียน และสไลด์ประกอบการเรียน · อ่านแล้วอาจเข้าใจ (มั้ง)</p>
+            </div>
+            <span class="cyber-badge cyber-badge--red">ตัวอย่าง</span>
+        </article>
+        <article class="channel-card" role="listitem">
+            <div class="channel-card__index">02</div>
+            <span class="category-icon category-icon--sheet" aria-hidden="true"><i>Σ</i></span>
+            <div class="channel-card__copy">
+                <span class="tech-label">QUICK DATA <b class="hot-sticker">HOT!</b></span>
+                <h3>Cheat Sheets</h3>
+                <p>สูตรสำคัญและสรุปแบบอ่านเร็ว · เปิดตำราแล้ว แต่สมองยัง loading...</p>
+            </div>
+            <span class="cyber-badge cyber-badge--pink">ตัวอย่าง</span>
+        </article>
+        <article class="channel-card" role="listitem">
+            <div class="channel-card__index">03</div>
+            <span class="category-icon category-icon--archive" aria-hidden="true"><i>A+</i></span>
+            <div class="channel-card__copy">
+                <span class="tech-label">VERIFIED ARCHIVE</span>
+                <h3>Exam Archive</h3>
+                <p>พื้นที่สาธิตหมวดข้อสอบเก่า · แสดงโครงหน้าตาเท่านั้น ยังไม่มีเอกสารจริง</p>
+            </div>
+            <span class="cyber-badge">ตัวอย่าง</span>
+        </article>
+    </div>
+</section>
+
+{% if is_super_admin %}
+    <h2>Admin</h2>
+    <ul>
+        <li><a href="{% url 'catalog:department_list' %}">จัดการภาควิชา</a></li>
+        <li><a href="{% url 'catalog:batch_list' %}">จัดการรุ่นและวิชาในรุ่น</a></li>
+        <li><a href="{% url 'catalog:course_list' %}">จัดการรายวิชา</a></li>
+    </ul>
+{% endif %}
 {% endblock %}

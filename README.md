@@ -24,7 +24,7 @@
 - SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
 - Git + GitHub (Pull Request, Projects, Actions)
 - Automated Tests ด้วย Django `TestCase` (`python manage.py test`) และวัด coverage ด้วย Coverage.py (เป้าหมาย ≥ 80% ตั้งแต่ Sprint 2)
-- CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2)
+- CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2) และเพิ่ม Static Analysis ใน Sprint 3: Black (format), Flake8 (PEP 8 lint), Bandit (security scan)
 
 ---
 
@@ -178,7 +178,8 @@ cntagram/
 ├── portal/          # Django project config (settings, urls, wsgi/asgi)
 ├── accounts/        # User, Role, UserRole (US-1, US-2)
 ├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
-├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
+├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5, US-7)
+├── media/           # ไฟล์เอกสารที่อัปโหลด (MEDIA_ROOT) สร้างเองตอนมีไฟล์แรก อยู่ใน .gitignore และเปิดได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น (ADR 0003)
 ├── .github/         # Issue templates และ Pull Request template
 ├── manage.py
 ├── requirements.txt
@@ -218,7 +219,7 @@ static/                           # css, js, img ส่วนกลาง
 
 - ทุก branch ตั้งชื่อตาม **เลข issue** และเปิด PR ที่มี `Closes #<เลข>`
 - จบ Sprint: หลัง Sprint Review เปิด PR `develop` → `main`
-- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch
+- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch, ใช้กับ admin ด้วย (Include administrators) และเมื่อมี CI workflow แล้วให้เปิด **Require status checks to pass** เลือก job ของ CI (เทสต์หรือ lint ตก ปุ่ม Merge จะถูกล็อก)
 - Branch ที่เปิดไปแล้วด้วยชื่อแบบเดิม (`feat/US-X-...`) ใช้ต่อจน merge ได้
 
 ---
