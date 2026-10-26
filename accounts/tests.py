@@ -570,7 +570,11 @@ class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
 
 class RegisterViewTests(RegistrationTestMixin, TestCase):
     def setUp(self):
+        cache.clear()
         self.url = reverse("accounts:register")
+
+    def tearDown(self):
+        cache.clear()
 
     def test_get_renders_form_with_csrf_token(self):
         response = self.client.get(self.url)

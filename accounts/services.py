@@ -99,6 +99,26 @@ def attempt_login(*, form, client_ip):
     return LoginAttempt()
 
 
+def _register_attempt_key(client_ip):
+    digest = salted_hmac("accounts.register-throttle", client_ip or "unknown").hexdigest()
+    return f"register-attempts:{digest}"
+
+
+def is_register_rate_limited(client_ip):
+    return cache.get(_register_attempt_key(client_ip), 0) >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+
+
+def record_register_attempt(client_ip):
+    key = _register_attempt_key(client_ip)
+    if cache.add(key, 1, timeout=settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS):
+        return 1
+    try:
+        return cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, timeout=settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
+        return 1
+
+
 def assign_moderator(*, user, department, granted_by):
     """แต่งตั้ง Moderator ประจำภาควิชา พร้อมบันทึกผู้แต่งตั้ง"""
     user_role = UserRole(
