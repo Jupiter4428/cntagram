@@ -4,9 +4,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
+from catalog.models import Department
 from catalog.selectors import active_department_list
-
-from .models import validate_nickname
 
 User = get_user_model()
 
@@ -54,24 +53,12 @@ class LoginForm(AuthenticationForm):
         return source.get("next", "")
 
 
-class RegisterForm(forms.Form):
+class RegisterForm(forms.ModelForm):
     """สมัครสมาชิกด้วยอีเมลนักศึกษาคณะวิศวะ (US-1)
 
-    กฎของอีเมลและชื่อเล่นอยู่ใน accounts.models ที่เดียว ฟอร์มนี้แค่เรียกใช้
+    สืบทอด ModelForm เพื่อใช้กฎจาก accounts.models โดยไม่ duplicate
     """
 
-    email = forms.EmailField(
-        label="อีเมลนักศึกษา",
-        max_length=255,
-        widget=forms.EmailInput(
-            attrs={
-                "autocomplete": "email",
-                "autofocus": True,
-                "class": "form-control",
-                "placeholder": "6610xxxxxx@student.tu.ac.th",
-            }
-        ),
-    )
     password = forms.CharField(
         label="รหัสผ่าน",
         strip=False,
@@ -94,24 +81,6 @@ class RegisterForm(forms.Form):
             }
         ),
     )
-    nickname = forms.CharField(
-        label="ชื่อเล่น (แสดงแทนอีเมล)",
-        max_length=50,
-        validators=[validate_nickname],
-        widget=forms.TextInput(
-            attrs={
-                "autocomplete": "nickname",
-                "class": "form-control",
-                "placeholder": "ชื่อที่ผู้อื่นจะเห็น",
-            }
-        ),
-    )
-    department = forms.ModelChoiceField(
-        label="ภาควิชา",
-        queryset=None,  # ตั้งใน __init__ ให้ query ใหม่ทุกครั้ง (ภาคที่เปิดอยู่เท่านั้น)
-        empty_label="-- เลือกภาควิชา --",
-        widget=forms.Select(attrs={"class": "form-select"}),
-    )
     pdpa_consent = forms.BooleanField(
         label="ข้าพเจ้ายินยอมให้เก็บและใช้ข้อมูลส่วนบุคคลตามนโยบาย PDPA",
         required=True,
@@ -119,13 +88,47 @@ class RegisterForm(forms.Form):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
 
+    class Meta:
+        model = User
+        fields = ["email", "nickname", "department"]
+        labels = {
+            "email": "อีเมลนักศึกษา",
+            "nickname": "ชื่อเล่น (แสดงแทนอีเมล)",
+            "department": "ภาควิชา",
+        }
+        widgets = {
+            "email": forms.EmailInput(
+                attrs={
+                    "autocomplete": "email",
+                    "autofocus": True,
+                    "class": "form-control",
+                    "placeholder": "6610xxxxxx@student.tu.ac.th",
+                }
+            ),
+            "nickname": forms.TextInput(
+                attrs={
+                    "autocomplete": "nickname",
+                    "class": "form-control",
+                    "placeholder": "ชื่อที่ผู้อื่นจะเห็น",
+                }
+            ),
+            "department": forms.Select(attrs={"class": "form-select"}),
+        }
+        error_messages = {
+            "email": {
+                "unique": "อีเมลนี้ถูกใช้สมัครแล้ว",
+            },
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["department"].queryset = active_department_list()
+        self.fields["department"].empty_label = "-- เลือกภาควิชา --"
 
     def clean_email(self):
-        # ตรวจเมลซ้ำ โดเมน รหัส 10 หลัก และรหัสคณะ 10 ผ่านกฎใน model
-        email, _ = User.validate_student_email(self.cleaned_data["email"])
+        email = self.cleaned_data.get("email")
+        if email:
+            email, _ = User.validate_student_email(email)
         return email
 
     def clean(self):
@@ -155,3 +158,16 @@ class RegisterForm(forms.Form):
                 widget = self.fields[name].widget
                 classes = widget.attrs.get("class", "")
                 widget.attrs["class"] = f"{classes} is-invalid".strip()
+
+
+class ModeratorAssignmentForm(forms.Form):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by("email"),
+        label="เลือกผู้ใช้",
+        empty_label="-- กรุณาเลือกผู้ใช้ --",
+    )
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True).order_by("code"),
+        label="เลือกภาควิชา",
+        empty_label="-- กรุณาเลือกภาควิชา --",
+    )

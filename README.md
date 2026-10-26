@@ -23,8 +23,8 @@
 - Bootstrap 5 (ผ่าน CDN) สำหรับ UI
 - SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
 - Git + GitHub (Pull Request, Projects, Actions)
-- Automated Tests ด้วย `python manage.py test`
-- CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2)
+- Automated Tests ด้วย Django `TestCase` (`python manage.py test`) และวัด coverage ด้วย Coverage.py (เป้าหมาย ≥ 80% ตั้งแต่ Sprint 2)
+- CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2) และเพิ่ม Static Analysis ใน Sprint 3: Black (format), Flake8 (PEP 8 lint), Bandit (security scan)
 
 ---
 
@@ -129,7 +129,7 @@ User ผูกกับภาควิชา (`department` ห้ามว่า
 
 > ตอนนี้ `admin.py` ของทุก app ยังไม่ได้ register model จึงยังไม่เห็นตารางของโปรเจคในหน้า admin
 ```bash
-python manage.py shell -c "from catalog.models import Department; Department.objects.get_or_create(code='CN', defaults={'name_th': 'วิศวกรรมคอมพิวเตอร์', 'name_en': 'Computer Engineering'})"
+python manage.py seed_catalog     # ภาค CN/CE/ME/EE + รุ่น CN21–CN25 + วิชาตัวอย่าง (รันซ้ำได้ ไม่สร้างซ้ำ)
 python manage.py createsuperuser
 ```
 ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (พิมพ์ตัวย่อภาค เช่น `CN` ตัวพิมพ์เล็กก็ได้ ถ้ายังไม่มีภาคนี้จะแจ้งว่าไม่พบ), Password
@@ -141,6 +141,12 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 เข้าใช้งานที่ `http://127.0.0.1:8000/` (หน้า admin ที่ `/admin/`)
+
+### 8. รันเทสต์
+```bash
+python manage.py test             # ทุกเทสต์ ต้องผ่านหมดก่อนเริ่มงาน
+```
+Django สร้างฐานข้อมูลทดสอบแยกให้เอง ไม่แตะ `db.sqlite3` คำสั่งย่อย, coverage และวิธีเขียนเทสต์ดูที่ [Testing](./CONTRIBUTING.md#testing)
 
 ---
 
@@ -172,7 +178,8 @@ cntagram/
 ├── portal/          # Django project config (settings, urls, wsgi/asgi)
 ├── accounts/        # User, Role, UserRole (US-1, US-2)
 ├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
-├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5)
+├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5, US-7)
+├── media/           # ไฟล์เอกสารที่อัปโหลด (MEDIA_ROOT) สร้างเองตอนมีไฟล์แรก อยู่ใน .gitignore และเปิดได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น (ADR 0003)
 ├── .github/         # Issue templates และ Pull Request template
 ├── manage.py
 ├── requirements.txt
@@ -190,7 +197,7 @@ cntagram/
 ├── views.py                      # รับ request → เรียก service/selector → response
 ├── urls.py                       # app_name + urlpatterns
 ├── admin.py
-├── tests.py  (หรือโฟลเดอร์ tests/)
+├── tests.py  (ยาวแล้วแตกเป็น tests/test_models.py, test_services.py, test_views.py ...)
 ├── migrations/                   # commit ขึ้น Git
 └── templates/<app>/              # เช่น materials/templates/materials/document_detail.html
 templates/                        # base.html และ includes/_navbar.html (ส่วนกลาง)
@@ -212,7 +219,7 @@ static/                           # css, js, img ส่วนกลาง
 
 - ทุก branch ตั้งชื่อตาม **เลข issue** และเปิด PR ที่มี `Closes #<เลข>`
 - จบ Sprint: หลัง Sprint Review เปิด PR `develop` → `main`
-- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch
+- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch, ใช้กับ admin ด้วย (Include administrators) และเมื่อมี CI workflow แล้วให้เปิด **Require status checks to pass** เลือก job ของ CI (เทสต์หรือ lint ตก ปุ่ม Merge จะถูกล็อก)
 - Branch ที่เปิดไปแล้วด้วยชื่อแบบเดิม (`feat/US-X-...`) ใช้ต่อจน merge ได้
 
 ---

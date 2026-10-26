@@ -11,7 +11,7 @@
 | [`database-design.md`](./database-design.md) | ออกแบบฐานข้อมูล (ERD 3NF) และเหตุผลของแต่ละตาราง | ก่อนแก้ `models.py` (ต้องอัปเดตไฟล์นี้ใน PR เดียวกัน) |
 | [`architecture/c4.md`](./architecture/c4.md) | ไดอะแกรม C4 Model ระดับ 1–2 (System Context, Container) | อยากเห็นภาพรวมว่าระบบประกอบด้วยอะไร |
 | [`adr/`](./adr/) | Architectural Decision Records: บันทึกว่าทำไมถึงเลือกสถาปัตยกรรมแบบนี้ | ก่อนเพิ่ม app ใหม่ หรือเปลี่ยนโครงสร้างโค้ด |
-| [`lecture-notes/`](./lecture-notes/) | สรุปเนื้อหารายวิชา CN331 (Django ORM, CBV, Architecture, Service Layer, Scrum) | ต้องการทฤษฎีหรือแนวทางที่โปรเจคอ้างอิง |
+| [`lecture-notes/`](./lecture-notes/) | สรุปเนื้อหารายวิชา CN331 (Django ORM, CBV, Architecture, Service Layer, Scrum, Automated Testing, CI/CD & Static Analysis) | ต้องการทฤษฎีหรือแนวทางที่โปรเจคอ้างอิง |
 | [`research/`](./research/) | ร่างเล่มรายงานโครงงาน แยกตามบท 1–5 พร้อมบรรณานุกรมและภาคผนวก | เขียนหรือแก้เล่มรายงาน |
 | [`archive/`](./archive/) | เอกสารเก่าที่เลิกใช้แล้ว เช่น SRS v1 (`.pdf`, `.docx`) | อยากดูที่มาของ requirement เดิมเท่านั้น |
 
