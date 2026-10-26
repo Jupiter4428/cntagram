@@ -1,5 +1,5 @@
-from pathlib import Path
 import time
+from pathlib import Path
 
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
@@ -395,9 +395,17 @@ class RegistrationTestMixin:
             name_en="Closed Department",
             is_active=False,
         )
-        cls.role_student, _ = Role.objects.get_or_create(
-            code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
-        )
+
+    def register(self, **overrides):
+        kwargs = {
+            "email": "6610612345@student.tu.ac.th",
+            "password": VALID_PASSWORD,
+            "nickname": "Ploy",
+            "department": self.department,
+            "pdpa_consent_at": timezone.now(),
+        }
+        kwargs.update(overrides)
+        return register_user(**kwargs)
 
     def payload(self, **overrides):
         data = {
@@ -450,13 +458,7 @@ class RegisterFormTests(RegistrationTestMixin, TestCase):
         self.assertIn("คณะวิศวกรรมศาสตร์", form.errors["email"][0])
 
     def test_rejects_duplicate_email(self):
-        register_user(
-            email="6610612345@student.tu.ac.th",
-            password=VALID_PASSWORD,
-            nickname="First",
-            department=self.department,
-            pdpa_consent_at=timezone.now(),
-        )
+        self.register(nickname="First")
         self.assertFieldError(self.payload(), "email")
 
     def test_rejects_reserved_nickname(self):
@@ -516,17 +518,6 @@ class RegisterFormTests(RegistrationTestMixin, TestCase):
 
 
 class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
-    def register(self, **overrides):
-        kwargs = {
-            "email": "6610612345@student.tu.ac.th",
-            "password": VALID_PASSWORD,
-            "nickname": "Ploy",
-            "department": self.department,
-            "pdpa_consent_at": timezone.now(),
-        }
-        kwargs.update(overrides)
-        return register_user(**kwargs)
-
     def test_creates_user_with_student_id_and_hashed_password(self):
         consent_at = timezone.now()
         user = self.register(pdpa_consent_at=consent_at)
@@ -610,13 +601,7 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
 
     def test_registered_user_can_log_in(self):
         # Arrange: create user using the real registration service
-        register_user(
-            email="6610612345@student.tu.ac.th",
-            password=VALID_PASSWORD,
-            nickname="Ploy",
-            department=self.department,
-            pdpa_consent_at=timezone.now(),
-        )
+        self.register()
 
         # Act: perform the login action
         response = self.client.post(
@@ -652,13 +637,7 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
         self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", response.context["form"].errors["nickname"][0])
 
     def test_rejects_duplicate_email(self):
-        register_user(
-            email="6610612345@student.tu.ac.th",
-            password=VALID_PASSWORD,
-            nickname="First",
-            department=self.department,
-            pdpa_consent_at=timezone.now(),
-        )
+        self.register(nickname="First")
         response = self.client.post(self.url, self.payload(email="6610612345@student.tu.ac.th"))
         self.assertEqual(response.status_code, 200)
         self.assertIn("email", response.context["form"].errors)
@@ -673,20 +652,20 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["form"].errors)
 
-    def test_authenticated_user_is_redirected_home(self):
-        user = register_user(
-            email="6610600000@student.tu.ac.th",
-            password=VALID_PASSWORD,
-            nickname="Existing",
-            department=self.department,
-            pdpa_consent_at=timezone.now(),
-        )
-        self.client.force_login(user)
+    def test_authenticated_user_get_is_redirected_home(self):
+        self.client.force_login(self.register())
 
-        for method in (self.client.get, self.client.post):
-            with self.subTest(method=method.__name__):
-                response = method(self.url)
-                self.assertRedirects(response, reverse("accounts:home"))
+        response = self.client.get(self.url)
+
+        self.assertRedirects(response, reverse("accounts:home"))
+
+    def test_authenticated_user_post_is_redirected_home(self):
+        self.client.force_login(self.register())
+
+        response = self.client.post(self.url, self.payload(email="6610600000@student.tu.ac.th"))
+
+        self.assertRedirects(response, reverse("accounts:home"))
+        self.assertEqual(User.objects.count(), 1)
 
     def test_registration_is_csrf_protected(self):
         csrf_client = Client(enforce_csrf_checks=True)
@@ -710,6 +689,7 @@ class ModeratorManagementTests(TestCase):
         cls.role_student, _ = Role.objects.get_or_create(
             code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
         )
+
         cls.dept_cn = Department.objects.create(
             code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
         )
