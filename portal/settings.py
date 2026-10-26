@@ -130,6 +130,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # ไฟล์เอกสารที่อัปโหลด (DocumentVersion.storage_path สัมพัทธ์กับโฟลเดอร์นี้)
 # ตั้งใจไม่มี MEDIA_URL: เปิดไฟล์ได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ไม่มี Direct URL

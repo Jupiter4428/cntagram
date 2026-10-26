@@ -1,0 +1,33 @@
+<section class="retro-widget archive-widget" aria-labelledby="archive-title">
+    <div class="retro-widget__header retro-widget__titlebar">
+        <span aria-hidden="true">▤</span>
+        <strong id="archive-title">Community Archive</strong>
+        <small>DEMO INDEX</small>
+    </div>
+    <div class="retro-widget__body archive-widget__body">
+        <p class="archive-widget__intro">สารบัญตัวอย่างตามปีการศึกษา ภาคเรียน และรายวิชา</p>
+        <details open>
+            <summary><span>ปีการศึกษา 2569</span><b>4</b></summary>
+            <div class="archive-widget__branch">
+                <details open>
+                    <summary><span>ภาคเรียนที่ 1</span><b>3</b></summary>
+                    <ul>
+                        <li><span>CN101 · Starter Notes</span><small>DEMO</small></li>
+                        <li><span>CN200 · Study Diary</span><small>DEMO</small></li>
+                        <li><span>SC135 · Math Survival</span><small>DEMO</small></li>
+                    </ul>
+                </details>
+                <details>
+                    <summary><span>ภาคเรียนที่ 2</span><b>1</b></summary>
+                    <ul>
+                        <li><span>คลังหัวข้อกำลังจัดเตรียม</span><small>DEMO</small></li>
+                    </ul>
+                </details>
+            </div>
+        </details>
+        <p class="demo-note mb-0">รายการนี้ใช้สาธิต navigation เท่านั้น จึงไม่มีลิงก์ไปยังหน้าที่ยังไม่พัฒนา</p>
+        {% if request.user.is_authenticated %}
+            <a class="archive-widget__real-link" href="{% url 'materials:vault' %}">เปิดคลังเอกสารที่ใช้งานได้ <span aria-hidden="true">›</span></a>
+        {% endif %}
+    </div>
+</section>

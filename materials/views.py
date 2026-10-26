@@ -7,6 +7,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 from catalog.models import Batch
 
 from .forms import UploadForm
+from .models import MAX_UPLOAD_BYTES
 from .selectors import upload_batch_courses, upload_batches
 from .services import ensure_can_upload_to, upload_document
 
@@ -50,6 +51,8 @@ def upload(request):
             "form": form,
             "department": department,
             "batches": upload_batches(department=department),
+            # เพดานของ DB (ไม่ query เพิ่ม) ใช้เช็กเบื้องต้นฝั่งหน้าจอ ค่าจริงตาม system_setting server เช็กซ้ำเสมอ
+            "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024),
         },
     )
 

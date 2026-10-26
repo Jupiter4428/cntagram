@@ -43,8 +43,11 @@ def _rate_limited_response(request, form):
 
 @require_GET
 def home(request):
-    """Public landing page for guests and authenticated users."""
-    return render(request, "accounts/home.html", {"is_super_admin": is_super_admin(request.user)})
+    """Landing page: ถ้าเป็น Super Admin ให้เปิด admin_page.html"""
+    if request.user.is_authenticated and is_super_admin(request.user):
+        return render(request, "admin_page.html")
+    context = {"is_super_admin": is_super_admin(request.user)}
+    return render(request, "accounts/home.html", context)
 
 
 @require_GET
