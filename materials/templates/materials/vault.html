@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}ค้นหาชีทและเอกสาร | CNTAGRAM{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'materials/vault.css' %}">{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'materials/vault.css' %}">
 <div class="document-vault">
 <section class="mb-4 dv-hero">
-  <p class="text-uppercase small fw-bold text-secondary mb-1">CNTAGRAM / DOCUMENT VAULT</p>
+  <p class="text-uppercase small fw-bold dv-eyebrow mb-1">CNTAGRAM / DOCUMENT VAULT</p>
   <h1 class="display-6 fw-bold">ค้นหาชีทและเอกสาร</h1>
   <p class="dv-subtitle mb-0">ค้นหาตามรหัสวิชา เพื่อดูเอกสารจากทุกรุ่นในที่เดียว</p>
 </section>
