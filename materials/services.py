@@ -6,8 +6,6 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
 
-from accounts.models import Role, UserRole
-
 from . import selectors
 from .models import Approval, DocType, Document, ExamDetail, max_upload_mb
 
@@ -114,10 +112,12 @@ def upload_document(
     return document
 
 
-
 @transaction.atomic
 def review_document(*, document, approver, decision, reason=None):
-    """พิจารณาอนุมัติหรือปฏิเสธเอกสารโดย Moderator หรือ Super Admin (US-6)"""
+    """พิจารณาอนุมัติหรือปฏิเสธเอกสารโดย Moderator หรือ Super Admin (US-6)
+
+    ใครพิจารณาได้และต้องครบกี่ฝ่ายมาจาก doc_type_required_role (US-9)
+    """
     locked_doc = (
         Document.objects.select_for_update()
         .select_related("batch_course__batch", "doc_type")
@@ -130,21 +130,19 @@ def review_document(*, document, approver, decision, reason=None):
     if locked_doc.uploader_id == approver.id:
         raise PermissionDenied("ผู้อัปโหลดไม่สามารถอนุมัติหรือปฏิเสธเอกสารของตนเองได้")
 
+    rule = selectors.approval_rule(document=locked_doc)
+    eligible = selectors.eligible_roles(document=locked_doc, user=approver, roles=rule.roles)
+    if not eligible:
+        if rule.legacy:
+            raise PermissionDenied("ข้อสอบของรุ่นนี้ให้ Super Admin เท่านั้นเป็นผู้พิจารณา")
+        raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
+
     if locked_doc.approvals.filter(approver=approver).exists():
         raise ValidationError("คุณพิจารณาเอกสารนี้ไปแล้ว")
 
-    doc_dept_id = locked_doc.batch_course.batch.department_id
-
-    if not selectors.is_reviewer_for(user=approver, department_id=doc_dept_id):
-        raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
-
-    is_moderator = UserRole.objects.filter(
-        user=approver, role__code=Role.MODERATOR, department_id=doc_dept_id
-    ).exists()
-
-    approver_role = Role.objects.get(
-        code=Role.MODERATOR if is_moderator else Role.SUPER_ADMIN
-    )
+    # คนที่มีหลาย role ให้นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน ไม่งั้นกฎ all จะไม่มีวันครบ
+    approved_ids = selectors.approved_role_ids(document=locked_doc)
+    approver_role = next((r for r in eligible if r.pk not in approved_ids), eligible[0])
 
     approval = Approval.objects.create(
         document=locked_doc,
@@ -155,10 +153,9 @@ def review_document(*, document, approver, decision, reason=None):
     )
 
     if decision == Approval.Decision.APPROVED:
-        if locked_doc.doc_type.vault == DocType.Vault.LECTURE:
+        if not selectors.missing_roles(rule=rule, approved_ids=approved_ids | {approver_role.pk}):
             locked_doc.status = Document.Status.PUBLISHED
             locked_doc.save(update_fields=["status", "updated_at"])
-        # หมายเหตุ: เอกสารข้อสอบ (vault == EXAM) ต้องรอการอนุมัติทั้ง Moderator และ Super Admin ตาม US-9 จึงคงสถานะ PENDING ไว้
     elif decision == Approval.Decision.REJECTED:
         locked_doc.status = Document.Status.REJECTED
         locked_doc.save(update_fields=["status", "updated_at"])
