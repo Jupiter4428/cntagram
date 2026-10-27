@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 from catalog.models import Batch
 
 from . import selectors
+from .approval_ui import attach_approval_ui
 from .forms import ReviewForm, SearchForm, UploadForm
 from .models import Document, max_upload_mb
 from .services import ensure_can_upload_to, review_document, upload_document
@@ -86,7 +87,9 @@ def approval_queue(request):
     if not selectors.can_review_any(user=request.user):
         raise PermissionDenied("เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้")
 
-    documents = selectors.pending_documents_for_moderator(user=request.user)
+    documents = attach_approval_ui(
+        selectors.pending_documents_for_moderator(user=request.user), request.user
+    )
     return render(request, "materials/approval_queue.html", {"documents": documents})
 
 
@@ -150,7 +153,9 @@ def approval_review(request, document_id):
     except Document.DoesNotExist:
         raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
 
+    attach_approval_ui([document], request.user)
     form = ReviewForm(request.POST or None)
+    status = 200
     if request.method == "POST" and form.is_valid():
         try:
             review_document(
@@ -161,10 +166,17 @@ def approval_review(request, document_id):
             )
         except ValidationError as err:
             form.add_error(None, err)
+        except PermissionDenied as err:
+            # บอกเหตุผลบนฟอร์ม (เช่น ข้อสอบรุ่นเก่าให้ Super Admin เท่านั้น) แต่ยังตอบ 403
+            form.add_error(None, str(err))
+            status = 403
         else:
             messages.success(request, f"บันทึกผลการพิจารณาเอกสาร '{document.title}' เรียบร้อยแล้ว")
             return redirect("materials:approval_queue")
 
     return render(
-        request, "materials/approval_review.html", {"document": document, "form": form}
+        request,
+        "materials/approval_review.html",
+        {"document": document, "form": form},
+        status=status,
     )

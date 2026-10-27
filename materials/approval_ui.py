@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from accounts.models import Role, UserRole
 from materials.models import Approval
 from materials.selectors import approval_progress_for
+from portal.permissions import is_super_admin
 
 
 def attach_approval_ui(documents, user):
@@ -27,6 +28,7 @@ def attach_approval_ui(documents, user):
         )
     )
 
+    super_admin = is_super_admin(user)
     already_reviewed = set(
         Approval.objects.filter(document__in=documents, approver=user)
         .values_list("document_id", flat=True)
@@ -38,7 +40,7 @@ def attach_approval_ui(documents, user):
         eligible = any(
             (role.code, None) in user_role_pairs
             or (role.code, department_id) in user_role_pairs
-            or (user.is_superuser and role.code == Role.SUPER_ADMIN)
+            or (super_admin and role.code == Role.SUPER_ADMIN)
             for role in missing
         )
         if not progress.approvable:
