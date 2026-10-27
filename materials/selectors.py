@@ -1,5 +1,7 @@
-"""การอ่านข้อมูลของ materials (ค้นหา / เปิดอ่านเอกสาร / ตรวจสอบสิทธิ์และการอนุมัติ) ตาม ADR 0002"""
-from django.db.models import Q
+"""การอ่านข้อมูลของ materials (ค้นหา / เปิดอ่านเอกสาร / อัปโหลด / ตรวจสอบสิทธิ์และการอนุมัติ) ตาม ADR 0002"""
+from django.db.models import Q, QuerySet
+
+from catalog.models import Batch, BatchCourse
 
 from accounts.models import Role, UserRole
 from portal.permissions import is_super_admin
@@ -39,6 +41,19 @@ def search_documents(*, course_code, department=None, batch=None, doc_type=None)
             "-created_at",
         )
     )
+
+
+def upload_batches(*, department) -> QuerySet[Batch]:
+    """รุ่นที่ผู้ใช้อัปโหลดเข้าได้ = รุ่นในภาคของตัวเอง เรียงตามเลขรุ่น"""
+    return Batch.objects.filter(department=department).order_by("number")
+
+
+def upload_batch_courses(*, batch) -> QuerySet[BatchCourse]:
+    """วิชาในรุ่นสำหรับ dropdown ต่อเนื่อง (รุ่น → วิชา)
+
+    BatchCourseManager select_related course ให้อยู่แล้ว จึงไม่มี N+1
+    """
+    return BatchCourse.objects.filter(batch=batch).order_by("course__code")
 
 
 def can_review_any(*, user):
