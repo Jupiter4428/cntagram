@@ -1,49 +1,80 @@
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
-from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_http_methods
 
 from catalog.models import Batch
-
-from .forms import UploadForm
+from .forms import SearchForm, UploadForm
 from .models import MAX_UPLOAD_BYTES
-from .selectors import upload_batch_courses, upload_batches
+from .selectors import (
+    published_documents,
+    search_documents,
+    upload_batch_courses,
+    upload_batches,
+)
 from .services import ensure_can_upload_to, upload_document
 
 
 @login_required
 def vault(request):
-    """Protected entry point for the document vault."""
-    return render(request, "materials/vault.html")
+    """หน้าค้นหาเอกสารด้วยรหัสวิชา รวมผลจากทุกรุ่นในหน้าเดียว (US-7)"""
+    form = SearchForm(request.GET or None)
+    documents = search_documents(**form.cleaned_data) if form.is_valid() else None
+    return render(request, "materials/vault.html", {"form": form, "documents": documents})
 
 
-def _add_service_errors(form, exc):
-    """error ของ service ที่ key ไม่ตรงช่องในฟอร์ม (เช่น size_bytes จาก model) แสดงเป็น non-field"""
-    if not hasattr(exc, "error_dict"):
-        form.add_error(None, exc)
-        return
-    for field, errors in exc.message_dict.items():
-        form.add_error(field if field in form.fields else None, errors)
+@login_required
+def document_detail(request, document_id):
+    """หน้าเอกสาร + preview PDF (เอกสารที่ไม่ published ตอบ 404)"""
+    document = get_object_or_404(published_documents(), pk=document_id)
+    return render(request, "materials/document_detail.html", {"document": document})
+
+
+@login_required
+@xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
+def document_preview(request, document_id):
+    """ส่งไฟล์ PDF เวอร์ชันล่าสุดแบบ inline ผ่าน view ที่ตรวจสิทธิ์ (ไม่มี Direct URL)"""
+    document = get_object_or_404(published_documents(), pk=document_id)
+    version = document.current_version
+    if version is None:
+        raise Http404("ยังไม่มีไฟล์ของเอกสารนี้")
+    try:
+        file = default_storage.open(version.storage_path, "rb")
+    except OSError:
+        raise Http404("ไม่พบไฟล์ของเอกสารนี้")
+    return FileResponse(
+        file, content_type="application/pdf", filename=version.original_name
+    )
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
 def upload(request):
-    """ฟอร์มอัปโหลดชีท (US-5) ภาควิชาล็อกตามสังกัดของผู้ใช้
+    """หน้าฟอร์มอัปโหลดชีท (US-5)"""
+    user = request.user
+    department = user.department
 
-    PermissionDenied จาก service (แก้ request ข้ามภาค) ปล่อยให้ Django ตอบ 403
-    """
-    form = UploadForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
-        data = {k: v for k, v in form.cleaned_data.items() if k != "disclaimer"}
-        try:
-            upload_document(uploader=request.user, **data)
-        except ValidationError as exc:
-            _add_service_errors(form, exc)
-        else:
+    if request.method == "POST":
+        form = UploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            document = upload_document(
+                user=user,
+                department=department,
+                batch_course=form.cleaned_data["batch_course"],
+                doc_type=form.cleaned_data["doc_type"],
+                title=form.cleaned_data["title"],
+                description=form.cleaned_data["description"],
+                file=form.cleaned_data["file"],
+                exam_period=form.cleaned_data.get("exam_period"),
+                exam_year_be=form.cleaned_data.get("exam_year_be"),
+            )
+            request.session["last_uploaded_doc_id"] = document.pk
             return redirect("materials:upload_done")
-    department = request.user.department
+    else:
+        form = UploadForm()
+
     return render(
         request,
         "materials/upload.html",
@@ -51,7 +82,6 @@ def upload(request):
             "form": form,
             "department": department,
             "batches": upload_batches(department=department),
-            # เพดานของ DB (ไม่ query เพิ่ม) ใช้เช็กเบื้องต้นฝั่งหน้าจอ ค่าจริงตาม system_setting server เช็กซ้ำเสมอ
             "max_upload_mb": MAX_UPLOAD_BYTES // (1024 * 1024),
         },
     )
@@ -60,17 +90,14 @@ def upload(request):
 @login_required
 @require_GET
 def upload_done(request):
+    """หน้าแสดงผลเมื่ออัปโหลดชีทสำเร็จ"""
     return render(request, "materials/upload_done.html")
 
 
 @login_required
 @require_GET
 def upload_course_options(request, batch_id):
-    """JSON วิชาในรุ่น ให้ dropdown ต่อเนื่องของฟอร์มอัปโหลด (เฉพาะรุ่นในภาคของตัวเอง)"""
-    batch = get_object_or_404(Batch, pk=batch_id)
-    ensure_can_upload_to(user=request.user, batch=batch)
-    courses = [
-        {"id": bc.pk, "code": bc.course.code, "name": bc.course.display_name}
-        for bc in upload_batch_courses(batch=batch)
-    ]
-    return JsonResponse({"courses": courses})
+    """API ดึงรายวิชาตามรุ่น"""
+    user = request.user
+    courses = upload_batch_courses(user=user, batch_id=batch_id)
+    return JsonResponse({"courses": list(courses)})

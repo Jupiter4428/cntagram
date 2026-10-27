@@ -2,7 +2,7 @@
 
 วีรชัย (อ.แจ็ค) · Department of Electrical & Computer Engineering · Thammasat School of Engineering (TSE) · Semester 1/2569
 
-เนื้อหาจากสไลด์สัปดาห์ที่ 7 (Advanced Django Queries & Sprint 1 Execution), สัปดาห์ที่ 10 (Software Architecture & Sprint 2 Planning) และสัปดาห์ที่ 11 (Automated Testing in Django) จัดกลุ่มตามหัวข้อ:
+เนื้อหาจากสไลด์สัปดาห์ที่ 7 (Advanced Django Queries & Sprint 1 Execution), สัปดาห์ที่ 10 (Software Architecture & Sprint 2 Planning), สัปดาห์ที่ 11 (Automated Testing in Django) และสัปดาห์ที่ 12 (CI/CD Pipelines & Static Code Analysis) จัดกลุ่มตามหัวข้อ:
 
 | ไฟล์ | หัวข้อ | ที่มา |
 |---|---|---|
@@ -12,6 +12,7 @@
 | [04-django-service-layer-and-transactions.md](04-django-service-layer-and-transactions.md) | Architectural Tiers, Fat Views/Models, services.py/selectors.py, ACID Transactions, select_for_update, ADR | Week 10 Part 2, Lab 2 |
 | [05-agile-scrum-sprints.md](05-agile-scrum-sprints.md) | Sprint 1 Ceremonies (Standup, Burndown, Review, Retro), Sprint 2 Planning (Velocity, Tech Debt, Sprint Goal, DoR/DoD, Vertical Slicing, GitHub Projects) | Week 7 Part 4, Week 10 Part 3, Lab 3 |
 | [06-django-automated-testing.md](06-django-automated-testing.md) | Cost of Defect, Testing Pyramid, TDD Red-Green-Refactor, AAA, Django TestCase & DB Isolation, setUp/setUpTestData, full_clean, Form/Service/View Testing, Test Client, Mock & patch, Coverage.py, Line vs Branch, Sprint 2 DoD | Week 11 หน่วยที่ 1–4 |
+| [07-ci-cd-and-static-analysis.md](07-ci-cd-and-static-analysis.md) | CI vs Continuous Delivery vs Deployment, GitHub Flow vs GitFlow, GitHub Actions (Workflow/Job/Runner/Step), `ci.yml`, pip Caching, Coverage Gate, Encrypted Secrets, Static vs Dynamic Analysis, Flake8, Black, Bandit, Branch Protection, PR Template, Sprint 2 Retro & Sprint 3 Kickoff | Week 12 หน่วยที่ 1–4 |
 
 ---
 
@@ -245,3 +246,59 @@
   - Kent Beck (2002). *Test-Driven Development: By Example*. Addison-Wesley.
   - Martin Fowler (2012). *The Practical Test Pyramid*. martinfowler.com.
   - *Coverage.py Documentation*: https://coverage.readthedocs.io/
+
+---
+
+## สัปดาห์ที่ 12: CI/CD Pipelines & Static Code Analysis
+
+### วัตถุประสงค์การเรียนรู้ประจำสัปดาห์ (Learning Outcomes)
+
+เมื่อเรียนจบสัปดาห์นี้ นักศึกษาจะสามารถ:
+
+1. **อธิบายสถาปัตยกรรม CI/CD และวงรอบ DevOps**: เปรียบเทียบ Continuous Integration, Delivery และ Deployment ตลอดจนบทบาทของ Fast Feedback
+2. **ออกแบบและเขียน GitHub Actions Workflows**: สร้างไฟล์ `.github/workflows/ci.yml` ที่ดักจับเหตุการณ์ `push` และ `pull_request` พร้อมจัดการ Environment, Caching และ Secrets
+3. **ติดตั้งและประยุกต์ใช้เครื่องมือ Static Code Analysis**: บังคับใช้มาตรฐาน PEP 8 ด้วย Flake8, จัดฟอร์แมตโค้ดอัตโนมัติด้วย Black และตรวจหาช่องโหว่ความปลอดภัยด้วย Bandit
+4. **กำหนดและจัดการ Quality Gates บน GitHub**: ตั้งค่า Branch Protection Rules บังคับให้ Status Checks ผ่าน และสร้าง PR Templates เพื่อตรวจทานโค้ดในทีม
+5. **ประเมินผล Sprint 2 และวางแผนเปิดตัว Sprint 3**: สรุปผลความเร็วจริง (Velocity) และจัดเตรียม Backlog เพื่อเตรียมพร้อมสู่ระบบคลาวด์ใน Sprint 3
+
+### แผนผังการเรียนรู้ประจำสัปดาห์ที่ 12 (Session Roadmap)
+
+เนื้อหาสัปดาห์นี้จะเชื่อมโยงจากชุดทดสอบในสัปดาห์ที่ 11 สู่ระบบคลาวด์อัตโนมัติบน GitHub:
+
+| หน่วย | หัวข้อ | เนื้อหา |
+|---|---|---|
+| หน่วยที่ 1 | CI/CD Foundations | CI vs CD, DevOps Loop, Trunk-Based Development, Fast Feedback |
+| หน่วยที่ 2 | GitHub Actions | Workflows, Runners, `ci.yml`, Dependency Caching, Env Secrets |
+| หน่วยที่ 3 | Static Analysis | Linters (Flake8), Autoformat (Black), Security Scan (Bandit), Failure vs Fix |
+| หน่วยที่ 4 | PR Gates & Sprints | Branch Protection, PR Etiquette, Sprint 2 Retro & Sprint 3 Launch |
+
+> 💡 **Takeaway** — สัปดาห์นี้เราจะเปลี่ยน Repository ของโครงงานกลุ่มให้กลายเป็น **Self-Checking Project** ที่ปฏิเสธโค้ดที่มีข้อผิดพลาดโดยอัตโนมัติ
+
+### สะพานเชื่อมสู่สัปดาห์ที่ 13 (Bridge to Web Security & Production Deployment)
+
+**ความสำเร็จในสัปดาห์นี้ (Week 12 Milestones)**
+- ออกแบบและสร้างไฟล์ `.github/workflows/ci.yml`
+- ติดตั้งระบบ Caching และบังคับใช้ Coverage Gate ใน CI
+- ป้องกันโค้ดด้วย Flake8, Black และ Bandit
+- ล็อกกิ่ง `main` ด้วย Branch Protection Rules และเปิดตัว Sprint 3
+
+**สัปดาห์หน้า: Week 13 Web Security & Deployment**
+- **OWASP Top 10 Defenses**: สกัดกั้นภัยคุกคาม XSS, CSRF, SQLi
+- **Production Hardening**: ล็อก `DEBUG=False`, HTTPS, Secrets
+- **Cloud Deployment**: รันบน Render ร่วมกับ PostgreSQL
+- **Final Release Branch**: ตรวจรับ Sprint 3 และเตรียม Final Demo
+
+> **"Automate your checks today; deploy with serene confidence tomorrow."**
+
+### แหล่งข้อมูลอ้างอิง (Week 12)
+
+- **GitHub Official Documentation**:
+  - *GitHub Actions Documentation — Workflow Syntax and Events*: https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions
+  - *About Protected Branches and Required Status Checks*: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches
+- **DevOps & Automation Literature**:
+  - Jez Humble & David Farley (2010). *Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation*. Addison-Wesley.
+  - Martin Fowler (2006). *Continuous Integration*. martinfowler.com.
+- **Static Analysis & Security Tools**:
+  - *Flake8 Documentation*: https://flake8.pycqa.org/
+  - *Black Formatter*: https://black.readthedocs.io/
+  - *Bandit Security Linter*: https://bandit.readthedocs.io/

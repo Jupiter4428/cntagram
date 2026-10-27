@@ -13,4 +13,10 @@ urlpatterns = [
         views.upload_course_options,
         name="upload_course_options",
     ),
+    path("documents/<int:document_id>/", views.document_detail, name="document_detail"),
+    path(
+        "documents/<int:document_id>/preview/",
+        views.document_preview,
+        name="document_preview",
+    ),
 ]

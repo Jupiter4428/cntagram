@@ -1610,7 +1610,9 @@ textarea:focus-visible,
     display: grid;
     width: min(calc(100% - 1.5rem), 1300px);
     min-height: 31px;
+
     grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     margin: 2.35rem auto -1rem;
     color: var(--chrome-silver);
@@ -1626,8 +1628,10 @@ textarea:focus-visible,
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%), 0 4px 12px rgb(0 0 0 / 32%);
 }
 
+
 .retro-marquee__label,
 .retro-marquee__status {
+.retro-marquee__label {
     align-self: stretch;
     display: grid;
     place-items: center;
@@ -2010,12 +2014,16 @@ textarea:focus-visible,
 
 @media (max-width: 679.98px) {
     .retro-marquee {
+
         grid-template-columns: auto minmax(0, 1fr);
         margin-top: 3.6rem;
     }
 
     .retro-marquee__status {
         display: none;
+    }
+
+        margin-top: 3.6rem;
     }
 
     .retro-marquee__window p {
@@ -2539,6 +2547,7 @@ body::after {
     text-shadow: 0 0 7px rgb(199 255 94 / 42%);
 }
 
+
 .site-brand__eyebrow,
 .site-brand__tagline,
 .tech-label,
@@ -2881,6 +2890,7 @@ body::after {
     .web-statusbar__counter {
         letter-spacing: 0;
     }
+
 }
 
 /* Authentic old-web pass: compact 2003–2008 community layout */

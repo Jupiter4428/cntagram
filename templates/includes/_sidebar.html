@@ -9,7 +9,8 @@
             <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
             <p class="tech-label">IDENTITY VERIFIED</p>
             <p class="member-name">{{ request.user.nickname }}</p>
-            <a class="chrome-button chrome-button--brand w-100 text-center" href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a>
+            <a class="chrome-button chrome-button--brand w-100 text-center"
+               href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a>
         {% else %}
             <div class="profile-bubble profile-bubble--guest" aria-hidden="true">?</div>
             <p>เชื่อมต่อบัญชีเพื่อเข้าถึงคลังความรู้ของชุมชนวิศวกรรม</p>
@@ -18,27 +19,6 @@
                 <a class="text-link text-center" href="{% url 'accounts:register' %}">สร้างบัญชีใหม่</a>
             </div>
         {% endif %}
-    </div>
-</section>
-
-{% include "includes/_archive.html" %}
-
-{% include "includes/_music_player.html" %}
-
-{% include "includes/_visitor_counter.html" %}
-
-<section class="retro-widget glass-module side-module retro-directory" aria-labelledby="directory-title">
-    <div class="retro-widget__header module-heading">
-        <span class="pixel-folder" aria-hidden="true">▤</span>
-        <span><small>MINI DIRECTORY</small><span id="directory-title">Community Menu</span></span>
-        <span class="tech-index">03</span>
-    </div>
-    <div class="retro-widget__body module-body">
-        <ul class="directory-list">
-            <li><span aria-hidden="true">›</span> หมวดชีทและโน้ต <b>DEMO</b></li>
-            <li><span aria-hidden="true">›</span> ข่าวจากชุมชน <b>DEMO</b></li>
-            <li><span aria-hidden="true">›</span> สมาชิกออนไลน์ <b>DEMO</b></li>
-        </ul>
     </div>
 </section>
 
@@ -54,17 +34,5 @@
             <li><span>02</span> ค้นหาวิชาและรุ่น</li>
             <li><span>03</span> แบ่งปันกับเพื่อน</li>
         </ol>
-        <p class="demo-note mb-0">ข้อมูลตัวอย่างสำหรับสาธิตระบบภาพ FE-1</p>
     </div>
 </details>
-
-<section class="signal-card" aria-label="ข้อมูลธีม">
-    <div class="signal-card__rings" aria-hidden="true"></div>
-    <div>
-        <span class="tech-label">VISUAL SYSTEM</span>
-        <strong>HI5 / Y2K WEB</strong>
-    </div>
-        <span class="signal-card__state">● DEMO</span>
-</section>
-
-{% include "includes/_badges.html" %}

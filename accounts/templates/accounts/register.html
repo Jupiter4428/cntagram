@@ -1,8 +1,19 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
 {% block title %}Register | CNTAGRAM{% endblock %}
 
 {% block content %}
-<h1>Register</h1>
-<p>The registration form will be provided by the account registration story.</p>
+<section class="retro-widget auth-surface auth-surface--placeholder mx-auto" aria-labelledby="register-title">
+    <div class="auth-surface__halo" aria-hidden="true"></div>
+    <header class="retro-widget__header auth-surface__head text-center">
+        <span class="tech-label">NEW IDENTITY CHANNEL</span>
+        <h1 id="register-title">สมัครสมาชิก <em>Register</em></h1>
+    </header>
+    <div class="retro-widget__body auth-surface__body empty-state">
+        <div class="chrome-glyph" aria-hidden="true">ID</div>
+        <h2>หน้าสมัครสมาชิกกำลังเตรียมพร้อม</h2>
+        <p class="mb-0">แบบฟอร์มสมัครสมาชิกจะเชื่อมต่อจาก User Story การลงทะเบียนบัญชี</p>
+    </div>
+    <footer class="auth-surface__foot"><span>COMING CHANNEL</span><span>REG / 01</span></footer>
+</section>
 {% endblock %}
