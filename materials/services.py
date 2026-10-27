@@ -1,5 +1,6 @@
 """การเขียนข้อมูลของ materials ตาม ADR 0002"""
 import hashlib
+import logging
 import uuid
 
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -7,13 +8,23 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 
 from . import selectors
-from .models import Approval, DocType, Document, ExamDetail, max_upload_mb
+from .models import (
+    Approval,
+    DocType,
+    Document,
+    ExamDetail,
+    max_upload_bytes,
+    max_upload_mb,
+)
+
+logger = logging.getLogger(__name__)
 
 PDF_MIME = "application/pdf"
 PDF_MAGIC = b"%PDF-"
 
 
 def _storage_path(batch_course, doc_type):
+    """path ใน storage ตั้งชื่อไฟล์ด้วย uuid ไม่ใช้ชื่อที่ผู้ใช้ส่งมา จึงเดา path หรือชนกันไม่ได้"""
     batch = batch_course.batch
     return (
         f"vault/{batch.department.code}/{batch.number}/{batch_course.course.code}/"
@@ -21,14 +32,18 @@ def _storage_path(batch_course, doc_type):
     )
 
 
+def file_too_large_message():
+    """ข้อความเมื่อไฟล์เกิน max_upload_mb ใช้ทั้งที่ service และตอน upload handler ข้ามไฟล์"""
+    return f"ไฟล์ต้องมีขนาดไม่เกิน {max_upload_mb()} MB"
+
+
 def _validate_pdf(file):
     """รับเฉพาะ PDF: MIME ที่ browser ส่งมาต้องเป็น PDF และ magic bytes ต้องขึ้นต้นด้วย %PDF-
 
     MIME ปลอมได้ฝั่ง client จึงต้องเช็ก magic bytes ของเนื้อไฟล์จริงด้วย
     """
-    limit_mb = max_upload_mb()
-    if file.size > limit_mb * 1024 * 1024:
-        raise ValidationError({"file": f"ไฟล์ต้องมีขนาดไม่เกิน {limit_mb} MB"})
+    if file.size > max_upload_bytes():
+        raise ValidationError({"file": file_too_large_message()})
     file.seek(0)
     header = file.read(len(PDF_MAGIC))
     file.seek(0)
@@ -37,6 +52,7 @@ def _validate_pdf(file):
 
 
 def _sha256(file):
+    """hash ของเนื้อไฟล์ทีละ chunk แล้ว seek กลับต้นไฟล์ให้ storage อ่านต่อได้"""
     digest = hashlib.sha256()
     for chunk in file.chunks():
         digest.update(chunk)
@@ -107,7 +123,11 @@ def upload_document(
                 exam_detail.save()
     except Exception:
         # บันทึก DB ไม่สำเร็จ ลบไฟล์ทิ้ง ไม่ให้มีไฟล์กำพร้าค้างใน storage
-        default_storage.delete(storage_path)
+        # ถ้าลบไม่ได้ให้ log path ไว้ตามเก็บทีหลัง error ที่ต้องส่งต่อคือของ DB
+        try:
+            default_storage.delete(storage_path)
+        except Exception:  # storage อื่น (เช่น S3) โยน error คนละชนิดกับ OSError
+            logger.exception("Could not remove orphaned upload %s", storage_path)
         raise
     return document
 

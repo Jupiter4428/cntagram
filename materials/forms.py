@@ -52,8 +52,8 @@ class SearchForm(forms.Form):
 class UploadForm(forms.Form):
     """อัปโหลดชีท (US-5) cleaned_data ยกเว้น disclaimer ส่งเข้า services.upload_document ได้เลย
 
-    batch_course รับได้ทุกภาค โดยตั้งใจ: การเช็กว่าตรงภาคของผู้ใช้อยู่ใน service
-    ซึ่งตอบ 403 เมื่อมีคนแก้ request ข้ามภาค (ไม่ใช่แค่ฟอร์มไม่ผ่าน)
+    batch_course รับได้ทุกภาค โดยตั้งใจ: view เช็กภาคของผู้ใช้ก่อนดูผลฟอร์ม
+    และ service เช็กซ้ำ จึงตอบ 403 เมื่อมีคนแก้ request ข้ามภาค (ไม่ใช่แค่ฟอร์มไม่ผ่าน)
     """
 
     batch_course = forms.ModelChoiceField(
@@ -63,7 +63,9 @@ class UploadForm(forms.Form):
         label="ประเภท", queryset=DocType.objects.order_by("code")
     )
     title = forms.CharField(label="ชื่อเอกสาร", max_length=200)
-    description = forms.CharField(label="รายละเอียด", widget=forms.Textarea)
+    description = forms.CharField(
+        label="รายละเอียด", widget=forms.Textarea, required=False
+    )
     exam_period = forms.ModelChoiceField(
         label="ช่วงสอบ", queryset=ExamPeriod.objects.all(), required=False
     )

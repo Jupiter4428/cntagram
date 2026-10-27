@@ -972,7 +972,7 @@ from catalog.models import SystemSetting
 
 legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่า default ถ้ายังไม่มีแถวนี้
 ```
-ข้อควรระวัง: `DocumentVersion` มี CHECK ขนาดไฟล์ 50 MB แบบ**ตายตัว** (`MAX_UPLOAD_BYTES` ใน `materials/models.py`) การแก้ `max_upload_mb` ใน DB ไม่เปลี่ยน CHECK นี้ แต่ `DocumentVersion.save()` เช็กกับ `max_upload_mb` ให้อยู่แล้ว จึงลดเพดานได้ทันทีโดยไม่ต้องแก้โค้ด ถ้าจะเพิ่มเกิน 50 MB ต้องแก้ค่าคงที่และสร้าง migration
+ข้อควรระวัง: `DocumentVersion` มี CHECK ขนาดไฟล์ 50 MB แบบ**ตายตัว** (`MAX_UPLOAD_MB` ใน `materials/models.py`) การแก้ `max_upload_mb` ใน DB ไม่เปลี่ยน CHECK นี้ แต่ `DocumentVersion.save()` เช็กกับ `max_upload_mb` ให้อยู่แล้ว จึงลดเพดานได้ทันทีโดยไม่ต้องแก้โค้ด ถ้าจะเพิ่มเกิน 50 MB ต้องแก้ค่าคงที่และสร้าง migration
 
 ### ข้อมูลตั้งต้น (seed) ที่ระบบต้องมี
 | ตาราง | ข้อมูล |
