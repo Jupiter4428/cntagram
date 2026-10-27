@@ -14,7 +14,8 @@
         <div class="retro-widget__body auth-surface__body">
             {% if rate_limited %}
                 <div class="alert alert-danger" role="alert">
-                    Too many failed login attempts. Please try again later.
+                    <strong>ลองเข้าสู่ระบบหลายครั้งเกินไป</strong>
+                    <p class="mb-0">กรุณารอสักครู่แล้วลองอีกครั้ง เพื่อความปลอดภัยของบัญชี</p><small>Too many failed login attempts. Please try again later.</small>
                 </div>
             {% endif %}
             {% for message in messages %}
@@ -25,19 +26,25 @@
             <form method="post" action="{% url 'accounts:login' %}">
                 {% csrf_token %}
                 {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-                {{ form.non_field_errors }}
+                {% if form.non_field_errors and not rate_limited %}
+                    <div class="alert alert-danger" role="alert">
+                        <strong>เข้าสู่ระบบไม่สำเร็จ</strong>
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
                 <div class="mb-3">
                     {{ form.username.label_tag }}
                     {{ form.username }}
-                    {{ form.username.errors }}
+                    {% if form.username.errors %}<div class="text-danger small" role="alert">{{ form.username.errors }}</div>{% endif %}
                 </div>
                 <div class="mb-3">
                     {{ form.password.label_tag }}
                     {{ form.password }}
-                    {{ form.password.errors }}
+                    {% if form.password.errors %}<div class="text-danger small" role="alert">{{ form.password.errors }}</div>{% endif %}
                 </div>
                 <button class="chrome-button chrome-button--brand chrome-button--large w-100" type="submit">เข้าสู่ระบบ <span aria-hidden="true">↗</span></button>
             </form>
+            <p class="text-center mt-3 mb-0">ยังไม่มีบัญชี? <a href="{% url 'accounts:register' %}">สมัครสมาชิก</a></p>
         </div>
         <footer class="auth-surface__foot"><span>ENCRYPTED SESSION</span><span>AUTH / 02</span></footer>
     </section>

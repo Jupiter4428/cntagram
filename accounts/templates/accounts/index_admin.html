@@ -1,0 +1,207 @@
+{% extends "admin_page.html" %}
+{% load materials_stats %}
+
+{% block title %}Admin Dashboard | CNTAGRAM{% endblock %}
+
+{% block admin_sidebar_extra %}
+        <section class="retro-widget glass-module side-module" aria-labelledby="new-users-title">
+            <div class="retro-widget__header module-heading">
+                <span class="module-heading__orb" aria-hidden="true"></span>
+                <span><small>NEW USERS</small><span id="new-users-title">ผู้ใช้ใหม่</span></span>
+                <span class="tech-index">+</span>
+            </div>
+            <div class="retro-widget__body module-body">
+                <dl class="admin-new-users">
+                    <div><dt>วันนี้</dt><dd>{{ dashboard.new_users.day }}</dd></div>
+                    <div><dt>สัปดาห์นี้</dt><dd>{{ dashboard.new_users.week }}</dd></div>
+                    <div><dt>เดือนนี้</dt><dd>{{ dashboard.new_users.month }}</dd></div>
+                    <div><dt>ปีนี้</dt><dd>{{ dashboard.new_users.year }}</dd></div>
+                    <div class="admin-new-users__all"><dt>เคยสมัครทั้งหมด</dt><dd>{{ dashboard.new_users.all }}</dd></div>
+                </dl>
+            </div>
+        </section>
+{% endblock %}
+
+{% block content %}
+<section class="retro-widget glass-module admin-greeting">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>DASHBOARD / OVERVIEW</small> สวัสดี, {{ request.user.nickname }}</span>
+        <span class="tech-index">{% now "d.m.Y" %}</span>
+    </div>
+    <div class="retro-widget__body module-body compact-copy">
+        <p class="mb-0">ภาพรวมระบบ CNTAGRAM วันนี้ ({% now "j F Y" %})</p>
+    </div>
+</section>
+
+<section class="admin-stats" aria-label="ตัวเลขสรุป">
+    <div class="retro-widget glass-module admin-stat admin-stat--blue">
+        <span class="admin-stat__icon" aria-hidden="true">☺</span>
+        <strong class="admin-stat__value">{{ dashboard.totals.users }}</strong>
+        <span class="admin-stat__label">ผู้ใช้ที่เคยสมัครทั้งหมด</span>
+    </div>
+    <a class="retro-widget glass-module admin-stat admin-stat--red" href="{% url 'catalog:department_list' %}">
+        <span class="admin-stat__icon" aria-hidden="true">▤</span>
+        <strong class="admin-stat__value">{{ dashboard.totals.departments }}</strong>
+        <span class="admin-stat__label">ภาควิชาที่เปิดใช้</span>
+    </a>
+    <a class="retro-widget glass-module admin-stat admin-stat--violet" href="{% url 'catalog:batch_list' %}">
+        <span class="admin-stat__icon" aria-hidden="true">◎</span>
+        <strong class="admin-stat__value">{{ dashboard.totals.batches }}</strong>
+        <span class="admin-stat__label">รุ่น</span>
+    </a>
+    <a class="retro-widget glass-module admin-stat admin-stat--green" href="{% url 'catalog:course_list' %}">
+        <span class="admin-stat__icon" aria-hidden="true">✎</span>
+        <strong class="admin-stat__value">{{ dashboard.totals.courses }}</strong>
+        <span class="admin-stat__label">รายวิชา</span>
+    </a>
+    <a class="retro-widget glass-module admin-stat admin-stat--amber" href="{% url 'materials:vault' %}">
+        <span class="admin-stat__icon" aria-hidden="true">▣</span>
+        <strong class="admin-stat__value">{% uploaded_file_count %}</strong>
+        <span class="admin-stat__label">ไฟล์ที่อัปโหลดทั้งหมด</span>
+    </a>
+</section>
+
+<div class="admin-row">
+    <section class="retro-widget glass-module">
+        <div class="retro-widget__header module-heading">
+            <span class="module-heading__orb" aria-hidden="true"></span>
+            <span><small>UPLOADS / 6 MONTHS</small> ไฟล์ที่อัปโหลดรายเดือน</span>
+            <span class="tech-index">01</span>
+        </div>
+        <div class="retro-widget__body module-body">
+            {% monthly_uploads as upload_rows %}
+            <div class="admin-bars" role="img" aria-label="กราฟจำนวนไฟล์ที่อัปโหลดรายเดือน ย้อนหลัง 6 เดือน">
+                {% for row in upload_rows %}
+                    <div class="admin-bars__col">
+                        <span class="admin-bars__count">{{ row.count }}</span>
+                        <span class="admin-bars__bar" style="height: {{ row.percent }}%"></span>
+                        <span class="admin-bars__month">{{ row.month|date:"M y" }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="retro-widget glass-module">
+        <div class="retro-widget__header module-heading">
+            <span class="module-heading__orb" aria-hidden="true"></span>
+            <span><small>USER TYPES</small> ผู้ใช้ตามบทบาท</span>
+            <span class="tech-index">02</span>
+        </div>
+        <div class="retro-widget__body module-body">
+            {% if dashboard.roles %}
+                <div class="admin-donut" role="img" aria-label="สัดส่วนผู้ใช้ตามบทบาท"
+                     style="background: conic-gradient({% for role in dashboard.roles %}var(--slice-{{ forloop.counter }}) {{ role.offset }}% {{ role.end }}%{% if not forloop.last %}, {% endif %}{% endfor %})"></div>
+                <ul class="admin-legend">
+                    {% for role in dashboard.roles %}
+                        <li>
+                            <span class="admin-dot" style="background: var(--slice-{{ forloop.counter }})" aria-hidden="true"></span>
+                            {{ role.label }} ({{ role.count }})
+                            <strong>{{ role.percent }}%</strong>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="mb-0">ยังไม่มีผู้ใช้ที่มีบทบาท</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<div class="admin-row">
+    <section class="retro-widget glass-module" id="recent-users">
+        <div class="retro-widget__header module-heading">
+            <span class="module-heading__orb" aria-hidden="true"></span>
+            <span><small>USERS / {{ dashboard.users_page.paginator.count }} TOTAL</small> ผู้ใช้ล่าสุด</span>
+            <span class="tech-index">03</span>
+        </div>
+        <div class="retro-widget__body module-body">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>ผู้ใช้</th><th>บทบาท</th><th>สถานะ</th><th>สมัครเมื่อ</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for user in dashboard.users_page %}
+                            <tr>
+                                <td>
+                                    <button class="admin-person" type="button" popovertarget="user-{{ user.pk }}" title="ดูข้อมูลผู้ใช้">
+                                        <span class="admin-person__avatar" aria-hidden="true">{{ user.nickname|first|upper }}</span>
+                                        <span><strong>{{ user.nickname }}</strong><small>{{ user.department.code }}</small></span>
+                                    </button>
+                                </td>
+                                <td>{% include "accounts/includes/_user_roles.html" %}</td>
+                                <td>{% include "accounts/includes/_user_status.html" %}</td>
+                                <td>{{ user.created_at|date:"j M Y" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4">ยังไม่มีผู้ใช้</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if dashboard.users_page.has_other_pages %}
+                <nav class="admin-pager" aria-label="หน้ารายชื่อผู้ใช้">
+                    {% for number in dashboard.users_page.elided_range %}
+                        {% if number == dashboard.users_page.paginator.ELLIPSIS %}
+                            <span class="admin-pager__gap">{{ number }}</span>
+                        {% elif number == dashboard.users_page.number %}
+                            <span class="admin-pager__page is-current" aria-current="page">{{ number }}</span>
+                        {% else %}
+                            <a class="admin-pager__page" href="?page={{ number }}#recent-users">{{ number }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </nav>
+            {% endif %}
+
+            {% for user in dashboard.users_page %}
+                <div class="retro-widget glass-module admin-popup" id="user-{{ user.pk }}" popover>
+                    <div class="retro-widget__header module-heading">
+                        <span class="module-heading__orb" aria-hidden="true"></span>
+                        <span><small>USER PROFILE</small> {{ user.nickname }}</span>
+                        <button class="admin-popup__close" type="button" popovertarget="user-{{ user.pk }}" popovertargetaction="hide" aria-label="ปิด">×</button>
+                    </div>
+                    <div class="retro-widget__body module-body">
+                        <dl class="admin-facts">
+                            <dt>ชื่อเล่น</dt><dd>{{ user.nickname }}</dd>
+                            <dt>อีเมล</dt><dd>{{ user.email }}</dd>
+                            <dt>อีเมลส่วนตัว</dt><dd>{{ user.personal_email|default:"-" }}</dd>
+                            <dt>รหัสนักศึกษา</dt><dd>{{ user.student_id|default:"-" }}</dd>
+                            <dt>ภาควิชา</dt><dd>{{ user.department.code }} {{ user.department.name_th }}</dd>
+                            <dt>บทบาท</dt><dd>{% include "accounts/includes/_user_roles.html" %}</dd>
+                            <dt>สถานะ</dt><dd>{% include "accounts/includes/_user_status.html" %}</dd>
+                            <dt>เอกสารที่อัปโหลด</dt><dd><strong>{{ user.upload_count }}</strong> ฉบับ</dd>
+                            <dt>สมัครเมื่อ</dt><dd>{{ user.created_at|date:"j M Y H:i" }}</dd>
+                            <dt>ยืนยันอีเมลเมื่อ</dt><dd>{{ user.email_verified_at|date:"j M Y H:i"|default:"ยังไม่ยืนยัน" }}</dd>
+                            <dt>เข้าระบบล่าสุด</dt><dd>{{ user.last_login|date:"j M Y H:i"|default:"ยังไม่เคยเข้าระบบ" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="retro-widget glass-module">
+        <div class="retro-widget__header module-heading">
+            <span class="module-heading__orb" aria-hidden="true"></span>
+            <span><small>DEPARTMENTS</small> ภาควิชา</span>
+            <span class="tech-index">04</span>
+        </div>
+        <div class="retro-widget__body module-body">
+            <ul class="directory-list">
+                {% for dept in dashboard.departments %}
+                    <li>
+                        <span aria-hidden="true">›</span>
+                        {{ dept.code }} {{ dept.name_th }}
+                        <b>{{ dept.user_count }} คน · {{ dept.batch_count }} รุ่น</b>
+                    </li>
+                {% empty %}
+                    <li><span aria-hidden="true">›</span> ยังไม่มีภาควิชาที่เปิดใช้</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+</div>
+{% endblock %}

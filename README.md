@@ -131,6 +131,7 @@ User ผูกกับภาควิชา (`department` ห้ามว่า
 ```bash
 python manage.py seed_catalog     # ภาค CN/CE/ME/EE + รุ่น CN21–CN25 + วิชาตัวอย่าง (รันซ้ำได้ ไม่สร้างซ้ำ)
 python manage.py createsuperuser
+python manage.py seed_materials   # ประเภทเอกสาร, ช่วงสอบ, system_setting, กฎอนุมัติ (รันซ้ำได้ ไม่เขียนทับค่าที่แก้แล้ว)
 ```
 ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (พิมพ์ตัวย่อภาค เช่น `CN` ตัวพิมพ์เล็กก็ได้ ถ้ายังไม่มีภาคนี้จะแจ้งว่าไม่พบ), Password
 
@@ -178,7 +179,7 @@ cntagram/
 ├── portal/          # Django project config (settings, urls, wsgi/asgi)
 ├── accounts/        # User, Role, UserRole (US-1, US-2)
 ├── catalog/         # Department, Batch, Course, BatchCourse, SystemSetting (US-3, US-4)
-├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5, US-7)
+├── materials/       # DocType, ExamPeriod, Document, ExamDetail, DocumentVersion (US-5, US-7), Approval (US-6), DocTypeRequiredRole (US-9)
 ├── media/           # ไฟล์เอกสารที่อัปโหลด (MEDIA_ROOT) สร้างเองตอนมีไฟล์แรก อยู่ใน .gitignore และเปิดได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น (ADR 0003)
 ├── .github/         # Issue templates และ Pull Request template
 ├── manage.py

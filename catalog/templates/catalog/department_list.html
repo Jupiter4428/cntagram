@@ -1,13 +1,10 @@
-{% extends "base.html" %}
+{% extends "admin_page.html" %}
 
 {% block title %}รายชื่อภาควิชา{% endblock %}
 
 {% block content %}
   <h1>รายชื่อภาควิชา</h1>
 
-  {% for message in messages %}
-    <div class="alert">{{ message }}</div>
-  {% endfor %}
 
   <a href="{% url 'catalog:department_create' %}">เพิ่มภาควิชา</a>
 

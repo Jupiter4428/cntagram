@@ -15,6 +15,10 @@
             <form method="post" action="{% url 'accounts:register' %}" novalidate id="register-form">
                 {% csrf_token %}
 
+                {% if rate_limited %}
+                    <div class="alert alert-danger" role="alert">ส่งคำขอสมัครสมาชิกบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่</div>
+                {% endif %}
+
                 {% if form.non_field_errors %}
                     <div class="alert alert-danger" role="alert">
                         {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}

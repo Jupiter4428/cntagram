@@ -492,6 +492,8 @@ Closes #N
 
 ### หน้าที่ของผู้เปิด PR (Author)
 - อธิบายเจตนาของ PR และสิ่งที่แก้ให้ชัดเจน
+- **แนบภาพ Screenshot ใน PR body โดยตรง** ด้วยการลากไฟล์ภาพลงช่อง Description/Comment ของ GitHub (GitHub จะเก็บเป็น attachment) **ไม่ต้อง commit ภาพประกอบ PR ลงใน repository** เช่น `docs/pr-screenshots/` เพื่อไม่ให้ repository และ Git history โตโดยไม่จำเป็น
+- ถ้าจำเป็นต้องใช้ลิงก์รูปจาก repository ให้ชี้ไปที่ commit SHA ที่มีรูปจริง ไม่ใช่ branch ที่อาจถูกลบหลัง Merge
 - แนบ screenshot ถ้าแก้ UI / แสดง Before–After ถ้าเป็น refactor
 - รัน automated tests ให้ผ่านทั้งหมด **ก่อน** ขอ review
 - merge/rebase `develop` ล่าสุดเข้า branch ตัวเองก่อนเปิด PR
@@ -956,7 +958,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 |---|---|
 | **DB** (UNIQUE / CHECK / PROTECT) | รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, เวอร์ชันซ้ำของเอกสาร, `storage_path` ซ้ำ · `size_bytes` ต้อง > 0 และ ≤ 50 MB, `status`/`vault`/`scan_status` นอกค่าที่กำหนด, `batch.number` < 1, `exam_year_be` นอก 2500–2700 · ลบ Department/Batch/Course ที่ยังถูกอ้างอยู่ไม่ได้ |
 | **Model** (`save()` เช็กให้เอง) | `UserRole`: moderator ต้องมี `department` / role อื่นห้ามมี และห้ามซ้ำ · `ExamDetail`: ผูกได้เฉพาะเอกสารที่ `vault = exam` · `DocumentVersion`: ขนาดไฟล์ไม่เกิน `max_upload_mb`, `storage_path`/`sha256` ต้องปลอดภัย และล้าง `original_name` |
-| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน |
+| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน · `Department.code` รับแค่ A-Z 2-5 ตัว, `Course.code` ต้องเป็น A-Z ตามด้วยเลข 1-3 หลัก เช่น CN201 (อยู่ใน path ไฟล์) |
 | **Service** (ต้องเขียนใน `services.py`) | ผู้ใช้อัปโหลดได้เฉพาะภาควิชาของตัวเอง (US-5), รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น, Super Admin ต้องมีอย่างน้อย 2 คน, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้ (US-6) |
 
 ### `SystemSetting` (ค่ากำหนดปรับได้โดยไม่ deploy ใหม่)
@@ -981,10 +983,10 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 | `ExamPeriod` | `midterm`, `final` |
 | `SystemSetting` | `legacy_batch_max`, `max_upload_mb` ตามตารางด้านบน |
 
-รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน ตาราง `role` ถูก seed อัตโนมัติด้วย data migration `accounts` 0004_seed_roles ตอน `migrate` (`seed_roles` ยังใช้ผูก super_admin ให้ superuser) และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
+รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) กฎอนุมัติ (US-9) `seed_materials` seed ให้ด้วย ส่วน `doc_type` ที่เพิ่มทีหลังรัน `python manage.py seed_approval_rules` (ข้อสอบต้องทั้ง moderator และ super_admin ชีทใช้คนใดคนหนึ่ง รันซ้ำได้ ถ้าไม่ seed จะไม่มีใครอนุมัติได้ ส่วน `doc_type` ที่มีอยู่แล้วตอน `migrate` ได้กฎจาก migration `0005` อัตโนมัติ ดู [ADR 0004](_docs/adr/0004-approval-tables-in-materials.md)) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน ตาราง `role` ถูก seed อัตโนมัติด้วย data migration `accounts` 0004_seed_roles ตอน `migrate` (`seed_roles` ยังใช้ผูก super_admin ให้ superuser) และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
 
 ### Migration ที่มีอยู่
-- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
+- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
   ```
