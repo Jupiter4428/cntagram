@@ -21,4 +21,9 @@ urlpatterns = [
     ),
     path("approvals/", views.approval_queue, name="approval_queue"),
     path("approvals/<int:document_id>/", views.approval_review, name="approval_review"),
+    path(
+        "approvals/<int:document_id>/preview/",
+        views.approval_document_preview,
+        name="approval_preview",
+    ),
 ]

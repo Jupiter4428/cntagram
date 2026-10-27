@@ -1,7 +1,12 @@
+import shutil
+import tempfile
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db import IntegrityError
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -14,6 +19,9 @@ from ..selectors import get_document_for_review, pending_documents_for_moderator
 from ..services import review_document
 
 User = get_user_model()
+
+PREVIEW_MEDIA_ROOT = tempfile.mkdtemp()
+PDF_BYTES = b"%PDF-1.4 fake pending sheet"
 
 
 class ApprovalBaseTestCase(TestCase):
@@ -672,3 +680,129 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         with self.assertNumQueries(8):
             response = self.client.get(self.queue_url)
             self.assertEqual(response.status_code, 200)
+
+
+@override_settings(MEDIA_ROOT=PREVIEW_MEDIA_ROOT)
+class ApprovalPreviewViewTests(ApprovalBaseTestCase):
+    """PDF preview ของเอกสารที่รอพิจารณา (US-6, #100) เปิดได้เฉพาะผู้ตรวจที่มีสิทธิ์
+
+    ทุกกรณีที่ไม่มีสิทธิ์ตอบ 404 เหมือนกัน (ผ่าน selectors.get_document_for_review)
+    เพื่อไม่เปิดเผยว่ามีเอกสารนั้นอยู่
+    """
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(PREVIEW_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
+
+    def create_document_with_file(self, **kwargs):
+        """เอกสารที่มีไฟล์ PDF อยู่ใน storage จริง (create_document เฉยๆ จะชี้ path ที่ไม่มีไฟล์)"""
+        doc = self.create_document(**kwargs)
+        path = default_storage.save(f"vault/test/{doc.pk}_preview.pdf", ContentFile(PDF_BYTES))
+        doc.versions.update(storage_path=path)
+        return doc
+
+    def preview(self, doc):
+        return self.client.get(reverse("materials:approval_preview", args=[doc.pk]))
+
+    def test_moderator_of_same_department_streams_pending_pdf_inline(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn)
+        self.client.force_login(self.mod_cn)
+
+        response = self.preview(doc)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertTrue(response["Content-Disposition"].startswith("inline"))
+        self.assertIn("test.pdf", response["Content-Disposition"])
+        self.assertEqual(response["X-Frame-Options"], "SAMEORIGIN")
+        self.assertEqual(b"".join(response.streaming_content), PDF_BYTES)
+
+    def test_super_admin_can_preview_pending_pdf_of_any_department(self):
+        doc = self.create_document_with_file(batch_course=self.bc_me)
+        self.client.force_login(self.super_admin)
+
+        response = self.preview(doc)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+
+    def test_moderator_of_other_department_gets_404(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn)
+        self.client.force_login(self.mod_me)
+
+        self.assertEqual(self.preview(doc).status_code, 404)
+
+    def test_normal_student_gets_404(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn)
+        self.client.force_login(self.normal_student)
+
+        self.assertEqual(self.preview(doc).status_code, 404)
+
+    def test_uploader_gets_404_even_when_they_are_a_moderator(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn, uploader=self.mod_cn)
+        self.client.force_login(self.mod_cn)
+
+        self.assertEqual(self.preview(doc).status_code, 404)
+
+    def test_document_that_is_not_pending_gets_404(self):
+        self.client.force_login(self.mod_cn)
+        for status in (Document.Status.PUBLISHED, Document.Status.REJECTED, Document.Status.HIDDEN):
+            with self.subTest(status=status):
+                doc = self.create_document_with_file(status=status)
+
+                self.assertEqual(self.preview(doc).status_code, 404)
+
+    def test_document_the_moderator_already_reviewed_gets_404(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn)
+        Approval.objects.create(
+            document=doc,
+            approver=self.mod_cn,
+            approver_role=self.role_moderator,
+            decision=Approval.Decision.APPROVED,
+        )
+        self.client.force_login(self.mod_cn)
+
+        self.assertEqual(self.preview(doc).status_code, 404)
+
+    def test_file_missing_from_storage_gets_404(self):
+        doc = self.create_document(batch_course=self.bc_cn)  # path ชี้ไฟล์ที่ไม่เคยถูกบันทึก
+        self.client.force_login(self.mod_cn)
+
+        self.assertEqual(self.preview(doc).status_code, 404)
+
+    def test_document_without_a_version_gets_404(self):
+        doc = self.create_document(batch_course=self.bc_cn)
+        doc.versions.all().delete()
+        self.client.force_login(self.mod_cn)
+
+        self.assertEqual(self.preview(doc).status_code, 404)
+
+    def test_guest_is_redirected_to_login(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn)
+        url = reverse("materials:approval_preview", args=[doc.pk])
+
+        response = self.client.get(url)
+
+        self.assertRedirects(response, f"{reverse('accounts:login')}?next={url}")
+
+    def test_review_page_embeds_preview_iframe_without_exposing_storage_path(self):
+        doc = self.create_document(batch_course=self.bc_cn)
+        storage_path = doc.current_version.storage_path
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(reverse("materials:approval_review", args=[doc.pk]))
+
+        preview_url = reverse("materials:approval_preview", args=[doc.pk])
+        self.assertContains(response, f'<iframe src="{preview_url}"')
+        self.assertNotContains(response, storage_path)
+
+    def test_review_page_has_no_iframe_when_document_has_no_file(self):
+        doc = self.create_document(batch_course=self.bc_cn)
+        doc.versions.all().delete()
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(reverse("materials:approval_review", args=[doc.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "<iframe")
