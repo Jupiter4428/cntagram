@@ -853,17 +853,24 @@ python manage.py test --failfast                         # หยุดทัน
 #### Coverage
 เป้าหมายตั้งแต่ Sprint 2: **ไม่ต่ำกว่า 80%** และเปิด branch coverage
 ```bash
-pip install coverage
+pip install -r requirements.txt     # มี coverage อยู่แล้ว
 coverage run manage.py test
 coverage report -m --fail-under=80   # -m แสดงบรรทัดที่ยังไม่ถูกเทสต์, ต่ำกว่า 80% จะคืน exit code ล้มเหลว
 coverage html                        # รายงานรายบรรทัดที่ htmlcov/index.html
 ```
-ตั้งค่าใน `.coveragerc` ที่ root (เพิ่มพร้อม PR ที่ตั้ง CI ใน Sprint 2; `.coverage` และ `htmlcov/` อยู่ใน `.gitignore` แล้ว)
+ตั้งค่าใน `.coveragerc` ที่ root (`.coverage` และ `htmlcov/` อยู่ใน `.gitignore` แล้ว)
 ```ini
 [run]
 branch = True
 source = .
-omit = */migrations/*, */tests/*, */tests.py, manage.py, .venv/*
+omit =
+    */migrations/*
+    */tests/*
+    */tests.py
+    manage.py
+    portal/asgi.py
+    portal/wsgi.py
+    .venv/*
 ```
 - **Branch coverage** นับว่าทุกทางแยกของ `if`/`else` ถูกรัน ไม่ใช่แค่บรรทัด (line coverage 100% ยังพลาดกิ่ง `else` ได้)
 - **Coverage สูง ≠ ไม่มีบั๊ก** ใช้ตัวเลขหาโค้ดที่ยังไม่มีเทสต์ แต่คุณภาพอยู่ที่ assertion และค่าขอบ (boundary) เช่น ขนาดไฟล์ 50 MB พอดี, รุ่น = `legacy_batch_max` พอดี
