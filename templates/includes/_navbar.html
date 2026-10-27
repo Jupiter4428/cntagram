@@ -13,6 +13,11 @@
                     <span class="capsule-link__icon" aria-hidden="true">▣</span>
                     คลังเอกสาร <small>VAULT</small>
                 </a>
+                <a class="capsule-link retro-tab{% if request.resolver_match.url_name == 'upload' or request.resolver_match.url_name == 'upload_done' %} is-active{% endif %}"
+                   href="{% url 'materials:upload' %}">
+                    <span class="capsule-link__icon" aria-hidden="true">↑</span>
+                    อัปโหลดชีท <small>UPLOAD</small>
+                </a>
             {% endif %}
         </div>
 

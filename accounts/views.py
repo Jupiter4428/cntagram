@@ -44,8 +44,11 @@ def _rate_limited_response(request, form):
 
 @require_GET
 def home(request):
-    """Public landing page for guests and authenticated users."""
-    return render(request, "accounts/home.html", {"is_super_admin": is_super_admin(request.user)})
+    """Public landing page; Super Admins get their own admin index."""
+    if is_super_admin(request.user):
+        dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
+        return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
+    return render(request, "accounts/index.html")
 
 
 @require_http_methods(["GET", "POST"])
@@ -53,6 +56,16 @@ def register(request):
     """Register a new student account with a faculty email (US-1)."""
     if request.user.is_authenticated:
         return redirect("accounts:home")
+
+    if request.method == "POST":
+        client_ip = _client_ip(request)
+        if services.is_register_rate_limited(client_ip):
+            response = render(request, "accounts/register.html", {
+                "form": RegisterForm(), "rate_limited": True,
+            }, status=429)
+            response["Retry-After"] = str(settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
+            return response
+        services.record_register_attempt(client_ip)
 
     form = RegisterForm(request.POST if request.method == "POST" else None)
     if form.is_bound and form.is_valid():

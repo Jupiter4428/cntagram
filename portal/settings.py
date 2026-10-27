@@ -100,6 +100,9 @@ LOGOUT_REDIRECT_URL = "accounts:home"
 LOGIN_RATE_LIMIT_ATTEMPTS = 5
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300
 
+REGISTER_RATE_LIMIT_ATTEMPTS = 5
+REGISTER_RATE_LIMIT_WINDOW_SECONDS = 300
+
 # แม็ประดับ error ของ messages ไปเป็น class "danger" ของ alert
 MESSAGE_TAGS = {messages.ERROR: 'danger'}
 
@@ -153,3 +156,10 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+from django.contrib.messages import constants as message_constants
+
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}
+

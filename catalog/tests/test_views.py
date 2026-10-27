@@ -298,3 +298,27 @@ class BatchCourseTests(CatalogTestCase):
             self.client.get(reverse("catalog:batch_list"))
         with self.assertNumQueries(6):  # + รุ่น, วิชาในรุ่น, ตัวเลือกวิชาในฟอร์ม
             self.client.get(reverse("catalog:batch_course_manage", args=[self.cn21.pk]))
+
+
+class AdminSidebarTests(CatalogTestCase):
+    def test_every_catalog_page_shows_the_admin_sidebar(self):
+        batch = Batch.objects.create(department=self.dept_cn, number=21)
+        pages = [
+            ("catalog:department_list", []),
+            ("catalog:department_create", []),
+            ("catalog:department_update", [self.dept_cn.pk]),
+            ("catalog:department_delete", [self.dept_cn.pk]),
+            ("catalog:batch_list", []),
+            ("catalog:batch_create", []),
+            ("catalog:batch_delete", [batch.pk]),
+            ("catalog:batch_course_manage", [batch.pk]),
+            ("catalog:course_list", []),
+            ("catalog:course_create", []),
+        ]
+        self.client.force_login(self.admin)
+        for url_name, args in pages:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name, args=args))
+
+                self.assertTemplateUsed(response, "includes/_admin_sidebar.html")
+                self.assertTemplateNotUsed(response, "includes/_sidebar.html")
