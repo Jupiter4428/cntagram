@@ -1,28 +1,35 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}อัปโหลดสำเร็จ | CNTAGRAM{% endblock %}
+{% block title %}ส่งชีทแล้ว | CNTAGRAM{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/upload.css' %}">{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-6 text-center">
-      <div class="card shadow-sm border-0 p-4">
-        <div class="card-body">
-          <div class="mb-3 text-warning">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
-              <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.272.081-.545l.998.118a8 8 0 0 1-.16 1.074l-.919-.395zm-.62 1.488q.124-.246.223-.502l.934.357a8 8 0 0 1-.497 1.054l-.775-.583zm-1.01 1.29q.192-.2.358-.415l.808.587a8 8 0 0 1-.795.918l-.57-.68a7 7 0 0 0 .199-.41zM8.5 5.5a.5.5 0 0 0-1 0v3.362l1.646 1.647a.5.5 0 0 0 .708-.708L8.5 8.362z"/>
-              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/>
-            </svg>
-          </div>
-          <h3 class="fw-bold mb-2">อัปโหลดชีทสรุปสำเร็จ</h3>
-          <p class="text-muted mb-4">เอกสารของคุณเข้าสู่ระบบแล้ว และอยู่ในสถานะ <span class="badge bg-warning text-dark fs-6">รออนุมัติ</span></p>
-          <div class="d-flex justify-content-center gap-2">
-            <a href="{% url 'materials:upload' %}" class="btn btn-outline-secondary">อัปโหลดชีทเพิ่ม</a>
-            <a href="{% url 'materials:vault' %}" class="btn btn-primary">ไปที่คลังชีท</a>
-          </div>
-        </div>
-      </div>
+<section class="retro-widget upload-card upload-done" aria-labelledby="done-title">
+  <header class="upload-card__titlebar">
+    <div>
+      <small class="upload-card__eyebrow">UPLOAD COMPLETE</small>
+      <h1 id="done-title">ส่งแล้ว รออนุมัติ</h1>
+    </div>
+    <span class="upload-card__badge upload-card__badge--pending">PENDING</span>
+  </header>
+
+  <div class="upload-done__body">
+    <div class="upload-done__icon" aria-hidden="true">✓</div>
+    <p class="upload-done__lead">ชีทของคุณถูกส่งเรียบร้อยแล้ว</p>
+    <p>ชีทจะแสดงในคลังหลังจากผู้ดูแลอนุมัติ</p>
+
+    <ol class="upload-done__steps" aria-label="สถานะการอัปโหลด">
+      <li class="is-done"><span>01</span> ส่งไฟล์แล้ว</li>
+      <li class="is-current"><span>02</span> รอผู้ดูแลอนุมัติ</li>
+      <li><span>03</span> แสดงในคลังเอกสาร</li>
+    </ol>
+
+    <div class="upload-done__actions">
+      <a class="upload-submit upload-submit--inline" href="{% url 'materials:upload' %}">อัปโหลดชีทอื่น <span aria-hidden="true">↗</span></a>
+      <a class="chrome-button chrome-button--quiet" href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a>
     </div>
   </div>
-</div>
+</section>
 {% endblock %}

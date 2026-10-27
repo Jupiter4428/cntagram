@@ -1,112 +1,103 @@
-// static/js/upload.js
-document.addEventListener("DOMContentLoaded", function () {
+(() => {
+  const form = document.getElementById("upload-form");
+  if (!form) return;
+
   const batchSelect = document.getElementById("id_batch");
   const courseSelect = document.getElementById("id_batch_course");
-  const docTypeSelect = document.querySelector('[name="doc_type"]');
-  const examPeriodWrapper = document.getElementById("wrapper_exam_period");
-  const academicYearWrapper = document.getElementById("wrapper_academic_year");
-  const fileInput = document.querySelector('input[type="file"]');
-  const fileError = document.getElementById("file-client-error");
-  const disclaimerCheck = document.getElementById("disclaimerCheck");
-  const submitBtn = document.getElementById("submitBtn");
+  const courseStatus = document.getElementById("course-status");
+  const docTypeSelect = document.getElementById("id_doc_type");
+  const examFields = document.getElementById("exam-fields");
+  const examPeriod = document.getElementById("id_exam_period");
+  const examYear = document.getElementById("id_exam_year_be");
+  const fileInput = document.getElementById("id_file");
+  const fileError = document.getElementById("file-error");
+  const disclaimer = document.getElementById("id_disclaimer");
+  const submitButton = document.getElementById("upload-submit");
+  const maxMb = Number(form.dataset.maxMb || "50");
 
-  // 1. Cascading Dropdown: เลือกรุ่น -> โหลดวิชาแบบ AJAX
-  if (batchSelect && courseSelect) {
-    batchSelect.addEventListener("change", function () {
-      const batchId = this.value;
-      const baseUrl = batchSelect.getAttribute("data-courses-url");
+  // 1) Cascading dropdown: เลือกรุ่น -> ดึงวิชา
+  let requestId = 0;
+  batchSelect.addEventListener("change", async () => {
+    const current = ++requestId;
+    courseSelect.disabled = true;
+    courseStatus.textContent = "";
+    courseSelect.replaceChildren(new Option("เลือกรุ่นก่อน", ""));
 
-      if (!batchId) {
-        courseSelect.innerHTML = '<option value="">เลือกรุ่นก่อน</option>';
-        courseSelect.disabled = true;
-        return;
+    if (!batchSelect.value) return;
+
+    courseSelect.replaceChildren(new Option("กำลังโหลดวิชา...", ""));
+    const url = batchSelect.dataset.coursesUrl.replace("/0/", `/${encodeURIComponent(batchSelect.value)}/`);
+    try {
+      const response = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error(String(response.status));
+      const { courses } = await response.json();
+      if (current !== requestId) return;
+      courseSelect.replaceChildren(new Option(courses.length ? "เลือกวิชา" : "ไม่มีวิชาในรุ่นนี้", ""));
+      for (const course of courses) {
+        courseSelect.add(new Option(`${course.code} ${course.name}`, course.id));
       }
-
-      courseSelect.disabled = true;
-      courseSelect.innerHTML = '<option value="">กำลังโหลดวิชา...</option>';
-
-      const fetchUrl = baseUrl.replace(/0\/?$/, batchId + "/");
-
-      fetch(fetchUrl)
-        .then((res) => {
-          if (!res.ok) throw new Error("Network response was not ok");
-          return res.json();
-        })
-        .then((data) => {
-          courseSelect.innerHTML = '<option value="">-- เลือกวิชา --</option>';
-          if (data.courses && data.courses.length > 0) {
-            data.courses.forEach((c) => {
-              const opt = document.createElement("option");
-              opt.value = c.id;
-              opt.textContent = `${c.code} - ${c.name}`;
-              courseSelect.appendChild(opt);
-            });
-            courseSelect.disabled = false;
-          } else {
-            courseSelect.innerHTML = '<option value="">ไม่มีวิชาในรุ่นนี้</option>';
-          }
-        })
-        .catch(() => {
-          courseSelect.innerHTML = '<option value="">โหลดข้อมูลไม่สำเร็จ</option>';
-        });
-    });
-  }
-
-  // 2. Client-side File Validation: เช็คนามสกุล .pdf และขนาดไม่เกิน 50MB (ตามรูป)
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB ตามข้อความในแบบ UI
-
-  if (fileInput) {
-    fileInput.addEventListener("change", function () {
-      if (fileError) {
-        fileError.style.display = "none";
-        fileError.textContent = "";
-      }
-
-      if (this.files && this.files[0]) {
-        const file = this.files[0];
-        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-
-        if (!isPdf) {
-          showError("รับเฉพาะไฟล์ PDF เท่านั้น");
-          this.value = "";
-          return;
-        }
-
-        if (file.size > MAX_FILE_SIZE) {
-          showError("ขนาดไฟล์ต้องไม่เกิน 50 MB");
-          this.value = "";
-          return;
-        }
-      }
-    });
-  }
-
-  function showError(msg) {
-    if (fileError) {
-      fileError.textContent = msg;
-      fileError.style.display = "block";
+      courseSelect.disabled = courses.length === 0;
+    } catch {
+      if (current !== requestId) return;
+      courseSelect.replaceChildren(new Option("โหลดวิชาไม่สำเร็จ", ""));
+      courseStatus.textContent = "โหลดรายวิชาไม่สำเร็จ ลองเลือกรุ่นอีกครั้ง";
     }
-  }
+  });
 
-  // 3. Dynamic Fields: แสดง/ซ่อน ช่องช่วงสอบและปีการศึกษา ตามประเภทเอกสาร
-  function toggleExamFields() {
-    if (!docTypeSelect) return;
-    const selectedText = docTypeSelect.options[docTypeSelect.selectedIndex]?.text || "";
-    const isExam = selectedText.includes("ข้อสอบ") || docTypeSelect.value.toLowerCase().includes("exam");
+  // 2) แสดง/ซ่อนช่วงสอบ + ปี พ.ศ. ตามประเภทเอกสาร (ตรวจ data-vault === "exam")
+  const syncExamFields = () => {
+    const option = docTypeSelect.selectedOptions[0];
+    const isExam = Boolean(option) && option.dataset.vault === "exam";
+    examFields.hidden = !isExam;
+    examPeriod.required = isExam;
+    examYear.required = isExam;
+    if (!isExam) {
+      examPeriod.value = "";
+      examYear.value = "";
+    }
+  };
+  docTypeSelect.addEventListener("change", syncExamFields);
+  syncExamFields();
 
-    if (examPeriodWrapper) examPeriodWrapper.style.display = isExam ? "" : "none";
-    if (academicYearWrapper) academicYearWrapper.style.display = isExam ? "" : "none";
-  }
+  // 3) เช็คชนิดและขนาดไฟล์เบื้องต้น
+  const showFileError = (message) => {
+    fileError.replaceChildren();
+    if (message) {
+      const item = document.createElement("li");
+      item.textContent = message;
+      fileError.append(item);
+    }
+    fileError.hidden = !message;
+    fileInput.setAttribute("aria-invalid", message ? "true" : "false");
+  };
 
-  if (docTypeSelect) {
-    docTypeSelect.addEventListener("change", toggleExamFields);
-    toggleExamFields();
-  }
+  fileInput.addEventListener("change", () => {
+    showFileError("");
+    const file = fileInput.files[0];
+    if (!file) return;
+    const isPdf = file.name.toLowerCase().endsWith(".pdf") && (file.type === "" || file.type === "application/pdf");
+    if (!isPdf) {
+      showFileError("รับเฉพาะไฟล์ PDF เท่านั้น");
+    } else if (file.size > maxMb * 1024 * 1024) {
+      showFileError(`ไฟล์ใหญ่เกินไป (สูงสุด ${maxMb} MB)`);
+    } else if (file.size === 0) {
+      showFileError("ไฟล์ว่างเปล่า");
+    }
+    if (!fileError.hidden) fileInput.value = "";
+  });
 
-  // 4. Disclaimer Checkbox: คุมปุ่ม Submit ไม่ให้กดได้จนกว่าจะยอมรับเงื่อนไข
-  if (disclaimerCheck && submitBtn) {
-    disclaimerCheck.addEventListener("change", function () {
-      submitBtn.disabled = !this.checked;
-    });
-  }
-});
+  // 4) Disclaimer ควบคุมปุ่ม Submit
+  const syncSubmit = () => {
+    submitButton.disabled = !disclaimer.checked;
+  };
+  disclaimer.addEventListener("change", syncSubmit);
+  syncSubmit();
+
+  // ตรวจสอบความถูกต้องก่อน submit
+  form.addEventListener("submit", (event) => {
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      form.reportValidity();
+    }
+  });
+})();
