@@ -28,11 +28,8 @@ def document_detail(request, document_id):
     return render(request, "materials/document_detail.html", {"document": document})
 
 
-@login_required
-@xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
-def document_preview(request, document_id):
-    """ส่งไฟล์ PDF เวอร์ชันล่าสุดแบบ inline ผ่าน view ที่ตรวจสิทธิ์ (ไม่มี Direct URL)"""
-    document = get_object_or_404(selectors.published_documents(), pk=document_id)
+def _inline_pdf_response(document):
+    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL) ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว"""
     version = document.current_version
     # TODO(US-21): ยังไม่เช็ก version.scan_status เพราะยังไม่มีตัวสแกน (ทุกไฟล์ค้างที่ pending)
     # เมื่อ US-21 มาถึง ต้องไม่ส่งไฟล์ที่ infected และตรวจว่าเป็น PDF จริงก่อนตอบ application/pdf
@@ -45,6 +42,30 @@ def document_preview(request, document_id):
     return FileResponse(
         file, content_type="application/pdf", filename=version.original_name
     )
+
+
+@login_required
+@xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
+def document_preview(request, document_id):
+    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสาร published แบบ inline ผ่าน view ที่ตรวจสิทธิ์"""
+    document = get_object_or_404(selectors.published_documents(), pk=document_id)
+    return _inline_pdf_response(document)
+
+
+@login_required
+@xframe_options_sameorigin  # ให้ <iframe> ในหน้าพิจารณาของเว็บเราเองแสดงได้
+def approval_document_preview(request, document_id):
+    """ส่งไฟล์ PDF ของเอกสารที่รอพิจารณา (pending) ให้ผู้ตรวจที่มีสิทธิ์เท่านั้น (US-6, #100)
+
+    สิทธิ์และสถานะตัดสินที่ selectors.get_document_for_review: ผู้ใช้ทั่วไป, Moderator ภาคอื่น,
+    ผู้อัปโหลดเอง, เอกสารที่ไม่ใช่ pending หรือที่ตนพิจารณาไปแล้ว ตอบ 404 เหมือนกันหมด
+    จึงไม่เปิดเผยว่ามีเอกสารนั้นอยู่ (ใช้ document_preview ไม่ได้ เพราะรับเฉพาะ published)
+    """
+    try:
+        document = selectors.get_document_for_review(document_id=document_id, user=request.user)
+    except Document.DoesNotExist:
+        raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
+    return _inline_pdf_response(document)
 
 
 @login_required
