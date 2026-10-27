@@ -12,4 +12,6 @@ urlpatterns = [
         views.document_preview,
         name="document_preview",
     ),
+    path("approvals/", views.approval_queue, name="approval_queue"),
+    path("approvals/<int:document_id>/", views.approval_review, name="approval_review"),
 ]

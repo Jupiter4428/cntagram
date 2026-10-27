@@ -274,3 +274,48 @@ class DocumentVersion(models.Model):
 
     def __str__(self):
         return f"{self.document_id} v{self.version_no}"
+
+
+class Approval(models.Model):
+    class Decision(models.TextChoices):
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    document = models.ForeignKey(
+        Document, on_delete=models.PROTECT, related_name="approvals"
+    )
+    approver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="approvals"
+    )
+    approver_role = models.ForeignKey(
+        "accounts.Role", on_delete=models.PROTECT, related_name="approvals"
+    )
+    decision = models.CharField(
+        max_length=10, choices=Decision.choices
+    )
+    reason = models.TextField(blank=True, null=True)
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "approval"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document", "approver"], name="uq_approval_document_approver"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(decision__in=["approved", "rejected"]),
+                name="ck_approval_decision",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.decision == self.Decision.REJECTED and not (self.reason and self.reason.strip()):
+            raise ValidationError({"reason": "Reason is required when rejecting a document."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.document_id} - {self.approver_id} ({self.decision})"
