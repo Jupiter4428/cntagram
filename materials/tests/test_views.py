@@ -11,9 +11,9 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Role, UserRole
-from catalog.models import Batch, BatchCourse, Course, Department
+from catalog.models import Batch, BatchCourse, Course, Department, SystemSetting
 
-from ..forms import SearchForm
+from ..forms import SearchForm, UploadForm
 from ..models import Document, DocType
 from .base import SearchTestCase, UploadTestCase, pdf_file, stored_file_count
 
@@ -279,6 +279,21 @@ class UploadViewTests(UploadTestCase):
         self.assertEqual(response.context["department"], self.cn)
         self.assertEqual(list(response.context["batches"]), [self.cn21])
 
+    def test_form_shows_the_admin_set_upload_limit(self):
+        SystemSetting.objects.filter(pk="max_upload_mb").update(value="20")
+
+        response = self.client.get(reverse("materials:upload"))
+
+        self.assertContains(response, 'data-max-mb="20"')
+        self.assertContains(response, "ไม่เกิน 20 MB")
+
+    def test_rendered_form_posts_every_field_the_server_needs(self):
+        response = self.client.get(reverse("materials:upload"))
+
+        for name in UploadForm.base_fields:
+            self.assertContains(response, f'name="{name}"')
+        self.assertNotContains(response, "<select><select")
+
     def test_successful_upload_saves_pending_document_and_redirects(self):
         response = self.post()
 
@@ -344,7 +359,7 @@ class UploadViewTests(UploadTestCase):
         for number in range(22, 27):
             Batch.objects.create(department=self.cn, number=number)
 
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(7):
             self.client.get(reverse("materials:upload"))
 
     def test_non_pdf_shows_file_error(self):

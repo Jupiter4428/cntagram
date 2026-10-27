@@ -11,7 +11,7 @@ from catalog.models import Batch
 
 from . import selectors
 from .forms import ReviewForm, SearchForm, UploadForm
-from .models import Document
+from .models import Document, max_upload_mb
 from .services import ensure_can_upload_to, review_document, upload_document
 
 
@@ -93,6 +93,7 @@ def upload(request):
             "form": form,
             "department": department,
             "batches": selectors.upload_batches(department=department),
+            "max_upload_mb": max_upload_mb(),
         },
     )
 
