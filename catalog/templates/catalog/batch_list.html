@@ -1,13 +1,10 @@
-{% extends "base.html" %}
+{% extends "admin_page.html" %}
 
 {% block title %}รายการรุ่น{% endblock %}
 
 {% block content %}
   <h1>รายการรุ่น</h1>
 
-  {% for message in messages %}
-    <div class="alert">{{ message }}</div>
-  {% endfor %}
 
   <a href="{% url 'catalog:batch_create' %}">เพิ่มรุ่น</a>
 

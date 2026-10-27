@@ -1,12 +1,39 @@
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils.crypto import salted_hmac
 
 from accounts.models import Role, UserRole
+
+User = get_user_model()
+
+
+@transaction.atomic
+def register_user(*, email, password, nickname, department, pdpa_consent_at):
+    """สร้างบัญชีนักศึกษาใหม่พร้อมผูก role 'student' (US-1)
+
+    อินพุตต้องผ่าน RegisterForm มาแล้ว ถ้าขั้นใดล้มเหลวจะ rollback ทั้งหมด
+    """
+    try:
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            nickname=nickname,
+            department=department,
+            pdpa_consent_at=pdpa_consent_at,
+        )
+    except IntegrityError as exc:
+        # สองคนสมัครอีเมลเดียวกันพร้อมกันจนผ่านเช็กซ้ำในฟอร์มทั้งคู่
+        # UNIQUE ที่ชนได้มีแค่ email กับ student_id ซึ่งได้มาจาก email จึงแจ้งที่ช่อง email
+        raise ValidationError({"email": "อีเมลนี้ถูกใช้สมัครแล้ว"}) from exc
+
+    student_role = Role.objects.get(code=Role.STUDENT)
+    UserRole.objects.create(user=user, role=student_role)
+    return user
 
 
 @dataclass(frozen=True)
@@ -70,6 +97,26 @@ def attempt_login(*, form, client_ip):
     if form.has_credentials:
         record_login_failure(identifier=identifier, client_ip=client_ip)
     return LoginAttempt()
+
+
+def _register_attempt_key(client_ip):
+    digest = salted_hmac("accounts.register-throttle", client_ip or "unknown").hexdigest()
+    return f"register-attempts:{digest}"
+
+
+def is_register_rate_limited(client_ip):
+    return cache.get(_register_attempt_key(client_ip), 0) >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+
+
+def record_register_attempt(client_ip):
+    key = _register_attempt_key(client_ip)
+    if cache.add(key, 1, timeout=settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS):
+        return 1
+    try:
+        return cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, timeout=settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
+        return 1
 
 
 def assign_moderator(*, user, department, granted_by):

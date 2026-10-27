@@ -3,10 +3,11 @@
 คู่มือสำหรับสมาชิกทีม: กระบวนการ Agile/Scrum, การใช้ Git/GitHub, สถาปัตยกรรมและมาตรฐานโค้ด Django และเกณฑ์ส่งงาน (DoR/DoD)
 อ่านให้จบก่อนเปิด Pull Request ครั้งแรก
 
-**แหล่งอ้างอิงหลัก:** [`_docs/lecture-notes/`](./_docs/lecture-notes/README.md) ของวิชา CN331 (สัปดาห์ที่ 7, 10 และ 11) คือแกนของคู่มือนี้ ส่วนเนื้อหาสัปดาห์ที่ 1–6 สรุปไว้ในหัวข้อมาตรฐานโค้ด
+**แหล่งอ้างอิงหลัก:** [`_docs/lecture-notes/`](./_docs/lecture-notes/README.md) ของวิชา CN331 (สัปดาห์ที่ 7, 10, 11 และ 12) คือแกนของคู่มือนี้ ส่วนเนื้อหาสัปดาห์ที่ 1–6 สรุปไว้ในหัวข้อมาตรฐานโค้ด
 - **กระบวนการ Agile และ Git/GitHub** ทำตาม lecture-notes ([05 Agile Scrum](./_docs/lecture-notes/05-agile-scrum-sprints.md))
 - **สถาปัตยกรรมและ logic ของโค้ด** ทำตามเอกสารของโปรเจค ([`_docs/database-design.md`](./_docs/database-design.md), [ADR](./_docs/adr/)) โดยมีหลักจาก lecture-notes ([03 Architecture](./_docs/lecture-notes/03-software-architecture-and-decomposition.md), [04 Service Layer](./_docs/lecture-notes/04-django-service-layer-and-transactions.md), [01 ORM](./_docs/lecture-notes/01-django-orm-queries-and-optimization.md), [02 CBV](./_docs/lecture-notes/02-django-class-based-views.md)) เป็นแกน
 - **การเขียนเทสต์และเกณฑ์ coverage** ทำตาม lecture-notes ([06 Automated Testing](./_docs/lecture-notes/06-django-automated-testing.md)) สรุปไว้ในหัวข้อ [Testing](#testing)
+- **CI, Static Analysis (Black, Flake8, Bandit) และ quality gate ของ PR** ทำตาม lecture-notes ([07 CI/CD & Static Analysis](./_docs/lecture-notes/07-ci-cd-and-static-analysis.md)) สรุปไว้ในหัวข้อ [Static Analysis และ CI](#static-analysis-และ-ci)
 - **Requirements / Product Backlog** อยู่ที่ [`_docs/requirements.md`](./_docs/requirements.md)
 
 > Setup, Sync, Project Structure และ Branch Strategy: ดูที่ [README.md](./README.md)
@@ -61,7 +62,7 @@ flowchart LR
 |---|---|---|
 | **Sprint 1** | Authentication, Forms, Core Models, Dashboard, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้จริง, Backlog บน GitHub |
 | **Sprint 2** | Business Logic (Service Layer), Unit Testing, CI | ฟีเจอร์หลัก, **coverage > 80%**, CI, Refactoring Stories (**≥ 20% ของแต้ม**) |
-| **Sprint 3** | Security (OWASP), Cloud Deploy | ระบบที่ปลอดภัยและ deploy บน Cloud Server |
+| **Sprint 3** | Security (OWASP Top 10, XSS, CSRF), Production Config (`DEBUG=False`, WhiteNoise), Cloud Deploy (Render + PostgreSQL) | ระบบที่ปลอดภัยและ deploy บน Cloud Server, Release Tag และเอกสารคู่มือ (ไม่เพิ่มฟีเจอร์ใหม่ที่เสี่ยงพัง) |
 | **Final** | Demo สัปดาห์ที่ 14 | Live Demo, Agile Metrics (Velocity, Burndown), ประเมินเพื่อนร่วมกลุ่ม |
 
 ร่าง Sprint Goal ของแต่ละรอบอยู่ใน [`_docs/requirements.md`](./_docs/requirements.md#8-roadmap-ร่าง--ปรับทุก-sprint-planning-ตาม-velocity-จริง) คะแนนประเมินจากงานที่ส่งมอบจริงบน GitHub ในแต่ละ Sprint
@@ -145,7 +146,8 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 - [ ] **View บาง:** business logic อยู่ใน `services.py` การอ่านข้อมูลอยู่ใน `selectors.py` ไม่มี Fat View และไม่มี side-effect ภายนอกใน `Model.save()`
 - [ ] **ไม่มี N+1 query** และ**ไม่มี circular import** (ทิศทาง dependency ตาม [ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md))
 - [ ] ผ่าน security พื้นฐาน (CSRF, escape output, ตรวจสิทธิ์และความเป็นเจ้าของฝั่ง server)
-- [ ] โค้ดตาม PEP 8 มี docstring ไม่มี debug code
+- [ ] โค้ดตาม PEP 8 มี docstring ไม่มี debug code (ตั้งแต่ Sprint 3: `black --check .`, `flake8 .` และ `bandit` ผ่าน ดู [Static Analysis และ CI](#static-analysis-และ-ci))
+- [ ] เมื่อมี CI แล้ว: status check ของ CI บน PR เป็นสีเขียว
 - [ ] ทดสอบบนเครื่อง local (และ staging เมื่อมี) และรันบนเครื่องอื่นในทีมได้
 - [ ] อัปเดตเอกสารที่เกี่ยวข้อง: README (setup เปลี่ยน), `_docs/database-design.md` (Model เปลี่ยน), ADR (ตัดสินใจเชิงสถาปัตยกรรม)
 
@@ -478,6 +480,7 @@ repo ไม่มี PR template ให้ GitHub เติมอัตโนม
 ## Checklist (Definition of Done)
 - [ ] ผ่าน Acceptance Criteria ครบทุกข้อของ issue
 - [ ] มี automated test และรันผ่านทั้งหมด (coverage ≥ 80% ตั้งแต่ Sprint 2)
+- [ ] ตั้งแต่ Sprint 3: `black --check .`, `flake8 .` และ `bandit` ผ่าน (และ CI เป็นสีเขียวเมื่อมี CI แล้ว)
 - [ ] View บาง: business logic อยู่ใน `services.py` การอ่านข้อมูลอยู่ใน `selectors.py`
 - [ ] ไม่มี N+1 query และไม่มี circular import
 - [ ] ผ่าน security พื้นฐาน (CSRF, escape output, ตรวจสิทธิ์ฝั่ง server)
@@ -866,6 +869,26 @@ omit = */migrations/*, */tests/*, */tests.py, manage.py, .venv/*
 - **Coverage สูง ≠ ไม่มีบั๊ก** ใช้ตัวเลขหาโค้ดที่ยังไม่มีเทสต์ แต่คุณภาพอยู่ที่ assertion และค่าขอบ (boundary) เช่น ขนาดไฟล์ 50 MB พอดี, รุ่น = `legacy_batch_max` พอดี
 - แนบผล `coverage report -m --fail-under=80` ใน PR
 
+### Static Analysis และ CI
+ตาม [lecture 07](./_docs/lecture-notes/07-ci-cd-and-static-analysis.md) static analysis ตรวจโค้ดโดยไม่ต้องรัน (style, import ที่ไม่ใช้, ช่องโหว่) ส่วนเทสต์ตรวจพฤติกรรม ต้องผ่านทั้งสองด่าน **เริ่มบังคับตั้งแต่ Sprint 3** (TD-8) จากนั้นรันบนเครื่องตัวเองให้ผ่านก่อน push ทุกครั้ง
+```bash
+pip install black flake8 bandit
+black .                                        # จัดรูปแบบโค้ดให้ (ใน CI ใช้ black --check --diff .)
+flake8 .                                       # PEP 8, import/ตัวแปรที่ไม่ใช้ (F401, F841), บรรทัดยาว (E501)
+bandit -r . -x "*/tests/*,*/migrations/*"      # hardcoded secret (B105), random กับ token (B311), eval/exec
+```
+ตั้งค่าใน `.flake8` ที่ root (เพิ่มพร้อม PR ของ TD-8)
+```ini
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503
+exclude = .git, __pycache__, */migrations/*, venv, .venv
+```
+- commit ที่จัด format อย่างเดียวใช้ type `style:` แยกจาก commit ที่แก้ logic
+- **ห้ามใช้ `# nosec`** ซ่อนสิ่งที่ Bandit เจอ ให้แก้ที่ต้นเหตุ: อ่าน secret จาก environment (`os.environ`), สร้าง token ด้วยโมดูล `secrets` ไม่ใช่ `random`
+- **CI (GitHub Actions)** อยู่ที่ `.github/workflows/ci.yml` รันทุก PR: Sprint 2 รันเทสต์ + coverage (TD-1) และ Sprint 3 เพิ่มด่าน static analysis (TD-8) เรียงตามด่าน `black --check` → `flake8` → `bandit` → `coverage run manage.py test` + `coverage report -m --fail-under=80` ด่านไหนตก PR เป็นสีแดง ใช้ `actions/setup-python` กับ `cache: "pip"` เพื่อไม่ต้องดาวน์โหลด dependency ใหม่ทุกรอบ
+- **Secret ใน CI** เก็บใน Settings → Secrets and variables → Actions แล้วอ้างด้วย `${{ secrets.NAME }}` ห้ามใส่ค่าจริงใน `ci.yml` หรือไฟล์ใดใน repo
+
 ### การใช้ AI (Copilot, Cursor ฯลฯ)
 AI เขียนโค้ดเร็วขึ้นมาก แต่ **คอขวดย้ายไปที่การตรวจสอบ** AI อาจสร้างข้อมูลมั่ว (hallucination) และช่องโหว่ความปลอดภัยโดยไม่รู้ตัว กฎของทีม:
 1. **คุณรับผิดชอบโค้ดที่เพิ่มเข้ามา 100%** ข้อผิดพลาดของ AI คือข้อผิดพลาดของคุณ
@@ -892,6 +915,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 - [ ] รันโค้ดแล้วไม่มี error
 - [ ] เขียน automated test ประกอบ และรันผ่านทั้งหมด (`python manage.py test` แบบไม่ใส่ `--keepdb`)
 - [ ] ตั้งแต่ Sprint 2: `coverage report -m --fail-under=80` ผ่าน และแนบผลใน PR
+- [ ] ตั้งแต่ Sprint 3: `black --check .`, `flake8 .` และ `bandit -r . -x "*/tests/*,*/migrations/*"` ผ่านบนเครื่องตัวเอง
 - [ ] ผ่าน Acceptance Criteria ครบทุกข้อของ issue
 - [ ] logic อยู่ถูกชั้น (view บาง / `services.py` / `selectors.py`) ไม่มี N+1 และไม่ import ย้อนทิศ
 - [ ] ไม่มีไฟล์ `.env`, `db.sqlite3`, หรือไฟล์ credential หลุดไปใน commit (เช็ค `git diff --staged`)
@@ -932,7 +956,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 |---|---|
 | **DB** (UNIQUE / CHECK / PROTECT) | รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, เวอร์ชันซ้ำของเอกสาร, `storage_path` ซ้ำ · `size_bytes` ต้อง > 0 และ ≤ 50 MB, `status`/`vault`/`scan_status` นอกค่าที่กำหนด, `batch.number` < 1, `exam_year_be` นอก 2500–2700 · ลบ Department/Batch/Course ที่ยังถูกอ้างอยู่ไม่ได้ |
 | **Model** (`save()` เช็กให้เอง) | `UserRole`: moderator ต้องมี `department` / role อื่นห้ามมี และห้ามซ้ำ · `ExamDetail`: ผูกได้เฉพาะเอกสารที่ `vault = exam` · `DocumentVersion`: ขนาดไฟล์ไม่เกิน `max_upload_mb`, `storage_path`/`sha256` ต้องปลอดภัย และล้าง `original_name` |
-| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน |
+| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน · `Department.code` รับแค่ A-Z 2-5 ตัว, `Course.code` ต้องเป็น A-Z ตามด้วยเลข 1-3 หลัก เช่น CN201 (อยู่ใน path ไฟล์) |
 | **Service** (ต้องเขียนใน `services.py`) | ผู้ใช้อัปโหลดได้เฉพาะภาควิชาของตัวเอง (US-5), รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น, Super Admin ต้องมีอย่างน้อย 2 คน, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้ (US-6) |
 
 ### `SystemSetting` (ค่ากำหนดปรับได้โดยไม่ deploy ใหม่)
@@ -957,10 +981,10 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 | `ExamPeriod` | `midterm`, `final` |
 | `SystemSetting` | `legacy_batch_max`, `max_upload_mb` ตามตารางด้านบน |
 
-รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน seed `role` เป็นงานย่อยของ US-3 และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
+รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) ส่วนตารางอื่นยังไม่มี script seed และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน ตาราง `role` ถูก seed อัตโนมัติด้วย data migration `accounts` 0004_seed_roles ตอน `migrate` (`seed_roles` ยังใช้ผูก super_admin ให้ superuser) และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5 ส่วน register admin อยู่ใน Product Backlog (TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36))
 
 ### Migration ที่มีอยู่
-- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0003, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
+- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
   ```

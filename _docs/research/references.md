@@ -50,6 +50,7 @@
 
 - **[CN331-W7]** เอกสารประกอบการบรรยายรายวิชา CN331 Software Engineering สัปดาห์ที่ 7: Advanced Django Queries & Sprint 1 Execution. คณะวิศวกรรมศาสตร์ มหาวิทยาลัยธรรมศาสตร์, ภาคเรียนที่ 1/2569. (สรุปใน [`lecture-notes/`](../lecture-notes/))
 - **[CN331-W10]** เอกสารประกอบการบรรยายรายวิชา CN331 Software Engineering สัปดาห์ที่ 10: Software Architecture & Sprint 2 Planning. คณะวิศวกรรมศาสตร์ มหาวิทยาลัยธรรมศาสตร์, ภาคเรียนที่ 1/2569.
+- **[CN331-W12]** เอกสารประกอบการบรรยายรายวิชา CN331 Software Engineering สัปดาห์ที่ 12: CI/CD Pipelines & Static Code Analysis. คณะวิศวกรรมศาสตร์ มหาวิทยาลัยธรรมศาสตร์, ภาคเรียนที่ 1/2569. (สรุปใน [`lecture-notes/07`](../lecture-notes/07-ci-cd-and-static-analysis.md))
 
 ## งานที่เกี่ยวข้อง
 

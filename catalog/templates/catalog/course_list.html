@@ -1,13 +1,10 @@
-{% extends "base.html" %}
+{% extends "admin_page.html" %}
 
 {% block title %}รายการวิชา{% endblock %}
 
 {% block content %}
   <h1>รายการวิชา</h1>
 
-  {% for message in messages %}
-    <div class="alert">{{ message }}</div>
-  {% endfor %}
 
   <a href="{% url 'catalog:course_create' %}">เพิ่มวิชา</a>
 
