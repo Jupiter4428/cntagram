@@ -792,6 +792,8 @@ urlpatterns = [
 ### Testing
 รายละเอียดและเหตุผลอยู่ใน [lecture-notes 06](./_docs/lecture-notes/06-django-automated-testing.md) ส่วนนี้คือข้อตกลงของทีม
 
+ทำไมต้องเขียน: การกดทดสอบเองทีละหน้าช้าลงเรื่อยๆ ตามจำนวนฟีเจอร์ และจับ regression (แก้จุดหนึ่งไปพังอีกจุด) ไม่ได้ บั๊กที่เจอตอนเขียนโค้ดแก้ถูกที่สุด (1×) ถ้าหลุดไปถึง CI แพงขึ้น 5–10× ถึง QA 15–25× ถึง production 50–100× (Boehm) ชุดเทสต์อัตโนมัติจึงเป็นตาข่ายที่ทำให้กล้า refactor และกล้า merge
+
 #### รันเทสต์
 ```bash
 python manage.py test                                    # รันทั้งหมด
@@ -803,6 +805,8 @@ python manage.py test --failfast                         # หยุดทัน
 ```
 ระหว่างพัฒนาใช้ `--keepdb -v 2` กับ class/method ที่กำลังทำ ก่อนเปิด PR รันทั้งหมดอีกรอบ (ไม่ใส่ `--keepdb` ถ้าเพิ่งแก้ migration)
 
+เบื้องหลัง `manage.py test`: Django สร้างฐานข้อมูลชั่วคราว (`test_<ชื่อ DB>`) จาก migrations ไม่แตะ `db.sqlite3` ของเรา ครอบแต่ละ test method ด้วย transaction แล้ว **rollback** เมื่อจบ และลบ test DB ทิ้งตอนรันเสร็จ ทุกเทสต์จึงเริ่มจาก DB สะอาด (`--keepdb` แค่เก็บ test DB ไว้ใช้รอบหน้า ข้อมูลในเทสต์ยังถูก rollback เหมือนเดิม)
+
 #### กฎหลัก
 - ทุก story ต้องมี automated test (เป็นส่วนหนึ่งของ DoD) และต้องผ่าน **100%** ก่อนเปิด PR (**No Tests, No Merge**)
 - **TDD (Red-Green-Refactor):** เขียนเทสต์ตาม AC ให้ล้มก่อน (Red) → เขียนโค้ดเท่าที่ทำให้ผ่าน (Green) → จัดโครงสร้าง/ดึงเข้า service โดยเทสต์ยังผ่าน (Refactor) แนะนำให้ทำ และบั๊กทุกตัวต้องมีเทสต์ที่ล้มก่อนแก้
@@ -811,6 +815,21 @@ python manage.py test --failfast                         # หยุดทัน
 - **ค่าที่คาดหวังเป็นค่าคงที่ที่รู้คำตอบ** (`self.assertEqual(total, 15)`) ไม่คำนวณซ้ำแบบเดียวกับโค้ด
 - **เทสต์ต้องเป็นอิสระต่อกัน** รันสลับลำดับแล้วต้องผ่านเท่าเดิม (ไม่พึ่งข้อมูลที่เทสต์อื่นสร้าง)
 - commit เทสต์ด้วย type `test:`
+
+ตัวอย่าง AAA จาก [materials/tests/test_services.py](./materials/tests/test_services.py)
+```python
+def test_docx_file_is_rejected(self):
+    # Arrange: ไฟล์ .docx ที่ไม่ใช่ PDF
+    docx = pdf_file(b"PK\x03\x04 fake docx", name="sheet.docx", content_type="...")
+
+    # Act: เรียก service ครั้งเดียว (ต้องล้ม)
+    with self.assertRaises(ValidationError) as ctx:
+        self.upload(file=docx)
+
+    # Assert: ข้อความผิดอยู่ที่ฟิลด์ file และไม่มีข้อมูลค้างใน DB
+    self.assertEqual(ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"])
+    self.assertFalse(Document.objects.exists())
+```
 
 #### โครงสร้างไฟล์
 เริ่มจาก `tests.py` ไฟล์เดียวต่อ app เมื่อยาวเกิน ~300 บรรทัดให้แตกเป็นโฟลเดอร์ตามชั้นของโค้ด (Django หาไฟล์ `test_*.py` ให้เอง)
@@ -825,11 +844,12 @@ python manage.py test --failfast                         # หยุดทัน
 ```
 
 #### เลือกคลาสและ fixture
-| ใช้ | เมื่อ |
-|---|---|
-| `SimpleTestCase` | ไม่แตะฐานข้อมูลเลย (form ที่ไม่มี `ModelChoiceField`, ฟังก์ชันคำนวณ) เร็วที่สุด |
-| `TestCase` | ค่าเริ่มต้นของโปรเจค (model, service, selector, view) แต่ละเทสต์ถูกครอบ transaction แล้ว rollback |
-| `TransactionTestCase` | เฉพาะเทสต์ที่ต้องเห็น commit จริง เช่น `transaction.on_commit()` (หรือใช้ `self.captureOnCommitCallbacks()` ใน `TestCase` แทนได้) |
+| ใช้ | เมื่อ | ความเร็วโดยประมาณ |
+|---|---|---|
+| `SimpleTestCase` | ไม่แตะฐานข้อมูลเลย (form ที่ไม่มี `ModelChoiceField`, ฟังก์ชันคำนวณ) ถ้าเผลอ query จะ error | เร็วที่สุด (< 5 ms) |
+| `TestCase` | ค่าเริ่มต้นของโปรเจค (model, service, selector, view) แต่ละเทสต์ถูกครอบ transaction แล้ว rollback | ~50 ms |
+| `TransactionTestCase` | เฉพาะเทสต์ที่ต้องเห็น commit จริง เช่น `transaction.on_commit()` (หรือใช้ `self.captureOnCommitCallbacks()` ใน `TestCase` แทนได้) | ช้า (~500 ms) |
+| `LiveServerTestCase` | เปิด HTTP server จริงให้เบราว์เซอร์ (Playwright/Selenium) ทีมยังไม่ใช้ | ช้ามาก (> 2 s) |
 
 - ข้อมูลอ้างอิงที่ไม่ถูกแก้ (ภาค, รุ่น, role, ผู้ใช้) สร้างใน **`setUpTestData(cls)`** ครั้งเดียวต่อ class ข้อมูลที่เทสต์จะแก้ค่าค่อยสร้างใน `setUp(self)`
 - ผู้ใช้สร้างด้วย `User.objects.create_user(...)` ตาม[ข้อตกลง](#ข้อตกลงที่ห้ามฝ่าฝืน) และล็อกอินในเทสต์ด้วย `self.client.force_login(user)` (ไม่ต้องผ่านการ hash รหัสผ่าน)
@@ -844,11 +864,37 @@ python manage.py test --failfast                         # หยุดทัน
   - ผู้มีสิทธิ์ → 200 + `assertTemplateUsed` + ข้อมูลใน `response.context` (หน้า 200 ที่ว่างเปล่าก็คือบั๊ก)
   - POST สำเร็จ → `assertRedirects` (Post/Redirect/Get) **และ**ตรวจว่าข้อมูลถูกสร้าง/แก้ในฐานข้อมูลจริง
 
+#### Assertion ที่ใช้บ่อย
+| Assertion | ใช้ตรวจ |
+|---|---|
+| `assertEqual(a, b)` | ค่าที่ได้, status code |
+| `assertTrue(x)` / `assertFalse(x)` | ค่า bool เช่น `form.is_valid()`, `Model.objects.filter(...).exists()` |
+| `assertIn(x, container)` | ชื่อฟิลด์ใน `form.errors`, key ใน `response.context` |
+| `assertRaises(Exc)` | exception ที่คาดหวัง เช่น `ValidationError`, `PermissionDenied` (ใช้ `as ctx` แล้วตรวจ `ctx.exception`) |
+| `assertRedirects(res, url)` | Post/Redirect/Get หลังส่งฟอร์ม และ redirect ไปหน้า login |
+| `assertTemplateUsed(res, name)` | view เรนเดอร์ template ที่ถูกไฟล์ |
+| `assertContains(res, text)` / `assertNotContains` | ข้อความในหน้า HTML (ตรวจ status 200 ให้ด้วย) เช่น ข้อมูลของคนอื่นต้องไม่โผล่ |
+| `assertNumQueries(n)` | จำนวน SQL คงที่ กัน N+1 |
+
 #### Mock
 - **Mock เฉพาะระบบภายนอกที่เราคุมไม่ได้:** อีเมล, API ภายนอก, เวลา/ค่าสุ่ม ห้าม mock service/selector/model ของเราเอง (เทสต์จะผ่านโดยไม่ได้ทดสอบอะไร)
 - อีเมลของ Django ไม่ต้อง mock: test runner เปลี่ยนเป็น locmem backend ให้แล้ว ตรวจผ่าน `django.core.mail.outbox`
 - `@patch` **ตรงที่ถูก import ไปใช้ ไม่ใช่ที่ประกาศไว้** เช่น service ใน `materials/services.py` ที่ `from x import client` ต้อง patch `"materials.services.client"`
 - ตั้ง `return_value` สำหรับ happy path, ใช้ `side_effect = SomeError(...)` จำลองระบบภายนอกล่ม แล้ว assert ว่า rollback ครบ ตรวจ argument ด้วย `assert_called_once_with(...)`
+
+ตัวอย่างจาก [materials/tests/test_views.py](./materials/tests/test_views.py) จำลอง storage ปฏิเสธไฟล์ แล้วตรวจว่าผู้ใช้เห็นข้อความ (ไม่ใช่หน้า 500) และไม่มี `Document` ค้าง
+```python
+from unittest import mock
+
+def test_error_without_field_names_is_shown_not_500(self):
+    error = ValidationError("Storage rejected the file.")
+    with mock.patch("materials.services.default_storage.save", side_effect=error):
+        response = self.post()
+
+    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.context["form"].non_field_errors(), ["Storage rejected the file."])
+    self.assertFalse(Document.objects.exists())
+```
 
 #### Coverage
 เป้าหมายตั้งแต่ Sprint 2: **ไม่ต่ำกว่า 80%** และเปิด branch coverage
@@ -856,8 +902,20 @@ python manage.py test --failfast                         # หยุดทัน
 pip install -r requirements.txt     # มี coverage อยู่แล้ว
 coverage run manage.py test
 coverage report -m --fail-under=80   # -m แสดงบรรทัดที่ยังไม่ถูกเทสต์, ต่ำกว่า 80% จะคืน exit code ล้มเหลว
-coverage html                        # รายงานรายบรรทัดที่ htmlcov/index.html
+coverage html                        # รายงานรายบรรทัดที่ htmlcov/index.html (Windows: start htmlcov/index.html)
 ```
+`.coveragerc` กำหนด `source` และ `branch` ไว้แล้ว ไม่ต้องใส่ `--source='.'` เอง และ `coverage run manage.py test --keepdb` ก็ใช้ได้ ผลที่แนบใน PR ให้รันเทสต์**ครบทุก app** (ถ้ารันเฉพาะ app เดียว ไฟล์ของ app อื่นจะนับเป็นไม่ถูกเทสต์และตัวเลขต่ำผิดจริง)
+
+อ่านผล `coverage report -m`
+```
+Name                Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------------------
+catalog\views.py      109      4     24      2    95%   26-28, 39->45, 58
+```
+- `Stmts`/`Miss` จำนวนบรรทัดคำสั่งทั้งหมด / ที่ไม่ถูกรัน, `Branch`/`BrPart` จำนวนทางแยกทั้งหมด / ที่รันไม่ครบทุกทาง
+- `Missing`: `26-28` คือบรรทัดที่ไม่ถูกรัน, `39->45` คือกิ่งจากบรรทัด 39 ไป 45 ไม่เคยเกิด (เช่น `if` ที่เป็นจริงทุกครั้ง ไม่เคยข้ามไป), `->exit` คือไม่เคยออกจากฟังก์ชันทางนั้น
+- ถ้าต่ำกว่า 80% หรือไฟล์ที่เราแก้มีบรรทัดใน `Missing` ให้เปิด `htmlcov/index.html` ดูบรรทัดสีแดง/เหลือง แล้วเพิ่มเทสต์ให้กิ่งนั้น อย่าแก้ `omit` เพื่อซ่อนโค้ด
+
 ตั้งค่าใน `.coveragerc` ที่ root (`.coverage` และ `htmlcov/` อยู่ใน `.gitignore` แล้ว)
 ```ini
 [run]
