@@ -5,9 +5,6 @@
 {% block content %}
   <h1>วิชาในรุ่น {{ batch.code }}</h1>
 
-  {% for message in messages %}
-    <div class="alert">{{ message }}</div>
-  {% endfor %}
 
   <ul>
     {% for batch_course in batch_courses %}

@@ -13,7 +13,7 @@ def backfill_total(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0003_alter_user_department'),
+        ('accounts', '0004_seed_roles'),
     ]
 
     operations = [

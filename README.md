@@ -24,7 +24,7 @@
 - SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
 - Git + GitHub (Pull Request, Projects, Actions)
 - Automated Tests ด้วย Django `TestCase` (`python manage.py test`) และวัด coverage ด้วย Coverage.py (เป้าหมาย ≥ 80% ตั้งแต่ Sprint 2)
-- CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2)
+- CI/CD ด้วย GitHub Actions (เริ่มใน Sprint 2) และเพิ่ม Static Analysis ใน Sprint 3: Black (format), Flake8 (PEP 8 lint), Bandit (security scan)
 
 ---
 
@@ -131,6 +131,7 @@ User ผูกกับภาควิชา (`department` ห้ามว่า
 ```bash
 python manage.py seed_catalog     # ภาค CN/CE/ME/EE + รุ่น CN21–CN25 + วิชาตัวอย่าง (รันซ้ำได้ ไม่สร้างซ้ำ)
 python manage.py createsuperuser
+python manage.py seed_materials   # ประเภทเอกสาร, ช่วงสอบ, system_setting (รันซ้ำได้ ไม่เขียนทับค่าที่แก้แล้ว)
 ```
 ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (พิมพ์ตัวย่อภาค เช่น `CN` ตัวพิมพ์เล็กก็ได้ ถ้ายังไม่มีภาคนี้จะแจ้งว่าไม่พบ), Password
 
@@ -219,7 +220,7 @@ static/                           # css, js, img ส่วนกลาง
 
 - ทุก branch ตั้งชื่อตาม **เลข issue** และเปิด PR ที่มี `Closes #<เลข>`
 - จบ Sprint: หลัง Sprint Review เปิด PR `develop` → `main`
-- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch
+- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch, ใช้กับ admin ด้วย (Include administrators) และเมื่อมี CI workflow แล้วให้เปิด **Require status checks to pass** เลือก job ของ CI (เทสต์หรือ lint ตก ปุ่ม Merge จะถูกล็อก)
 - Branch ที่เปิดไปแล้วด้วยชื่อแบบเดิม (`feat/US-X-...`) ใช้ต่อจน merge ได้
 
 ---

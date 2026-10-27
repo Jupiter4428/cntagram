@@ -14,6 +14,14 @@ from catalog.models import SystemSetting
 # ซึ่งเช็กใน DocumentVersion.clean() และต้องไม่เกินค่านี้
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB (ตาม CHECK ใน ERD)
 
+def max_upload_mb():
+    """ขนาดไฟล์สูงสุดที่รับได้ (MB) จาก system_setting แต่ไม่เกินเพดาน CHECK ของ DB"""
+    limit_mb = SystemSetting.get_int(SystemSetting.MAX_UPLOAD_MB, 50)
+    if limit_mb <= 0:  # ค่าตั้งผิด ให้ถอยกลับเป็นค่าเริ่มต้น
+        limit_mb = 50
+    return min(limit_mb, MAX_UPLOAD_BYTES // (1024 * 1024))
+
+
 sha256_validator = RegexValidator(
     regex=r"^[0-9a-f]{64}\Z",
     message="sha256 must be 64 lowercase hex characters.",
@@ -258,11 +266,8 @@ class DocumentVersion(models.Model):
                 except ValidationError as exc:
                     raise ValidationError({field: exc.messages})
         if self.size_bytes is not None:
-            limit_mb = SystemSetting.get_int(SystemSetting.MAX_UPLOAD_MB, 50)
-            if limit_mb <= 0:  # ค่าตั้งผิด ให้ถอยกลับเป็นค่าเริ่มต้น
-                limit_mb = 50
-            limit = min(limit_mb * 1024 * 1024, MAX_UPLOAD_BYTES)
-            if self.size_bytes > limit:
+            limit_mb = max_upload_mb()
+            if self.size_bytes > limit_mb * 1024 * 1024:
                 raise ValidationError(
                     {"size_bytes": f"File is larger than {limit_mb} MB"}
                 )
@@ -274,3 +279,48 @@ class DocumentVersion(models.Model):
 
     def __str__(self):
         return f"{self.document_id} v{self.version_no}"
+
+
+class Approval(models.Model):
+    class Decision(models.TextChoices):
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    document = models.ForeignKey(
+        Document, on_delete=models.PROTECT, related_name="approvals"
+    )
+    approver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="approvals"
+    )
+    approver_role = models.ForeignKey(
+        "accounts.Role", on_delete=models.PROTECT, related_name="approvals"
+    )
+    decision = models.CharField(
+        max_length=10, choices=Decision.choices
+    )
+    reason = models.TextField(blank=True, null=True)
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "approval"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document", "approver"], name="uq_approval_document_approver"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(decision__in=["approved", "rejected"]),
+                name="ck_approval_decision",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.decision == self.Decision.REJECTED and not (self.reason and self.reason.strip()):
+            raise ValidationError({"reason": "Reason is required when rejecting a document."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.document_id} - {self.approver_id} ({self.decision})"

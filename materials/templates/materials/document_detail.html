@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ document.title }} | CNTAGRAM{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'materials/vault.css' %}">{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'materials/vault.css' %}">
 <div class="document-vault">
 <nav aria-label="breadcrumb" class="mb-3">
   <a href="{% url 'materials:vault' %}?course_code={{ document.batch_course.course.code|urlencode }}">← กลับไปผลค้นหา</a>
 </nav>
 <article>
   <header class="mb-4 dv-hero">
-    <p class="small text-secondary text-uppercase fw-bold mb-1">CNTAGRAM / DOCUMENT DETAIL</p>
+    <p class="small text-uppercase fw-bold dv-eyebrow mb-1">CNTAGRAM / DOCUMENT DETAIL</p>
     <h1 class="display-6 fw-bold">{{ document.title }}</h1>
     <div class="card shadow-sm mt-3 dv-panel"><div class="card-body">
       {% include "materials/_document_meta.html" with document=document layout="detail" %}

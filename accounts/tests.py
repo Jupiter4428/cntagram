@@ -14,10 +14,10 @@ from django.utils import timezone
 from catalog.models import Batch, Course, Department
 
 from . import selectors, services
-from .forms import LoginForm
+from .forms import LoginForm, RegisterForm
 from .models import Role, UserRole
 from .selectors import admin_dashboard
-from .services import is_login_rate_limited
+from .services import is_login_rate_limited, register_user
 
 User = get_user_model()
 
@@ -261,6 +261,7 @@ class AuthenticationViewsTests(TestCase):
         response = self.client.get(reverse("accounts:home"))
 
         self.assertTemplateUsed(response, "accounts/index.html")
+        self.assertTemplateNotUsed(response, "accounts/index_admin.html")
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
 
     def test_member_home_uses_the_public_index_without_the_admin_menu(self):
@@ -269,8 +270,27 @@ class AuthenticationViewsTests(TestCase):
         response = self.client.get(reverse("accounts:home"))
 
         self.assertTemplateUsed(response, "accounts/index.html")
+        self.assertTemplateNotUsed(response, "accounts/index_admin.html")
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
         self.assertContains(response, self.hero)
+
+    def test_moderator_home_does_not_show_the_dashboard_or_other_users_details(self):
+        role, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"})
+        moderator = User.objects.create_user(
+            email="6610000002@student.tu.ac.th",
+            password=None,
+            nickname="Mod",
+            department=self.user.department,
+            pdpa_consent_at=timezone.now(),
+        )
+        UserRole.objects.create(user=moderator, role=role, department=self.user.department)
+        self.client.force_login(moderator)
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertTemplateUsed(response, "accounts/index.html")
+        self.assertTemplateNotUsed(response, "accounts/index_admin.html")
+        self.assertNotContains(response, self.user.email)
 
     def test_super_admin_home_with_an_invalid_page_shows_the_first_page(self):
         self.client.force_login(self.create_super_admin())
@@ -443,6 +463,313 @@ class AuthenticationViewsTests(TestCase):
         response = self.post_login(REMOTE_ADDR=client_ip)
 
         self.assertRedirects(response, reverse("accounts:home"))
+
+
+VALID_PASSWORD = "Cn331-Strong-Passw0rd"
+
+
+class RoleSeedMigrationTests(TestCase):
+    def test_migrations_create_all_roles(self):
+        codes = set(Role.objects.values_list("code", flat=True))
+
+        self.assertEqual(codes, {Role.STUDENT, Role.ALUMNI, Role.MODERATOR, Role.SUPER_ADMIN})
+
+
+class RegistrationTestMixin:
+    """ข้อมูลตั้งต้นและ payload ที่ถูกต้องสำหรับทดสอบการสมัครสมาชิก"""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.department = Department.objects.create(
+            code="CN",
+            name_th="วิศวกรรมคอมพิวเตอร์",
+            name_en="Computer Engineering",
+        )
+        cls.inactive_department = Department.objects.create(
+            code="OLD",
+            name_th="ภาคที่ปิดแล้ว",
+            name_en="Closed Department",
+            is_active=False,
+        )
+
+    def register(self, **overrides):
+        kwargs = {
+            "email": "6610612345@student.tu.ac.th",
+            "password": VALID_PASSWORD,
+            "nickname": "Ploy",
+            "department": self.department,
+            "pdpa_consent_at": timezone.now(),
+        }
+        kwargs.update(overrides)
+        return register_user(**kwargs)
+
+    def payload(self, **overrides):
+        data = {
+            "email": "6610612345@student.tu.ac.th",
+            "password": VALID_PASSWORD,
+            "password_confirm": VALID_PASSWORD,
+            "nickname": "Ploy",
+            "department": str(self.department.pk),
+            "pdpa_consent": "on",
+        }
+        data.update(overrides)
+        return {k: v for k, v in data.items() if v is not None}
+
+
+class RegisterFormTests(RegistrationTestMixin, TestCase):
+    def assertFieldError(self, data, field):
+        form = RegisterForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn(field, form.errors)
+        return form
+
+    def test_valid_data_normalizes_email(self):
+        form = RegisterForm(data=self.payload(email="  6610612345@Student.TU.ac.th "))
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["email"], "6610612345@student.tu.ac.th")
+
+    def test_rejects_non_student_domain(self):
+        for email in ("6610612345@gmail.com", "6610612345@tu.ac.th"):
+            with self.subTest(email=email):
+                self.assertFieldError(self.payload(email=email), "email")
+
+    def test_malformed_email_shows_thai_error(self):
+        form = self.assertFieldError(self.payload(email="not-an-email"), "email")
+        self.assertEqual(form.errors["email"], ["รูปแบบอีเมลไม่ถูกต้อง"])
+
+    def test_rejects_local_part_that_is_not_10_digits(self):
+        for email in (
+            "661061234@student.tu.ac.th",
+            "66106123456@student.tu.ac.th",
+            "66106abcde@student.tu.ac.th",
+            "๖๖๑๐๖๑๒๓๔๕@student.tu.ac.th",
+        ):
+            with self.subTest(email=email):
+                self.assertFieldError(self.payload(email=email), "email")
+
+    def test_rejects_faculty_code_other_than_10(self):
+        form = self.assertFieldError(
+            self.payload(email="6620612345@student.tu.ac.th"), "email"
+        )
+        self.assertIn("คณะวิศวกรรมศาสตร์", form.errors["email"][0])
+
+    def test_rejects_duplicate_email(self):
+        self.register(nickname="First")
+        self.assertFieldError(self.payload(), "email")
+
+    def test_rejects_reserved_nickname(self):
+        for nickname in ("admin", "Ad-Min", "MODERATOR", "แอดมิน"):
+            with self.subTest(nickname=nickname):
+                form = self.assertFieldError(self.payload(nickname=nickname), "nickname")
+                self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0])
+
+    def test_blank_required_fields_show_thai_error(self):
+        for field in ("email", "nickname", "department", "password", "password_confirm"):
+            with self.subTest(field=field):
+                form = self.assertFieldError(self.payload(**{field: ""}), field)
+                self.assertEqual(form.errors[field], ["กรุณากรอกข้อมูลช่องนี้"])
+
+    def test_requires_pdpa_consent(self):
+        form = self.assertFieldError(self.payload(pdpa_consent=None), "pdpa_consent")
+        self.assertIn("PDPA", form.errors["pdpa_consent"][0])
+
+    def test_rejects_password_mismatch(self):
+        self.assertFieldError(
+            self.payload(password_confirm="Something-Else-123"), "password_confirm"
+        )
+
+    def test_rejects_weak_password(self):
+        self.assertFieldError(
+            self.payload(password="12345678", password_confirm="12345678"), "password"
+        )
+
+    def test_rejects_password_too_similar_to_nickname(self):
+        form = self.assertFieldError(
+            self.payload(
+                nickname="Supaporn",
+                password="Supaporn12345",
+                password_confirm="Supaporn12345",
+            ),
+            "password",
+        )
+        self.assertTrue(
+            any("คล้าย" in err or "similar" in err.lower() for err in form.errors["password"])
+        )
+
+    def test_department_choices_only_include_active_departments(self):
+        queryset = RegisterForm().fields["department"].queryset
+        self.assertIn(self.department, queryset)
+        self.assertNotIn(self.inactive_department, queryset)
+
+    def test_rejects_inactive_department_with_thai_error(self):
+        form = self.assertFieldError(
+            self.payload(department=str(self.inactive_department.pk)), "department"
+        )
+        self.assertEqual(form.errors["department"], ["กรุณาเลือกภาควิชาจากรายการ"])
+
+    def test_invalid_fields_get_bootstrap_invalid_class(self):
+        form = self.assertFieldError(self.payload(nickname="admin"), "nickname")
+        self.assertIn("is-invalid", form.fields["nickname"].widget.attrs["class"])
+        self.assertNotIn("is-invalid", form.fields["email"].widget.attrs["class"])
+
+
+class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
+    def test_creates_user_with_student_id_and_hashed_password(self):
+        consent_at = timezone.now()
+        user = self.register(pdpa_consent_at=consent_at)
+
+        self.assertEqual(user.student_id, "6610612345")
+        self.assertEqual(user.entry_year, 66)
+        self.assertEqual(user.department, self.department)
+        self.assertEqual(user.pdpa_consent_at, consent_at)
+        self.assertTrue(user.check_password(VALID_PASSWORD))
+        self.assertNotEqual(user.password, VALID_PASSWORD)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+
+    def test_entry_year_extracted_from_student_id_67(self):
+        user = self.register(email="6710619999@student.tu.ac.th")
+        self.assertEqual(user.student_id, "6710619999")
+        self.assertEqual(user.entry_year, 67)
+
+    def test_assigns_student_role(self):
+        user = self.register()
+        role_codes = list(user.user_roles.values_list("role__code", flat=True))
+        self.assertEqual(role_codes, [Role.STUDENT])
+
+    def test_rolls_back_user_when_student_role_missing(self):
+        Role.objects.filter(code=Role.STUDENT).delete()
+        with self.assertRaises(Role.DoesNotExist):
+            self.register()
+
+        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+
+    def test_duplicate_email_at_database_insertion_raises_validation_error(self):
+        self.register(email="6610612345@student.tu.ac.th")
+        with self.assertRaises(ValidationError) as ctx:
+            self.register(email="6610612345@student.tu.ac.th", nickname="Another")
+        self.assertIn("email", ctx.exception.message_dict)
+        self.assertIn("อีเมลนี้ถูกใช้สมัครแล้ว", ctx.exception.message_dict["email"])
+
+    def test_requires_explicit_pdpa_consent_time(self):
+        # service ต้องไม่เติมเวลายินยอม PDPA ให้เอง
+        with self.assertRaises(TypeError):
+            register_user(
+                email="6610612345@student.tu.ac.th",
+                password=VALID_PASSWORD,
+                nickname="Ploy",
+                department=self.department,
+            )
+
+        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+
+
+class RegisterViewTests(RegistrationTestMixin, TestCase):
+    def setUp(self):
+        self.url = reverse("accounts:register")
+
+    def test_get_renders_form_with_csrf_token(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/register.html")
+        self.assertIsInstance(response.context["form"], RegisterForm)
+        self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertContains(response, self.department.code)
+        self.assertNotContains(response, self.inactive_department.name_th)
+
+    def test_successful_registration_redirects_to_login_with_message(self):
+        before = timezone.now()
+        response = self.client.post(self.url, self.payload(), follow=True)
+        after = timezone.now()
+
+        self.assertRedirects(response, reverse("accounts:login"))
+        self.assertContains(response, "สมัครสมาชิกสำเร็จ")
+        user = User.objects.get(email="6610612345@student.tu.ac.th")
+        self.assertEqual(user.student_id, "6610612345")
+        self.assertEqual(user.entry_year, 66)
+        self.assertEqual(user.nickname, "Ploy")
+        self.assertIsNotNone(user.pdpa_consent_at)
+        self.assertTrue(before <= user.pdpa_consent_at <= after)
+        self.assertTrue(user.user_roles.filter(role__code=Role.STUDENT).exists())
+        # สมัครแล้วไม่ล็อกอินให้อัตโนมัติ ต้องไปล็อกอินเอง
+        self.assertNotIn(SESSION_KEY, self.client.session)
+
+    def test_registered_user_can_log_in(self):
+        # Arrange: create user using the real registration service
+        self.register()
+
+        # Act: perform the login action
+        response = self.client.post(
+            reverse("accounts:login"),
+            {"username": "6610612345@student.tu.ac.th", "password": VALID_PASSWORD},
+        )
+
+        # Assert: login succeeds and redirects home
+        self.assertRedirects(response, reverse("accounts:home"))
+
+    def assertRegistrationRejected(self, data, field):
+        response = self.client.post(self.url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(field, response.context["form"].errors)
+        self.assertFalse(User.objects.exists())
+        self.assertFalse(UserRole.objects.exists())
+        return response
+
+    def test_rejects_invalid_email_domain(self):
+        self.assertRegistrationRejected(
+            self.payload(email="6610612345@gmail.com"), "email"
+        )
+
+    def test_rejects_non_engineering_faculty(self):
+        response = self.assertRegistrationRejected(
+            self.payload(email="6602612345@student.tu.ac.th"), "email"
+        )
+        self.assertContains(response, "is-invalid")
+
+    def test_rejects_reserved_nickname(self):
+        response = self.assertRegistrationRejected(self.payload(nickname="Admin"), "nickname")
+        self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", response.context["form"].errors["nickname"][0])
+
+    def test_rejects_duplicate_email(self):
+        self.register(nickname="First")
+        response = self.client.post(self.url, self.payload(email="6610612345@student.tu.ac.th"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("email", response.context["form"].errors)
+        self.assertIn("อีเมลนี้ถูกใช้สมัครแล้ว", response.context["form"].errors["email"])
+
+    def test_rejects_missing_pdpa_consent(self):
+        self.assertRegistrationRejected(self.payload(pdpa_consent=None), "pdpa_consent")
+
+    def test_empty_post_shows_errors(self):
+        response = self.client.post(self.url, {})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors)
+
+    def test_authenticated_user_get_is_redirected_home(self):
+        self.client.force_login(self.register())
+
+        response = self.client.get(self.url)
+
+        self.assertRedirects(response, reverse("accounts:home"))
+
+    def test_authenticated_user_post_is_redirected_home(self):
+        self.client.force_login(self.register())
+
+        response = self.client.post(self.url, self.payload(email="6610600000@student.tu.ac.th"))
+
+        self.assertRedirects(response, reverse("accounts:home"))
+        self.assertEqual(User.objects.count(), 1)
+
+    def test_registration_is_csrf_protected(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+
+        response = csrf_client.post(self.url, self.payload())
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(User.objects.exists())
 
 
 class ModeratorManagementTests(TestCase):
@@ -701,7 +1028,7 @@ class AdminDashboardSelectorTests(TestCase):
 
         roles = admin_dashboard()["roles"]
 
-        self.assertEqual([(r["label"], r["count"]) for r in roles if r["label"] == "ผู้ดูแลภาค"], [("ผู้ดูแลภาค", 1)])
+        self.assertEqual([r["count"] for r in roles if r["label"] == moderator.name_th], [1])
 
     def test_new_user_counts_by_today_week_month_year_and_all(self):
         def joined(user, *date_parts):

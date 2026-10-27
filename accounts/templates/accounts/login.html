@@ -17,6 +17,11 @@
                     Too many failed login attempts. Please try again later.
                 </div>
             {% endif %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
             <form method="post" action="{% url 'accounts:login' %}">
                 {% csrf_token %}
                 {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}

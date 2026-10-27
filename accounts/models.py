@@ -41,7 +41,7 @@ RESERVED_NICKNAMES = {
 def validate_nickname(value):
     normalized = re.sub(r"[\s_\-.]+", "", value).casefold()
     if normalized in RESERVED_NICKNAMES:
-        raise ValidationError("This nickname is reserved. Please choose another one.")
+        raise ValidationError("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น")
 
 
 class UserManager(BaseUserManager):
