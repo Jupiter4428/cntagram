@@ -492,6 +492,8 @@ Closes #N
 
 ### หน้าที่ของผู้เปิด PR (Author)
 - อธิบายเจตนาของ PR และสิ่งที่แก้ให้ชัดเจน
+- **แนบภาพ Screenshot ใน PR body โดยตรง** ด้วยการลากไฟล์ภาพลงช่อง Description/Comment ของ GitHub (GitHub จะเก็บเป็น attachment) **ไม่ต้อง commit ภาพประกอบ PR ลงใน repository** เช่น `docs/pr-screenshots/` เพื่อไม่ให้ repository และ Git history โตโดยไม่จำเป็น
+- ถ้าจำเป็นต้องใช้ลิงก์รูปจาก repository ให้ชี้ไปที่ commit SHA ที่มีรูปจริง ไม่ใช่ branch ที่อาจถูกลบหลัง Merge
 - แนบ screenshot ถ้าแก้ UI / แสดง Before–After ถ้าเป็น refactor
 - รัน automated tests ให้ผ่านทั้งหมด **ก่อน** ขอ review
 - merge/rebase `develop` ล่าสุดเข้า branch ตัวเองก่อนเปิด PR
