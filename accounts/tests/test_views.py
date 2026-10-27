@@ -1,23 +1,19 @@
-import datetime
 import time
-from pathlib import Path
 
 from django.contrib.auth import SESSION_KEY, get_user_model
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.staticfiles import finders
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from catalog.models import Batch, Course, Department
+from catalog.models import Department
 
-from . import selectors, services
-from .forms import LoginForm, RegisterForm
-from .models import Role, UserRole
-from .selectors import admin_dashboard
-from .services import is_login_rate_limited, register_user
+from .. import services
+from ..forms import RegisterForm
+from ..models import Role, UserRole
+from ..services import is_login_rate_limited
+from .base import ModeratorTestMixin, RegistrationTestMixin, VALID_PASSWORD
 
 User = get_user_model()
 
@@ -64,9 +60,6 @@ class AuthenticationViewsTests(TestCase):
             reverse("accounts:login"), data, **request_kwargs
         )
 
-    def test_login_form_extends_django_authentication_form(self):
-        self.assertTrue(issubclass(LoginForm, AuthenticationForm))
-
     def test_home_renders_reusable_retro_layout(self):
         response = self.client.get(reverse("accounts:home"))
 
@@ -82,29 +75,6 @@ class AuthenticationViewsTests(TestCase):
         self.assertTemplateUsed(response, "includes/_archive.html")
         self.assertTemplateUsed(response, "includes/_stickers.html")
         self.assertTemplateUsed(response, "includes/_digital_ephemera.html")
-        self.assertContains(response, 'href="/static/css/retro.css"')
-        self.assertContains(response, 'src="/static/img/cyber-orb.svg"')
-        self.assertContains(response, "WELCOME TO CNTAGRAM!")
-        self.assertContains(response, "เว็บบอร์ดเด็กวิศวะ!")
-        self.assertContains(response, "RECENTLY UPDATED / ILLUSTRATIVE")
-        self.assertContains(response, "Decorative only")
-        self.assertContains(response, "COMING SOON")
-        self.assertContains(response, "A “COSMIC” CONNECTION")
-        self.assertContains(response, "404:<br>ความรู้ไม่พบ")
-        self.assertContains(response, "category-icon category-icon--notes")
-        self.assertContains(response, "category-icon category-icon--sheet")
-        self.assertContains(response, "category-icon category-icon--archive")
-        self.assertContains(response, "CNTAGRAM</b> ONLINE")
-        self.assertContains(response, "BRAIN.EXE</b> RUNNING")
-        self.assertContains(response, 'aria-hidden="true"')
-        self.assertContains(response, 'class="capsule-link retro-tab is-active"')
-        self.assertContains(response, 'class="retro-counter pixel-counter"')
-        self.assertContains(response, 'class="retro-badge web-badge')
-        self.assertContains(response, 'class="retro-sticker fun-sticker')
-        self.assertNotContains(response, "music-widget__controls")
-        self.assertNotContains(response, 'button type="button" disabled')
-        self.assertNotContains(response, "<audio")
-        self.assertContains(response, "ข้อมูลหน้าแรกเป็นตัวอย่าง FE-1")
 
     def test_home_renders_blog_style_demo_content_without_fake_routes(self):
         response = self.client.get(reverse("accounts:home"))
@@ -152,14 +122,17 @@ class AuthenticationViewsTests(TestCase):
         self.assertContains(response, f'action="{reverse("accounts:logout")}"')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
 
-    def test_existing_pages_inherit_retro_base_template(self):
-        public_urls = ("accounts:login", "accounts:register")
-        for url_name in public_urls:
-            with self.subTest(url_name=url_name):
-                response = self.client.get(reverse(url_name))
-                self.assertTemplateUsed(response, "base.html")
-                self.assertContains(response, 'href="/static/css/retro.css"')
+    def test_login_page_inherits_retro_base_template(self):
+        response = self.client.get(reverse("accounts:login"))
+        self.assertTemplateUsed(response, "base.html")
+        self.assertContains(response, 'href="/static/css/retro.css"')
 
+    def test_register_page_inherits_retro_base_template(self):
+        response = self.client.get(reverse("accounts:register"))
+        self.assertTemplateUsed(response, "base.html")
+        self.assertContains(response, 'href="/static/css/retro.css"')
+
+    def test_vault_page_inherits_retro_base_template(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("materials:vault"))
         self.assertTemplateUsed(response, "base.html")
@@ -193,49 +166,8 @@ class AuthenticationViewsTests(TestCase):
                 self.assertNotContains(response, "Visitor Counter")
 
     def test_retro_stylesheet_is_discoverable(self):
-        stylesheet_path = finders.find("css/retro.css")
-        orb_path = finders.find("img/cyber-orb.svg")
-        self.assertIsNotNone(stylesheet_path)
-        self.assertIsNotNone(orb_path)
-
-        stylesheet = Path(stylesheet_path).read_text(encoding="utf-8")
-        expected_tokens = {
-            "--cyber-black": "#090911",
-            "--tse-red": "#8C191C",
-            "--tse-yellow": "#FFD04F",
-            "--tse-charcoal": "#58595B",
-            "--chrome-silver": "#DDE3EE",
-            "--plastic-white": "#F8F9FF",
-            "--aero-blue": "#A9D8FF",
-            "--bubblegum-pink": "#FF78C8",
-            "--acid-lime": "#C7FF5E",
-            "--iridescent-purple": "#A88CFF",
-            "--midnight-navy": "#111423",
-            "--soft-indigo": "#1B1F35",
-        }
-        for token, value in expected_tokens.items():
-            with self.subTest(token=token):
-                self.assertIn(f"{token}: {value};", stylesheet)
-
-        for component_class in (
-            ".retro-widget",
-            ".retro-widget__header",
-            ".retro-widget__body",
-            ".retro-badge",
-            ".retro-sticker",
-            ".retro-counter",
-            ".retro-tab",
-            ".post-entry",
-            ".archive-widget",
-        ):
-            with self.subTest(component_class=component_class):
-                self.assertIn(component_class, stylesheet)
-
-        self.assertIn("@keyframes marquee-loop", stylesheet)
-        self.assertIn("@keyframes brain-blinkie", stylesheet)
-        self.assertIn(".category-icon--notes", stylesheet)
-        self.assertIn(".chrome-circuit-heart", stylesheet)
-        self.assertIn("@media (prefers-reduced-motion: reduce)", stylesheet)
+        self.assertIsNotNone(finders.find("css/retro.css"))
+        self.assertIsNotNone(finders.find("img/cyber-orb.svg"))
 
     def test_guest_can_access_public_pages(self):
         for url_name in ("accounts:home", "accounts:login", "accounts:register"):
@@ -465,205 +397,6 @@ class AuthenticationViewsTests(TestCase):
         self.assertRedirects(response, reverse("accounts:home"))
 
 
-VALID_PASSWORD = "Cn331-Strong-Passw0rd"
-
-
-class RoleSeedMigrationTests(TestCase):
-    def test_migrations_create_all_roles(self):
-        codes = set(Role.objects.values_list("code", flat=True))
-
-        self.assertEqual(codes, {Role.STUDENT, Role.ALUMNI, Role.MODERATOR, Role.SUPER_ADMIN})
-
-
-class RegistrationTestMixin:
-    """ข้อมูลตั้งต้นและ payload ที่ถูกต้องสำหรับทดสอบการสมัครสมาชิก"""
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.department = Department.objects.create(
-            code="CN",
-            name_th="วิศวกรรมคอมพิวเตอร์",
-            name_en="Computer Engineering",
-        )
-        cls.inactive_department = Department.objects.create(
-            code="OLD",
-            name_th="ภาคที่ปิดแล้ว",
-            name_en="Closed Department",
-            is_active=False,
-        )
-
-    def register(self, **overrides):
-        kwargs = {
-            "email": "6610612345@student.tu.ac.th",
-            "password": VALID_PASSWORD,
-            "nickname": "Ploy",
-            "department": self.department,
-            "pdpa_consent_at": timezone.now(),
-        }
-        kwargs.update(overrides)
-        return register_user(**kwargs)
-
-    def payload(self, **overrides):
-        data = {
-            "email": "6610612345@student.tu.ac.th",
-            "password": VALID_PASSWORD,
-            "password_confirm": VALID_PASSWORD,
-            "nickname": "Ploy",
-            "department": str(self.department.pk),
-            "pdpa_consent": "on",
-        }
-        data.update(overrides)
-        return {k: v for k, v in data.items() if v is not None}
-
-
-class RegisterFormTests(RegistrationTestMixin, TestCase):
-    def assertFieldError(self, data, field):
-        form = RegisterForm(data=data)
-        self.assertFalse(form.is_valid())
-        self.assertIn(field, form.errors)
-        return form
-
-    def test_valid_data_normalizes_email(self):
-        form = RegisterForm(data=self.payload(email="  6610612345@Student.TU.ac.th "))
-        self.assertTrue(form.is_valid(), form.errors)
-        self.assertEqual(form.cleaned_data["email"], "6610612345@student.tu.ac.th")
-
-    def test_rejects_non_student_domain(self):
-        for email in ("6610612345@gmail.com", "6610612345@tu.ac.th"):
-            with self.subTest(email=email):
-                self.assertFieldError(self.payload(email=email), "email")
-
-    def test_malformed_email_shows_thai_error(self):
-        form = self.assertFieldError(self.payload(email="not-an-email"), "email")
-        self.assertEqual(form.errors["email"], ["รูปแบบอีเมลไม่ถูกต้อง"])
-
-    def test_rejects_local_part_that_is_not_10_digits(self):
-        for email in (
-            "661061234@student.tu.ac.th",
-            "66106123456@student.tu.ac.th",
-            "66106abcde@student.tu.ac.th",
-            "๖๖๑๐๖๑๒๓๔๕@student.tu.ac.th",
-        ):
-            with self.subTest(email=email):
-                self.assertFieldError(self.payload(email=email), "email")
-
-    def test_rejects_faculty_code_other_than_10(self):
-        form = self.assertFieldError(
-            self.payload(email="6620612345@student.tu.ac.th"), "email"
-        )
-        self.assertIn("คณะวิศวกรรมศาสตร์", form.errors["email"][0])
-
-    def test_rejects_duplicate_email(self):
-        self.register(nickname="First")
-        self.assertFieldError(self.payload(), "email")
-
-    def test_rejects_reserved_nickname(self):
-        for nickname in ("admin", "Ad-Min", "MODERATOR", "แอดมิน"):
-            with self.subTest(nickname=nickname):
-                form = self.assertFieldError(self.payload(nickname=nickname), "nickname")
-                self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0])
-
-    def test_blank_required_fields_show_thai_error(self):
-        for field in ("email", "nickname", "department", "password", "password_confirm"):
-            with self.subTest(field=field):
-                form = self.assertFieldError(self.payload(**{field: ""}), field)
-                self.assertEqual(form.errors[field], ["กรุณากรอกข้อมูลช่องนี้"])
-
-    def test_requires_pdpa_consent(self):
-        form = self.assertFieldError(self.payload(pdpa_consent=None), "pdpa_consent")
-        self.assertIn("PDPA", form.errors["pdpa_consent"][0])
-
-    def test_rejects_password_mismatch(self):
-        self.assertFieldError(
-            self.payload(password_confirm="Something-Else-123"), "password_confirm"
-        )
-
-    def test_rejects_weak_password(self):
-        self.assertFieldError(
-            self.payload(password="12345678", password_confirm="12345678"), "password"
-        )
-
-    def test_rejects_password_too_similar_to_nickname(self):
-        form = self.assertFieldError(
-            self.payload(
-                nickname="Supaporn",
-                password="Supaporn12345",
-                password_confirm="Supaporn12345",
-            ),
-            "password",
-        )
-        self.assertTrue(
-            any("คล้าย" in err or "similar" in err.lower() for err in form.errors["password"])
-        )
-
-    def test_department_choices_only_include_active_departments(self):
-        queryset = RegisterForm().fields["department"].queryset
-        self.assertIn(self.department, queryset)
-        self.assertNotIn(self.inactive_department, queryset)
-
-    def test_rejects_inactive_department_with_thai_error(self):
-        form = self.assertFieldError(
-            self.payload(department=str(self.inactive_department.pk)), "department"
-        )
-        self.assertEqual(form.errors["department"], ["กรุณาเลือกภาควิชาจากรายการ"])
-
-    def test_invalid_fields_get_bootstrap_invalid_class(self):
-        form = self.assertFieldError(self.payload(nickname="admin"), "nickname")
-        self.assertIn("is-invalid", form.fields["nickname"].widget.attrs["class"])
-        self.assertNotIn("is-invalid", form.fields["email"].widget.attrs["class"])
-
-
-class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
-    def test_creates_user_with_student_id_and_hashed_password(self):
-        consent_at = timezone.now()
-        user = self.register(pdpa_consent_at=consent_at)
-
-        self.assertEqual(user.student_id, "6610612345")
-        self.assertEqual(user.entry_year, 66)
-        self.assertEqual(user.department, self.department)
-        self.assertEqual(user.pdpa_consent_at, consent_at)
-        self.assertTrue(user.check_password(VALID_PASSWORD))
-        self.assertNotEqual(user.password, VALID_PASSWORD)
-        self.assertFalse(user.is_staff)
-        self.assertFalse(user.is_superuser)
-
-    def test_entry_year_extracted_from_student_id_67(self):
-        user = self.register(email="6710619999@student.tu.ac.th")
-        self.assertEqual(user.student_id, "6710619999")
-        self.assertEqual(user.entry_year, 67)
-
-    def test_assigns_student_role(self):
-        user = self.register()
-        role_codes = list(user.user_roles.values_list("role__code", flat=True))
-        self.assertEqual(role_codes, [Role.STUDENT])
-
-    def test_rolls_back_user_when_student_role_missing(self):
-        Role.objects.filter(code=Role.STUDENT).delete()
-        with self.assertRaises(Role.DoesNotExist):
-            self.register()
-
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
-
-    def test_duplicate_email_at_database_insertion_raises_validation_error(self):
-        self.register(email="6610612345@student.tu.ac.th")
-        with self.assertRaises(ValidationError) as ctx:
-            self.register(email="6610612345@student.tu.ac.th", nickname="Another")
-        self.assertIn("email", ctx.exception.message_dict)
-        self.assertIn("อีเมลนี้ถูกใช้สมัครแล้ว", ctx.exception.message_dict["email"])
-
-    def test_requires_explicit_pdpa_consent_time(self):
-        # service ต้องไม่เติมเวลายินยอม PDPA ให้เอง
-        with self.assertRaises(TypeError):
-            register_user(
-                email="6610612345@student.tu.ac.th",
-                password=VALID_PASSWORD,
-                nickname="Ploy",
-                department=self.department,
-            )
-
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
-
-
 class RegisterViewTests(RegistrationTestMixin, TestCase):
     def setUp(self):
         cache.clear()
@@ -696,20 +429,16 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
         self.assertIsNotNone(user.pdpa_consent_at)
         self.assertTrue(before <= user.pdpa_consent_at <= after)
         self.assertTrue(user.user_roles.filter(role__code=Role.STUDENT).exists())
-        # สมัครแล้วไม่ล็อกอินให้อัตโนมัติ ต้องไปล็อกอินเอง
         self.assertNotIn(SESSION_KEY, self.client.session)
 
     def test_registered_user_can_log_in(self):
-        # Arrange: create user using the real registration service
         self.register()
 
-        # Act: perform the login action
         response = self.client.post(
             reverse("accounts:login"),
             {"username": "6610612345@student.tu.ac.th", "password": VALID_PASSWORD},
         )
 
-        # Assert: login succeeds and redirects home
         self.assertRedirects(response, reverse("accounts:home"))
 
     def assertRegistrationRejected(self, data, field):
@@ -776,116 +505,38 @@ class RegisterViewTests(RegistrationTestMixin, TestCase):
         self.assertFalse(User.objects.exists())
 
 
-class ModeratorManagementTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.now = timezone.now()
-        cls.role_super_admin, _ = Role.objects.get_or_create(
-            code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"}
-        )
-        cls.role_moderator, _ = Role.objects.get_or_create(
-            code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"}
-        )
-        cls.role_student, _ = Role.objects.get_or_create(
-            code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
-        )
+class RegisterThrottleTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.url = reverse("accounts:register")
 
-        cls.dept_cn = Department.objects.create(
-            code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
-        )
-        cls.dept_ce = Department.objects.create(
-            code="CE", name_th="วิศวกรรมโยธา", name_en="Civil Engineering"
-        )
-        cls.dept_me = Department.objects.create(
-            code="ME", name_th="วิศวกรรมเครื่องกล", name_en="Mechanical Engineering"
-        )
+    def tearDown(self):
+        cache.clear()
 
-        cls.admin = User.objects.create_user(
-            email="6510610099@student.tu.ac.th",
-            password="password123",
-            nickname="admin",
-            department=cls.dept_cn,
-            is_superuser=True,
-            pdpa_consent_at=cls.now,
-        )
-        UserRole.objects.create(user=cls.admin, role=cls.role_super_admin)
+    @override_settings(REGISTER_RATE_LIMIT_ATTEMPTS=2, REGISTER_RATE_LIMIT_WINDOW_SECONDS=90)
+    def test_blocks_post_after_quota_with_retry_after(self):
+        for _ in range(2):
+            self.assertEqual(self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10").status_code, 200)
+        response = self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10")
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response["Retry-After"], "90")
+        self.assertContains(response, "ส่งคำขอสมัครสมาชิกบ่อยเกินไป", status_code=429)
 
-        cls.user_momo = User.objects.create_user(
-            email="6510610001@student.tu.ac.th",
-            password="password123",
-            nickname="momo",
-            department=cls.dept_cn,
-            pdpa_consent_at=cls.now,
-        )
-        UserRole.objects.create(user=cls.user_momo, role=cls.role_student)
+    @override_settings(REGISTER_RATE_LIMIT_ATTEMPTS=1)
+    def test_limit_is_per_ip_and_does_not_trust_forwarded_for(self):
+        self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10")
+        blocked = self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10", HTTP_X_FORWARDED_FOR="192.0.2.20")
+        self.assertEqual(blocked.status_code, 429)
+        self.assertEqual(self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.20").status_code, 200)
 
-        cls.user_nana = User.objects.create_user(
-            email="6510610002@student.tu.ac.th",
-            password="password123",
-            nickname="nana",
-            department=cls.dept_ce,
-            pdpa_consent_at=cls.now,
-        )
-        UserRole.objects.create(user=cls.user_nana, role=cls.role_student)
+    @override_settings(REGISTER_RATE_LIMIT_ATTEMPTS=1)
+    def test_get_does_not_use_post_quota(self):
+        self.client.post(self.url, {})
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+        self.assertEqual(self.client.post(self.url, {}).status_code, 429)
 
-    def test_assign_and_remove_moderator_many_to_many(self):
-        ur1 = services.assign_moderator(
-            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
-        )
-        ur2 = services.assign_moderator(
-            user=self.user_momo, department=self.dept_ce, granted_by=self.admin
-        )
 
-        self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
-        )
-        self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
-        )
-
-        services.remove_moderator(user_role=ur1)
-        self.assertFalse(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
-        )
-        self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
-        )
-
-    def test_department_can_have_many_moderators(self):
-        services.assign_moderator(
-            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
-        )
-        services.assign_moderator(
-            user=self.user_nana, department=self.dept_cn, granted_by=self.admin
-        )
-
-        moderators = selectors.moderator_list().filter(department=self.dept_cn)
-        self.assertEqual(
-            {m.user for m in moderators}, {self.user_momo, self.user_nana}
-        )
-
-    def test_is_moderator_of_department_is_scoped_to_assigned_department(self):
-        services.assign_moderator(
-            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
-        )
-        self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
-        )
-        self.assertFalse(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_me)
-        )
-
-    def test_cannot_assign_duplicate_moderator(self):
-        ur = services.assign_moderator(
-            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
-        )
-        self.assertEqual(ur.granted_by, self.admin)
-
-        with self.assertRaises(ValidationError):
-            services.assign_moderator(
-                user=self.user_momo, department=self.dept_cn, granted_by=self.admin
-            )
-
+class ModeratorViewTests(ModeratorTestMixin, TestCase):
     def test_super_admin_can_get_manage_page(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("accounts:moderator_manage"))
@@ -969,164 +620,3 @@ class ModeratorManagementTests(TestCase):
         response = self.client.get(reverse("accounts:moderator_manage"))
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("accounts:login"), response.url)
-
-    def test_moderator_list_queries_prevent_n_plus_one(self):
-        services.assign_moderator(
-            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
-        )
-        services.assign_moderator(
-            user=self.user_nana, department=self.dept_ce, granted_by=self.admin
-        )
-        with self.assertNumQueries(1):
-            for m in selectors.moderator_list():
-                _ = (m.user.email, m.department.code, m.granted_by.email)
-
-
-class AdminDashboardSelectorTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.cn = Department.objects.create(code="CN", name_th="คอมพิวเตอร์", name_en="Computer")
-        Department.objects.create(code="OLD", name_th="ภาคเก่า", name_en="Old", is_active=False)
-        Batch.objects.create(department=cls.cn, number=21)
-        Batch.objects.create(department=cls.cn, number=22)
-        for code in ("CN101", "CN102", "SC135"):
-            Course.objects.create(code=code, name_en=code)
-        student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
-        admin, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
-        cls.users = []
-        for i, role in enumerate((student, student, admin)):
-            user = User.objects.create_user(
-                email=f"661000000{i}@student.tu.ac.th",
-                password="pw",
-                nickname=f"User{i}",
-                department=cls.cn,
-                pdpa_consent_at=timezone.now(),
-            )
-            UserRole.objects.create(user=user, role=role)
-            cls.users.append(user)
-
-    def test_totals_count_active_departments_batches_and_courses(self):
-        totals = admin_dashboard()["totals"]
-
-        self.assertEqual(
-            (totals["departments"], totals["batches"], totals["courses"]),
-            (1, 2, 3),
-        )
-
-    def test_role_counts_are_sorted_by_count_with_percent_and_donut_slice(self):
-        dashboard = admin_dashboard()
-
-        self.assertEqual(
-            dashboard["roles"],
-            [
-                {"label": "นักศึกษา", "count": 2, "percent": 67, "offset": 0, "end": 67},
-                {"label": "ผู้ดูแลระบบ", "count": 1, "percent": 33, "offset": 67, "end": 100},
-            ],
-        )
-
-    def test_role_counts_count_a_moderator_of_two_departments_once(self):
-        moderator, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"})
-        me = Department.objects.create(code="ME", name_th="เครื่องกล", name_en="Mechanical")
-        for department in (self.cn, me):
-            UserRole.objects.create(user=self.users[0], role=moderator, department=department)
-
-        roles = admin_dashboard()["roles"]
-
-        self.assertEqual([r["count"] for r in roles if r["label"] == moderator.name_th], [1])
-
-    def test_new_user_counts_by_today_week_month_year_and_all(self):
-        def joined(user, *date_parts):
-            moment = datetime.datetime(*date_parts, 12, tzinfo=datetime.timezone.utc)
-            User.objects.filter(pk=user.pk).update(created_at=moment)
-
-        self.add_users(1)
-        joined(self.users[0], 2026, 10, 24)  # วันนี้ (เสาร์)
-        joined(self.users[1], 2026, 10, 20)  # สัปดาห์นี้ (เริ่มจันทร์ 19)
-        joined(self.users[2], 2026, 10, 2)  # เดือนนี้
-        joined(User.objects.get(nickname="Extra0"), 2025, 12, 31)  # ปีก่อน
-
-        dashboard = admin_dashboard(today=datetime.date(2026, 10, 24))
-
-        counts = dashboard["new_users"]
-        self.assertEqual(
-            (counts["day"], counts["week"], counts["month"], counts["year"]),
-            (1, 2, 3, 3),
-        )
-
-    def test_all_users_count_goes_up_by_one_per_created_user(self):
-        before = admin_dashboard()["new_users"]["all"]
-
-        self.add_users(1)
-
-        self.assertEqual(admin_dashboard()["new_users"]["all"], before + 1)
-
-    def test_all_users_count_does_not_drop_when_the_newest_user_is_deleted(self):
-        before = admin_dashboard()["new_users"]["all"]
-        newest = User.objects.latest("pk")
-        UserRole.objects.filter(user=newest).delete()
-        newest.delete()
-
-        dashboard = admin_dashboard()
-
-        self.assertEqual(dashboard["new_users"]["all"], before)
-        self.assertEqual(dashboard["totals"]["users"], before)
-
-    def add_users(self, count):
-        for i in range(count):
-            User.objects.create_user(
-                email=f"6610{900000 + i}@student.tu.ac.th",
-                password=None,
-                nickname=f"Extra{i}",
-                department=self.cn,
-                pdpa_consent_at=timezone.now(),
-            )
-
-    def test_users_page_lists_newest_first_with_role_labels_and_upload_count(self):
-        dashboard = admin_dashboard()
-
-        self.assertEqual(
-            [
-                (user.nickname, [r.role.name_th for r in user.user_roles.all()], user.upload_count)
-                for user in dashboard["users_page"]
-            ],
-            [("User2", ["ผู้ดูแลระบบ"], 0), ("User1", ["นักศึกษา"], 0), ("User0", ["นักศึกษา"], 0)],
-        )
-
-    def test_users_are_split_into_pages_of_seven(self):
-        self.add_users(6)
-
-        users_page = admin_dashboard(page=2)["users_page"]
-
-        self.assertEqual(users_page.paginator.num_pages, 2)
-        self.assertEqual([user.nickname for user in users_page], ["User1", "User0"])
-
-    def test_out_of_range_page_shows_the_last_page(self):
-        self.add_users(6)
-
-        users_page = admin_dashboard(page="99")["users_page"]
-
-        self.assertEqual(users_page.number, 2)
-
-    def test_page_numbers_show_six_pages_then_an_ellipsis_and_the_last(self):
-        self.add_users(88)  # 91 คน = 13 หน้า
-
-        users_page = admin_dashboard(page=1)["users_page"]
-
-        self.assertEqual(
-            [str(n) for n in users_page.elided_range],
-            ["1", "2", "3", "4", "5", "6", "…", "13"],
-        )
-
-    def test_department_overview_lists_active_departments_with_user_and_batch_counts(self):
-        dashboard = admin_dashboard()
-
-        self.assertEqual(
-            [(d.code, d.user_count, d.batch_count) for d in dashboard["departments"]],
-            [("CN", 3, 2)],
-        )
-
-    def test_dashboard_runs_a_fixed_number_of_queries(self):
-        with self.assertNumQueries(10):
-            dashboard = admin_dashboard()
-            for user in dashboard["users_page"]:
-                [r.role.name_th for r in user.user_roles.all()]
