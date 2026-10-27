@@ -956,7 +956,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 |---|---|
 | **DB** (UNIQUE / CHECK / PROTECT) | รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, เวอร์ชันซ้ำของเอกสาร, `storage_path` ซ้ำ · `size_bytes` ต้อง > 0 และ ≤ 50 MB, `status`/`vault`/`scan_status` นอกค่าที่กำหนด, `batch.number` < 1, `exam_year_be` นอก 2500–2700 · ลบ Department/Batch/Course ที่ยังถูกอ้างอยู่ไม่ได้ |
 | **Model** (`save()` เช็กให้เอง) | `UserRole`: moderator ต้องมี `department` / role อื่นห้ามมี และห้ามซ้ำ · `ExamDetail`: ผูกได้เฉพาะเอกสารที่ `vault = exam` · `DocumentVersion`: ขนาดไฟล์ไม่เกิน `max_upload_mb`, `storage_path`/`sha256` ต้องปลอดภัย และล้าง `original_name` |
-| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน |
+| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน · `Department.code` รับแค่ A-Z 2-5 ตัว, `Course.code` ต้องเป็น A-Z ตามด้วยเลข 1-3 หลัก เช่น CN201 (อยู่ใน path ไฟล์) |
 | **Service** (ต้องเขียนใน `services.py`) | ผู้ใช้อัปโหลดได้เฉพาะภาควิชาของตัวเอง (US-5), รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น, Super Admin ต้องมีอย่างน้อย 2 คน, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้ (US-6) |
 
 ### `SystemSetting` (ค่ากำหนดปรับได้โดยไม่ deploy ใหม่)

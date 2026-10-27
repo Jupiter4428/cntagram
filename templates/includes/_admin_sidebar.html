@@ -1,0 +1,42 @@
+{% with url_name=request.resolver_match.url_name %}
+<section class="retro-widget glass-module side-module admin-menu" aria-labelledby="admin-menu-title">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>ADMIN CONSOLE</small><span id="admin-menu-title">เมนูผู้ดูแลระบบ</span></span>
+        <span class="tech-index">SA</span>
+    </div>
+    <nav class="retro-widget__body module-body" aria-label="เมนูผู้ดูแลระบบ">
+        <p class="admin-menu__label">เมนูหลัก</p>
+        <a class="admin-menu__link{% if url_name == 'home' %} is-active{% endif %}" href="{% url 'accounts:home' %}">
+            <span aria-hidden="true">▦</span> Dashboard
+        </a>
+        <a class="admin-menu__link{% if url_name|slice:':10' == 'department' %} is-active{% endif %}" href="{% url 'catalog:department_list' %}">
+            <span aria-hidden="true">▤</span> จัดการภาควิชา
+        </a>
+        <a class="admin-menu__link{% if url_name|slice:':5' == 'batch' %} is-active{% endif %}" href="{% url 'catalog:batch_list' %}">
+            <span aria-hidden="true">◎</span> จัดการรุ่นและวิชาในรุ่น
+        </a>
+        <a class="admin-menu__link{% if url_name|slice:':6' == 'course' %} is-active{% endif %}" href="{% url 'catalog:course_list' %}">
+            <span aria-hidden="true">✎</span> จัดการรายวิชา
+        </a>
+
+        <p class="admin-menu__label">ระบบ</p>
+        <a class="admin-menu__link" href="{% url 'materials:vault' %}">
+            <span aria-hidden="true">▣</span> คลังเอกสาร
+        </a>
+        <a class="admin-menu__link" href="{% url 'admin:index' %}">
+            <span aria-hidden="true">⚙</span> Django admin
+        </a>
+    </nav>
+</section>
+
+<section class="retro-widget glass-module side-module">
+    <div class="retro-widget__body module-body compact-copy admin-account">
+        <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
+        <div>
+            <p class="member-name mb-0">{{ request.user.nickname }}</p>
+            <p class="tech-label mb-0">SUPER ADMIN</p>
+        </div>
+    </div>
+</section>
+{% endwith %}

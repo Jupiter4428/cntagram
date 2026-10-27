@@ -70,7 +70,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE; เก็บตัวพิมพ์ใหญ่) |
+| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE; เก็บตัวพิมพ์ใหญ่; รับแค่ A-Z 2-5 ตัว เพราะอยู่ใน path ไฟล์) |
 | name_th | VARCHAR(100) | NN |
 | name_en | VARCHAR(100) | NN |
 | is_active | BOOLEAN | NN, default true |
@@ -89,7 +89,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326; เก็บตัวพิมพ์ใหญ่) |
+| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326; เก็บตัวพิมพ์ใหญ่; A-Z ตามด้วยเลข 1-3 หลัก เพราะอยู่ใน path ไฟล์) |
 | name_th | VARCHAR(150) | NULL |
 | name_en | VARCHAR(150) | NN |
 
@@ -156,6 +156,14 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 > กฎใน model: `department_id` ต้องมีค่าเมื่อ role = `moderator` และต้องเป็น NULL เมื่อเป็น role อื่น
 > แต่งตั้ง Moderator หลายภาค (US-10) = เพิ่มแถว `user_role` 1 แถวต่อ 1 ภาค **ไม่มีตาราง M:N user–department แยก**
 > แถว `role` ทั้ง 4 ค่า และ `user_role(super_admin)` ของ superuser คนแรก มาจาก seed ในงานย่อยของ US-3 (`createsuperuser` ตั้งแค่ `is_superuser` ไม่สร้าง `user_role`)
+
+**user_counter** (ยอดสะสมผู้ใช้ที่เคยถูกสร้าง สำหรับ Dashboard ของ Super Admin, #65)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK (มีแถวเดียว id = 1) |
+| total | INTEGER | NN, ≥ 0 |
+
+> signal `post_save` ของ `User` บวกทีละหนึ่งทุกครั้งที่สร้างผู้ใช้ ไม่ลดเมื่อลบ ตอนสร้างตารางตั้งค่าเริ่มจากจำนวนผู้ใช้ที่มีอยู่
 
 ### 3.3 เอกสารและไฟล์ (Sprint 1)
 
@@ -335,6 +343,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 1. `audit_log.target_type/target_id` — polymorphic reference ไม่มี FK (เหตุผลในหัวข้อ 3.5)
 2. `document.status` เป็นค่า enum ในตาราง ไม่แยกเป็น lookup table (ค่าน้อยและตายตัว ลด join)
 3. `approval.approver_role_id` — เก็บ "ตัดสินในบทบาทใด" เพราะผู้ใช้คนเดียวอาจมีหลาย role (ไม่ซ้ำซ้อน เพราะไม่ได้ derive จาก user ได้ตรงๆ)
+4. `user_counter.total` — เก็บยอดสะสมแยกไว้ เพราะนับจาก `app_user` ไม่ได้หลังมีการลบผู้ใช้
 
 ---
 

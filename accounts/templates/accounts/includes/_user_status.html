@@ -1,0 +1,7 @@
+{% if not user.is_active %}
+    <span class="admin-badge admin-badge--red">ปิดใช้งาน</span>
+{% elif user.is_email_verified %}
+    <span class="admin-badge admin-badge--green">ใช้งาน</span>
+{% else %}
+    <span class="admin-badge admin-badge--amber">รอยืนยันอีเมล</span>
+{% endif %}
