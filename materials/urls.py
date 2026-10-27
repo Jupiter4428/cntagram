@@ -19,4 +19,6 @@ urlpatterns = [
         views.upload_course_options,
         name="upload_course_options",
     ),
+    path("approvals/", views.approval_queue, name="approval_queue"),
+    path("approvals/<int:document_id>/", views.approval_review, name="approval_review"),
 ]

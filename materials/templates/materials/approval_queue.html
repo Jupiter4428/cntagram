@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}คิวรออนุมัติเอกสาร (Approval Queue) | CNTAGRAM{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h1 class="h2 mb-1 fw-bold">คิวรออนุมัติเอกสาร</h1>
+        <p class="text-muted mb-0">รายการชีทสรุปและเอกสารการเรียนที่รอการตรวจสอบโดยผู้ดูแลประจำภาควิชา (US-6)</p>
+    </div>
+    <div class="col-auto">
+        <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
+            รอตรวจสอบ: {{ documents|length }} รายการ
+        </span>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" class="ps-3 py-3">ชื่อเอกสาร</th>
+                    <th scope="col" class="py-3">รหัสวิชา</th>
+                    <th scope="col" class="py-3">ภาควิชา / รุ่น</th>
+                    <th scope="col" class="py-3">ประเภท</th>
+                    <th scope="col" class="py-3">ผู้อัปโหลด</th>
+                    <th scope="col" class="py-3">วันที่อัปโหลด</th>
+                    <th scope="col" class="py-3">สถานะ</th>
+                    <th scope="col" class="text-end pe-3 py-3">การดำเนินการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-semibold text-dark">{{ doc.title }}</div>
+                            <small class="text-muted text-truncate d-inline-block" style="max-width: 250px;">
+                                {{ doc.description|truncatechars:60 }}
+                            </small>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis fw-semibold">
+                                {{ doc.batch_course.course.code }}
+                            </span>
+                            <div class="small text-muted">{{ doc.batch_course.course.display_name }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info-subtle text-info-emphasis">
+                                {{ doc.batch_course.batch.department.code }}
+                            </span>
+                            <small class="text-muted">รุ่น {{ doc.batch_course.batch.number }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                {{ doc.doc_type.name_th }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-secondary">{{ doc.uploader.nickname }}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ doc.created_at|date:"d M Y, H:i" }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning text-dark px-2 py-1">Pending</span>
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="{% url 'materials:approval_review' doc.id %}" class="btn btn-sm btn-primary px-3 shadow-sm">
+                                ตรวจสอบ / พิจารณา
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center p-5 bg-light">
+                            <div class="display-6 text-muted mb-3">📁✨</div>
+                            <h3 class="h4 fw-bold text-dark">ไม่มีเอกสารรอการอนุมัติในขณะนี้</h3>
+                            <p class="text-muted mx-auto mb-3" style="max-width: 450px;">
+                                เอกสารทั้งหมดของภาควิชาที่คุณดูแลได้รับการพิจารณาเรียบร้อยแล้ว หรือยังไม่มีการส่งเอกสารใหม่เข้ามา
+                            </p>
+                            <a href="{% url 'materials:vault' %}" class="btn btn-outline-primary px-4">
+                                ไปยังหน้าคลังเอกสาร (Vault)
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
