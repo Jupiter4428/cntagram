@@ -9,8 +9,7 @@
             <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
             <p class="tech-label">IDENTITY VERIFIED</p>
             <p class="member-name">{{ request.user.nickname }}</p>
-            <a class="chrome-button chrome-button--brand w-100 text-center"
-               href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a>
+            <a class="chrome-button chrome-button--brand w-100 text-center" href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a>
         {% else %}
             <div class="profile-bubble profile-bubble--guest" aria-hidden="true">?</div>
             <p>เชื่อมต่อบัญชีเพื่อเข้าถึงคลังความรู้ของชุมชนวิศวกรรม</p>
