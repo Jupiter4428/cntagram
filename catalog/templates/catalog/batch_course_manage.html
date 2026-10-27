@@ -1,32 +1,61 @@
 {% extends "admin_page.html" %}
 
-{% block title %}วิชาในรุ่น {{ batch.code }}{% endblock %}
+{% block title %}วิชาในรุ่น {{ batch.code }} | CNTAGRAM{% endblock %}
 
 {% block content %}
-  <h1>วิชาในรุ่น {{ batch.code }}</h1>
+{% include "includes/_admin_messages.html" %}
 
+<div class="admin-row">
+    <section class="retro-widget glass-module">
+        <div class="retro-widget__header module-heading">
+            <span class="module-heading__orb" aria-hidden="true"></span>
+            <span><small>CATALOG / BATCHES / {{ batch.code }}</small><h1 class="admin-title">วิชาในรุ่น {{ batch.code }}</h1></span>
+            <span class="tech-index">{{ batch_courses|length }} วิชา</span>
+        </div>
+        <div class="retro-widget__body module-body">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th scope="col">รหัสวิชา</th><th scope="col">ชื่อวิชา</th><th scope="col"><span class="visually-hidden">จัดการ</span></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for batch_course in batch_courses %}
+                            <tr>
+                                <td><strong>{{ batch_course.course.code }}</strong></td>
+                                <td>{{ batch_course.course.display_name }}</td>
+                                <td>
+                                    <form class="admin-actions" method="post" action="{% url 'catalog:batch_course_remove' batch.pk batch_course.pk %}">
+                                        {% csrf_token %}
+                                        <button class="admin-button admin-button--danger" type="submit">ถอดออก</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3">ยังไม่มีวิชาในรุ่นนี้</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="admin-hint mt-3"><a href="{% url 'catalog:batch_list' %}">← กลับหน้ารายการรุ่น</a></p>
+        </div>
+    </section>
 
-  <ul>
-    {% for batch_course in batch_courses %}
-      <li>
-        {{ batch_course.course.code }} {{ batch_course.course.display_name }}
-        <form method="post" action="{% url 'catalog:batch_course_remove' batch.pk batch_course.pk %}">
-          {% csrf_token %}
-          <button type="submit">ถอดออก</button>
-        </form>
-      </li>
-    {% empty %}
-      <li>ยังไม่มีวิชาในรุ่นนี้</li>
-    {% endfor %}
-  </ul>
-
-  <h2>เพิ่มวิชาเข้ารุ่น</h2>
-  <p>ถ้ายังไม่มีวิชาในรายการ <a href="{% url 'catalog:course_create' %}">สร้างวิชาใหม่</a> ก่อน</p>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">เพิ่มวิชา</button>
-  </form>
-
-  <a href="{% url 'catalog:batch_list' %}">กลับหน้ารายการรุ่น</a>
+    <section class="retro-widget glass-module">
+        <div class="retro-widget__header module-heading">
+            <span class="module-heading__orb" aria-hidden="true"></span>
+            <span><small>ADD COURSE</small><h2 class="admin-title">เพิ่มวิชาเข้ารุ่น</h2></span>
+            <span class="tech-index">+</span>
+        </div>
+        <div class="retro-widget__body module-body">
+            <form class="admin-form" method="post">
+                {% csrf_token %}
+                {% include "includes/_admin_form_fields.html" %}
+                <div class="admin-form__buttons">
+                    <button class="admin-button admin-button--primary" type="submit">เพิ่มวิชา</button>
+                </div>
+            </form>
+            <p class="admin-hint mt-3">ถ้ายังไม่มีวิชาในรายการ <a href="{% url 'catalog:course_create' %}">สร้างวิชาใหม่</a> ก่อน</p>
+        </div>
+    </section>
+</div>
 {% endblock %}

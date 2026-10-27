@@ -358,6 +358,106 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 
 .admin-facts dd { margin: 0; overflow-wrap: anywhere; }
 
+/* ---------- หน้าจัดการ catalog (รุ่น / วิชา / วิชาในรุ่น) ---------- */
+.admin-title { margin: 0; font: inherit; font-size: 1.05rem; }
+
+.admin-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+}
+
+.admin-hint { margin: 0; color: #505872; font-size: 0.8rem; }
+.admin-hint a,
+.admin-table a:not(.admin-button) { color: var(--tse-red); font-weight: 700; }
+
+.admin-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.75rem;
+    color: var(--panel-ink);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    background: rgb(255 255 255 / 60%);
+    border: 2px outset #f8f9ff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.admin-button:hover,
+.admin-button:focus-visible { color: var(--panel-ink); background: #fff; border-color: var(--tse-red); }
+.admin-button:active { border-style: inset; }
+
+.admin-button--primary,
+.admin-button--primary:hover,
+.admin-button--primary:focus-visible {
+    color: #fff;
+    background: linear-gradient(100deg, var(--tse-red), #763158);
+}
+
+.admin-button--danger { color: var(--tse-red); }
+
+.admin-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: flex-end; }
+.admin-actions form { margin: 0; }
+
+.admin-alert {
+    padding: 0.6rem 0.85rem;
+    color: var(--panel-ink);
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: #e6f4ec;
+    border: 1px solid #3f9f6b;
+    border-left-width: 6px;
+    border-radius: 4px;
+}
+
+.admin-alert--error { background: #fbe6e7; border-color: var(--tse-red); }
+
+/* ฟอร์มบนแผงสีอ่อน: .form-control ของ retro.css ทำไว้สำหรับพื้นมืดหน้า login */
+.admin-form { display: grid; gap: 0.8rem; max-width: 520px; }
+.admin-form__field { display: grid; gap: 0.25rem; }
+.admin-form label { color: #653054; font-size: 0.8rem; font-weight: 800; }
+
+.admin-form input,
+.admin-form select {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    color: var(--panel-ink);
+    font: inherit;
+    font-size: 0.9rem;
+    background: #fff;
+    border: 2px inset #dce6f4;
+    border-radius: 4px;
+}
+
+.admin-form input:focus,
+.admin-form select:focus { border-color: var(--tse-red); outline: 2px solid rgb(140 25 28 / 25%); }
+.admin-form .helptext { color: #505872; font-size: 0.72rem; }
+.admin-form .errorlist { margin: 0; color: var(--tse-red); font-size: 0.78rem; font-weight: 700; }
+.admin-form .errorlist.nonfield { padding: 0.5rem 0.75rem; background: #fbe6e7; border: 1px solid var(--tse-red); border-radius: 4px; }
+.admin-form__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.admin-group + .admin-group { margin-top: 1rem; }
+
+.admin-group__title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0 0 0.35rem;
+    color: var(--panel-ink);
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.admin-group__title small { color: #505872; font-size: 0.75rem; font-weight: 400; }
+
 /* ตัวเลขผู้ใช้/รุ่นในรายการภาควิชา: ของ retro.css เล็กเกินอ่าน (0.48rem) */
 .site-layout--admin .directory-list b { font-size: 0.7rem; }
 

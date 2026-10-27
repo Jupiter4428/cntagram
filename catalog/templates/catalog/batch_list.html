@@ -1,26 +1,54 @@
 {% extends "admin_page.html" %}
 
-{% block title %}รายการรุ่น{% endblock %}
+{% block title %}รายการรุ่น | CNTAGRAM{% endblock %}
 
 {% block content %}
-  <h1>รายการรุ่น</h1>
+{% include "includes/_admin_messages.html" %}
 
+<section class="retro-widget glass-module">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>CATALOG / BATCHES</small><h1 class="admin-title">รายการรุ่น</h1></span>
+        <span class="tech-index">{{ batches|length }} รุ่น</span>
+    </div>
+    <div class="retro-widget__body module-body">
+        <div class="admin-toolbar">
+            <p class="admin-hint">รุ่นแยกตามภาควิชา กด "จัดการวิชา" เพื่อเพิ่มหรือถอดวิชาในรุ่น</p>
+            <a class="admin-button admin-button--primary" href="{% url 'catalog:batch_create' %}">+ เพิ่มรุ่น</a>
+        </div>
 
-  <a href="{% url 'catalog:batch_create' %}">เพิ่มรุ่น</a>
-
-  {% regroup batches by department as department_batches %}
-  {% for group in department_batches %}
-    <h2>{{ group.grouper }}</h2>
-    <ul>
-      {% for batch in group.list %}
-        <li>
-          {{ batch.code }} ({{ batch.course_count }} วิชา)
-          <a href="{% url 'catalog:batch_course_manage' batch.pk %}">จัดการวิชา</a>
-          <a href="{% url 'catalog:batch_delete' batch.pk %}">ลบ</a>
-        </li>
-      {% endfor %}
-    </ul>
-  {% empty %}
-    <p>ไม่มีข้อมูลรุ่น</p>
-  {% endfor %}
+        {% regroup batches by department as department_batches %}
+        {% for group in department_batches %}
+            <section class="admin-group" aria-labelledby="dept-{{ group.grouper.pk }}">
+                <h2 class="admin-group__title" id="dept-{{ group.grouper.pk }}">
+                    {{ group.grouper.code }} {{ group.grouper.name_th }}
+                    <small>{{ group.list|length }} รุ่น</small>
+                </h2>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th scope="col">รุ่น</th><th scope="col">จำนวนวิชา</th><th scope="col"><span class="visually-hidden">จัดการ</span></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for batch in group.list %}
+                                <tr>
+                                    <td><strong>{{ batch.code }}</strong></td>
+                                    <td><span class="admin-badge{% if batch.course_count %} admin-badge--green{% endif %}">{{ batch.course_count }} วิชา</span></td>
+                                    <td>
+                                        <div class="admin-actions">
+                                            <a class="admin-button" href="{% url 'catalog:batch_course_manage' batch.pk %}">จัดการวิชา</a>
+                                            <a class="admin-button admin-button--danger" href="{% url 'catalog:batch_delete' batch.pk %}">ลบ</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        {% empty %}
+            <p class="admin-hint">ยังไม่มีข้อมูลรุ่น</p>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}
