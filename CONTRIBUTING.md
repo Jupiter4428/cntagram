@@ -61,8 +61,8 @@ flowchart LR
 | Sprint | เนื้อหาหลัก | สิ่งที่ส่งมอบ |
 |---|---|---|
 | **Sprint 1** | Authentication, Forms, Core Models, Dashboard, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้จริง, Backlog บน GitHub |
-| **Sprint 2** | Business Logic (Service Layer), Unit Testing, CI | ฟีเจอร์หลัก, **coverage > 80%**, CI, Refactoring Stories (**≥ 20% ของแต้ม**) |
-| **Sprint 3** | Security (OWASP Top 10, XSS, CSRF), Production Config (`DEBUG=False`, WhiteNoise), Cloud Deploy (Render + PostgreSQL) | ระบบที่ปลอดภัยและ deploy บน Cloud Server, Release Tag และเอกสารคู่มือ (ไม่เพิ่มฟีเจอร์ใหม่ที่เสี่ยงพัง) |
+| **Sprint 2** | Business Logic (Service Layer), Unit Testing (เนื้อหาถึงสัปดาห์ที่ 11) | ฟีเจอร์หลัก, **coverage > 80%**, Refactoring Stories (**≥ 20% ของแต้ม**) |
+| **Sprint 3** | CI/CD + Static Analysis (สัปดาห์ที่ 12), Security (OWASP Top 10, XSS, CSRF), Production Config (`DEBUG=False`, WhiteNoise), Cloud Deploy (Render + PostgreSQL) | ระบบที่ปลอดภัยและ deploy บน Cloud Server, Release Tag และเอกสารคู่มือ (ไม่เพิ่มฟีเจอร์ใหม่ที่เสี่ยงพัง) |
 | **Final** | Demo สัปดาห์ที่ 14 | Live Demo, Agile Metrics (Velocity, Burndown), ประเมินเพื่อนร่วมกลุ่ม |
 
 ร่าง Sprint Goal ของแต่ละรอบอยู่ใน [`_docs/requirements.md`](./_docs/requirements.md#8-roadmap-ร่าง--ปรับทุก-sprint-planning-ตาม-velocity-จริง) คะแนนประเมินจากงานที่ส่งมอบจริงบน GitHub ในแต่ละ Sprint
