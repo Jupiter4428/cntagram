@@ -57,6 +57,16 @@ def register(request):
     if request.user.is_authenticated:
         return redirect("accounts:home")
 
+    if request.method == "POST":
+        client_ip = _client_ip(request)
+        if services.is_register_rate_limited(client_ip):
+            response = render(request, "accounts/register.html", {
+                "form": RegisterForm(), "rate_limited": True,
+            }, status=429)
+            response["Retry-After"] = str(settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
+            return response
+        services.record_register_attempt(client_ip)
+
     form = RegisterForm(request.POST if request.method == "POST" else None)
     if form.is_bound and form.is_valid():
         data = form.cleaned_data
