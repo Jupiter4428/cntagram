@@ -1,10 +1,35 @@
 {% extends "base.html" %}
-{# โครง HTML เปล่า ยังไม่มี css รอฝั่ง front ออกแบบ (US-5) #}
+{% load static %}
 
 {% block title %}ส่งชีทแล้ว | CNTAGRAM{% endblock %}
 
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/upload.css' %}">{% endblock %}
+
 {% block content %}
-<h1>ส่งแล้ว รออนุมัติ</h1>
-<p>ชีทของคุณจะแสดงในคลังหลังจากผู้ดูแลอนุมัติ</p>
-<p><a href="{% url 'materials:upload' %}">อัปโหลดชีทอื่น</a></p>
+<section class="retro-widget upload-card upload-done" aria-labelledby="done-title">
+  <header class="upload-card__titlebar">
+    <div>
+      <small class="upload-card__eyebrow">UPLOAD COMPLETE</small>
+      <h1 id="done-title">ส่งแล้ว รออนุมัติ</h1>
+    </div>
+    <span class="upload-card__badge upload-card__badge--pending">PENDING</span>
+  </header>
+
+  <div class="upload-done__body">
+    <div class="upload-done__icon" aria-hidden="true">✓</div>
+    <p class="upload-done__lead">ชีทของคุณถูกส่งเรียบร้อยแล้ว</p>
+    <p>ชีทจะแสดงในคลังหลังจากผู้ดูแลอนุมัติ</p>
+
+    <ol class="upload-done__steps" aria-label="สถานะการอัปโหลด">
+      <li class="is-done"><span>01</span> ส่งไฟล์แล้ว</li>
+      <li class="is-current"><span>02</span> รอผู้ดูแลอนุมัติ</li>
+      <li><span>03</span> แสดงในคลังเอกสาร</li>
+    </ol>
+
+    <div class="upload-done__actions">
+      <a class="upload-submit upload-submit--inline" href="{% url 'materials:upload' %}">อัปโหลดชีทอื่น <span aria-hidden="true">↗</span></a>
+      <a class="chrome-button chrome-button--quiet" href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a>
+    </div>
+  </div>
+</section>
 {% endblock %}
