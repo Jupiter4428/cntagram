@@ -1,15 +1,10 @@
-{% extends "base.html" %}
-
-{% block title %}พิจารณาเอกสาร: {{ document.title }} | CNTAGRAM{% endblock %}
-
-{% block content %}
 <div class="row justify-content-center">
     <div class="col-12 col-lg-10">
         <!-- Breadcrumb & Header -->
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'materials:approval_queue' %}" class="text-decoration-none">คิวรออนุมัติ</a></li>
-                <li class="breadcrumb-item active" aria-current="page">พิจารณาเอกสาร #{{ document.id }}</li>
+                <li class="breadcrumb-item active" aria-current="page">พิจารณาเอกสาร </li>
             </ol>
         </nav>
 
@@ -19,13 +14,10 @@
                 <p class="text-muted mb-0">ตรวจสอบความถูกต้องและเนื้อหาของชีทสรุป/สไลด์ก่อนเผยแพร่สู่คลังเอกสาร</p>
             </div>
             <div>
-                {% if document.status == 'pending' %}
-                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">สถานะ: รอพิจารณา (Pending)</span>
-                {% elif document.status == 'published' %}
-                    <span class="badge bg-success fs-6 px-3 py-2">สถานะ: เผยแพร่แล้ว (Published)</span>
-                {% elif document.status == 'rejected' %}
-                    <span class="badge bg-danger fs-6 px-3 py-2">สถานะ: ถูกปฏิเสธ (Rejected)</span>
-                {% endif %}
+                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">สถานะ: รอพิจารณา </span>
+                    <span class="badge bg-success fs-6 px-3 py-2">สถานะ: เผยแพร่แล้ว </span>
+                    <span class="badge bg-danger fs-6 px-3 py-2">สถานะ: ถูกปฏิเสธ </span>
+              
             </div>
         </div>
 
@@ -39,44 +31,44 @@
                     <div class="card-body p-4">
                         <div class="mb-3">
                             <label class="text-muted small fw-semibold d-block">ชื่อเอกสาร</label>
-                            <div class="fs-5 fw-bold text-dark">{{ document.title }}</div>
+                            <div class="fs-5 fw-bold text-dark"></div>
                         </div>
 
                         <div class="mb-3">
                             <label class="text-muted small fw-semibold d-block">คำอธิบาย</label>
-                            <div class="bg-light p-3 rounded-2 text-secondary" style="white-space: pre-wrap;">{{ document.description|default:"(ไม่มีคำอธิบาย)" }}</div>
+                            <div class="bg-light p-3 rounded-2 text-secondary" style="white-space: pre-wrap;"></div>
                         </div>
 
                         <div class="row g-3 pt-2">
                             <div class="col-sm-6">
                                 <label class="text-muted small fw-semibold d-block">รายวิชา</label>
                                 <div class="fw-semibold text-primary">
-                                    {{ document.batch_course.course.code }} - {{ document.batch_course.course.display_name }}
+                                    
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <label class="text-muted small fw-semibold d-block">ภาควิชา และ รุ่น</label>
                                 <div>
                                     <span class="badge bg-info-subtle text-info-emphasis">
-                                        {{ document.batch_course.batch.department.code }} ({{ document.batch_course.batch.department.name_th }})
+                                        
                                     </span>
-                                    <span class="ms-1 fw-semibold">รุ่น {{ document.batch_course.batch.number }}</span>
+                                    <span class="ms-1 fw-semibold"> </span>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <label class="text-muted small fw-semibold d-block">ประเภทเอกสาร</label>
                                 <span class="badge bg-light text-dark border">
-                                    {{ document.doc_type.name_th }} ({{ document.doc_type.code }})
+                                    
                                 </span>
                             </div>
                             <div class="col-sm-6">
                                 <label class="text-muted small fw-semibold d-block">ผู้อัปโหลด</label>
-                                <span class="fw-medium text-dark">{{ document.uploader.nickname }}</span>
-                                <small class="text-muted">({{ document.uploader.department.code }})</small>
+                                <span class="fw-medium text-dark"></span>
+                                <small class="text-muted"></small>
                             </div>
                             <div class="col-sm-6">
                                 <label class="text-muted small fw-semibold d-block">วันที่ส่งเอกสาร</label>
-                                <span class="text-muted">{{ document.created_at|date:"d F Y, H:i" }} น.</span>
+                                <span class="text-muted"></span>
                             </div>
                         </div>
                     </div>
@@ -85,32 +77,32 @@
                 <!-- File Info Card -->
                 <div class="card border-0 shadow-sm rounded-3">
                     <div class="card-header bg-white py-3 border-bottom">
-                        <h2 class="h5 fw-bold mb-0 text-dark">ไฟล์แนบ (Current Version)</h2>
+                        <h2 class="h5 fw-bold mb-0 text-dark">ไฟล์แนบ </h2>
                     </div>
                     <div class="card-body p-4">
-                        {% if document.current_version %}
+                      
                             <div class="d-flex align-items-center p-3 border rounded-3 bg-light">
-                                <div class="display-6 me-3 text-primary">📄</div>
+                                <div class="display-6 me-3 text-primary"></div>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark text-break">{{ document.current_version.original_name }}</div>
+                                    <div class="fw-bold text-dark text-break"></div>
                                     <div class="small text-muted">
-                                        เวอร์ชัน: v{{ document.current_version.version_no }} | 
-                                        ขนาด: {{ document.current_version.size_bytes|filesizeformat }} |
-                                        อัปโหลด: {{ document.current_version.uploaded_at|date:"d M Y, H:i" }}
+                                        เวอร์ชัน: | 
+                                        ขนาด: |
+                                        อัปโหลด: 
                                     </div>
                                     <div class="small text-muted mt-1">
-                                        SHA256: <code class="text-muted">{{ document.current_version.sha256|truncatechars:24 }}</code>
+                                        SHA256: <code class="text-muted"></code>
                                     </div>
                                 </div>
                             </div>
-                            {% url 'materials:approval_preview' document.id as preview_url %}
-                            <iframe src="{{ preview_url }}" title="ตัวอย่างไฟล์ {{ document.current_version.original_name }}" class="pdf-preview w-100 mt-3 border rounded-3" style="height: 70vh;"></iframe>
+                          
+                            <iframe src="{{ preview_url }}" title="" class="pdf-preview w-100 mt-3 border rounded-3" style="height: 70vh;"></iframe>
                             <div class="mt-2">
                                 <a href="{{ preview_url }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">เปิดไฟล์ในแท็บใหม่</a>
                             </div>
-                        {% else %}
-                            <p class="text-muted mb-0">ยังไม่มีไฟล์ในเวอร์ชันปัจจุบัน</p>
-                        {% endif %}
+                       
+                            <p class="text-muted mb-0"></p>
+                        
                     </div>
                 </div>
             </div>
@@ -123,13 +115,13 @@
                     </div>
                     <div class="card-body p-4">
                         <form method="post" action="{% url 'materials:approval_review' document.id %}" novalidate>
-                            {% csrf_token %}
+                         
 
-                            {% if form.non_field_errors %}
+                           
                                 <div class="alert alert-danger" role="alert">
-                                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                                    
                                 </div>
-                            {% endif %}
+                           
 
                             <label class="form-label fw-bold mb-2">เลือกผลการพิจารณา <span class="text-danger">*</span></label>
                             <div class="row g-2 mb-3">
@@ -137,45 +129,45 @@
                                     <input type="radio" class="btn-check" name="decision" id="decision_approved" value="approved" {% if form.decision.value == 'approved' %}checked{% endif %}>
                                     <label class="btn btn-outline-success w-100 py-3 fw-bold d-flex flex-column align-items-center justify-content-center gap-1 rounded-3" for="decision_approved">
                                         <span class="fs-4">✅</span>
-                                        <span>อนุมัติ (Approve)</span>
+                                        <span>อนุมัติ </span>
                                     </label>
                                 </div>
                                 <div class="col-6">
                                     <input type="radio" class="btn-check" name="decision" id="decision_rejected" value="rejected" {% if form.decision.value == 'rejected' %}checked{% endif %}>
                                     <label class="btn btn-outline-danger w-100 py-3 fw-bold d-flex flex-column align-items-center justify-content-center gap-1 rounded-3" for="decision_rejected">
                                         <span class="fs-4">❌</span>
-                                        <span>ปฏิเสธ (Reject)</span>
+                                        <span>ปฏิเสธ </span>
                                     </label>
                                 </div>
                             </div>
-                            {% if form.decision.errors %}
+                            
                                 <div class="text-danger small mb-3">
-                                    {% for error in form.decision.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
+                                    
+                            
 
                             <div class="mb-4">
                                 <label class="form-label fw-bold" for="{{ form.reason.id_for_label }}">
-                                    {{ form.reason.label }}
-                                    <span class="text-danger fw-normal" id="reason-required-hint" style="display: none;">*(จำเป็นต้องระบุ)</span>
+                                   
+                                    <span class="text-danger fw-normal" id="reason-required-hint" style="display: none;"></span>
                                 </label>
-                                {{ form.reason }}
-                                {% if form.reason.errors %}
+                                
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.reason.errors %}{{ error }}{% endfor %}
+                                        
                                     </div>
-                                {% endif %}
-                                <div class="form-text mt-1 text-muted small">
-                                    กรณีปฏิเสธ ต้องระบุเหตุผลเพื่อแจ้งให้ผู้อัปโหลดทราบและแก้ไข
+                             
+                                <div class="form-text mt-1 text-muted" style="font-size: 0.75rem;">
+                                   
                                 </div>
                             </div>
 
-                            <div class="d-grid gap-2">
+                            <div class="d-grid gap-2 review-action-buttons">
                                 <button type="submit" class="btn btn-primary btn-lg fw-semibold shadow-sm">
-                                    บันทึกผลการพิจารณา
+                                        บันทึก
                                 </button>
                                 <a href="{% url 'materials:approval_queue' %}" class="btn btn-outline-secondary">
-                                    ยกเลิก / กลับไปหน้ารายการ
+                                ยกเลิก 
+                                </a>
+                            </div>
                                 </a>
                             </div>
                         </form>
@@ -208,4 +200,251 @@
         updateState();
     });
 </script>
-{% endblock %}
+
+
+
+
+<style>
+/* ==========================================
+   CNTAGRAM GLOBAL BACKGROUND & LAYOUT
+   ========================================== */
+body {
+    background: linear-gradient(135deg, #18191c 0%, #3d4045 40%, #111214 100%);
+    color: #e0e0e0;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ==========================================
+   BREADCRUMB & HEADER SECTION
+   ========================================== */
+.breadcrumb {
+    background-color: transparent !important;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.breadcrumb-item a {
+    color: #ffb3c1 !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+}
+
+.breadcrumb-item.active {
+    color: #9ca3af !important;
+}
+
+/* กรอบสี่เหลี่ยมหัวข้อสีแดงเลือดหมู */
+.footer-brand-box {
+    display: inline-block;
+    background: linear-gradient(90deg, #201f1f 0%, #5f262d 60%, #782c2c 100%);
+    border: 1px solid #7a1324;
+    padding: 10px 40px 10px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    margin: 10px 0;
+    border-radius: 2px;
+}
+
+.footer-wordmark {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1.5rem; 
+    color: #ffffff !important;
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.footer-slogan {
+    font-family: 'Courier New', Courier, monospace, sans-serif !important;
+    font-size: 0.8rem;
+    color: #ffb3c1 !important;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================
+   CARDS & CONTAINERS (การ์ดข้อมูลเอกสารและไฟล์)
+   ========================================== */
+.card {
+    background-color: #24272a !important;
+    border: 1px solid #3a3f44 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 2px !important;
+}
+
+.card-header {
+    background-color: #1e2022 !important;
+    border-bottom: 2px solid #3a3f44 !important;
+}
+
+.card-header h2 {
+    color: #ffffff !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.card-body {
+    color: #e0e0e0;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+}
+
+/* กล่องคำอธิบายด้านใน */
+.bg-light {
+    background-color: #1e2022 !important;
+    border: 1px solid #3a3f44 !important;
+    color: #d1d5db !important;
+}
+
+/* ป้ายข้อความและแบดจ์ต่างๆ */
+.text-dark {
+    color: #ffffff !important;
+}
+
+.text-muted {
+    color: #9ca3af !important;
+}
+
+.text-primary {
+    color: #ffb3c1 !important;
+}
+
+.badge.bg-info-subtle {
+    background-color: #1a2332 !important;
+    color: #93c5fd !important;
+    border: 1px solid #1e3a8a;
+}
+
+.badge.bg-light {
+    background-color: #1e2022 !important;
+    color: #d1d5db !important;
+    border-color: #3a3f44 !important;
+}
+
+/* ส่วนแสดงไฟล์ PDF Preview และกล่องไฟล์แนบ */
+.border.rounded-3.bg-light {
+    background-color: #1e2022 !important;
+    border-color: #3a3f44 !important;
+}
+
+.pdf-preview {
+    border: 1px solid #3a3f44 !important;
+    background-color: #1e2022;
+}
+
+/* ==========================================
+   FORM & REVIEW ACTIONS (ฟอร์มอนุมัติ/ปฏิเสธ)
+   ========================================== */
+.form-label {
+    color: #ffffff;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+}
+
+/* ปุ่มกดเลือกสถานะ Approve / Reject แบบ Radio */
+.btn-outline-success {
+    background-color: #1e2022;
+    border: 1px solid #198754;
+    color: #198754;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+}
+
+.btn-check:checked + .btn-outline-success {
+    background: linear-gradient(180deg, #198754 0%, #146c43 100%) !important;
+    color: #ffffff !important;
+    border-color: #198754 !important;
+    box-shadow: 0 0 10px rgba(25, 135, 84, 0.5);
+}
+
+.btn-outline-danger {
+    background-color: #1e2022;
+    border: 1px solid #b91c38;
+    color: #ffb3c1;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+}
+
+.btn-check:checked + .btn-outline-danger {
+    background: linear-gradient(180deg, #991b32 0%, #7a1324 100%) !important;
+    color: #ffffff !important;
+    border-color: #b91c38 !important;
+    box-shadow: 0 0 10px rgba(185, 28, 56, 0.6);
+}
+
+/* ช่องกรอกเหตุผล (Textarea / Input) */
+textarea.form-control, input.form-control {
+    background-color: #1e2022 !important;
+    border: 1px solid #3a3f44 !important;
+    color: #ffffff !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    border-radius: 2px !important;
+}
+
+textarea.form-control:focus, input.form-control:focus {
+    border-color: #b91c38 !important;
+    box-shadow: 0 0 8px rgba(185, 28, 56, 0.4) !important;
+}
+
+/* ปุ่มบันทึกผลการพิจารณา */
+.btn-primary {
+    background: linear-gradient(180deg, #991b32 0%, #7a1324 100%) !important;
+    border: 1px solid #b91c38 !important;
+    color: #ffffff !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    border-radius: 2px !important;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(180deg, #b91c38 0%, #8f1027 100%) !important;
+    box-shadow: 0 0 10px rgba(185, 28, 56, 0.6);
+}
+
+/* ปุ่มยกเลิก / เปิดไฟล์ในแท็บใหม่ */
+.btn-outline-secondary, .btn-outline-secondary.btn-sm {
+    background-color: #1e2022;
+    border: 1px solid #4a4d52;
+    color: #d1d5db;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    border-radius: 2px !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #3a3f44;
+    color: #ffffff;
+    border-color: #6b7280;
+}
+
+/* เว้นระยะห่างปุ่มบันทึกและยกเลิก 20px ทั้งบนและล่าง */
+.review-action-buttons {
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+/* ขยับเนื้อหาภายในกล่อง (Card Body) ให้ห่างจากขอบเข้ามา 20px */
+.card-body {
+    padding: 20px !important;
+}
+
+/* หากต้องการให้ช่องหัวข้อการ์ด (Card Header) ขยับเข้ามาตรงกันด้วย */
+.card-header {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+
+</style>
+
