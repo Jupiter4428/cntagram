@@ -13,6 +13,11 @@ class SearchFormTests(SearchTestCase):
                 self.assertFalse(form.is_valid())
                 self.assertIn("course_code", form.errors)
 
+    def test_blank_course_code_shows_thai_error_message(self):
+        form = SearchForm({"course_code": ""})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors["course_code"], ["กรุณาระบุรหัสวิชา"])
+
     def test_batch_from_another_department_is_invalid(self):
         ce = self.make_department()
         form = SearchForm(
