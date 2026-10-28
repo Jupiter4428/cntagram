@@ -2,8 +2,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
+from django.db.models import Count
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_http_methods
 
@@ -26,8 +28,15 @@ def vault(request):
 @login_required
 def document_detail(request, document_id):
     """หน้าเอกสาร + preview PDF (เอกสารที่ไม่ published ตอบ 404)"""
-    document = get_object_or_404(selectors.published_documents(), pk=document_id)
-    return render(request, "materials/document_detail.html", {"document": document})
+    document = get_object_or_404(
+        selectors.published_documents().annotate(download_count=Count("download_logs")),
+        pk=document_id,
+    )
+    return render(request, "materials/document_detail.html", {
+        "document": document,
+        "download_count": document.download_count,
+        "download_url": reverse("materials:document_download", args=[document.pk]) if document.current_version else None,
+    })
 
 
 def _inline_pdf_response(document):

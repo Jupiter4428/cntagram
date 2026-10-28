@@ -317,6 +317,23 @@ class DocumentVersion(models.Model):
     def __str__(self):
         return f"{self.document_id} v{self.version_no}"
 
+class DownloadLog(models.Model):
+    """One row per successful protected download; no duplicated count column."""
+
+    document = models.ForeignKey(
+        Document, on_delete=models.PROTECT, related_name="download_logs"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="download_logs"
+    )
+    downloaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "download_log"
+        indexes = [
+            models.Index(fields=["document", "downloaded_at"], name="idx_download_doc_time"),
+        ]
+
 
 class Approval(models.Model):
     class Decision(models.TextChoices):
