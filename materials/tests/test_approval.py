@@ -1,3 +1,4 @@
+from datetime import datetime, timezone as dt_timezone
 import shutil
 import tempfile
 
@@ -355,6 +356,24 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         self.assertContains(response, "Math Summary")
         self.assertContains(response, "test.pdf")
         self.assertIsInstance(response.context["form"], ReviewForm)
+
+    def test_approval_review_renders_created_at_in_bangkok_time(self):
+        doc = self.create_document(batch_course=self.bc_cn, title="Math Summary")
+        utc_time = datetime(2026, 10, 27, 3, 0, 0, tzinfo=dt_timezone.utc)
+        Document.objects.filter(pk=doc.pk).update(created_at=utc_time)
+
+        self.client.force_login(self.mod_cn)
+        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        response = self.client.get(review_url)
+
+        self.assertEqual(response.status_code, 200)
+        # UTC 03:00 must be converted to 10:00 Bangkok time (UTC+7)
+        self.assertContains(response, "27 October 2026, 10:00 น.")
+
+    def test_timezone_setting_is_asia_bangkok(self):
+        from django.conf import settings
+        self.assertEqual(settings.TIME_ZONE, "Asia/Bangkok")
+        self.assertTrue(settings.USE_TZ)
 
     def test_approval_review_already_processed_returns_404(self):
         doc_published = self.create_document(
