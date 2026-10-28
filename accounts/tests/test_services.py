@@ -6,12 +6,12 @@ from django.utils import timezone
 from .. import selectors, services
 from ..models import Role
 from ..services import register_user
-from .base import ModeratorTestMixin, RegistrationTestMixin, VALID_PASSWORD
+from .base import ModeratorTestCase, RegistrationTestCase, VALID_PASSWORD
 
 User = get_user_model()
 
 
-class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
+class RegisterUserServiceTests(RegistrationTestCase):
     def test_creates_user_with_student_id_and_hashed_password(self):
         consent_at = timezone.now()
         user = self.register(pdpa_consent_at=consent_at)
@@ -61,7 +61,7 @@ class RegisterUserServiceTests(RegistrationTestMixin, TestCase):
         self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
 
 
-class ModeratorServiceTests(ModeratorTestMixin, TestCase):
+class ModeratorServiceTests(ModeratorTestCase):
     def test_assign_and_remove_moderator_many_to_many(self):
         ur1 = services.assign_moderator(
             user=self.user_momo, department=self.dept_cn, granted_by=self.admin

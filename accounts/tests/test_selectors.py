@@ -9,7 +9,7 @@ from catalog.models import Batch, Course, Department
 from .. import selectors, services
 from ..models import Role, UserRole
 from ..selectors import admin_dashboard
-from .base import ModeratorTestMixin
+from .base import ModeratorTestCase
 
 User = get_user_model()
 
@@ -164,7 +164,7 @@ class AdminDashboardSelectorTests(TestCase):
                 [r.role.name_th for r in user.user_roles.all()]
 
 
-class ModeratorSelectorTests(ModeratorTestMixin, TestCase):
+class ModeratorSelectorTests(ModeratorTestCase):
     def test_department_can_have_many_moderators(self):
         services.assign_moderator(
             user=self.user_momo, department=self.dept_cn, granted_by=self.admin

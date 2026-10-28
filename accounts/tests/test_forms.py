@@ -2,7 +2,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.test import TestCase
 
 from ..forms import LoginForm, RegisterForm
-from .base import RegistrationTestMixin
+from .base import RegistrationTestCase
 
 
 class LoginFormTests(TestCase):
@@ -10,7 +10,7 @@ class LoginFormTests(TestCase):
         self.assertTrue(issubclass(LoginForm, AuthenticationForm))
 
 
-class RegisterFormTests(RegistrationTestMixin, TestCase):
+class RegisterFormTests(RegistrationTestCase):
     def assertFieldError(self, data, field):
         form = RegisterForm(data=data)
         self.assertFalse(form.is_valid())
