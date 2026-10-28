@@ -190,7 +190,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | doc_type_id | SMALLINT | FK → doc_type, NN |
 | uploader_id | BIGINT | FK → app_user, NN |
 | title | VARCHAR(200) | NN |
-| description | TEXT | NN |
+| description | TEXT | NN (ไม่บังคับกรอก เก็บเป็นสตริงว่าง) |
 | status | VARCHAR(15) | NN, CHECK in (`pending`, `published`, `rejected`, `hidden`), default `pending` |
 | created_at / updated_at | TIMESTAMP | NN |
 

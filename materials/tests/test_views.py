@@ -1,5 +1,4 @@
 import shutil
-import tempfile
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -15,11 +14,16 @@ from catalog.models import Batch, BatchCourse, Course, Department, SystemSetting
 
 from ..forms import SearchForm, UploadForm
 from ..models import Document, DocType
-from .base import SearchTestCase, UploadTestCase, pdf_file, stored_file_count
+from .base import (
+    TEST_MEDIA_ROOT,
+    SearchTestCase,
+    UploadTestCase,
+    pdf_file,
+    stored_file_count,
+)
 
 User = get_user_model()
 
-TEST_MEDIA_ROOT = tempfile.mkdtemp()
 PDF_BYTES = b"%PDF-1.4 fake sheet"
 
 
@@ -300,6 +304,12 @@ class UploadViewTests(UploadTestCase):
         self.assertRedirects(response, reverse("materials:upload_done"))
         self.assertEqual(Document.objects.get().status, Document.Status.PENDING)
 
+    def test_upload_without_description_is_saved(self):
+        response = self.post(description="")
+
+        self.assertRedirects(response, reverse("materials:upload_done"))
+        self.assertEqual(Document.objects.get().description, "")
+
     def test_upload_done_page_says_waiting_for_approval(self):
         response = self.client.get(reverse("materials:upload_done"))
 
@@ -315,6 +325,12 @@ class UploadViewTests(UploadTestCase):
 
     def test_tampered_request_into_another_department_is_403(self):
         response = self.post(batch_course=self.me21_cn200.pk)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Document.objects.exists())
+
+    def test_tampered_request_into_another_department_is_403_even_with_other_errors(self):
+        response = self.post(batch_course=self.me21_cn200.pk, disclaimer="")
 
         self.assertEqual(response.status_code, 403)
         self.assertFalse(Document.objects.exists())
@@ -361,6 +377,16 @@ class UploadViewTests(UploadTestCase):
 
         with self.assertNumQueries(7):
             self.client.get(reverse("materials:upload"))
+
+    def test_file_over_the_limit_shows_size_error(self):
+        SystemSetting.objects.filter(pk="max_upload_mb").update(value="1")
+
+        # 3 MB เกิน FILE_UPLOAD_MAX_MEMORY_SIZE จึงผ่านเส้นทาง temp file เหมือน production
+        response = self.post(file=pdf_file(b"%PDF-" + b"0" * 3_145_728))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"].errors["file"], ["ไฟล์ต้องมีขนาดไม่เกิน 1 MB"])
+        self.assertFalse(Document.objects.exists())
 
     def test_non_pdf_shows_file_error(self):
         response = self.post(file=pdf_file(b"PK\x03\x04", name="sheet.docx"))
