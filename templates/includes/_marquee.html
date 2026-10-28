@@ -2,9 +2,124 @@
     <span class="retro-marquee__label">★ NOTICE ★</span>
     <div class="retro-marquee__window">
         <div class="retro-marquee__track">
-            <span>WELCOME TO CNTAGRAM! · brain.exe still running · ขอให้ midterm นี้ใจดีกับทุกคน · เปิดตำราแล้ว แต่สมองยัง loading... · FE-1 DEMO ONLY · PDF or die (แต่พักผ่อนด้วยนะ) ♥</span>
-            <span aria-hidden="true">WELCOME TO CNTAGRAM! · brain.exe still running · ขอให้ midterm นี้ใจดีกับทุกคน · เปิดตำราแล้ว แต่สมองยัง loading... · FE-1 DEMO ONLY · PDF or die (แต่พักผ่อนด้วยนะ) ♥</span>
+            <span>WELCOME TO CNTAGRAM! still running · ขอให้ midterm นี้ใจดีกับทุกคน · เปิดตำราแล้ว แต่สมองยัง loading... · PDF or die (แต่พักผ่อนด้วยนะ) ♥</span>
+            <span aria-hidden="true">WELCOME TO CNTAGRAM! · still running · ขอให้ midterm นี้ใจดีกับทุกคน · เปิดตำราแล้ว แต่สมองยัง loading... · PDF or die (แต่พักผ่อนด้วยนะ) ♥</span>
         </div>
     </div>
     <span class="retro-marquee__status">DEMO</span>
 </div>
+
+
+
+<style>
+.retro-marquee {
+    display: flex;
+    align-items: center;
+    background-color: #121315;
+    border: 1px dashed #4a4d52;
+    color: #e0e0e0;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+    border-radius: 2px;
+}
+
+/* ป้ายหัวข้อ NOTICE ด้านซ้าย */
+.retro-marquee__label {
+    background: linear-gradient(180deg, #991b32 0%, #7a1324 100%);
+    color: #ffffff;
+    padding: 3px 8px;
+    font-weight: bold;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    margin-right: 12px;
+    white-space: nowrap;
+    border-radius: 2px;
+    border: 1px solid #540c18;
+}
+
+/* หน้าต่างสำหรับแสดงข้อความวิ่ง */
+.retro-marquee__window {
+    overflow: hidden;
+    white-space: nowrap;
+    flex-grow: 1;
+    position: relative;
+    mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+
+/* รางวิ่งของข้อความ */
+.retro-marquee__track {
+    display: inline-flex;
+    gap: 40px;
+    animation: marqueeScroll 25s linear infinite;
+}
+
+.retro-marquee__track span {
+    color: #d1d5db;
+    letter-spacing: 0.5px;
+}
+
+/* หยุดวิ่งเมื่อเอาเมาส์ชี้หรือโฟกัส */
+.retro-marquee:hover .retro-marquee__track,
+.retro-marquee:focus-within .retro-marquee__track {
+    animation-play-state: paused;
+}
+
+/* ป้ายสถานะ DEMO ด้านขวา */
+.retro-marquee__status {
+    background-color: #2b2d31;
+    color: #ffb3c1;
+    border: 1px solid #4a4d52;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-left: 12px;
+    border-radius: 2px;
+}
+
+/* แอนิเมชันการวิ่ง */
+@keyframes marqueeScroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(calc(-50% - 20px));
+    }
+}
+
+/* ==========================================
+   CNTAGRAM GLOBAL BACKGROUND & LAYOUT
+   ========================================== */
+
+/* ตั้งค่าพื้นหลังหลักของเว็บไซต์ */
+body {
+    background: linear-gradient(135deg, #18191c 0%, #3d4045 40%, #111214 100%);
+    color: #e0e0e0;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* หากต้องการเพิ่มลวดลายตาราง Grid จางๆ สไตล์ Cyberpunk เพิ่มมิติให้พื้นหลัง */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none; /* เพื่อให้คลิกทะลุผ่านลาย Grid ไปได้ปกติ */
+    z-index: -1; /* ให้อยู่หลังสุดเสมอ */
+}
