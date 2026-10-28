@@ -1,25 +1,15 @@
-{% extends "base.html" %}
-
-{% block title %}คิวรออนุมัติเอกสาร (Approval Queue) | CNTAGRAM{% endblock %}
-
-{% block content %}
-{% for message in messages %}
-    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %}" role="alert">{{ message }}</div>
-{% endfor %}
-
 <div class="row mb-4 align-items-center">
     <div class="col">
         <h1 class="h2 mb-1 fw-bold">คิวรออนุมัติเอกสาร</h1>
-        <p class="text-muted mb-0">รายการชีทสรุปและเอกสารการเรียนที่รอการตรวจสอบโดยผู้ดูแลประจำภาควิชา (US-6)</p>
+        <p class="text-muted mb-0">รายการชีทสรุปและเอกสารการเรียนที่รอการตรวจสอบโดยผู้ดูแลประจำภาควิชา</p>
     </div>
     <div class="col-auto">
         <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
-            รอตรวจสอบ: {{ documents|length }} รายการ
+            รอตรวจสอบ: รายการ
         </span>
     </div>
 </div>
 
-{% if documents %}
     <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -36,36 +26,35 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for doc in documents %}
                         <tr>
                             <td class="ps-3">
-                                <div class="fw-semibold text-dark">{{ doc.title }}</div>
+                                <div class="fw-semibold text-dark"></div>
                                 <small class="text-muted text-truncate d-inline-block" style="max-width: 250px;">
-                                    {{ doc.description|truncatechars:60 }}
+                                    
                                 </small>
                             </td>
                             <td>
                                 <span class="badge bg-secondary-subtle text-secondary-emphasis fw-semibold">
-                                    {{ doc.batch_course.course.code }}
+                                    
                                 </span>
-                                <div class="small text-muted">{{ doc.batch_course.course.display_name }}</div>
+                                <div class="small text-muted"></div>
                             </td>
                             <td>
                                 <span class="badge bg-info-subtle text-info-emphasis">
-                                    {{ doc.batch_course.batch.department.code }}
+                                    
                                 </span>
-                                <small class="text-muted">รุ่น {{ doc.batch_course.batch.number }}</small>
+                                <small class="text-muted"> </small>
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border">
-                                    {{ doc.doc_type.name_th }}
+                                    
                                 </span>
                             </td>
                             <td>
-                                <span class="text-secondary">{{ doc.uploader.nickname }}</span>
+                                <span class="text-secondary"></span>
                             </td>
                             <td>
-                                <small class="text-muted">{{ doc.created_at|date:"d M Y, H:i" }}</small>
+                                <small class="text-muted"></small>
                             </td>
                             <td>
                                 <span class="badge bg-warning text-dark px-2 py-1">Pending</span>
@@ -76,23 +65,151 @@
                                 </a>
                             </td>
                         </tr>
-                    {% endfor %}
+
                 </tbody>
             </table>
         </div>
     </div>
-{% else %}
+
     <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-4 bg-light">
         <div class="card-body">
-            <div class="display-6 text-muted mb-3">📁✨</div>
-            <h3 class="h4 fw-bold text-dark">ไม่มีเอกสารรอการอนุมัติในขณะนี้</h3>
+            <div class="display-6 text-muted mb-3"></div>
+            <h3 class="h4 fw-bold text-dark"></h3>
             <p class="text-muted mx-auto" style="max-width: 450px;">
-                เอกสารทั้งหมดของภาควิชาที่คุณดูแลได้รับการพิจารณาเรียบร้อยแล้ว หรือยังไม่มีการส่งเอกสารใหม่เข้ามา
             </p>
             <a href="{% url 'materials:vault' %}" class="btn btn-outline-primary px-4 mt-2">
-                ไปยังหน้าคลังเอกสาร (Vault)
+                ไปยังหน้าคลังเอกสาร 
             </a>
         </div>
     </div>
-{% endif %}
-{% endblock %}
+
+
+
+
+
+<style>
+/* ==========================================
+   CNTAGRAM GLOBAL BACKGROUND & LAYOUT
+   ========================================== */
+body {
+    background: linear-gradient(135deg, #18191c 0%, #3d4045 40%, #111214 100%);
+    color: #e0e0e0;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ==========================================
+   BRAND BOX (กรอบสี่เหลี่ยมหัวข้อสีแดงเลือดหมูตามต้องการ)
+   ========================================== */
+.footer-brand-box {
+    display: inline-block;
+    background: linear-gradient(90deg, #201f1f 0%, #5f262d 60%, #782c2c 100%);
+    border: 1px solid #7a1324;
+    padding: 10px 120px 10px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    margin: 20px 0 20px 0;
+    border-radius: 2px;
+}
+
+.footer-wordmark {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1.4rem; 
+    color: #ffffff !important;
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.footer-slogan {
+    font-family: 'Courier New', Courier, monospace, sans-serif !important;
+    font-size: 0.8rem;
+    color: #ffb3c1 !important;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================
+   TABLE & CARD STYLING (เว้นระยะตารางไม่ให้ชิดตัวหนังสือ)
+   ========================================== */
+.cyber-table-card {
+    background-color: #24272a !important;
+    border: 1px solid #3a3f44 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 2px !important;
+    margin-top: 15px; /* เว้นระยะห่างจากหัวข้อด้านบนไม่ให้ชิดเกินไป */
+}
+
+.table thead th {
+    background-color: #1e2022 !important;
+    color: #9ca3af !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #7a1324 !important;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.table tbody tr {
+    background-color: #1e2022;
+    color: #e0e0e0;
+    border-bottom: 1px solid #2d3135;
+}
+
+.table tbody tr:hover {
+    background-color: #272a2e !important;
+    color: #ffffff;
+}
+
+.table td {
+    border-color: #2d3135 !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    vertical-align: middle;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+/* ป้าย Badge และปุ่มต่างๆ */
+.row .badge.bg-primary {
+    background: linear-gradient(180deg, #b91c38 0%, #8f1027 100%) !important;
+    border: 1px solid #7a1324;
+    color: #ffffff !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+}
+
+.table .btn-primary {
+    background: linear-gradient(180deg, #991b32 0%, #7a1324 100%) !important;
+    border: 1px solid #b91c38 !important;
+    color: #ffffff !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 2px !important;
+}
+
+.cyber-empty-card {
+    background-color: #24272a !important;
+    border: 1px solid #3a3f44 !important;
+    border-radius: 2px !important;
+    margin-top: 15px;
+}
+</style>
