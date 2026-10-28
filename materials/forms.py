@@ -16,6 +16,7 @@ class SearchForm(forms.Form):
         label="รหัสวิชา",
         max_length=10,
         widget=forms.TextInput(attrs={"class": "form-control"}),
+        error_messages={"required": "กรุณาระบุรหัสวิชา"},
     )
     department = forms.ModelChoiceField(
         label="ภาควิชา",
