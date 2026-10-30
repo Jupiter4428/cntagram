@@ -10,6 +10,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import UserRole
+from accounts.services import remove_moderator
 
 from ..forms import ReviewForm
 from ..models import Approval, Document
@@ -197,6 +198,19 @@ class ApprovalServiceTests(ApprovalBaseTestCase):
                 decision=Approval.Decision.APPROVED,
             )
 
+    def test_removed_moderator_cannot_review(self):
+        doc_cn = self.create_document(batch_course=self.bc_cn)
+        remove_moderator(
+            user_role=UserRole.objects.get(user=self.mod_cn, role=self.role_moderator)
+        )
+
+        with self.assertRaises(PermissionDenied):
+            review_document(
+                document=doc_cn,
+                approver=self.mod_cn,
+                decision=Approval.Decision.APPROVED,
+            )
+
     def test_approve_lecture_sheet_changes_status_to_published(self):
         doc = self.create_document(doc_type=self.doc_type_summary)
 
@@ -316,6 +330,22 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         review_url = reverse("materials:approval_review", kwargs={"document_id": doc_cn.pk})
         response = self.client.get(review_url)
         # Cannot distinguish other dept from non-existent document
+        self.assertEqual(response.status_code, 404)
+
+    def test_moderator_removed_from_one_dept_gets_404_from_its_review_doc(self):
+        doc_cn = self.create_document(batch_course=self.bc_cn)
+        UserRole.objects.create(
+            user=self.mod_cn, role=self.role_moderator, department=self.dept_me
+        )
+        remove_moderator(
+            user_role=UserRole.objects.get(
+                user=self.mod_cn, role=self.role_moderator, department=self.dept_cn
+            )
+        )
+        self.client.force_login(self.mod_cn)
+
+        review_url = reverse("materials:approval_review", kwargs={"document_id": doc_cn.pk})
+        response = self.client.get(review_url)
         self.assertEqual(response.status_code, 404)
 
     def test_approval_queue_displays_department_documents(self):
