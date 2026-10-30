@@ -1,21 +1,40 @@
-{% extends "base.html" %}
+{% extends "admin_page.html" %}
 
-{% block title %}รายการวิชา{% endblock %}
+{% block title %}รายการวิชา | CNTAGRAM{% endblock %}
 
 {% block content %}
-  <h1>รายการวิชา</h1>
+{% include "includes/_admin_messages.html" %}
 
-  {% for message in messages %}
-    <div class="alert">{{ message }}</div>
-  {% endfor %}
+<section class="retro-widget glass-module">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>CATALOG / COURSES</small><h1 class="admin-title">รายการวิชา</h1></span>
+        <span class="tech-index">{{ courses|length }} วิชา</span>
+    </div>
+    <div class="retro-widget__body module-body">
+        <div class="admin-toolbar">
+            <p class="admin-hint">วิชาหนึ่งเก็บครั้งเดียวแล้วใช้ร่วมได้หลายรุ่น ผูกวิชาเข้ารุ่นได้ที่หน้า <a href="{% url 'catalog:batch_list' %}">จัดการรุ่น</a></p>
+            <a class="admin-button admin-button--primary" href="{% url 'catalog:course_create' %}">+ เพิ่มวิชา</a>
+        </div>
 
-  <a href="{% url 'catalog:course_create' %}">เพิ่มวิชา</a>
-
-  <ul>
-    {% for course in courses %}
-      <li>{{ course.code }} {{ course.display_name }}</li>
-    {% empty %}
-      <li>ไม่มีข้อมูลวิชา</li>
-    {% endfor %}
-  </ul>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th scope="col">รหัสวิชา</th><th scope="col">ชื่อไทย</th><th scope="col">ชื่ออังกฤษ</th></tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                        <tr>
+                            <td><strong>{{ course.code }}</strong></td>
+                            <td>{{ course.name_th|default:"-" }}</td>
+                            <td>{{ course.name_en }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3">ยังไม่มีข้อมูลวิชา</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 {% endblock %}

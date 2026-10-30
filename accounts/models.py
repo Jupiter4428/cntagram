@@ -41,7 +41,7 @@ RESERVED_NICKNAMES = {
 def validate_nickname(value):
     normalized = re.sub(r"[\s_\-.]+", "", value).casefold()
     if normalized in RESERVED_NICKNAMES:
-        raise ValidationError("This nickname is reserved. Please choose another one.")
+        raise ValidationError("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น")
 
 
 class UserManager(BaseUserManager):
@@ -378,3 +378,18 @@ class UserRole(models.Model):
     def __str__(self):
         scope = f" @{self.department.code}" if self.department_id else ""
         return f"{self.user_id}:{self.role.code}{scope}"
+
+
+class UserCounter(models.Model):
+    """ยอดสะสมผู้ใช้ที่เคยถูกสร้าง มีแถวเดียว (pk=1)
+
+    signal post_save ของ User บวกทีละหนึ่ง ไม่ลดเมื่อลบผู้ใช้ (ต่างจาก Max("pk") ที่ลดเมื่อลบคนล่าสุด)
+    """
+
+    total = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "user_counter"
+
+    def __str__(self):
+        return str(self.total)

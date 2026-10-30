@@ -1,15 +1,27 @@
-{% extends "base.html" %}
+{% extends "admin_page.html" %}
 
-{% block title %}เพิ่มวิชา{% endblock %}
+{% block title %}เพิ่มวิชา | CNTAGRAM{% endblock %}
 
 {% block content %}
-  <h1>เพิ่มวิชา</h1>
+<section class="retro-widget glass-module">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>CATALOG / COURSES / NEW</small><h1 class="admin-title">เพิ่มวิชา</h1></span>
+        <span class="tech-index">+</span>
+    </div>
+    <div class="retro-widget__body module-body">
+        {% if form.code_taken %}
+        <p class="admin-hint mb-3">ถ้ารหัสวิชามีอยู่ในระบบแล้ว ไม่ต้องสร้างใหม่ ให้<a href="{% url 'catalog:batch_list' %}">ผูกวิชาเดิมเข้ารุ่น</a>ที่หน้าจัดการวิชาในรุ่นแทน</p>
+        {% endif %}
 
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">บันทึก</button>
-  </form>
-
-  <a href="{% url 'catalog:course_list' %}">กลับหน้ารายการ</a>
+        <form class="admin-form" method="post">
+            {% csrf_token %}
+            {% include "includes/_admin_form_fields.html" %}
+            <div class="admin-form__buttons">
+                <button class="admin-button admin-button--primary" type="submit">บันทึก</button>
+                <a class="admin-button" href="{% url 'catalog:course_list' %}">ยกเลิก</a>
+            </div>
+        </form>
+    </div>
+</section>
 {% endblock %}

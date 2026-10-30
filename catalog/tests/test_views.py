@@ -1,56 +1,11 @@
-from django.test import TestCase
-
-# Create your tests here.
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
-from django.test import Client, TestCase
 from django.urls import reverse
-from django.utils import timezone
 
-from accounts.models import Role, UserRole
 from catalog.models import Batch, BatchCourse, Course, Department
 
+from .base import CatalogTestCase
+
 User = get_user_model()
-
-
-class CatalogTestCase(TestCase):
-    """setUp ร่วม: ภาค CN, นักศึกษาทั่วไป และ Super Admin"""
-
-    def setUp(self):
-        self.client = Client()
-        self.now = timezone.now()
-
-        # สร้าง Role พื้นฐานโดยใช้ Role constants
-        self.role_student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
-        self.role_super_admin, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
-
-        # สร้างภาควิชาตั้งต้น
-        self.dept_cn = Department.objects.create(
-            code="CN",
-            name_th="วิศวกรรมคอมพิวเตอร์",
-            name_en="Computer Engineering",
-        )
-
-        # นักศึกษาทั่วไป
-        self.student = User.objects.create_user(
-            email="6810610001@student.tu.ac.th",
-            password="password123",
-            nickname="student_test",
-            department=self.dept_cn,
-            pdpa_consent_at=self.now,
-        )
-        UserRole.objects.create(user=self.student, role=self.role_student)
-
-        # Super Admin
-        self.admin = User.objects.create_user(
-            email="6810610002@student.tu.ac.th",
-            password="password123",
-            nickname="admin_test",
-            department=self.dept_cn,
-            is_superuser=True,
-            pdpa_consent_at=self.now,
-        )
-        UserRole.objects.create(user=self.admin, role=self.role_super_admin)
 
 
 class DepartmentTests(CatalogTestCase):
@@ -129,22 +84,6 @@ class DepartmentTests(CatalogTestCase):
         self.assertTrue(Department.objects.filter(code="CE").exists())
         self.assertContains(response, "ลบไม่ได้ เพราะยังมีผู้ใช้สังกัดภาคนี้อยู่")
 
-    def test_seed_commands_idempotent(self):
-        """คำสั่ง seed_roles และ seed_catalog ต้องรันซ้ำได้โดยไม่สร้างข้อมูลซ้ำซ้อน"""
-        call_command("seed_roles")
-        call_command("seed_roles")
-        call_command("seed_catalog")
-        call_command("seed_catalog")
-
-        self.assertEqual(Role.objects.count(), 4)
-        self.assertEqual(Department.objects.count(), 4)
-        # รุ่นตัวอย่าง CN21-CN25 ใช้วิชาชุดเดียวกัน 4 วิชา (ไม่สร้างวิชาซ้ำต่อรุ่น)
-        self.assertEqual(
-            [b.code for b in Batch.objects.all()], ["CN21", "CN22", "CN23", "CN24", "CN25"]
-        )
-        self.assertEqual(Course.objects.count(), 4)
-        self.assertEqual(BatchCourse.objects.count(), 5 * 4)
-
 
 class BatchTests(CatalogTestCase):
     def test_create_batch_builds_code_from_department(self):
@@ -169,6 +108,20 @@ class BatchTests(CatalogTestCase):
         )
         self.assertEqual(Batch.objects.filter(department=self.dept_cn, number=21).count(), 1)
         self.assertFormError(response.context["form"], None, "รุ่นนี้มีอยู่แล้ว")
+        self.assertContains(response, "รุ่นนี้มีอยู่แล้ว")
+
+    def test_batch_list_groups_batches_under_their_department(self):
+        """หน้ารายการรุ่นแยกตามภาควิชา: รุ่นของแต่ละภาคอยู่ใต้ชื่อภาคนั้น"""
+        dept_ee = Department.objects.create(code="EE", name_th="วิศวกรรมไฟฟ้า", name_en="Electrical Engineering")
+        Batch.objects.create(department=dept_ee, number=24)
+        Batch.objects.create(department=self.dept_cn, number=21)
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("catalog:batch_list"))
+
+        html = response.content.decode()
+        positions = [html.index(text) for text in ["วิศวกรรมคอมพิวเตอร์", "CN21", "วิศวกรรมไฟฟ้า", "EE24"]]
+        self.assertEqual(positions, sorted(positions))
 
     def test_delete_empty_batch(self):
         """ลบรุ่นที่ยังไม่มีวิชาได้"""
@@ -233,6 +186,49 @@ class CourseTests(CatalogTestCase):
         )
         self.assertEqual(Course.objects.filter(code="CN200").count(), 1)
         self.assertFormError(response.context["form"], "code", "รหัสวิชานี้มีอยู่ในระบบแล้ว")
+        self.assertContains(response, "รหัสวิชานี้มีอยู่ในระบบแล้ว")
+
+    def test_empty_course_form_has_no_bind_hint(self):
+        """ฟอร์มเพิ่มวิชาที่ยังไม่กรอก ไม่แสดงคำแนะนำให้ผูกวิชาเดิม"""
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("catalog:course_create"))
+
+        self.assertNotContains(response, "ผูกวิชาเดิมเข้ารุ่น")
+
+    def test_duplicate_course_code_shows_bind_hint(self):
+        """รหัสวิชาซ้ำ → แนะนำให้ไปผูกวิชาเดิมเข้ารุ่นแทนการสร้างใหม่"""
+        Course.objects.create(code="CN200", name_en="Discrete Mathematics")
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("catalog:course_create"),
+            {"code": "CN200", "name_th": "", "name_en": "Discrete Math 2"},
+        )
+
+        self.assertContains(response, "ผูกวิชาเดิมเข้ารุ่น")
+
+    def test_missing_course_code_has_no_bind_hint(self):
+        """ไม่กรอกรหัสวิชา → แจ้ง error ของช่องนั้น แต่ไม่แนะนำให้ผูกวิชาเดิม"""
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            reverse("catalog:course_create"),
+            {"code": "", "name_th": "", "name_en": "Discrete Mathematics"},
+        )
+
+        self.assertFormError(response.context["form"], "code", "This field is required.")
+        self.assertNotContains(response, "ผูกวิชาเดิมเข้ารุ่น")
+
+    def test_course_list_shows_thai_and_english_names(self):
+        """หน้ารายการวิชาแสดงทั้งชื่อไทยและชื่ออังกฤษ"""
+        Course.objects.create(code="CN200", name_th="คณิตศาสตร์ดิสครีต", name_en="Discrete Mathematics")
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("catalog:course_list"))
+
+        self.assertContains(response, "คณิตศาสตร์ดิสครีต")
+        self.assertContains(response, "Discrete Mathematics")
 
 
 class BatchCourseTests(CatalogTestCase):
@@ -269,6 +265,7 @@ class BatchCourseTests(CatalogTestCase):
 
         self.assertEqual(BatchCourse.objects.filter(batch=self.cn21).count(), 1)
         self.assertFormError(response.context["form"], "course", "วิชานี้อยู่ในรุ่นนี้แล้ว")
+        self.assertContains(response, "วิชานี้อยู่ในรุ่นนี้แล้ว")
 
     def test_remove_course_from_batch_keeps_course(self):
         """ถอด CN200 ออกจาก CN21 → CN22 ยังมี CN200 และข้อมูลวิชายังอยู่"""
@@ -300,57 +297,25 @@ class BatchCourseTests(CatalogTestCase):
             self.client.get(reverse("catalog:batch_course_manage", args=[self.cn21.pk]))
 
 
-class CatalogAdminTests(TestCase):
-    """Django admin ของ catalog (TD-3)"""
+class AdminSidebarTests(CatalogTestCase):
+    def test_every_catalog_page_shows_the_admin_sidebar(self):
+        batch = Batch.objects.create(department=self.dept_cn, number=21)
+        pages = [
+            ("catalog:department_list", []),
+            ("catalog:department_create", []),
+            ("catalog:department_update", [self.dept_cn.pk]),
+            ("catalog:department_delete", [self.dept_cn.pk]),
+            ("catalog:batch_list", []),
+            ("catalog:batch_create", []),
+            ("catalog:batch_delete", [batch.pk]),
+            ("catalog:batch_course_manage", [batch.pk]),
+            ("catalog:course_list", []),
+            ("catalog:course_create", []),
+        ]
+        self.client.force_login(self.admin)
+        for url_name, args in pages:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name, args=args))
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.dept_cn = Department.objects.create(
-            code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
-        )
-        cls.superuser = User.objects.create_superuser(
-            email="admin@example.com",
-            password="admin-password",
-            nickname="Admin",
-            department=cls.dept_cn,
-        )
-
-    def setUp(self):
-        self.client.force_login(self.superuser)
-
-    def test_changelist_opens_for_every_catalog_model(self):
-        for model in ("department", "batch", "course", "batchcourse", "systemsetting"):
-            with self.subTest(model=model):
-                response = self.client.get(reverse(f"admin:catalog_{model}_changelist"))
-                self.assertEqual(response.status_code, 200)
-
-    def _make_batch_course_in_new_department(self, n):
-        department = Department.objects.create(
-            code=f"D{n}", name_th=f"ภาค {n}", name_en=f"Department {n}"
-        )
-        batch = Batch.objects.create(department=department, number=n)
-        course = Course.objects.create(code=f"CN{n}00", name_en=f"Course {n}")
-        return BatchCourse.objects.create(batch=batch, course=course)
-
-    def test_batch_changelist_has_no_n_plus_1(self):
-        for n in range(1, 4):
-            self._make_batch_course_in_new_department(n)
-
-        with self.assertNumQueries(6):
-            self.client.get(reverse("admin:catalog_batch_changelist"))
-
-    def test_batchcourse_changelist_has_no_n_plus_1(self):
-        for n in range(1, 4):
-            self._make_batch_course_in_new_department(n)
-
-        with self.assertNumQueries(6):
-            self.client.get(reverse("admin:catalog_batchcourse_changelist"))
-
-    def test_admin_saves_course_code_in_upper_case(self):
-        response = self.client.post(
-            reverse("admin:catalog_course_add"),
-            {"code": "cn101", "name_th": "", "name_en": "Programming"},
-        )
-
-        self.assertRedirects(response, reverse("admin:catalog_course_changelist"))
-        self.assertTrue(Course.objects.filter(code="CN101").exists())
+                self.assertTemplateUsed(response, "includes/_admin_sidebar.html")
+                self.assertTemplateNotUsed(response, "includes/_sidebar.html")

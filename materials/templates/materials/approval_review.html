@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}พิจารณาเอกสาร: {{ document.title }} | CNTAGRAM{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'materials/vault.css' %}">{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+        <!-- Breadcrumb & Header -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'materials:approval_queue' %}" class="text-decoration-none">คิวรออนุมัติ</a></li>
+                <li class="breadcrumb-item active" aria-current="page">พิจารณาเอกสาร #{{ document.id }}</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold mb-1">พิจารณาอนุมัติเอกสาร</h1>
+                <p class="text-muted mb-0">ตรวจสอบความถูกต้องและเนื้อหาของชีทสรุป/สไลด์ก่อนเผยแพร่สู่คลังเอกสาร</p>
+            </div>
+            <div>
+                {% if document.status == 'pending' %}
+                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">สถานะ: รอพิจารณา (Pending)</span>
+                {% elif document.status == 'published' %}
+                    <span class="badge bg-success fs-6 px-3 py-2">สถานะ: เผยแพร่แล้ว (Published)</span>
+                {% elif document.status == 'rejected' %}
+                    <span class="badge bg-danger fs-6 px-3 py-2">สถานะ: ถูกปฏิเสธ (Rejected)</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Document Details & File Card -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h2 class="h5 fw-bold mb-0 text-dark">ข้อมูลเอกสาร</h2>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="text-muted small fw-semibold d-block">ชื่อเอกสาร</label>
+                            <div class="fs-5 fw-bold text-dark">{{ document.title }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="text-muted small fw-semibold d-block">คำอธิบาย</label>
+                            <div class="bg-light p-3 rounded-2 text-secondary" style="white-space: pre-wrap;">{{ document.description|default:"(ไม่มีคำอธิบาย)" }}</div>
+                        </div>
+
+                        <div class="row g-3 pt-2">
+                            <div class="col-sm-6">
+                                <label class="text-muted small fw-semibold d-block">รายวิชา</label>
+                                <div class="fw-semibold text-primary">
+                                    {{ document.batch_course.course.code }} - {{ document.batch_course.course.display_name }}
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small fw-semibold d-block">ภาควิชา และ รุ่น</label>
+                                <div>
+                                    <span class="badge bg-info-subtle text-info-emphasis">
+                                        {{ document.batch_course.batch.department.code }} ({{ document.batch_course.batch.department.name_th }})
+                                    </span>
+                                    <span class="ms-1 fw-semibold">รุ่น {{ document.batch_course.batch.number }}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small fw-semibold d-block">ประเภทเอกสาร</label>
+                                <span class="badge bg-light text-dark border">
+                                    {{ document.doc_type.name_th }} ({{ document.doc_type.code }})
+                                </span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small fw-semibold d-block">ผู้อัปโหลด</label>
+                                <span class="fw-medium text-dark">{{ document.uploader.nickname }}</span>
+                                <small class="text-muted">({{ document.uploader.department.code }})</small>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small fw-semibold d-block">วันที่ส่งเอกสาร</label>
+                                <span class="text-muted">{{ document.created_at|date:"d F Y, H:i" }} น.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Info Card -->
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h2 class="h5 fw-bold mb-0 text-dark">ไฟล์แนบ (Current Version)</h2>
+                    </div>
+                    <div class="card-body p-4">
+                        {% if document.current_version %}
+                            <div class="d-flex align-items-center p-3 border rounded-3 bg-light">
+                                <div class="display-6 me-3 text-primary">📄</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-dark text-break">{{ document.current_version.original_name }}</div>
+                                    <div class="small text-muted">
+                                        เวอร์ชัน: v{{ document.current_version.version_no }} | 
+                                        ขนาด: {{ document.current_version.size_bytes|filesizeformat }} |
+                                        อัปโหลด: {{ document.current_version.uploaded_at|date:"d M Y, H:i" }}
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        SHA256: <code class="text-muted">{{ document.current_version.sha256|truncatechars:24 }}</code>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">ยังไม่มีไฟล์ในเวอร์ชันปัจจุบัน</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if document.current_version %}
+                    <!-- PDF Preview (ส่งผ่าน view ที่ตรวจสิทธิ์ ไม่มี Direct URL ของไฟล์) -->
+                    <section class="card border-0 shadow-sm rounded-3 mt-4 document-vault" aria-labelledby="preview-heading">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-0 text-dark" id="preview-heading">ตัวอย่างเอกสาร PDF</h2>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="border rounded overflow-hidden bg-white">
+                                <iframe src="{% url 'materials:approval_preview' document.pk %}" title="ตัวอย่าง PDF: {{ document.title }}" class="dv-preview" loading="lazy"></iframe>
+                            </div>
+                            <p class="small text-secondary mt-2 mb-0">หากตัวอย่างไม่แสดง อาจเป็นเพราะไฟล์ยังไม่พร้อมหรือเบราว์เซอร์ไม่รองรับ PDF</p>
+                        </div>
+                    </section>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Review Action Form Card -->
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-3 sticky-top" style="top: 1.5rem;">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h2 class="h5 fw-bold mb-0 text-dark">แบบฟอร์มการพิจารณา</h2>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" action="{% url 'materials:approval_review' document.id %}" novalidate>
+                            {% csrf_token %}
+
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger" role="alert">
+                                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <label class="form-label fw-bold mb-2">เลือกผลการพิจารณา <span class="text-danger">*</span></label>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="decision" id="decision_approved" value="approved" {% if form.decision.value == 'approved' %}checked{% endif %}>
+                                    <label class="btn btn-outline-success w-100 py-3 fw-bold d-flex flex-column align-items-center justify-content-center gap-1 rounded-3" for="decision_approved">
+                                        <span class="fs-4">✅</span>
+                                        <span>อนุมัติ (Approve)</span>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="decision" id="decision_rejected" value="rejected" {% if form.decision.value == 'rejected' %}checked{% endif %}>
+                                    <label class="btn btn-outline-danger w-100 py-3 fw-bold d-flex flex-column align-items-center justify-content-center gap-1 rounded-3" for="decision_rejected">
+                                        <span class="fs-4">❌</span>
+                                        <span>ปฏิเสธ (Reject)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            {% if form.decision.errors %}
+                                <div class="text-danger small mb-3">
+                                    {% for error in form.decision.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold" for="{{ form.reason.id_for_label }}">
+                                    {{ form.reason.label }}
+                                    <span class="text-danger fw-normal" id="reason-required-hint" style="display: none;">*(จำเป็นต้องระบุ)</span>
+                                </label>
+                                {{ form.reason }}
+                                {% if form.reason.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.reason.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text mt-1 text-muted small">
+                                    กรณีปฏิเสธ ต้องระบุเหตุผลเพื่อแจ้งให้ผู้อัปโหลดทราบและแก้ไข
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg fw-semibold shadow-sm">
+                                    บันทึกผลการพิจารณา
+                                </button>
+                                <a href="{% url 'materials:approval_queue' %}" class="btn btn-outline-secondary">
+                                    ยกเลิก / กลับไปหน้ารายการ
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const approveRadio = document.getElementById('decision_approved');
+        const rejectRadio = document.getElementById('decision_rejected');
+        const reasonHint = document.getElementById('reason-required-hint');
+        const reasonInput = document.getElementById('{{ form.reason.id_for_label }}');
+
+        function updateState() {
+            if (rejectRadio && rejectRadio.checked) {
+                if (reasonHint) reasonHint.style.display = 'inline';
+                if (reasonInput) reasonInput.setAttribute('placeholder', 'ระบุเหตุผลที่ปฏิเสธเอกสารนี้ (บังคับกรอก)');
+            } else {
+                if (reasonHint) reasonHint.style.display = 'none';
+                if (reasonInput) reasonInput.setAttribute('placeholder', 'ระบุเหตุผล (บังคับกรอกกรณีปฏิเสธ)');
+            }
+        }
+
+        if (approveRadio) approveRadio.addEventListener('change', updateState);
+        if (rejectRadio) rejectRadio.addEventListener('change', updateState);
+        updateState();
+    });
+</script>
+{% endblock %}
