@@ -2,12 +2,26 @@ from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 
-from .models import Document, DocType, DocumentVersion, ExamDetail, ExamPeriod
+from .models import (
+    Approval,
+    Document,
+    DocType,
+    DocTypeRequiredRole,
+    DocumentVersion,
+    ExamDetail,
+    ExamPeriod,
+)
+
+
+class DocTypeRequiredRoleInline(admin.TabularInline):
+    model = DocTypeRequiredRole
+    extra = 0
 
 
 @admin.register(DocType)
 class DocTypeAdmin(admin.ModelAdmin):
     list_display = ["code", "name_th", "vault"]
+    inlines = [DocTypeRequiredRoleInline]
 
 
 @admin.register(ExamPeriod)
@@ -66,4 +80,24 @@ class DocumentAdmin(admin.ModelAdmin):
     ]
     search_fields = ["title"]
     autocomplete_fields = ["batch_course", "uploader"]
+    # เปลี่ยนสถานะได้ทาง review_document เท่านั้น ซึ่งเช็ก role และบันทึก Approval ให้
+    readonly_fields = ["status"]
     inlines = [ExamDetailInline, DocumentVersionInline]
+
+
+@admin.register(Approval)
+class ApprovalAdmin(admin.ModelAdmin):
+    """ดูได้อย่างเดียว ผลอนุมัติต้องเกิดจาก review_document ซึ่งเช็ก role ให้"""
+
+    list_display = ["document", "approver", "approver_role", "decision", "decided_at"]
+    list_filter = ["decision", "approver_role"]
+    list_select_related = ["document", "approver", "approver_role"]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

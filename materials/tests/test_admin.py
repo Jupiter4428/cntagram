@@ -3,9 +3,18 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.models import Role
 from catalog.models import Batch, BatchCourse, Course, Department
 
-from ..models import Document, DocType, DocumentVersion, ExamDetail, ExamPeriod
+from ..models import (
+    Approval,
+    Document,
+    DocType,
+    DocTypeRequiredRole,
+    DocumentVersion,
+    ExamDetail,
+    ExamPeriod,
+)
 
 User = get_user_model()
 
@@ -123,3 +132,89 @@ class MaterialsAdminTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("doc_type", response.context["adminform"].form.errors)
+
+    def test_admin_sets_approval_rule_on_doc_type_page(self):
+        moderator = Role.objects.get(code=Role.MODERATOR)
+
+        response = self.client.post(
+            reverse("admin:materials_doctype_change", args=[self.doc_type.pk]),
+            {
+                "code": self.doc_type.code,
+                "name_th": self.doc_type.name_th,
+                "vault": self.doc_type.vault,
+                "required_roles-TOTAL_FORMS": "1",
+                "required_roles-INITIAL_FORMS": "0",
+                "required_roles-0-role": moderator.pk,
+                "required_roles-0-mode": DocTypeRequiredRole.Mode.ANY,
+            },
+        )
+
+        self.assertRedirects(response, reverse("admin:materials_doctype_changelist"))
+        self.assertTrue(
+            DocTypeRequiredRole.objects.filter(doc_type=self.doc_type, role=moderator).exists()
+        )
+
+    def _approve(self, document):
+        return Approval.objects.create(
+            document=document,
+            approver=self.superuser,
+            approver_role=Role.objects.get(code=Role.SUPER_ADMIN),
+            decision=Approval.Decision.APPROVED,
+        )
+
+    def test_approval_changelist_has_no_n_plus_1(self):
+        for document in (self.document, self._make_document(2), self._make_document(3)):
+            self._approve(document)
+
+        with self.assertNumQueries(6):
+            response = self.client.get(reverse("admin:materials_approval_changelist"))
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_approval_cannot_be_added_through_admin(self):
+        response = self.client.get(reverse("admin:materials_approval_add"))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_approval_cannot_be_changed_through_admin(self):
+        approval = self._approve(self.document)
+
+        response = self.client.post(
+            reverse("admin:materials_approval_change", args=[approval.pk]),
+            {"decision": Approval.Decision.REJECTED, "reason": "edited"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        approval.refresh_from_db()
+        self.assertEqual(approval.decision, Approval.Decision.APPROVED)
+
+    def test_approval_cannot_be_deleted_through_admin(self):
+        approval = self._approve(self.document)
+
+        response = self.client.post(
+            reverse("admin:materials_approval_delete", args=[approval.pk]), {"post": "yes"}
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Approval.objects.filter(pk=approval.pk).exists())
+
+    def test_admin_cannot_change_document_status(self):
+        response = self.client.post(
+            reverse("admin:materials_document_change", args=[self.document.pk]),
+            {
+                "batch_course": self.document.batch_course_id,
+                "doc_type": self.doc_type.pk,
+                "uploader": self.document.uploader_id,
+                "title": self.document.title,
+                "description": self.document.description,
+                "status": Document.Status.PUBLISHED,
+                "exam_detail-TOTAL_FORMS": "0",
+                "exam_detail-INITIAL_FORMS": "0",
+                "versions-TOTAL_FORMS": "0",
+                "versions-INITIAL_FORMS": "0",
+            },
+        )
+
+        self.assertRedirects(response, reverse("admin:materials_document_changelist"))
+        self.document.refresh_from_db()
+        self.assertEqual(self.document.status, Document.Status.PENDING)
