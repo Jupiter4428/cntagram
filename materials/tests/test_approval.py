@@ -540,8 +540,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         # 6. moderator department ids query
         # 7. main document query with all select_related joins
         # 8. document_version prefetch_related
+        # 9-13. batched approval progress, reviewer roles and decisions.
         # No N+1 queries when rendering documents.
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(13):
             response = self.client.get(self.queue_url)
             self.assertEqual(response.status_code, 200)
 
@@ -552,7 +553,7 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
                 title=f"Bulk Doc {i}",
             )
 
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(13):
             response = self.client.get(self.queue_url)
             self.assertEqual(response.status_code, 200)
 
