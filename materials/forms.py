@@ -104,6 +104,15 @@ class ReviewForm(forms.Form):
         label="เหตุผลประกอบการพิจารณา",
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.is_bound and self.data.get("decision") == Approval.Decision.REJECTED and not (self.data.get("reason") or "").strip():
+            self.fields["reason"].widget.attrs.update({
+                "class": "form-control is-invalid",
+                "aria-invalid": "true",
+                "aria-describedby": "reason-errors",
+            })
+
     def clean(self):
         cleaned_data = super().clean()
         decision = cleaned_data.get("decision")

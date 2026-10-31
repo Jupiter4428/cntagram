@@ -141,25 +141,21 @@
                                 </div>
                             {% endif %}
 
-                            <label class="form-label fw-bold mb-2">เลือกผลการพิจารณา <span class="text-danger">*</span></label>
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <input type="radio" class="btn-check" name="decision" id="decision_approved" value="approved" {% if form.decision.value == 'approved' %}checked{% endif %}>
-                                    <label class="btn approval-radio w-100 py-3 fw-bold d-flex flex-column align-items-center justify-content-center gap-1 rounded-3" for="decision_approved">
-                                        <span class="fs-4">✅</span>
-                                        <span>อนุมัติ (Approve)</span>
-                                    </label>
+                            <fieldset class="mb-3" {% if form.decision.errors %}aria-describedby="decision-errors"{% endif %}>
+                                <legend class="form-label fw-bold mb-2 fs-6">{{ form.decision.label }} <span class="text-danger" aria-hidden="true">*</span></legend>
+                                <div class="row g-2">
+                                    {% for radio in form.decision %}
+                                        <div class="col-6">
+                                            <div class="form-check approval-choice">
+                                                {{ radio.tag }}
+                                                <label class="btn approval-radio w-100 py-3 fw-bold rounded-3" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                                <div class="col-6">
-                                    <input type="radio" class="btn-check" name="decision" id="decision_rejected" value="rejected" {% if form.decision.value == 'rejected' %}checked{% endif %}>
-                                    <label class="btn approval-radio w-100 py-3 fw-bold d-flex flex-column align-items-center justify-content-center gap-1 rounded-3" for="decision_rejected">
-                                        <span class="fs-4">❌</span>
-                                        <span>ปฏิเสธ (Reject)</span>
-                                    </label>
-                                </div>
-                            </div>
+                            </fieldset>
                             {% if form.decision.errors %}
-                                <div class="text-danger small mb-3">
+                                <div id="decision-errors" class="text-danger small mb-3" role="alert">
                                     {% for error in form.decision.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
@@ -171,7 +167,7 @@
                                 </label>
                                 {{ form.reason }}
                                 {% if form.reason.errors %}
-                                    <div class="invalid-feedback d-block">
+                                    <div id="reason-errors" class="invalid-feedback d-block" role="alert">
                                         {% for error in form.reason.errors %}{{ error }}{% endfor %}
                                     </div>
                                 {% endif %}

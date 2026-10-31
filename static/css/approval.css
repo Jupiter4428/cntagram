@@ -12,7 +12,10 @@
 .approval-page .approval-secondary { border: 2px solid #731215; color: #731215; background: #fff; font-weight: 700; }
 .approval-page .approval-secondary:hover, .approval-page .approval-secondary:focus-visible { background: #731215; color: #fff; }
 .approval-page .approval-radio { border: 2px solid #731215; color: #731215; background: #fff; }
-.approval-page .btn-check:checked + .approval-radio { background: #731215; color: #fff; }
+.approval-page .approval-choice { padding-left: 0; position: relative; }
+.approval-page .approval-choice .form-check-input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.approval-page .approval-choice .form-check-input:checked + .approval-radio { background: #731215; color: #fff; }
+.approval-page .approval-choice .form-check-input:focus-visible + .approval-radio { outline: 3px solid #155e9b; outline-offset: 2px; }
 .approval-page .approval-description { white-space: pre-wrap; background: #f5f5f5; color: #303030; padding: 1rem; border-radius: .4rem; }
 .approval-page .approval-muted, .approval-page .approval-meta-label { color: #51565c; }
 .approval-page .approval-link { color: #731215; }
