@@ -297,6 +297,9 @@ class DownloadLog(models.Model):
             models.Index(fields=["document", "downloaded_at"], name="idx_download_doc_time"),
         ]
 
+    def __str__(self):
+        return f"{self.document_id} downloaded by {self.user_id}"
+
 
 class Approval(models.Model):
     class Decision(models.TextChoices):

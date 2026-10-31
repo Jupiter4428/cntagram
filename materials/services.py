@@ -9,7 +9,13 @@ from django.db import transaction
 from accounts.models import Role, UserRole
 
 from . import selectors
-from .models import Approval, DocType, Document, ExamDetail, max_upload_mb
+from .models import Approval, DocType, Document, DownloadLog, ExamDetail, max_upload_mb
+
+
+@transaction.atomic
+def record_download(*, document, user):
+    """Persist a successful protected download through the service layer."""
+    return DownloadLog.objects.create(document=document, user=user)
 
 PDF_MIME = "application/pdf"
 PDF_MAGIC = b"%PDF-"

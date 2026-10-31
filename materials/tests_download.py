@@ -42,6 +42,12 @@ class ProtectedDownloadTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(DownloadLog.objects.count(), 0)
 
+    def test_head_request_does_not_create_download_log(self):
+        self.client.force_login(self.user)
+        response = self.client.head(self.url)
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(DownloadLog.objects.count(), 0)
+
     def test_pending_cannot_download(self):
         self.document.status = "pending"
         self.document.save(update_fields=["status"])

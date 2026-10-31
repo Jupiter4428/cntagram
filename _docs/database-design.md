@@ -383,7 +383,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 - **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting
   *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้)*
   ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4)
-- **Sprint 1 (ยังไม่สร้าง):** approval (US-6), doc_type_required_role (US-9), download_log (US-8)
+- **Sprint 1:** approval (US-6), doc_type_required_role (US-9), download_log (US-8) มี migration แล้วในโค้ดของแต่ละฟีเจอร์
 - **ถัดไป:** audit_log (US-24), report (US-31)
 - **ภายหลัง:** comment / rating (US-28 – US-30), email verification token (US-11), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
 
