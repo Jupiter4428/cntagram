@@ -23,6 +23,11 @@ def published_documents():
     )
 
 
+def published_document_with_download_count():
+    """Published documents with download counts, without an extra detail query."""
+    return published_documents().annotate(download_count=Count("download_logs"))
+
+
 def search_documents(*, course_code, department=None, batch=None, doc_type=None):
     """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น กรองเพิ่มด้วย ภาค/รุ่น/ประเภท ได้
 

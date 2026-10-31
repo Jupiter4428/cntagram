@@ -76,8 +76,14 @@ class ProtectedDownloadTests(TestCase):
                 self.assertIn("attachment", response["Content-Disposition"])
                 self.assertEqual(b"".join(response.streaming_content), content)
                 self.assertEqual(DownloadLog.objects.filter(document=self.document).count(), 1)
-                detail = self.client.get(reverse("materials:document_detail", args=[self.document.pk]))
-                self.assertContains(detail, "ดาวน์โหลดแล้ว 1 ครั้ง")
+                self.assertEqual(response["Cache-Control"], "private, no-store")
+
+    def test_document_detail_shows_download_count(self):
+        self.client.force_login(self.user)
+        DownloadLog.objects.create(document=self.document, user=self.user)
+        detail = self.client.get(reverse("materials:document_detail", args=[self.document.pk]))
+        self.assertContains(detail, "ดาวน์โหลดแล้ว 1 ครั้ง")
+        self.assertEqual(DownloadLog.objects.count(), 1)
 
     def test_guest_detail_does_not_download_or_log(self):
         detail_url = reverse("materials:document_detail", args=[self.document.pk])
