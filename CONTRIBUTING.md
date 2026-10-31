@@ -32,6 +32,10 @@
 
 ---
 
+## การป้องกัน Guest (Issue #45)
+
+ทุก view ใหม่ต้อง Login โดยอัตโนมัติผ่าน `django.contrib.auth.middleware.LoginRequiredMiddleware` ใน `portal/settings.py` ไม่ต้องใส่ `@login_required` ทีละ view หากตั้งใจเปิดให้ Guest เข้าถึง ให้ติด `@login_not_required` จาก `django.contrib.auth.decorators` อย่างชัดเจน และเพิ่มเทสต์ยืนยันการเข้าถึง ทั้งนี้ยังต้องตรวจสิทธิ์ตาม Role ภายใน view หรือ service ตามปกติ
+
 ## Scrum ของทีมเรา
 
 ### ทีมและบทบาท
