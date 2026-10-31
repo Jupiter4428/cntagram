@@ -23,6 +23,7 @@ US-7 ต้องให้ผู้ใช้กดเปิดอ่าน PDF �
 
 ## Consequences
 - ทุกคำขอไฟล์ผ่าน Django จึงตรวจสิทธิ์ได้ครบ แต่ต้องแลกกับ worker ที่ถูกใช้ระหว่างส่งไฟล์ ซึ่งรับได้กับขนาดไฟล์ ≤ 50 MB และจำนวนผู้ใช้ระดับคณะ
-- ตอนนี้ยังไม่เช็ก `DocumentVersion.scan_status` และยังไม่ตรวจว่าไฟล์เป็น PDF จริง เพราะตัวสแกนเป็นงานของ US-21 จึงทิ้ง TODO ไว้ใน view และ US-21 ต้องปิดสองเรื่องนี้
+- ตอนอัปโหลด (US-5) ตรวจแล้วว่าไฟล์เป็น PDF จริง (MIME ที่ browser ส่งมา + magic bytes `%PDF-`) แต่ยังไม่เช็ก `DocumentVersion.scan_status` เพราะตัวสแกนเป็นงานของ US-21 จึงทิ้ง TODO ไว้ใน view และ US-21 ต้องปิดเรื่องนี้
+- ไฟล์ที่เกิน `max_upload_mb` ถูก `MaxSizeUploadHandler` ข้ามตั้งแต่ตอนรับ จึงไม่ลง temp file ทั้งก้อน แต่ Django ยังอ่าน byte ที่เหลือของ request ทิ้งจนจบ ตอน deploy (SP-4) ต้องตั้งเพดานขนาด request ที่ web server ด้วย (เช่น `client_max_body_size` ของ nginx ให้เกิน 50 MB เล็กน้อย)
 - US-8 (ดาวน์โหลด + นับสถิติ) ต้องใช้รูปแบบเดียวกัน คือ view ที่ตรวจสิทธิ์ แล้วส่ง `FileResponse` แบบ attachment
 - ตอน deploy (SP-4) ให้ทบทวนว่าจะเปลี่ยนไปใช้ `X-Accel-Redirect` หรือ signed URL หรือไม่ ถ้าเปลี่ยนให้เขียน ADR ใหม่มาแทนฉบับนี้

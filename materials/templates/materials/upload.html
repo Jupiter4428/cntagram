@@ -105,7 +105,7 @@
 
     <div class="upload-field">
       <label for="id_description">รายละเอียด</label>
-      <textarea name="description" id="id_description" rows="5" required>{{ form.description.value|default:'' }}</textarea>
+      <textarea name="description" id="id_description" rows="5">{{ form.description.value|default:'' }}</textarea>
       {% include "materials/_field_errors.html" with errors=form.description.errors %}
     </div>
 

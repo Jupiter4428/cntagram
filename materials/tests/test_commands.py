@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from catalog.models import SystemSetting
 
-from ..models import DocType, ExamPeriod
+from ..models import DocType, DocTypeRequiredRole, ExamPeriod
 
 
 class SeedMaterialsCommandTests(TestCase):
@@ -29,6 +29,15 @@ class SeedMaterialsCommandTests(TestCase):
         )
         self.assertEqual(SystemSetting.get_int("max_upload_mb"), 50)
         self.assertEqual(SystemSetting.get_int("legacy_batch_max"), 23)
+
+    def test_seeds_approval_rules_for_every_doc_type(self):
+        # ไม่งั้นหลังติดตั้งใหม่จะไม่มีใครอนุมัติเอกสารได้ (US-9)
+        self.seed()
+
+        self.assertEqual(
+            set(DocTypeRequiredRole.objects.values_list("doc_type__code", flat=True)),
+            {"summary", "slide", "cheatsheet", "exam"},
+        )
 
     def test_rerun_does_not_duplicate_or_overwrite_admin_changes(self):
         self.seed()

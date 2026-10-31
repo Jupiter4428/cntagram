@@ -1,0 +1,11 @@
+[run]
+branch = True
+source = .
+omit =
+    */migrations/*
+    */tests/*
+    */tests.py
+    manage.py
+    portal/asgi.py
+    portal/wsgi.py
+    .venv/*

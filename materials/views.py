@@ -13,7 +13,12 @@ from catalog.models import Batch
 from . import selectors
 from .forms import ReviewForm, SearchForm, UploadForm
 from .models import Document, max_upload_mb
-from .services import ensure_can_upload_to, review_document, upload_document
+from .services import (
+    ensure_can_upload_to,
+    file_too_large_message,
+    review_document,
+    upload_document,
+)
 
 
 @login_required
@@ -108,10 +113,17 @@ def approval_queue(request):
 def upload(request):
     """ฟอร์มอัปโหลดชีท (US-5) ภาควิชาล็อกตามสังกัดของผู้ใช้
 
-    PermissionDenied จาก service (แก้ request ข้ามภาค) ปล่อยให้ Django ตอบ 403
+    เช็กภาคของวิชาก่อนดูผล is_valid() ให้ request ที่แก้ข้ามภาคได้ 403 เสมอ
+    แม้ช่องอื่นจะผิดด้วย (cleaned_data มีช่องที่ผ่านแล้วแม้ฟอร์มรวมไม่ผ่าน)
     """
     form = UploadForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
+    if getattr(request, "upload_too_large", False):  # MaxSizeUploadHandler ข้ามไฟล์ไปแล้ว
+        form.fields["file"].error_messages["required"] = file_too_large_message()
+    is_valid = request.method == "POST" and form.is_valid()
+    batch_course = form.cleaned_data.get("batch_course") if form.is_bound else None
+    if batch_course:
+        ensure_can_upload_to(user=request.user, batch=batch_course.batch)
+    if is_valid:
         data = {k: v for k, v in form.cleaned_data.items() if k != "disclaimer"}
         try:
             upload_document(uploader=request.user, **data)
@@ -135,6 +147,7 @@ def upload(request):
 @login_required
 @require_GET
 def upload_done(request):
+    """หน้าหลังอัปโหลดสำเร็จ แจ้งว่าเอกสารรออนุมัติ (US-5)"""
     return render(request, "materials/upload_done.html")
 
 
@@ -164,6 +177,7 @@ def approval_review(request, document_id):
         raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
 
     form = ReviewForm(request.POST or None)
+    status = 200
     if request.method == "POST" and form.is_valid():
         try:
             review_document(
@@ -174,10 +188,17 @@ def approval_review(request, document_id):
             )
         except ValidationError as err:
             form.add_error(None, err)
+        except PermissionDenied as err:
+            # บอกเหตุผลบนฟอร์ม (เช่น ข้อสอบรุ่นเก่าให้ Super Admin เท่านั้น) แต่ยังตอบ 403
+            form.add_error(None, str(err))
+            status = 403
         else:
             messages.success(request, f"บันทึกผลการพิจารณาเอกสาร '{document.title}' เรียบร้อยแล้ว")
             return redirect("materials:approval_queue")
 
     return render(
-        request, "materials/approval_review.html", {"document": document, "form": form}
+        request,
+        "materials/approval_review.html",
+        {"document": document, "form": form},
+        status=status,
     )

@@ -147,6 +147,14 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # ตั้งใจไม่มี MEDIA_URL: เปิดไฟล์ได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ไม่มี Direct URL
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ข้ามไฟล์ที่เกิน max_upload_mb ตั้งแต่ตอนรับ ก่อนลง temp file ทั้งก้อน
+# มีผลกับทุกการอัปโหลดในระบบ (รวม admin) ตอนนี้มีแค่ฟอร์มอัปโหลดชีทที่รับไฟล์
+FILE_UPLOAD_HANDLERS = [
+    'materials.uploadhandlers.MaxSizeUploadHandler',
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration

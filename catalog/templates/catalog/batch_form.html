@@ -1,15 +1,25 @@
 {% extends "admin_page.html" %}
 
-{% block title %}เพิ่มรุ่น{% endblock %}
+{% block title %}เพิ่มรุ่น | CNTAGRAM{% endblock %}
 
 {% block content %}
-  <h1>เพิ่มรุ่น</h1>
+<section class="retro-widget glass-module">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>CATALOG / BATCHES / NEW</small><h1 class="admin-title">เพิ่มรุ่น</h1></span>
+        <span class="tech-index">+</span>
+    </div>
+    <div class="retro-widget__body module-body">
+        <p class="admin-hint mb-3">เลือกภาควิชาแล้วใส่เลขรุ่น ระบบสร้างรหัสรุ่นให้เอง เช่น ภาค CN รุ่น 21 ได้ CN21</p>
 
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">บันทึก</button>
-  </form>
-
-  <a href="{% url 'catalog:batch_list' %}">กลับหน้ารายการ</a>
+        <form class="admin-form" method="post">
+            {% csrf_token %}
+            {% include "includes/_admin_form_fields.html" %}
+            <div class="admin-form__buttons">
+                <button class="admin-button admin-button--primary" type="submit">บันทึก</button>
+                <a class="admin-button" href="{% url 'catalog:batch_list' %}">ยกเลิก</a>
+            </div>
+        </form>
+    </div>
+</section>
 {% endblock %}

@@ -12,14 +12,26 @@ from catalog.models import SystemSetting
 
 # เพดานสูงสุดที่ DB บังคับ (CHECK) ส่วนค่าที่ปรับได้จริงคือ system_setting.max_upload_mb
 # ซึ่งเช็กใน DocumentVersion.clean() และต้องไม่เกินค่านี้
-MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB (ตาม CHECK ใน ERD)
+MAX_UPLOAD_MB = 50  # ตาม CHECK ใน ERD
+
+
+def _mb_to_bytes(mb):
+    return mb * 1024 * 1024
+
+
+MAX_UPLOAD_BYTES = _mb_to_bytes(MAX_UPLOAD_MB)
 
 def max_upload_mb():
     """ขนาดไฟล์สูงสุดที่รับได้ (MB) จาก system_setting แต่ไม่เกินเพดาน CHECK ของ DB"""
-    limit_mb = SystemSetting.get_int(SystemSetting.MAX_UPLOAD_MB, 50)
+    limit_mb = SystemSetting.get_int(SystemSetting.MAX_UPLOAD_MB, MAX_UPLOAD_MB)
     if limit_mb <= 0:  # ค่าตั้งผิด ให้ถอยกลับเป็นค่าเริ่มต้น
-        limit_mb = 50
-    return min(limit_mb, MAX_UPLOAD_BYTES // (1024 * 1024))
+        limit_mb = MAX_UPLOAD_MB
+    return min(limit_mb, MAX_UPLOAD_MB)
+
+
+def max_upload_bytes():
+    """max_upload_mb() เป็นหน่วย byte ทุกจุดที่เช็กขนาดไฟล์ใช้ตัวนี้"""
+    return _mb_to_bytes(max_upload_mb())
 
 
 sha256_validator = RegexValidator(
@@ -76,6 +88,43 @@ class DocType(models.Model):
         return self.code
 
 
+class DocTypeRequiredRole(models.Model):
+    """กฎอนุมัติ: เอกสารประเภทนี้ต้องได้รับอนุมัติจาก role ใด (US-9)
+
+    mode = any: role ใดก็ได้ 1 คนพอ (ชีทสรุป/สไลด์)
+    mode = all: ต้องครบทุก role ที่ระบุ (ข้อสอบ: moderator และ super_admin)
+    ทุกแถวของ doc_type เดียวกันควรใช้ mode เดียวกัน ถ้าปนกันจะถือว่าเป็น all
+    ประเภทที่ไม่มีแถวเลยจะไม่มีใครอนุมัติได้
+    """
+
+    class Mode(models.TextChoices):
+        ANY = "any", "Any one of the roles"
+        ALL = "all", "Every role"
+
+    doc_type = models.ForeignKey(
+        DocType, on_delete=models.PROTECT, related_name="required_roles"
+    )
+    role = models.ForeignKey(
+        "accounts.Role", on_delete=models.PROTECT, related_name="required_by_doc_types"
+    )
+    mode = models.CharField(max_length=3, choices=Mode.choices, default=Mode.ANY)
+
+    class Meta:
+        db_table = "doc_type_required_role"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["doc_type", "role"], name="uq_doctype_required_role"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(mode__in=["any", "all"]),
+                name="ck_doctype_required_role_mode",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.doc_type.code} needs {self.role.code} ({self.mode})"
+
+
 class ExamPeriod(models.Model):
     """midterm, final"""
 
@@ -107,7 +156,7 @@ class Document(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="documents"
     )
     title = models.CharField(max_length=200)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     status = models.CharField(
         max_length=15, choices=Status.choices, default=Status.PENDING
     )
@@ -266,10 +315,9 @@ class DocumentVersion(models.Model):
                 except ValidationError as exc:
                     raise ValidationError({field: exc.messages})
         if self.size_bytes is not None:
-            limit_mb = max_upload_mb()
-            if self.size_bytes > limit_mb * 1024 * 1024:
+            if self.size_bytes > max_upload_bytes():
                 raise ValidationError(
-                    {"size_bytes": f"File is larger than {limit_mb} MB"}
+                    {"size_bytes": f"File is larger than {max_upload_mb()} MB"}
                 )
 
     def save(self, *args, **kwargs):

@@ -1,20 +1,29 @@
 """การเขียนข้อมูลของ materials ตาม ADR 0002"""
 import hashlib
+import logging
 import uuid
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
 
-from accounts.models import Role, UserRole
-
 from . import selectors
-from .models import Approval, DocType, Document, DownloadLog, ExamDetail, max_upload_mb
+from .models import (
+    Approval,
+    DocType,
+    Document,
+    DownloadLog,
+    ExamDetail,
+    max_upload_bytes,
+    max_upload_mb,
+)
+
+logger = logging.getLogger(__name__)
 
 
 @transaction.atomic
 def record_download(*, document, user):
-    """Persist a successful protected download through the service layer."""
+    """Persist a protected download in the service layer."""
     return DownloadLog.objects.create(document=document, user=user)
 
 PDF_MIME = "application/pdf"
@@ -22,6 +31,7 @@ PDF_MAGIC = b"%PDF-"
 
 
 def _storage_path(batch_course, doc_type):
+    """path ใน storage ตั้งชื่อไฟล์ด้วย uuid ไม่ใช้ชื่อที่ผู้ใช้ส่งมา จึงเดา path หรือชนกันไม่ได้"""
     batch = batch_course.batch
     return (
         f"vault/{batch.department.code}/{batch.number}/{batch_course.course.code}/"
@@ -29,14 +39,18 @@ def _storage_path(batch_course, doc_type):
     )
 
 
+def file_too_large_message():
+    """ข้อความเมื่อไฟล์เกิน max_upload_mb ใช้ทั้งที่ service และตอน upload handler ข้ามไฟล์"""
+    return f"ไฟล์ต้องมีขนาดไม่เกิน {max_upload_mb()} MB"
+
+
 def _validate_pdf(file):
     """รับเฉพาะ PDF: MIME ที่ browser ส่งมาต้องเป็น PDF และ magic bytes ต้องขึ้นต้นด้วย %PDF-
 
     MIME ปลอมได้ฝั่ง client จึงต้องเช็ก magic bytes ของเนื้อไฟล์จริงด้วย
     """
-    limit_mb = max_upload_mb()
-    if file.size > limit_mb * 1024 * 1024:
-        raise ValidationError({"file": f"ไฟล์ต้องมีขนาดไม่เกิน {limit_mb} MB"})
+    if file.size > max_upload_bytes():
+        raise ValidationError({"file": file_too_large_message()})
     file.seek(0)
     header = file.read(len(PDF_MAGIC))
     file.seek(0)
@@ -45,6 +59,7 @@ def _validate_pdf(file):
 
 
 def _sha256(file):
+    """hash ของเนื้อไฟล์ทีละ chunk แล้ว seek กลับต้นไฟล์ให้ storage อ่านต่อได้"""
     digest = hashlib.sha256()
     for chunk in file.chunks():
         digest.update(chunk)
@@ -115,15 +130,21 @@ def upload_document(
                 exam_detail.save()
     except Exception:
         # บันทึก DB ไม่สำเร็จ ลบไฟล์ทิ้ง ไม่ให้มีไฟล์กำพร้าค้างใน storage
-        default_storage.delete(storage_path)
+        # ถ้าลบไม่ได้ให้ log path ไว้ตามเก็บทีหลัง error ที่ต้องส่งต่อคือของ DB
+        try:
+            default_storage.delete(storage_path)
+        except Exception:  # storage อื่น (เช่น S3) โยน error คนละชนิดกับ OSError
+            logger.exception("Could not remove orphaned upload %s", storage_path)
         raise
     return document
 
 
-
 @transaction.atomic
 def review_document(*, document, approver, decision, reason=None):
-    """พิจารณาอนุมัติหรือปฏิเสธเอกสารโดย Moderator หรือ Super Admin (US-6)"""
+    """พิจารณาอนุมัติหรือปฏิเสธเอกสารโดย Moderator หรือ Super Admin (US-6)
+
+    ใครพิจารณาได้และต้องครบกี่ฝ่ายมาจาก doc_type_required_role (US-9)
+    """
     locked_doc = (
         Document.objects.select_for_update()
         .select_related("batch_course__batch", "doc_type")
@@ -136,21 +157,19 @@ def review_document(*, document, approver, decision, reason=None):
     if locked_doc.uploader_id == approver.id:
         raise PermissionDenied("ผู้อัปโหลดไม่สามารถอนุมัติหรือปฏิเสธเอกสารของตนเองได้")
 
+    rule = selectors.approval_rule(document=locked_doc)
+    eligible = selectors.eligible_roles(document=locked_doc, user=approver, roles=rule.roles)
+    if not eligible:
+        if rule.legacy:
+            raise PermissionDenied("ข้อสอบของรุ่นนี้ให้ Super Admin เท่านั้นเป็นผู้พิจารณา")
+        raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
+
     if locked_doc.approvals.filter(approver=approver).exists():
         raise ValidationError("คุณพิจารณาเอกสารนี้ไปแล้ว")
 
-    doc_dept_id = locked_doc.batch_course.batch.department_id
-
-    if not selectors.is_reviewer_for(user=approver, department_id=doc_dept_id):
-        raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
-
-    is_moderator = UserRole.objects.filter(
-        user=approver, role__code=Role.MODERATOR, department_id=doc_dept_id
-    ).exists()
-
-    approver_role = Role.objects.get(
-        code=Role.MODERATOR if is_moderator else Role.SUPER_ADMIN
-    )
+    # คนที่มีหลาย role ให้นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน ไม่งั้นกฎ all จะไม่มีวันครบ
+    approved_ids = selectors.approved_role_ids(document=locked_doc)
+    approver_role = next((r for r in eligible if r.pk not in approved_ids), eligible[0])
 
     approval = Approval.objects.create(
         document=locked_doc,
@@ -161,10 +180,9 @@ def review_document(*, document, approver, decision, reason=None):
     )
 
     if decision == Approval.Decision.APPROVED:
-        if locked_doc.doc_type.vault == DocType.Vault.LECTURE:
+        if not selectors.missing_roles(rule=rule, approved_ids=approved_ids | {approver_role.pk}):
             locked_doc.status = Document.Status.PUBLISHED
             locked_doc.save(update_fields=["status", "updated_at"])
-        # หมายเหตุ: เอกสารข้อสอบ (vault == EXAM) ต้องรอการอนุมัติทั้ง Moderator และ Super Admin ตาม US-9 จึงคงสถานะ PENDING ไว้
     elif decision == Approval.Decision.REJECTED:
         locked_doc.status = Document.Status.REJECTED
         locked_doc.save(update_fields=["status", "updated_at"])

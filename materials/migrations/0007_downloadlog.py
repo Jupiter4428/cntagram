@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('materials', '0002_alter_doctype_vault_alter_document_status_and_more'),
+        ('materials', '0006_document_description_optional'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
