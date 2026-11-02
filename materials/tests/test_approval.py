@@ -359,7 +359,7 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         self.assertTemplateUsed(response, "materials/approval_queue.html")
         self.assertContains(response, "CN Unique Title")
         self.assertNotContains(response, "ME Unique Title")
-        self.assertContains(response, "Pending")
+        self.assertNotContains(response, "Pending")
 
     def test_approval_queue_does_not_display_own_uploaded_documents(self):
         self.create_document(
