@@ -3,7 +3,7 @@ import datetime
 from collections import defaultdict
 from typing import NamedTuple
 
-from django.db.models import Count, DateField, Q, QuerySet
+from django.db.models import Count, DateField, OuterRef, Q, QuerySet, Subquery
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
@@ -28,6 +28,73 @@ def published_documents():
 def published_document_with_download_count():
     """Published documents with download counts, without an extra detail query."""
     return published_documents().annotate(download_count=Count("download_logs"))
+
+def user_documents(*, user) -> QuerySet[Document]:
+    """ดึงรายการเอกสารที่ผู้ใช้เป็นผู้อัปโหลด เรียงจากใหม่ไปเก่า
+
+    พร้อมเหตุผลปฏิเสธล่าสุด (ถ้าสถานะ rejected) และ preload ข้อมูลที่ต้องใช้แสดงผล
+    เพื่อป้องกัน N+1 queries ในหน้า Dashboard
+    """
+    if not user or not user.is_authenticated:
+        return Document.objects.none()
+
+    latest_rejection_reason = Subquery(
+        Approval.objects.filter(
+            document=OuterRef("pk"),
+            decision=Approval.Decision.REJECTED,
+        )
+        .order_by("-decided_at", "-id")
+        .values("reason")[:1]
+    )
+
+    return (
+        Document.objects.filter(uploader=user)
+        .annotate(rejection_reason=latest_rejection_reason)
+        .select_related(
+            "batch_course__batch__department",
+            "batch_course__course",
+            "doc_type",
+        )
+        .prefetch_related("versions")
+        .order_by("-created_at")
+    )
+
+def moderator_pending_summary(*, user) -> dict | None:
+    """สรุปจำนวนไฟล์รออนุมัติและรายชื่อภาควิชาสำหรับ Moderator บน Dashboard
+
+    คืน None ถ้าผู้ใช้ไม่ได้เป็น Moderator หรือ Super Admin
+    คืน dict:
+        {
+            "count": int,
+            "departments_display": str,  # เช่น "ภาค CN" หรือ "ทุกภาควิชา"
+        }
+    """
+    if not user or not user.is_authenticated:
+        return None
+
+    if is_super_admin(user):
+        count = pending_documents_for_moderator(user=user).count()
+        return {
+            "count": count,
+            "departments_display": "ทุกภาควิชา",
+        }
+
+    roles = UserRole.objects.filter(
+        user=user, role__code=Role.MODERATOR, department__isnull=False
+    ).select_related("department")
+
+    if not roles.exists():
+        return None
+
+    dept_codes = sorted({r.department.code for r in roles if r.department})
+    dept_display = f"ภาค {', '.join(dept_codes)}" if dept_codes else ""
+    count = pending_documents_for_moderator(user=user).count()
+    return {
+        "count": count,
+        "departments_display": dept_display,
+    }
+
+
 
 
 def search_documents(*, course_code, department=None, batch=None, doc_type=None):
