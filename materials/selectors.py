@@ -71,9 +71,17 @@ def can_review_any(*, user):
     """ตรวจสอบว่าผู้ใช้เป็น Super Admin หรือ Moderator ของภาควิชาใดๆ หรือไม่"""
     if not user or not user.is_authenticated:
         return False
-    return is_super_admin(user) or UserRole.objects.filter(
+    cached = getattr(user, "_can_review_any", None)
+    if cached is not None:
+        return cached
+    result = is_super_admin(user) or UserRole.objects.filter(
         user=user, role__code=Role.MODERATOR
     ).exists()
+    try:
+        user._can_review_any = result
+    except Exception:
+        pass
+    return result
 
 
 def pending_documents_for_moderator(*, user):
