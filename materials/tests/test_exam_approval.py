@@ -1,4 +1,5 @@
 """เทสต์ของ US-9: กฎอนุมัติจาก doc_type_required_role, ข้อสอบต้องอนุมัติสองฝ่าย และกฎข้อสอบรุ่นเก่า"""
+
 from importlib import import_module
 from io import StringIO
 
@@ -13,7 +14,11 @@ from accounts.models import Role, UserRole
 from catalog.models import SystemSetting
 
 from ..models import Approval, DocType, DocTypeRequiredRole, Document
-from ..selectors import approval_progress, approval_progress_for, pending_documents_for_moderator
+from ..selectors import (
+    approval_progress,
+    approval_progress_for,
+    pending_documents_for_moderator,
+)
 from ..services import review_document
 from .base import ApprovalBaseTestCase
 
@@ -25,7 +30,9 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
 
     def test_exam_approved_by_moderator_awaits_super_admin(self):
         doc = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
 
         progress = approval_progress(document=doc)
 
@@ -36,9 +43,14 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
 
     def test_rejected_exam_awaits_nobody(self):
         doc = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
         review_document(
-            document=doc, approver=self.super_admin, decision=Approval.Decision.REJECTED, reason="ละเมิดลิขสิทธิ์"
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
+        review_document(
+            document=doc,
+            approver=self.super_admin,
+            decision=Approval.Decision.REJECTED,
+            reason="ละเมิดลิขสิทธิ์",
         )
         doc.refresh_from_db()
 
@@ -48,7 +60,9 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
         self.assertEqual(progress.missing_roles, [])
 
     def test_doc_type_without_rules_awaits_nobody(self):
-        doc_type_slide = DocType.objects.create(code="slide", name_th="สไลด์", vault=DocType.Vault.LECTURE)
+        doc_type_slide = DocType.objects.create(
+            code="slide", name_th="สไลด์", vault=DocType.Vault.LECTURE
+        )
         doc = self.create_document(doc_type=doc_type_slide)
 
         progress = approval_progress(document=doc)
@@ -63,12 +77,16 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
         progress = approval_progress(document=doc)
 
         self.assertEqual(progress.approved_roles, [])
-        self.assertCountEqual(progress.missing_roles, [self.role_moderator, self.role_super_admin])
+        self.assertCountEqual(
+            progress.missing_roles, [self.role_moderator, self.role_super_admin]
+        )
         self.assertFalse(progress.require_all)
 
     def test_sheet_approved_by_one_role_awaits_nobody(self):
         doc = self.create_document(doc_type=self.doc_type_summary)
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
 
         progress = approval_progress(document=doc)
 
@@ -96,7 +114,9 @@ class ApprovalProgressSelectorTests(ApprovalBaseTestCase):
 class ApprovalProgressForQueueTests(ApprovalBaseTestCase):
     def test_queue_progress_of_every_document_in_three_queries(self):
         exam = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=exam, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=exam, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
         sheet = self.create_document(doc_type=self.doc_type_summary)
         legacy = self.create_exam_of_batch(22)
         documents = list(pending_documents_for_moderator(user=self.super_admin))
@@ -117,6 +137,30 @@ class ApprovalProgressForQueueTests(ApprovalBaseTestCase):
 class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
     """US-9: approval rules come from doc_type_required_role"""
 
+    def test_doc_type_without_rules_is_hidden_from_review_queue(self):
+        doc_type = DocType.objects.create(
+            code="slide_no_rule", name_th="สไลด์ไม่มีกฎ", vault=DocType.Vault.LECTURE
+        )
+        doc = self.create_document(doc_type=doc_type)
+        for reviewer in (self.super_admin, self.mod_cn):
+            self.assertNotIn(
+                doc.pk,
+                pending_documents_for_moderator(user=reviewer).values_list(
+                    "pk", flat=True
+                ),
+            )
+        doc.refresh_from_db()
+        self.assertEqual(doc.status, Document.Status.PENDING)
+
+    def test_multiple_approval_rules_do_not_duplicate_queue_rows(self):
+        doc = self.create_document(doc_type=self.doc_type_exam)
+        ids = list(
+            pending_documents_for_moderator(user=self.super_admin).values_list(
+                "pk", flat=True
+            )
+        )
+        self.assertEqual(ids.count(doc.pk), 1)
+
     def test_doc_type_without_rules_cannot_be_approved(self):
         doc_type_slide = DocType.objects.create(
             code="slide", name_th="สไลด์", vault=DocType.Vault.LECTURE
@@ -125,7 +169,9 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
 
         with self.assertRaises(PermissionDenied):
             review_document(
-                document=doc, approver=self.super_admin, decision=Approval.Decision.APPROVED
+                document=doc,
+                approver=self.super_admin,
+                decision=Approval.Decision.APPROVED,
             )
 
     def test_exam_approved_by_moderator_only_stays_pending(self):
@@ -141,7 +187,9 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
 
     def test_exam_approved_by_moderator_then_super_admin_is_published(self):
         doc = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
 
         review_document(
             document=doc, approver=self.super_admin, decision=Approval.Decision.APPROVED
@@ -154,7 +202,9 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
         doc = self.create_exam_of_batch(23)
 
         with self.assertRaises(PermissionDenied) as ctx:
-            review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+            review_document(
+                document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+            )
         self.assertIn("Super Admin เท่านั้น", str(ctx.exception))
 
     def test_super_admin_alone_publishes_exam_of_legacy_batch(self):
@@ -171,14 +221,22 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
         SystemSetting.objects.create(key=SystemSetting.LEGACY_BATCH_MAX, value="20")
         doc = self.create_exam_of_batch(22)
 
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
 
-        self.assertTrue(Approval.objects.filter(document=doc, approver=self.mod_cn).exists())
+        self.assertTrue(
+            Approval.objects.filter(document=doc, approver=self.mod_cn).exists()
+        )
 
     def test_user_with_both_roles_counts_for_the_side_still_missing(self):
-        UserRole.objects.create(user=self.super_admin, role=self.role_moderator, department=self.dept_cn)
+        UserRole.objects.create(
+            user=self.super_admin, role=self.role_moderator, department=self.dept_cn
+        )
         doc = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
 
         approval = review_document(
             document=doc, approver=self.super_admin, decision=Approval.Decision.APPROVED
@@ -196,11 +254,17 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
             department=self.dept_cn,
             pdpa_consent_at=self.now,
         )
-        UserRole.objects.create(user=second_mod, role=self.role_moderator, department=self.dept_cn)
+        UserRole.objects.create(
+            user=second_mod, role=self.role_moderator, department=self.dept_cn
+        )
         doc = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
 
-        review_document(document=doc, approver=second_mod, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=second_mod, decision=Approval.Decision.APPROVED
+        )
 
         doc.refresh_from_db()
         self.assertEqual(doc.status, Document.Status.PENDING)
@@ -217,34 +281,52 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
         doc = self.create_document(doc_type=self.doc_type_summary)
 
         with self.assertRaises(PermissionDenied):
-            review_document(document=doc, approver=superuser, decision=Approval.Decision.APPROVED)
+            review_document(
+                document=doc, approver=superuser, decision=Approval.Decision.APPROVED
+            )
         self.assertFalse(Approval.objects.filter(document=doc).exists())
 
     def test_document_no_longer_pending_cannot_be_reviewed(self):
-        doc = self.create_document(doc_type=self.doc_type_exam, status=Document.Status.REJECTED)
+        doc = self.create_document(
+            doc_type=self.doc_type_exam, status=Document.Status.REJECTED
+        )
 
         with self.assertRaises(ValidationError):
             review_document(
-                document=doc, approver=self.super_admin, decision=Approval.Decision.APPROVED
+                document=doc,
+                approver=self.super_admin,
+                decision=Approval.Decision.APPROVED,
             )
         self.assertFalse(Approval.objects.filter(document=doc).exists())
 
     def test_same_approver_cannot_decide_twice(self):
         doc = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
 
         with self.assertRaises(ValidationError):
-            review_document(document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+            review_document(
+                document=doc, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+            )
         self.assertEqual(Approval.objects.filter(document=doc).count(), 1)
 
 
 class SeedApprovalRulesCommandTests(TestCase):
     def rules(self):
-        return set(DocTypeRequiredRole.objects.values_list("doc_type__code", "role__code", "mode"))
+        return set(
+            DocTypeRequiredRole.objects.values_list(
+                "doc_type__code", "role__code", "mode"
+            )
+        )
 
     def test_exam_needs_every_approver_role_and_sheet_needs_either(self):
-        DocType.objects.create(code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM)
-        DocType.objects.create(code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE)
+        DocType.objects.create(
+            code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM
+        )
+        DocType.objects.create(
+            code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE
+        )
 
         call_command("seed_approval_rules", stdout=StringIO())
 
@@ -259,7 +341,9 @@ class SeedApprovalRulesCommandTests(TestCase):
         )
 
     def test_rerun_keeps_a_mode_an_admin_changed(self):
-        DocType.objects.create(code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM)
+        DocType.objects.create(
+            code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM
+        )
         call_command("seed_approval_rules", stdout=StringIO())
         DocTypeRequiredRole.objects.update(mode=DocTypeRequiredRole.Mode.ANY)
 
@@ -283,14 +367,22 @@ class SeedApprovalRulesMigrationTests(TestCase):
     """0005 seeds rules for doc types already in the database when it is migrated"""
 
     def test_existing_doc_types_get_rules_by_vault(self):
-        DocType.objects.create(code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM)
-        DocType.objects.create(code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE)
+        DocType.objects.create(
+            code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM
+        )
+        DocType.objects.create(
+            code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE
+        )
         migration = import_module("materials.migrations.0005_seed_approval_rules")
 
         migration.seed_rules(django_apps, None)
 
         self.assertEqual(
-            set(DocTypeRequiredRole.objects.values_list("doc_type__code", "role__code", "mode")),
+            set(
+                DocTypeRequiredRole.objects.values_list(
+                    "doc_type__code", "role__code", "mode"
+                )
+            ),
             {
                 ("exam", Role.MODERATOR, "all"),
                 ("exam", Role.SUPER_ADMIN, "all"),
