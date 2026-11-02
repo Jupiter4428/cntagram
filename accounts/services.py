@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -82,20 +82,28 @@ def clear_login_failures(*, identifier, client_ip):
     cache.delete(key)
 
 
-def attempt_login(*, form, client_ip):
-    """Process a bound LoginForm: throttle first, then validate and record.
+def attempt_login(*, identifier, password, client_ip):
+    """Authenticate credentials while checking and recording rate limits.
 
-    The throttle check runs before validation so a blocked identity never
-    reaches authenticate(), even with the correct password.
+    1. Checks if identifier or client_ip is rate limited -> LoginAttempt(rate_limited=True).
+    2. Authenticates credentials.
+    3. If valid -> clears failure count and returns LoginAttempt(user=user).
+    4. If invalid -> records failure (if identifier and password provided) and returns LoginAttempt().
     """
-    identifier = form.submitted_username
-    if is_login_rate_limited(identifier=identifier, client_ip=client_ip):
+    normalized_identifier = (identifier or "").strip().lower()
+    normalized_ip = (client_ip or "").strip()
+
+    if is_login_rate_limited(identifier=normalized_identifier, client_ip=normalized_ip):
         return LoginAttempt(rate_limited=True)
-    if form.is_valid():
-        clear_login_failures(identifier=identifier, client_ip=client_ip)
-        return LoginAttempt(user=form.get_user())
-    if form.has_credentials:
-        record_login_failure(identifier=identifier, client_ip=client_ip)
+
+    user = authenticate(username=normalized_identifier, password=password)
+    if user is not None:
+        clear_login_failures(identifier=normalized_identifier, client_ip=normalized_ip)
+        return LoginAttempt(user=user)
+
+    if normalized_identifier and password:
+        record_login_failure(identifier=normalized_identifier, client_ip=normalized_ip)
+
     return LoginAttempt()
 
 

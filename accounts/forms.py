@@ -38,21 +38,9 @@ class LoginForm(AuthenticationForm):
         """Match the normalization used when user accounts are created."""
         return self.cleaned_data["username"].strip().lower()
 
-    @property
-    def submitted_username(self):
-        """Raw username as submitted (usable before validation, e.g. throttling)."""
-        return self.data.get("username", "") if self.is_bound else ""
-
-    @property
-    def has_credentials(self):
-        """Whether both username and password were actually submitted."""
-        return bool(self.submitted_username and self.data.get("password"))
-
-    @property
-    def next_url(self):
-        """Untrusted `next` target: submitted value when bound, else initial."""
-        source = self.data if self.is_bound else self.initial
-        return source.get("next", "")
+    def clean(self):
+        """Validate fields without authenticating here; service layer handles authentication."""
+        return self.cleaned_data
 
 
 class RegisterForm(forms.ModelForm):
