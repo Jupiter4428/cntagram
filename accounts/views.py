@@ -112,6 +112,7 @@ def login(request):
     return render(request, "accounts/login.html", {"form": form, "next": form.next_url})
 
 
+@login_not_required
 @require_POST
 def logout(request):
     """End the current session; CSRF middleware protects this POST endpoint."""

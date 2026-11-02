@@ -9,7 +9,7 @@ def is_super_admin(user):
     return user.is_authenticated and user.user_roles.filter(role__code=SUPER_ADMIN).exists()
 
 
-# LoginRequiredMiddleware redirects guests before this role-based authorization check.
+# LoginRequiredMiddleware redirect Guest ไปหน้า login ก่อนถึงการเช็กสิทธิ์ตรงนี้
 def super_admin_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):

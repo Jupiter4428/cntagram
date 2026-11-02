@@ -49,6 +49,10 @@ class LoginRequiredMiddlewareTests(TestCase):
                     f"{reverse('accounts:login')}?next={url}",
                 )
 
+    def test_guest_logout_redirects_home(self):
+        response = self.client.post(reverse("accounts:logout"))
+        self.assertRedirects(response, reverse("accounts:home"))
+
     def test_admin_index_redirects_guest_to_admin_login(self):
         url = reverse("admin:index")
         self.assertRedirects(self.client.get(url), f"{reverse('admin:login')}?next={url}")
