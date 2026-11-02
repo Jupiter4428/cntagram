@@ -6,16 +6,14 @@ SearchTestCase สำหรับค้นหา / เปิดอ่านเ�
 import os
 import shutil
 import tempfile
-from io import StringIO
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from accounts.models import Role, UserRole
-from catalog.models import Batch, BatchCourse, Course, Department
+from catalog.models import Batch, BatchCourse, Course, Department, SystemSetting
 
 from ..models import DocType, DocTypeRequiredRole, Document, DocumentVersion, ExamPeriod
 
@@ -78,6 +76,7 @@ PDF_BYTES = b"%PDF-1.4\n% fake sheet\n%%EOF\n"
 
 
 def pdf_file(content=PDF_BYTES, *, name="cn200-midterm.pdf", content_type="application/pdf"):
+    """ไฟล์อัปโหลดจำลอง ค่าเริ่มต้นเป็น PDF ที่ผ่านทั้งเช็ก MIME และ magic bytes"""
     return SimpleUploadedFile(name, content, content_type=content_type)
 
 
@@ -85,6 +84,7 @@ TEST_MEDIA_ROOT = tempfile.mkdtemp()
 
 
 def stored_file_count():
+    """จำนวนไฟล์ใน TEST_MEDIA_ROOT ใช้ยืนยันว่าอัปโหลดที่ล้มไม่ทิ้งไฟล์กำพร้าไว้"""
     return sum(len(files) for _, _, files in os.walk(TEST_MEDIA_ROOT))
 
 
@@ -94,10 +94,14 @@ class UploadTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        call_command("seed_materials", stdout=StringIO())
-        cls.summary = DocType.objects.get(code="summary")
-        cls.exam = DocType.objects.get(code="exam")
-        cls.midterm = ExamPeriod.objects.get(code="midterm")
+        cls.summary = DocType.objects.create(
+            code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE
+        )
+        cls.exam = DocType.objects.create(
+            code="exam", name_th="ข้อสอบเก่า", vault=DocType.Vault.EXAM
+        )
+        cls.midterm = ExamPeriod.objects.create(code="midterm", name_th="กลางภาค")
+        SystemSetting.objects.create(key=SystemSetting.MAX_UPLOAD_MB, value="50")
         cls.cn = Department.objects.create(
             code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
         )

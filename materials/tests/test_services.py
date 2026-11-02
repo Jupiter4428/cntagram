@@ -1,13 +1,23 @@
 import hashlib
+from unittest import mock
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 
 from catalog.models import SystemSetting
 
-from ..models import Document
-from ..services import upload_document
-from .base import PDF_BYTES, UploadTestCase, pdf_file, stored_file_count
+from ..models import Document, DownloadLog
+from ..services import record_download, upload_document
+from .base import PDF_BYTES, SearchTestCase, UploadTestCase, pdf_file, stored_file_count
+
+
+class RecordDownloadServiceTests(SearchTestCase):
+    def test_record_download_creates_log_for_document_and_user(self):
+        document = self.make_document(self.cn200[21], title="Download service test")
+        log = record_download(document=document, user=self.uploader)
+        self.assertEqual(log.document, document)
+        self.assertEqual(log.user, self.uploader)
+        self.assertEqual(DownloadLog.objects.filter(document=document).count(), 1)
 
 
 class UploadDocumentServiceTests(UploadTestCase):
@@ -69,7 +79,7 @@ class UploadDocumentServiceTests(UploadTestCase):
 
     def test_file_larger_than_max_upload_setting_is_rejected(self):
         SystemSetting.objects.filter(pk="max_upload_mb").update(value="1")
-        too_big = PDF_BYTES + b"0" * (1024 * 1024)
+        too_big = PDF_BYTES + b"0" * 1_048_576
         files_before = stored_file_count()
 
         with self.assertRaises(ValidationError) as ctx:
@@ -116,6 +126,20 @@ class UploadDocumentServiceTests(UploadTestCase):
             self.upload(doc_type=self.exam, exam_period=self.midterm, exam_year_be=1999)
 
         self.assertEqual(stored_file_count(), files_before)
+        self.assertFalse(Document.objects.exists())
+
+    def test_database_error_is_raised_even_when_file_cleanup_fails(self):
+        with mock.patch.object(
+            default_storage, "delete", side_effect=OSError("storage unavailable")
+        ):
+            with self.assertRaises(ValidationError) as ctx, self.assertLogs(
+                "materials.services", "ERROR"
+            ):
+                self.upload(
+                    doc_type=self.exam, exam_period=self.midterm, exam_year_be=1999
+                )
+
+        self.assertIn("exam_year_be", ctx.exception.message_dict)
         self.assertFalse(Document.objects.exists())
 
     def test_upload_into_another_department_is_denied(self):

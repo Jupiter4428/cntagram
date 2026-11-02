@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
-from django.contrib import messages
+from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -104,7 +104,9 @@ REGISTER_RATE_LIMIT_ATTEMPTS = 5
 REGISTER_RATE_LIMIT_WINDOW_SECONDS = 300
 
 # แม็ประดับ error ของ messages ไปเป็น class "danger" ของ alert
-MESSAGE_TAGS = {messages.ERROR: 'danger'}
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -147,6 +149,14 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # ตั้งใจไม่มี MEDIA_URL: เปิดไฟล์ได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ไม่มี Direct URL
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ข้ามไฟล์ที่เกิน max_upload_mb ตั้งแต่ตอนรับ ก่อนลง temp file ทั้งก้อน
+# มีผลกับทุกการอัปโหลดในระบบ (รวม admin) ตอนนี้มีแค่ฟอร์มอัปโหลดชีทที่รับไฟล์
+FILE_UPLOAD_HANDLERS = [
+    'materials.uploadhandlers.MaxSizeUploadHandler',
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -156,10 +166,3 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
-
-from django.contrib.messages import constants as message_constants
-
-MESSAGE_TAGS = {
-    message_constants.ERROR: "danger",
-}
-

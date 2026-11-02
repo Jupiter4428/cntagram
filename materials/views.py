@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_http_methods
 
@@ -13,7 +14,12 @@ from . import selectors
 from .approval_ui import attach_approval_ui
 from .forms import ReviewForm, SearchForm, UploadForm
 from .models import Document, max_upload_mb
-from .services import ensure_can_upload_to, review_document, upload_document
+from .services import (
+    ensure_can_upload_to,
+    file_too_large_message,
+    review_document,
+    upload_document,
+)
 
 
 @login_required
@@ -27,21 +33,33 @@ def vault(request):
 @login_required
 def document_detail(request, document_id):
     """หน้าเอกสาร + preview PDF (เอกสารที่ไม่ published ตอบ 404)"""
-    document = get_object_or_404(selectors.published_documents(), pk=document_id)
-    return render(request, "materials/document_detail.html", {"document": document})
+    document = get_object_or_404(
+        selectors.published_document_with_download_count(),
+        pk=document_id,
+    )
+    return render(request, "materials/document_detail.html", {
+        "document": document,
+        "download_count": document.download_count,
+        "download_url": reverse("materials:document_download", args=[document.pk]) if document.current_version else None,
+    })
+
+
+def open_document_pdf(document):
+    """Open a document's current PDF after its caller has checked access rights."""
+    version = document.current_version
+    # TODO(US-21): enforce virus scan status before serving any document file.
+    if version is None:
+        raise Http404("Document has no file")
+    try:
+        stream = default_storage.open(version.storage_path, "rb")
+    except (OSError, ValueError):
+        raise Http404("Document file unavailable")
+    return stream, version
 
 
 def _inline_pdf_response(document):
     """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL) ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว"""
-    version = document.current_version
-    # TODO(US-21): ยังไม่เช็ก version.scan_status เพราะยังไม่มีตัวสแกน (ทุกไฟล์ค้างที่ pending)
-    # เมื่อ US-21 มาถึง ต้องไม่ส่งไฟล์ที่ infected และตรวจว่าเป็น PDF จริงก่อนตอบ application/pdf
-    if version is None:
-        raise Http404("ยังไม่มีไฟล์ของเอกสารนี้")
-    try:
-        file = default_storage.open(version.storage_path, "rb")
-    except OSError:  # ไม่พบไฟล์ หรือ path ใช้เปิดไม่ได้ ตอบ 404 แทน 500
-        raise Http404("ไม่พบไฟล์ของเอกสารนี้")
+    file, version = open_document_pdf(document)
     return FileResponse(
         file, content_type="application/pdf", filename=version.original_name
     )
@@ -98,10 +116,17 @@ def approval_queue(request):
 def upload(request):
     """ฟอร์มอัปโหลดชีท (US-5) ภาควิชาล็อกตามสังกัดของผู้ใช้
 
-    PermissionDenied จาก service (แก้ request ข้ามภาค) ปล่อยให้ Django ตอบ 403
+    เช็กภาคของวิชาก่อนดูผล is_valid() ให้ request ที่แก้ข้ามภาคได้ 403 เสมอ
+    แม้ช่องอื่นจะผิดด้วย (cleaned_data มีช่องที่ผ่านแล้วแม้ฟอร์มรวมไม่ผ่าน)
     """
     form = UploadForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
+    if getattr(request, "upload_too_large", False):  # MaxSizeUploadHandler ข้ามไฟล์ไปแล้ว
+        form.fields["file"].error_messages["required"] = file_too_large_message()
+    is_valid = request.method == "POST" and form.is_valid()
+    batch_course = form.cleaned_data.get("batch_course") if form.is_bound else None
+    if batch_course:
+        ensure_can_upload_to(user=request.user, batch=batch_course.batch)
+    if is_valid:
         data = {k: v for k, v in form.cleaned_data.items() if k != "disclaimer"}
         try:
             upload_document(uploader=request.user, **data)
@@ -125,6 +150,7 @@ def upload(request):
 @login_required
 @require_GET
 def upload_done(request):
+    """หน้าหลังอัปโหลดสำเร็จ แจ้งว่าเอกสารรออนุมัติ (US-5)"""
     return render(request, "materials/upload_done.html")
 
 
