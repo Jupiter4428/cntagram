@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}403 Forbidden | CNTAGRAM{% endblock %}
+
+{% block content %}
+<div class="error-page error-403">
+    <section class="retro-widget glass-module">
+        <div class="retro-widget__header module-heading">
+            <span class="module-heading__orb" aria-hidden="true"></span>
+            <span><small>SECURITY CLEARANCE // PROTOCOL 403</small> ACCESS DENIED</span>
+            <span class="tech-index">ERR_403</span>
+        </div>
+        <div class="retro-widget__body module-body p-4 text-center">
+            <div class="error-badge mb-3">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6 rounded-pill">
+                    403 FORBIDDEN
+                </span>
+            </div>
+            <h1 class="h3 fw-bold mb-3 text-light">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</h1>
+            <p class="text-secondary fs-6 mb-4 mx-auto" style="max-width: 540px;">
+                {{ exception|default:"คุณไม่มีสิทธิ์เข้าถึงหน้านี้ หรือเนื้อหานี้สงวนสิทธิ์เฉพาะผู้ดูแลระบบ" }}
+            </p>
+            <div class="d-flex flex-wrap gap-3 justify-content-center mt-3">
+                <a href="{% url 'accounts:home' %}" class="chrome-button chrome-button--brand">
+                    กลับสู่หน้าแรก
+                </a>
+                <a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--quiet">
+                    ไปยังคลังเอกสาร
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
