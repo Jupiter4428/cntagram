@@ -33,16 +33,24 @@ class LoginThrottleTests(ThrottleTestCase):
             pdpa_consent_at=timezone.now(),
         )
 
-    def post_login(self, password=None, *, client=None, username=None, **extra):
-        data = {
-            "username": username or self.user.email,
+    def post_login(
+        self,
+        password=None,
+        *,
+        username=None,
+        data=None,
+        client=None,
+        **request_kwargs,
+    ):
+        payload = {
+            "username": self.user.email if username is None else username,
             "password": self.password if password is None else password,
+            **(data or {}),
         }
-        request_kwargs = {}
-        for key, value in extra.items():
-            (request_kwargs if key.isupper() else data)[key] = value
+        if "next" in request_kwargs:
+            payload["next"] = request_kwargs.pop("next")
         return (client or self.client).post(
-            reverse("accounts:login"), data, **request_kwargs
+            reverse("accounts:login"), payload, **request_kwargs
         )
 
     @override_settings(

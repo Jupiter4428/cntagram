@@ -34,21 +34,24 @@ class LoginViewTests(TestCase):
             pdpa_consent_at=timezone.now(),
         )
 
-    def post_login(self, password=None, *, client=None, username=None, **extra):
-        """POST to the login view as self.user (correct password by default).
-
-        `extra` keys that are valid form data (e.g. `next`) go into the POST body;
-        anything uppercase (e.g. REMOTE_ADDR) is passed to the test client.
-        """
-        data = {
-            "username": username or self.user.email,
+    def post_login(
+        self,
+        password=None,
+        *,
+        username=None,
+        data=None,
+        client=None,
+        **request_kwargs,
+    ):
+        payload = {
+            "username": self.user.email if username is None else username,
             "password": self.password if password is None else password,
+            **(data or {}),
         }
-        request_kwargs = {}
-        for key, value in extra.items():
-            (request_kwargs if key.isupper() else data)[key] = value
+        if "next" in request_kwargs:
+            payload["next"] = request_kwargs.pop("next")
         return (client or self.client).post(
-            reverse("accounts:login"), data, **request_kwargs
+            reverse("accounts:login"), payload, **request_kwargs
         )
 
     def test_guest_is_redirected_from_vault_to_login(self):
