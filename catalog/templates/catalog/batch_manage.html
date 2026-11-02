@@ -1,52 +1,543 @@
-{# HTML เปล่า ยังไม่มี style รอฝั่ง front ออกแบบ #}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8">
-  <title>จัดการรุ่น {{ department.code }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNTAGRAM - Batch Management</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tahoma', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #18191c 0%, #3d4045 40%, #111214 100%);
+    background-attachment: fixed;
+            color: #d1c4e9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    
+        
+.brand-banner {
+    display: inline-block;
+    background: linear-gradient(90deg, #201f1f 0%, #5f262d 60%, #782c2c 100%);
+    padding: 10px 120px 10px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    margin: 20px 0 20px 0;
+}
+
+.brand-title {
+    font-family: 'Montserrat', sans-serif; /* เปลี่ยนมาใช้ฟอนต์ Montserrat แบบโมเดิร์น */
+    font-size: 28px;                 /* ปรับขนาดให้พอดี ไม่ใหญ่หนาเทอะทะ */
+    font-weight: 700;                /* ความหนาระดับปานกลาง (กำลังดี ไม่หนาทึบ) */
+    color: #ffffff;
+    letter-spacing: 2.5px;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.brand-subtitle {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px;
+    font-weight: 400;                /* ปรับความหนาตัวอักษรซับไตเติลให้บางลง */
+    color: #e0cb90;
+    letter-spacing: 1.5px;
+    margin-top: 3px;
+    text-transform: uppercase;
+}
+    
+        
+        /* --- TOP HEADER & LOGO --- */
+        .top-sub-bar {
+            width: 100%;
+            background: #0d0714;
+            color: #8a7b9c;
+            font-size: 10px;
+            padding: 3px 20px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #2a1a38;
+            letter-spacing: 1px;
+        }
+
+
+        .nav-btn {
+            background: linear-gradient(to bottom, #27252a, #09090a);
+            border: 1px solid #7c3aed;
+            color: #e9d5ff;
+            padding: 4px 12px;
+            font-size: 11px;
+            border-radius: 3px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(to bottom, #e11d48, #9f1239);
+            border-color: #fda4af;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .marquee-bar {
+        
+            background: #0f0716;
+            border: 1px solid #0f0716;
+            border-top: none;
+            color: #fbbf24;
+            font-size: 10px;
+            padding: 4px 10px;
+            font-family: monospace;
+
+            margin-right: auto;
+            display: inline-block;
+
+            margin-left: 20px;
+        }
+
+        /* --- MAIN CONTENT LAYOUT --- */
+        .main-layout {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* LEFT: FORM */
+        .content-left {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 10px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 460px;
+            background: #dedede;
+            border: 1px solid #888;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            color: #222;
+        }
+
+        .card-header-banner {
+            background: linear-gradient(to right, #4c0519 0%, #881337 50%, #4c0519 100%);
+            color: #fff;
+            padding: 15px 20px;
+            border-bottom: 2px solid #be123c;
+        }
+
+        .card-header-sub {
+            font-size: 9px;
+            color: #fda4af;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+
+        .card-header-title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .card-header-title i {
+            font-style: italic;
+            color: #fb7185;
+        }
+
+        .card-body {
+            padding: 25px 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #bbb;
+            border-radius: 3px;
+            background-color: #f9f9f9;
+            font-size: 13px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(to bottom, #be123c, #881337);
+            color: white;
+            border: 1px solid #ffffff;
+            padding: 9px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(to bottom, #e11d48, #be123c);
+        }
+
+        .card-footer-bar {
+            background: #cfcfcf;
+            padding: 6px 15px;
+            font-size: 9px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #bbb;
+            font-family: monospace;
+        }
+
+        /* RIGHT: SIDEBAR WIDGETS */
+        .content-right {
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .side-widget {
+            background: #242324;
+            border: 1px solid #27262c;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .widget-header {
+            background: linear-gradient(to right, #242324, #27262c);
+            color: #e9d5ff;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #a3a0a5;
+        }
+
+        .widget-body {
+            padding: 10px;
+        }
+
+
+
+
+        /* / Music */
+        /* --- STUDY WITH MIKU MUSIC PLAYER --- */
+        .minimal-player {
+            background: #71717a;
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.4);
+            border: 1px solid #52525b;
+        }
+
+        /* รูปปกตามภาพแรกที่ส่งมา */
+        .player-artwork {
+            width: 85px;
+            height: 85px;
+            background: #18181b;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid #3f3f46;
+        }
+
+        .player-artwork img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-controls-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* แถบความคืบหน้าเพลง */
+        .seekbar-container {
+            width: 100%;
+        }
+
+        .seekbar {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #ffffff;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .seekbar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #ffffff;
+            font-family: monospace;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        /* ปุ่ม Play/Pause และข้ามเพลง */
+        .button-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ctrl-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .ctrl-btn.play-pause {
+            font-size: 16px;
+        }
+
+        .ctrl-btn:hover {
+            color: #f43f5e;
+        }
+
+        /* รูปคลื่นเสียงแทนขีดระดับเสียง */
+        .waveform-container {
+            width: 100%;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #18181b;
+            border-radius: 4px;
+            overflow: hidden;
+            padding: 2px;
+        }
+
+        .waveform-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: invert(1); /* ปรับให้คลื่นเสียงเป็นสีขาวตัดกับพื้นหลัง */
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
-  <h1>รุ่นของภาค {{ department.code }} - {{ department.name_th }}</h1>
 
-  <nav>
-    {% for d in departments %}
-      <a href="{% url 'catalog:batch_manage' d.code %}">{{ d.code }}</a>
-    {% endfor %}
-  </nav>
 
-  {% for message in messages %}
-    <p class="message {{ message.tags }}">{{ message }}</p>
-  {% endfor %}
 
-  <table>
-    <thead>
-      <tr><th>รุ่น</th><th>จำนวนวิชา</th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for batch in batches %}
-        <tr>
-          <td><a href="{% url 'catalog:batch_course_manage' batch.pk %}">{{ batch.code }}</a></td>
-          <td>{{ batch.course_count }}</td>
-          <td>
-            {% if batch.course_count == 0 %}
-              <form method="post" action="{% url 'catalog:batch_delete' batch.pk %}">
-                {% csrf_token %}
-                <button type="submit">ลบ</button>
-              </form>
-            {% endif %}
-          </td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="3">ยังไม่มีรุ่น</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+ <div style="width: 100%; text-align: left; padding-left: 20px;">
+    <div class="brand-banner">
+        <div class="brand-title">CNTAGRAM</div>
+        <div class="brand-subtitle">EVEN WITHOUT SEEING HOPE IT DOESN'T MEAN THERE IS NO HOPE. PAST OR FUTURE LET THEM BE</div>
+    </div>
+</div>
 
-  <h2>เพิ่มรุ่น</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">เพิ่มรุ่น</button>
-  </form>
-</body>
-</html>
+
+
+    <!-- NAVBAR & MARQUEE -->
+        <div class="marquee-bar">
+            ★ Welcome to CNTAGRAM!  Good luck on your midterms, everyone!
+        </div>
+
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-layout">
+        
+        <!-- LEFT: FORM -->
+        <div class="content-left">
+            <div class="login-card">
+                <div class="card-header-banner">
+                    <div class="card-header-sub"></div>
+                    <div class="card-header-title">เข้าสู่ระบบ<i>Login</i></div>
+                    <div class="card-header-desc">ใช้บัญชีอีเมลนักศึกษาเพื่อเข้าสู่คลัง CNTAGRAM</div> 
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="form-group">
+                            <label>Username:</label>
+                            <input type="text" name="username" class="form-control" >
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" name="password" class="form-control" >
+                        </div>
+                        <button type="submit" class="submit-btn">เข้าสู่ระบบ</button>
+                    </form>
+                </div>
+                <div class="card-footer-bar">
+                    <span>ENCRYPTED SESSION</span>
+                    <span>AUTH / 02</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: SIDEBAR WIDGETS -->
+        <div class="content-right">
+            
+          
+
+            <!-- BGM PLAYER WIDGET (ทรงสี่เหลี่ยม / รูปบนซ้าย / คลื่นเสียง / ไม่มีปุ่ม STOP) -->
+<div class="side-widget">
+    <div class="widget-header" style="background:  #8d3041; border-bottom: 1px solid #4c1c1f;">
+        <span>♫ Study with Miku</span>
+    </div>
+    <div class="widget-body">
+        <div style="background: #272a31; border: 1px solid #060606; padding: 10px; border-radius: 4px;">
+            
+            <!-- ส่วนบน: รูปจัตุรัสบนซ้าย + คลื่นเสียงด้านขวา -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <!-- รูปภาพทรงจัตุรัสมุมบนซ้าย (เปลี่ยน src เป็นชื่อรูปของคุณได้เลย) -->
+                <img id="mikuCover" src="d:\6810530011\miku.jpg" alt="Miku Cover" style="width: 55px; height: 55px; object-fit: cover; border-radius: 4px; border: 1px solid #090909; flex-shrink: 0;">
+                
+                <!-- คลื่นเสียง + สถานะเพลง -->
+                <div style="flex: 1; overflow: hidden;">
+                    <div id="trackStatus" style="font-size: 9px; font-family: monospace; color: #fbefff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        STATUS: PAUSED
+                    </div>
+                    
+                    <!-- แถบคลื่นเสียงวิ่งตามจังหวะ -->
+                    <div class="eq-wrapper" id="eqWrapper" style="display: flex; gap: 3px; align-items: flex-end; height: 18px; background: #272a31; padding: 3px; border-radius: 3px; border: 1px solid #2e1065;">
+                        <span class="bar" style="width: 4px; background: #f200ff44; height: 30%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00c32c; height: 70%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00aa42; height: 95%;"></span>
+
+                        <span class="bar" style="width: 4px; background: #f200ff44; height: 90%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00c32c; height: 50%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00aa42; height: 75%;"></span>
+
+                        <span class="bar" style="width: 4px; background: #f200ff44; height: 20%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00c32c; height: 60%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00aa42; height: 75%;"></span>
+
+                        <span class="bar" style="width: 4px; background: #f200ff44; height: 50%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00c32c; height: 90%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00aa42; height: 15%;"></span>
+
+                        <span class="bar" style="width: 4px; background: #f200ff44; height: 90%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00c32c; height: 20%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00aa42; height: 75%;"></span>
+
+                        <span class="bar" style="width: 4px; background: #f200ff44; height: 20%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00c32c; height: 60%;"></span>
+                        <span class="bar" style="width: 4px; background: #ff00aa42; height: 75%;"></span>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- รายการเลือกเพลง (3 เพลง) -->
+            <select id="mikuSelect" onchange="changeMikuTrack()" style="width: 100%; background: #150c1e; color: #f9dada; border: 1px solid #f9dada; font-size: 10px; padding: 5px; border-radius: 3px; margin-bottom: 8px; cursor: pointer;">
+                <option value="d:\6810530011\e623dc9d-7875-4c01-bb71-b7bbbe0bd1e7.mp4">『ヴァンパイア』 DECO*27 </option>
+                <option value="d:\6810530011\21f9de12-6547-49a9-8d51-28c6534756de.mp4">『アンノウン・マザーグース』  wowaka </option>
+                <option value="d:\6810530011\0e0f0580-3a46-49f0-8d97-5eb03e4b2184.mp4">『死んでしまったんだ』椎乃味醂 </option>
+
+            </select>
+
+            <!-- ปุ่ม Play / Pause (ไม่มีปุ่ม STOP) -->
+            <button id="mikuPlayBtn" onclick="toggleMikuPlay()" style="width: 100%; background: linear-gradient(to bottom, #6a353f, #9b2037); color: #f9dada; border: 1px solid #000000; font-size: 11px; padding: 6px; font-weight: bold; border-radius: 3px; cursor: pointer;">
+                ▶ PLAY
+            </button>
+
+        </div>
+    </div>
+</div>
+
+<!-- AUDIO ELEMENT -->
+<audio id="mikuAudio" src="d:\6810530011\e623dc9d-7875-4c01-bb71-b7bbbe0bd1e7.mp4"></audio>
+
+<!-- CSS อนิเมชันคลื่นเสียงกระพริบ -->
+<style>
+    .eq-animated .bar {
+        animation: waveBounce 0.5s ease-in-out infinite alternate;
+    }
+    .eq-animated .bar:nth-child(2n) { animation-delay: 0.15s; }
+    .eq-animated .bar:nth-child(3n) { animation-delay: 0.3s; }
+    
+    @keyframes waveBounce {
+        0% { height: 20%; }
+        100% { height: 100%; }
+    }
+</style>
+
+<!-- JAVASCRIPT ควบคุมเพลง -->
+<script>
+    const mikuAudio = document.getElementById('mikuAudio');
+    const mikuPlayBtn = document.getElementById('mikuPlayBtn');
+    const trackStatus = document.getElementById('trackStatus');
+    const eqWrapper = document.getElementById('eqWrapper');
+    const mikuSelect = document.getElementById('mikuSelect');
+
+    function toggleMikuPlay() {
+        if (mikuAudio.paused) {
+            mikuAudio.play();
+            mikuPlayBtn.innerText = "⏸ PAUSE";
+            trackStatus.innerText = "PLAYING: " + mikuSelect.options[mikuSelect.selectedIndex].text.substring(4);
+            eqWrapper.classList.add('eq-animated');
+        } else {
+            mikuAudio.pause();
+            mikuPlayBtn.innerText = "▶ PLAY";
+            trackStatus.innerText = "STATUS: PAUSED";
+            eqWrapper.classList.remove('eq-animated');
+        }
+    }
+
+    function changeMikuTrack() {
+        mikuAudio.src = mikuSelect.value;
+        mikuAudio.play();
+        mikuPlayBtn.innerText = "⏸ PAUSE";
+        trackStatus.innerText = "PLAYING: " + mikuSelect.options[mikuSelect.selectedIndex].text.substring(4);
+        eqWrapper.classList.add('eq-animated');
+    }
+
+    // ➕ นำส่วนนี้มาเพิ่มต่อท้าย เพื่อให้เล่นเพลงถัดไปและวนลูปอัตโนมัติ
+    mikuAudio.addEventListener('ended', function() {
+        if (mikuSelect.selectedIndex < mikuSelect.options.length - 1) {
+            mikuSelect.selectedIndex++;
+        } else {
+            mikuSelect.selectedIndex = 0; // วนกลับไปเพลงแรกสุดเมื่อถึงเพลงสุดท้าย
+        }
+        
+        mikuAudio.src = mikuSelect.value;
+        mikuAudio.play();
+        mikuPlayBtn.innerText = "⏸ PAUSE";
+        trackStatus.innerText = "PLAYING: " + mikuSelect.options[mikuSelect.selectedIndex].text.substring(4);
+        eqWrapper.classList.add('eq-animated');
+    });
+</script>
