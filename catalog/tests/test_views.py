@@ -141,6 +141,49 @@ class BatchTests(CatalogTestCase):
         self.assertTrue(Batch.objects.filter(pk=batch.pk).exists())
         self.assertContains(response, "ลบรุ่น CN21 ไม่ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้")
 
+    def test_delete_confirmation_shows_batch_code_and_cancel_link(self):
+        """รุ่นว่างแสดงปุ่มยืนยันลบและลิงก์ยกเลิก"""
+        batch = Batch.objects.create(department=self.dept_cn, number=21)
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:batch_delete", args=[batch.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CN21")
+        self.assertContains(response, reverse("catalog:batch_list"))
+        self.assertContains(response, "ยกเลิก")
+        self.assertFalse(response.context["has_courses"])
+        self.assertNotContains(response, "disabled")
+        self.assertTemplateUsed(response, "catalog/batch_confirm_delete.html")
+
+    def test_delete_confirmation_warns_and_disables_action_for_batch_with_courses(self):
+        """รุ่นที่มีวิชาแสดงคำเตือนและปิดปุ่มลบ"""
+        batch = Batch.objects.create(department=self.dept_cn, number=21)
+        course = Course.objects.create(code="CN200", name_en="Discrete Mathematics")
+        BatchCourse.objects.create(batch=batch, course=course)
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:batch_delete", args=[batch.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ไม่สามารถลบรุ่น <strong>CN21</strong> ได้")
+        self.assertTemplateUsed(response, "catalog/batch_confirm_delete.html")
+        self.assertTrue(response.context["has_courses"])
+        self.assertContains(response, "disabled")
+
+    def test_admin_dashboard_links_to_batches_and_courses(self):
+        """หน้าแรกของแอดมินมีลิงก์จัดการรุ่นและวิชา"""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("accounts:home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'href="{reverse("catalog:batch_list")}"')
+        self.assertContains(response, f'href="{reverse("catalog:course_list")}"')
+
+    def test_admin_sidebar_highlights_batch_and_course_pages(self):
+        """เมนูแอดมินแสดงสถานะ active บนหน้ารุ่นและวิชา"""
+        self.client.force_login(self.admin)
+        for url_name in ("catalog:batch_list", "catalog:course_list"):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f'is-active" href="{reverse(url_name)}"')
+
 
 class CatalogPermissionTests(CatalogTestCase):
     def test_non_super_admin_gets_403_on_batch_and_course_pages(self):
