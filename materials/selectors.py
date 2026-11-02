@@ -31,7 +31,15 @@ def published_document_with_download_count():
     return published_documents().annotate(download_count=Count("download_logs"))
 
 
-def search_documents(*, course_code, department=None, batch=None, doc_type=None):
+def search_documents(
+    *,
+    course_code,
+    department=None,
+    batch=None,
+    doc_type=None,
+    exam_period=None,
+    exam_year_be=None
+):
     """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น กรองเพิ่มด้วย ภาค/รุ่น/ประเภท ได้
 
     เทียบรหัสแบบตรงตัว (Course.code เก็บเป็นตัวพิมพ์ใหญ่) จึงใช้ UQ index ของ course.code ได้
@@ -44,6 +52,10 @@ def search_documents(*, course_code, department=None, batch=None, doc_type=None)
         conditions &= Q(batch_course__batch=batch)
     if doc_type is not None:
         conditions &= Q(doc_type=doc_type)
+    if exam_period is not None:
+        conditions &= Q(exam_detail__exam_period=exam_period)
+    if exam_year_be is not None:
+        conditions &= Q(exam_detail__exam_year_be=exam_year_be)
     return (
         published_documents()
         .filter(conditions)

@@ -1,4 +1,5 @@
 """ฟอร์มของ materials รับค่าอย่างเดียว การอ่าน/เขียนทำผ่าน selectors / services"""
+
 from django import forms
 
 from catalog.models import Batch, BatchCourse, Department
@@ -39,13 +40,37 @@ class SearchForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select"}),
     )
 
+    exam_period = forms.ModelChoiceField(
+        label="ช่วงสอบ",
+        queryset=ExamPeriod.objects.order_by("code"),
+        required=False,
+        empty_label="ทุกช่วงสอบ",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    exam_year_be = forms.IntegerField(
+        label="ปี พ.ศ.",
+        min_value=2500,
+        max_value=2700,
+        required=False,
+        widget=forms.NumberInput(
+            attrs={"class": "form-control", "min": 2500, "max": 2700}
+        ),
+        error_messages={
+            "min_value": "ปีต้องอยู่ในช่วง พ.ศ. 2500–2700",
+            "max_value": "ปีต้องอยู่ในช่วง พ.ศ. 2500–2700",
+            "invalid": "กรุณากรอกปี พ.ศ. เป็นตัวเลข",
+        },
+    )
+
     def clean(self):
         """เลือกทั้งภาคและรุ่น รุ่นต้องอยู่ในภาคนั้น (ไม่งั้นผลจะว่างโดยไม่รู้สาเหตุ)"""
         cleaned_data = super().clean()
         department = cleaned_data.get("department")
         batch = cleaned_data.get("batch")
         if department and batch and batch.department_id != department.pk:
-            self.add_error("batch", f"รุ่น {batch.code} ไม่ได้อยู่ในภาค {department.code}")
+            self.add_error(
+                "batch", f"รุ่น {batch.code} ไม่ได้อยู่ในภาค {department.code}"
+            )
         return cleaned_data
 
 
@@ -106,12 +131,18 @@ class ReviewForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.is_bound and self.data.get("decision") == Approval.Decision.REJECTED and not (self.data.get("reason") or "").strip():
-            self.fields["reason"].widget.attrs.update({
-                "class": "form-control is-invalid",
-                "aria-invalid": "true",
-                "aria-describedby": "reason-errors",
-            })
+        if (
+            self.is_bound
+            and self.data.get("decision") == Approval.Decision.REJECTED
+            and not (self.data.get("reason") or "").strip()
+        ):
+            self.fields["reason"].widget.attrs.update(
+                {
+                    "class": "form-control is-invalid",
+                    "aria-invalid": "true",
+                    "aria-describedby": "reason-errors",
+                }
+            )
 
     def clean(self):
         cleaned_data = super().clean()
