@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 {% block title %}{{ document.title }} | CNTAGRAM{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'materials/vault.css' %}"><link rel="stylesheet" href="{% static 'materials/download.css' %}">{% endblock %}
@@ -40,10 +40,8 @@
   </section>
   <section aria-labelledby="preview-heading">
     <h2 class="h5" id="preview-heading">ตัวอย่างเอกสาร PDF</h2>
-    <div class="border rounded overflow-hidden bg-white">
-      <iframe src="{% url 'materials:document_preview' document.pk %}" title="ตัวอย่าง PDF: {{ document.title }}" class="dv-preview" loading="lazy"></iframe>
-    </div>
-    <p class="small text-secondary mt-2">หากตัวอย่างไม่แสดง อาจเป็นเพราะไฟล์ยังไม่พร้อมหรือเบราว์เซอร์ไม่รองรับ PDF</p>
+    {% url 'materials:document_preview' document.pk as preview_url %}
+    {% include "materials/_pdf_preview.html" %}
   </section>
 </article>
 </div>

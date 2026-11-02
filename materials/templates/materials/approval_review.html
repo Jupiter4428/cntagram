@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}พิจารณาเอกสาร: {{ document.title }} | CNTAGRAM{% endblock %}
@@ -94,7 +94,7 @@
                                 <div class="flex-grow-1">
                                     <div class="fw-bold text-dark text-break">{{ document.current_version.original_name }}</div>
                                     <div class="small text-muted">
-                                        เวอร์ชัน: v{{ document.current_version.version_no }} |
+                                        เวอร์ชัน: v{{ document.current_version.version_no }} | 
                                         ขนาด: {{ document.current_version.size_bytes|filesizeformat }} |
                                         อัปโหลด: {{ document.current_version.uploaded_at|date:"d M Y, H:i" }}
                                     </div>
@@ -116,10 +116,8 @@
                             <h2 class="h5 fw-bold mb-0 text-dark" id="preview-heading">ตัวอย่างเอกสาร PDF</h2>
                         </div>
                         <div class="card-body p-4">
-                            <div class="border rounded overflow-hidden bg-white">
-                                <iframe src="{% url 'materials:approval_preview' document.pk %}" title="ตัวอย่าง PDF: {{ document.title }}" class="dv-preview" loading="lazy"></iframe>
-                            </div>
-                            <p class="small text-secondary mt-2 mb-0">หากตัวอย่างไม่แสดง อาจเป็นเพราะไฟล์ยังไม่พร้อมหรือเบราว์เซอร์ไม่รองรับ PDF</p>
+                            {% url 'materials:approval_preview' document.pk as preview_url %}
+                            {% include "materials/_pdf_preview.html" %}
                         </div>
                     </section>
                 {% endif %}
@@ -132,15 +130,6 @@
                         <h2 class="h5 fw-bold mb-0 text-dark">แบบฟอร์มการพิจารณา</h2>
                     </div>
                     <div class="card-body p-4">
-                        <section aria-label="ความคืบหน้าการอนุมัติ" class="mb-3">
-                            <h3 class="h6">สถานะการอนุมัติ</h3>
-                            {% if document.approval_ui %}
-                                <p class="mb-1">อนุมัติแล้ว: {% for role in document.approval_ui.approved_roles %}<span class="approval-badge">{{ role.name_th }}</span> {% empty %}ยังไม่มี{% endfor %}</p>
-                                <p class="mb-1">ยังรอ: {% for role in document.approval_ui.missing_roles %}<span class="approval-badge">{{ role.name_th }}</span> {% empty %}ไม่มี{% endfor %}</p>
-                                {% if not document.approval_ui.can_review %}<p class="alert alert-warning" role="status">{{ document.approval_ui.reason }}</p>{% endif %}
-                            {% else %}<p class="alert alert-warning" role="status">รอข้อมูลสถานะและสิทธิ์จากระบบ</p>{% endif %}
-                        </section>
-                        {% if document.approval_ui.can_review %}
                         <form method="post" action="{% url 'materials:approval_review' document.id %}" novalidate>
                             {% csrf_token %}
 
@@ -194,10 +183,6 @@
                                 </a>
                             </div>
                         </form>
-                        {% else %}
-                            {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>{% endif %}
-                            <a href="{% url 'materials:approval_queue' %}" class="btn approval-secondary">กลับไปหน้ารายการ</a>
-                        {% endif %}
                     </div>
                 </div>
             </div>
