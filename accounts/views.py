@@ -33,15 +33,6 @@ def _safe_login_redirect(request, next_url=""):
     return resolve_url(settings.LOGIN_REDIRECT_URL)
 
 
-def _rate_limited_response(request, form):
-    """HTTP 429 login page with Retry-After, keeping the typed username."""
-    limited_form = LoginForm(request=request, initial={"username": form.submitted_username})
-    context = {"form": limited_form, "next": form.next_url, "rate_limited": True}
-    response = render(request, "accounts/login.html", context, status=429)
-    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-    return response
-
-
 @require_GET
 def home(request):
     """Public landing page; Super Admins get their own admin index."""
@@ -90,22 +81,52 @@ def register(request):
 @require_http_methods(["GET", "POST"])
 def login(request):
     """Authenticate a user while throttling repeated failures."""
-    is_post = request.method == "POST"
-    form = LoginForm(
-        request=request,
-        data=request.POST if is_post else None,
-        initial={"next": request.GET.get("next", "")},
-    )
     if request.user.is_authenticated:
-        return redirect(_safe_login_redirect(request, form.next_url))
-    if is_post:
-        attempt = attempt_login(form=form, client_ip=_client_ip(request))
+        return redirect(_safe_login_redirect(request))
+
+    next_url = request.POST.get("next") or request.GET.get("next", "")
+    form = LoginForm(
+        data=request.POST if request.method == "POST" else None,
+        initial={"next": next_url},
+    )
+    status = 200
+    retry_after = None
+
+    if request.method == "POST":
+        client_ip = _client_ip(request)
+        identifier = (request.POST.get("username") or "").strip()
+        password = request.POST.get("password") or ""
+
+        attempt = services.attempt_login(
+            identifier=identifier,
+            password=password,
+            client_ip=client_ip,
+        )
         if attempt.user:
             auth_login(request, attempt.user)
-            return redirect(_safe_login_redirect(request, form.next_url))
-        if attempt.rate_limited:
-            return _rate_limited_response(request, form)
-    return render(request, "accounts/login.html", {"form": form, "next": form.next_url})
+            return redirect(_safe_login_redirect(request, next_url))
+        elif attempt.rate_limited:
+            form.add_error(
+                None,
+                "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง (Too many failed login attempts)",
+            )
+            status = 429
+            retry_after = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+        elif form.is_valid():
+            form.add_error(
+                None,
+                "Please enter a correct email and password. Note that both fields may be case-sensitive.",
+            )
+
+    response = render(
+        request,
+        "accounts/login.html",
+        {"form": form, "next": next_url},
+        status=status,
+    )
+    if retry_after:
+        response["Retry-After"] = retry_after
+    return response
 
 
 @require_POST
