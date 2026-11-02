@@ -23,5 +23,10 @@ def course_list():
     return Course.objects.order_by("code")
 
 
+def batch_has_courses(*, batch):
+    """Return whether the batch still has linked courses."""
+    return batch.batch_courses.exists()
+
+
 def batch_course_list(*, batch):
     return BatchCourse.objects.filter(batch=batch).order_by("course__code")

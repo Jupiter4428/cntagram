@@ -10,14 +10,15 @@
         <span class="tech-index">!</span>
     </div>
     <div class="retro-widget__body module-body">
-        <p class="admin-hint mb-3">คุณกำลังจะลบรุ่น <strong>{{ batch.code }}</strong> กรุณาตรวจสอบก่อนยืนยัน การลบรุ่นไม่สามารถย้อนกลับได้</p>
-        {% if batch.batch_courses.exists %}
+        {% if has_courses %}
         <p class="admin-hint mb-3" id="batch-delete-warning" role="alert">ไม่สามารถลบรุ่น {{ batch.code }} ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้ กรุณาถอดรายวิชาออกก่อน</p>
+        {% else %}
+        <p class="admin-hint mb-3">คุณกำลังจะลบรุ่น <strong>{{ batch.code }}</strong> กรุณาตรวจสอบก่อนยืนยัน การลบรุ่นไม่สามารถย้อนกลับได้</p>
         {% endif %}
 
         <form class="admin-form__buttons" method="post">
             {% csrf_token %}
-            <button class="admin-button admin-button--primary" type="submit" {% if batch.batch_courses.exists %}disabled aria-describedby="batch-delete-warning"{% endif %}>ยืนยันการลบ</button>
+            <button class="admin-button admin-button--primary" type="submit" {% if has_courses %}disabled aria-describedby="batch-delete-warning"{% endif %}>ยืนยันการลบ</button>
             <a class="admin-button" href="{% url 'catalog:batch_list' %}">ยกเลิก</a>
         </form>
     </div>

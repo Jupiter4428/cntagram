@@ -91,7 +91,11 @@ def batch_delete(request, pk):
         else:
             messages.success(request, f"ลบรุ่น {code} สำเร็จแล้ว")
         return redirect("catalog:batch_list")
-    return render(request, "catalog/batch_confirm_delete.html", {"batch": batch})
+    return render(
+        request,
+        "catalog/batch_confirm_delete.html",
+        {"batch": batch, "has_courses": selectors.batch_has_courses(batch=batch)},
+    )
 
 
 @super_admin_required
