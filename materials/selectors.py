@@ -100,7 +100,7 @@ def pending_documents_for_moderator(*, user):
         )
 
     return (
-        qs.exclude(uploader=user)
+        qs.filter(doc_type__required_roles__isnull=False).exclude(uploader=user)
         .exclude(approvals__approver=user)
         .select_related(
             "batch_course__batch__department",
@@ -109,6 +109,7 @@ def pending_documents_for_moderator(*, user):
             "uploader",
         )
         .prefetch_related("versions")
+        .distinct()
         .order_by("-created_at")
     )
 

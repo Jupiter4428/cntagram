@@ -117,6 +117,23 @@ class ApprovalProgressForQueueTests(ApprovalBaseTestCase):
 class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
     """US-9: approval rules come from doc_type_required_role"""
 
+    def test_doc_type_without_rules_is_hidden_from_review_queue(self):
+        doc_type = DocType.objects.create(
+            code="slide_no_rule", name_th="สไลด์ไม่มีกฎ", vault=DocType.Vault.LECTURE
+        )
+        doc = self.create_document(doc_type=doc_type)
+        for reviewer in (self.super_admin, self.mod_cn):
+            self.assertNotIn(
+                doc.pk,
+                pending_documents_for_moderator(user=reviewer).values_list("pk", flat=True),
+            )
+        self.assertEqual(doc.status, Document.Status.PENDING)
+
+    def test_multiple_approval_rules_do_not_duplicate_queue_rows(self):
+        doc = self.create_document(doc_type=self.doc_type_exam)
+        ids = list(pending_documents_for_moderator(user=self.super_admin).values_list("pk", flat=True))
+        self.assertEqual(ids.count(doc.pk), 1)
+
     def test_doc_type_without_rules_cannot_be_approved(self):
         doc_type_slide = DocType.objects.create(
             code="slide", name_th="สไลด์", vault=DocType.Vault.LECTURE
