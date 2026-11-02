@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from portal.permissions import is_super_admin, super_admin_required
 
+from materials import selectors as material_selectors
 from . import selectors, services
 from .forms import LoginForm, ModeratorAssignmentForm, RegisterForm
 from .models import Role, UserRole
@@ -48,7 +49,15 @@ def home(request):
     if is_super_admin(request.user):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
-    return render(request, "accounts/index.html")
+
+    context = {}
+    if request.user.is_authenticated:
+        context["my_documents"] = material_selectors.user_documents(user=request.user)
+        context["moderator_pending"] = material_selectors.moderator_pending_summary(
+            user=request.user
+        )
+
+    return render(request, "accounts/index.html", context)
 
 
 @require_http_methods(["GET", "POST"])

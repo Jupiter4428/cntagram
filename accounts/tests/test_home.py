@@ -4,7 +4,9 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from catalog.models import Department
+from catalog.models import Batch, BatchCourse, Course, Department
+from materials.models import Approval, DocType, Document
+
 
 from ..models import Role, UserRole
 
@@ -237,3 +239,185 @@ class HomeViewTests(TestCase):
         self.assertContains(response, 'href="?page=1#recent-users"')
         self.assertContains(response, 'popovertarget="user-%d"' % self.user.pk)
         self.assertContains(response, self.user.email)
+
+
+class UserDashboardTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.now = timezone.now()
+        cls.dept_cn = Department.objects.create(
+            code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
+        )
+        cls.dept_me = Department.objects.create(
+            code="ME", name_th="วิศวกรรมเครื่องกล", name_en="Mechanical Engineering"
+        )
+        cls.batch_cn = Batch.objects.create(department=cls.dept_cn, number=24)
+        cls.batch_me = Batch.objects.create(department=cls.dept_me, number=24)
+        cls.course = Course.objects.create(code="CN101", name_en="Computer Programming")
+        cls.bc_cn = BatchCourse.objects.create(batch=cls.batch_cn, course=cls.course)
+        cls.bc_me = BatchCourse.objects.create(batch=cls.batch_me, course=cls.course)
+
+        cls.doc_type_summary = DocType.objects.create(
+            code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE
+        )
+
+        cls.role_student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
+        cls.role_moderator, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"})
+
+        cls.student = User.objects.create_user(
+            email="6610000010@student.tu.ac.th",
+            password="password",
+            nickname="Ton",
+            department=cls.dept_cn,
+            pdpa_consent_at=cls.now,
+        )
+        UserRole.objects.create(user=cls.student, role=cls.role_student)
+
+        cls.other_student = User.objects.create_user(
+            email="6610000011@student.tu.ac.th",
+            password="password",
+            nickname="Other",
+            department=cls.dept_cn,
+            pdpa_consent_at=cls.now,
+        )
+
+        cls.moderator = User.objects.create_user(
+            email="6610000012@student.tu.ac.th",
+            password="password",
+            nickname="P'Mo",
+            department=cls.dept_cn,
+            pdpa_consent_at=cls.now,
+        )
+        UserRole.objects.create(user=cls.moderator, role=cls.role_moderator, department=cls.dept_cn)
+
+    def test_guest_home_does_not_show_my_documents_or_moderator_queue(self):
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "ไฟล์ของฉัน")
+        self.assertNotContains(response, "MODERATOR QUEUE")
+
+    def test_student_home_shows_only_own_documents_with_statuses_and_rejection_reason(self):
+        # Student's documents
+        d_pending = Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="CN101 Midterm Summary",
+            status=Document.Status.PENDING,
+        )
+        d_published = Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="CN101 Final Summary",
+            status=Document.Status.PUBLISHED,
+        )
+        d_rejected = Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="CN101 Lecture Slides",
+            status=Document.Status.REJECTED,
+        )
+        Approval.objects.create(
+            document=d_rejected,
+            approver=self.moderator,
+            approver_role=self.role_moderator,
+            decision=Approval.Decision.REJECTED,
+            reason="ผิดวิชาและเนื้อหาไม่ตรงตามหลักสูตร",
+        )
+
+        # Other student's document (should not be shown)
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.other_student,
+            title="Secret Friend Document",
+            status=Document.Status.PENDING,
+        )
+
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ไฟล์ของฉัน")
+        self.assertContains(response, "CN101 Midterm Summary")
+        self.assertContains(response, "รออนุมัติ")
+        self.assertContains(response, "CN101 Final Summary")
+        self.assertContains(response, "เผยแพร่แล้ว")
+        self.assertContains(response, "CN101 Lecture Slides")
+        self.assertContains(response, "ถูกปฏิเสธ")
+        self.assertContains(response, "เหตุผลที่ถูกปฏิเสธ:</strong> ผิดวิชาและเนื้อหาไม่ตรงตามหลักสูตร")
+        self.assertNotContains(response, "Secret Friend Document")
+        self.assertNotContains(response, "MODERATOR QUEUE")
+
+    def test_moderator_home_shows_pending_approvals_count_for_assigned_department(self):
+        # 2 pending docs in CN
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="Pending CN 1",
+            status=Document.Status.PENDING,
+        )
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.other_student,
+            title="Pending CN 2",
+            status=Document.Status.PENDING,
+        )
+        # 1 pending doc in ME (not CN)
+        Document.objects.create(
+            batch_course=self.bc_me,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="Pending ME",
+            status=Document.Status.PENDING,
+        )
+
+        self.client.force_login(self.moderator)
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "MODERATOR QUEUE")
+        self.assertContains(response, "รออนุมัติ <strong>2</strong> ไฟล์ (ภาค CN)")
+        self.assertContains(response, reverse("materials:approval_queue"))
+
+    def test_empty_documents_shows_upload_cta(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "คุณยังไม่มีประวัติการอัปโหลดเอกสารในระบบ")
+        self.assertContains(response, reverse("materials:upload"))
+
+    def test_dashboard_query_count_remains_constant(self):
+        self.client.force_login(self.student)
+
+        # Baseline: 1 document
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="Doc 0",
+            status=Document.Status.PUBLISHED,
+        )
+        # Session + User + 2 super_admin checks + 1 moderator check + 1 user_documents + 1 versions prefetch = 7
+        with self.assertNumQueries(7):
+            self.client.get(reverse("accounts:home"))
+
+        # Add 4 more documents (total 5)
+        for i in range(1, 5):
+            Document.objects.create(
+                batch_course=self.bc_cn,
+                doc_type=self.doc_type_summary,
+                uploader=self.student,
+                title=f"Doc {i}",
+                status=Document.Status.PUBLISHED,
+            )
+
+        # Same 7 queries regardless of 1 or 5 documents (no N+1)!
+        with self.assertNumQueries(7):
+            self.client.get(reverse("accounts:home"))
