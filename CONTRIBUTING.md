@@ -720,7 +720,7 @@ urlpatterns = [
 ### Views
 - ใช้ **Function-Based Views เป็นหลัก** ตามที่ทีมตกลง (อ่านจากบนลงล่างได้ตรงๆ เหมาะกับ flow ที่มีกฎเฉพาะ)
 - ใช้ **Generic CBV** (`ListView`, `DetailView` ฯลฯ) ได้กับหน้าแสดงข้อมูลแบบ CRUD ล้วนๆ โดย
-  - หากใช้ Mixin อื่น ให้ใส่ตามลำดับ MRO ที่เหมาะสม เช่น `class DocumentListView(ListView)` (การล็อกอินบังคับด้วย `LoginRequiredMiddleware` อยู่แล้ว)
+  - ใส่ Mixin ไว้**ซ้ายสุด** ตามลำดับ MRO เช่น `class DocumentListView(PermissionRequiredMixin, ListView)` (ไม่ต้องใส่ `LoginRequiredMixin` เพราะ `LoginRequiredMiddleware` บังคับล็อกอินให้แล้ว)
   - override `get_queryset()` ให้เรียก selector ไม่เขียน query ยาวในคลาส
 - ไม่ว่าแบบไหน view ต้อง**บาง**: รับ input → เรียก service/selector → ตอบ response
 - ต้อง return `HttpResponse` (หรือ `render`/`redirect`/`JsonResponse`) ห้าม return `None` หรือสตริงเปล่า

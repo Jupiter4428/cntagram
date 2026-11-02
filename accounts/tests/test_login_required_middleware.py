@@ -1,7 +1,12 @@
 """Regression tests for centralized guest access control (Issue #45)."""
 
+from types import ModuleType
+
+from django.http import HttpResponse
 from django.test import TestCase, override_settings
-from django.urls import reverse
+from django.urls import include, path, reverse
+
+from accounts import urls as accounts_urls
 
 
 class LoginRequiredMiddlewareTests(TestCase):
@@ -9,17 +14,6 @@ class LoginRequiredMiddlewareTests(TestCase):
         for name in ("accounts:home", "accounts:register", "accounts:login"):
             with self.subTest(name=name):
                 self.assertEqual(self.client.get(reverse(name)).status_code, 200)
-
-    def test_private_pages_redirect_guests_to_login(self):
-        login_url = reverse("accounts:login")
-        for name in (
-            "materials:vault", "materials:upload", "materials:approval_queue",
-            "catalog:batch_list", "catalog:course_list", "accounts:moderator_manage",
-        ):
-            with self.subTest(name=name):
-                response = self.client.get(reverse(name))
-                self.assertEqual(response.status_code, 302)
-                self.assertTrue(response.url.startswith(login_url + "?next="))
 
     def test_all_private_routes_redirect_guests(self):
         private_urls = (
@@ -39,6 +33,7 @@ class LoginRequiredMiddlewareTests(TestCase):
             ("materials:vault", ()),
             ("materials:document_detail", (1,)),
             ("materials:document_preview", (1,)),
+            ("materials:document_download", (1,)),
             ("materials:upload", ()),
             ("materials:upload_done", ()),
             ("materials:upload_course_options", (1,)),
@@ -62,11 +57,6 @@ class LoginRequiredMiddlewareTests(TestCase):
         self.assertEqual(self.client.get(reverse("admin:login")).status_code, 200)
 
     def test_new_view_without_decorator_is_private_by_default(self):
-        from django.http import HttpResponse
-        from django.urls import include, path
-        from types import ModuleType
-        from accounts import urls as accounts_urls
-
         def private_view(request):
             return HttpResponse("private")
 
