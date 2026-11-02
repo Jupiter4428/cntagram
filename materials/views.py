@@ -1,5 +1,4 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, JsonResponse
@@ -22,7 +21,6 @@ from .services import (
 )
 
 
-@login_required
 def vault(request):
     """หน้าค้นหาเอกสารด้วยรหัสวิชา รวมผลจากทุกรุ่นในหน้าเดียว (US-7)"""
     form = SearchForm(request.GET or None)
@@ -30,7 +28,6 @@ def vault(request):
     return render(request, "materials/vault.html", {"form": form, "documents": documents})
 
 
-@login_required
 def document_detail(request, document_id):
     """หน้าเอกสาร + preview PDF (เอกสารที่ไม่ published ตอบ 404)"""
     document = get_object_or_404(
@@ -65,7 +62,6 @@ def _inline_pdf_response(document):
     )
 
 
-@login_required
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
 def document_preview(request, document_id):
     """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสาร published แบบ inline ผ่าน view ที่ตรวจสิทธิ์"""
@@ -73,7 +69,6 @@ def document_preview(request, document_id):
     return _inline_pdf_response(document)
 
 
-@login_required
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าพิจารณาของเว็บเราเองแสดงได้
 def approval_document_preview(request, document_id):
     """ส่งไฟล์ PDF ของเอกสารที่รอพิจารณา (pending) ให้ผู้ตรวจที่มีสิทธิ์เท่านั้น (US-6, #100)
@@ -98,7 +93,6 @@ def _add_service_errors(form, exc):
         form.add_error(field if field in form.fields else None, errors)
 
 
-@login_required
 @require_GET
 def approval_queue(request):
     """Display pending documents waiting for review by the moderator (US-6)."""
@@ -111,7 +105,6 @@ def approval_queue(request):
     return render(request, "materials/approval_queue.html", {"documents": documents})
 
 
-@login_required
 @require_http_methods(["GET", "POST"])
 def upload(request):
     """ฟอร์มอัปโหลดชีท (US-5) ภาควิชาล็อกตามสังกัดของผู้ใช้
@@ -147,14 +140,12 @@ def upload(request):
     )
 
 
-@login_required
 @require_GET
 def upload_done(request):
     """หน้าหลังอัปโหลดสำเร็จ แจ้งว่าเอกสารรออนุมัติ (US-5)"""
     return render(request, "materials/upload_done.html")
 
 
-@login_required
 @require_GET
 def upload_course_options(request, batch_id):
     """JSON วิชาในรุ่น ให้ dropdown ต่อเนื่องของฟอร์มอัปโหลด (เฉพาะรุ่นในภาคของตัวเอง)"""
@@ -167,7 +158,6 @@ def upload_course_options(request, batch_id):
     return JsonResponse({"courses": courses})
 
 
-@login_required
 @require_http_methods(["GET", "POST"])
 def approval_review(request, document_id):
     """Review a single document submission (approve/reject) (US-6)."""

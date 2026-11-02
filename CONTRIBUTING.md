@@ -617,7 +617,6 @@ def published_documents_for_course(*, course_code: str) -> QuerySet[Document]:
 ```
 ```python
 # materials/views.py
-@login_required
 def course_documents(request, course_code):
     documents = published_documents_for_course(course_code=course_code)
     return render(request, "materials/course_documents.html", {"documents": documents})
@@ -721,16 +720,15 @@ urlpatterns = [
 ### Views
 - ใช้ **Function-Based Views เป็นหลัก** ตามที่ทีมตกลง (อ่านจากบนลงล่างได้ตรงๆ เหมาะกับ flow ที่มีกฎเฉพาะ)
 - ใช้ **Generic CBV** (`ListView`, `DetailView` ฯลฯ) ได้กับหน้าแสดงข้อมูลแบบ CRUD ล้วนๆ โดย
-  - ใส่ Mixin ไว้**ซ้ายสุด** ตามลำดับ MRO เช่น `class DocumentListView(LoginRequiredMixin, ListView)`
+  - ใส่ Mixin ไว้**ซ้ายสุด** ตามลำดับ MRO เช่น `class DocumentListView(PermissionRequiredMixin, ListView)` (ไม่ต้องใส่ `LoginRequiredMixin` เพราะ `LoginRequiredMiddleware` บังคับล็อกอินให้แล้ว)
   - override `get_queryset()` ให้เรียก selector ไม่เขียน query ยาวในคลาส
 - ไม่ว่าแบบไหน view ต้อง**บาง**: รับ input → เรียก service/selector → ตอบ response
 - ต้อง return `HttpResponse` (หรือ `render`/`redirect`/`JsonResponse`) ห้าม return `None` หรือสตริงเปล่า
 - ค้นหา object ด้วย `get_object_or_404()` แทน `try/except DoesNotExist`
 - อ่าน query string ด้วย `request.GET.get('key', default)` ไม่ใช้ `request.GET['key']` (จะเกิด 500 เมื่อไม่มีคีย์)
-- หน้าที่ต้องล็อกอินใช้ `@login_required` / `LoginRequiredMixin` (ตั้ง `LOGIN_URL`, `LOGIN_REDIRECT_URL`, `LOGOUT_REDIRECT_URL` ใน settings)
+- ทุก view ต้องล็อกอินโดยอัตโนมัติผ่าน `LoginRequiredMiddleware` (ตั้ง `LOGIN_URL`, `LOGIN_REDIRECT_URL`, `LOGOUT_REDIRECT_URL` ใน settings) หน้าที่เปิดให้ Guest ต้องติด `@login_not_required` และมีเทสต์ยืนยัน
 - **ตรวจสิทธิ์และความเป็นเจ้าของข้อมูลฝั่ง server (กัน IDOR):** ผู้ใช้ A ต้องแก้ URL เป็นของ B แล้วทำอะไรไม่ได้ กฎสิทธิ์ทางธุรกิจ (เช่น อัปโหลดได้เฉพาะภาคตัวเอง) เขียนใน service แล้ว `raise PermissionDenied`
   ```python
-  @login_required
   @require_POST
   def document_delete(request, pk):
       document = get_object_or_404(Document, pk=pk)
@@ -746,7 +744,6 @@ urlpatterns = [
 - **ไม่อ่าน `request.POST` ดิบๆ** ให้ใช้ `forms.Form` หรือ `forms.ModelForm` เสมอ (ได้ validation, type coercion, error message และกัน XSS ในตัว)
 - รูปแบบมาตรฐานของ view ที่รับฟอร์ม + **Post/Redirect/Get** (สำเร็จแล้ว `redirect()` เสมอ กัน refresh แล้วส่งซ้ำ) และส่งข้อมูลที่ผ่าน validation ให้ service:
   ```python
-  @login_required
   def document_create(request):
       form = DocumentUploadForm(request.POST or None, request.FILES or None)
       if request.method == "POST" and form.is_valid():
@@ -781,7 +778,7 @@ urlpatterns = [
 | SQL Injection | ใช้ Django ORM เสมอ ห้ามต่อสตริงสร้าง SQL เอง |
 | XSS | Auto-escaping ของ DTL, ไม่ใช้ `\|safe` กับ user input |
 | CSRF | `{% csrf_token %}` ทุกฟอร์ม POST |
-| Broken Access Control / IDOR | `@login_required` + ตรวจสิทธิ์/ความเป็นเจ้าของใน service |
+| Broken Access Control / IDOR | `LoginRequiredMiddleware` + ตรวจสิทธิ์/ความเป็นเจ้าของใน service |
 | เข้าถึงไฟล์โดยตรง | ไฟล์ PDF ส่งผ่าน view ที่ตรวจสิทธิ์ทุกครั้ง ไม่เปิด Direct URL |
 | Secret รั่ว | เก็บใน `.env` ไม่ commit |
 
@@ -970,7 +967,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
    - ทุก Model ต้องมี __str__ และ class Meta, ห้าม side-effect ภายนอกใน save()
    - ห้าม raw SQL, ห้าม fields='__all__', ห้าม |safe กับ user input
    - ใช้ get_object_or_404, reverse()/{% url 'ns:name' %}, ไม่ hardcode URL
-   - ทุกฟอร์ม POST ต้องมี {% csrf_token %}; view ที่ต้องล็อกอินใช้ @login_required
+   - ทุกฟอร์ม POST ต้องมี {% csrf_token %}; view ที่เปิดให้ Guest ต้องติด @login_not_required
    - เขียน unit test ประกอบทุกฟีเจอร์ commit ตาม Conventional Commits
    ```
 
@@ -990,7 +987,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 - [ ] ถ้าแก้ Model: มี migration ที่ commit แล้ว ไม่ได้ลบ/แก้ migration เก่า และอัปเดต `_docs/database-design.md`
 - [ ] อัปเดต `requirements.txt` ถ้าติดตั้ง package ใหม่
 - [ ] โค้ดตาม PEP 8 มี docstring และลบ debug code / print ที่ไม่จำเป็นออก
-- [ ] ทุกฟอร์ม POST มี `{% csrf_token %}` และหน้าที่ต้องล็อกอินมี `@login_required`
+- [ ] ทุกฟอร์ม POST มี `{% csrf_token %}` และหน้าที่เปิดให้ Guest ต้องติด `@login_not_required`
 - [ ] PR มี `Closes #<เลข issue>` และย้ายการ์ดเป็น **In Review**
 
 ---
