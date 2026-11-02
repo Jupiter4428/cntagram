@@ -173,6 +173,9 @@ class HomeViewTests(TestCase):
         self.assertTemplateUsed(response, "accounts/index.html")
         self.assertTemplateNotUsed(response, "accounts/index_admin.html")
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
+        for url_name in ("catalog:department_list", "catalog:batch_list", "catalog:course_list"):
+            with self.subTest(url_name=url_name):
+                self.assertNotContains(response, reverse(url_name))
         self.assertContains(response, self.hero)
 
     def test_moderator_home_does_not_show_the_dashboard_or_other_users_details(self):
@@ -218,6 +221,8 @@ class HomeViewTests(TestCase):
         self.assertContains(response, "ไฟล์ที่อัปโหลดรายเดือน")
         self.assertContains(response, 'class="admin-new-users"')
         self.assertContains(response, reverse("catalog:department_list"))
+        self.assertContains(response, reverse("catalog:batch_list"))
+        self.assertContains(response, reverse("catalog:course_list"))
 
     def test_admin_home_pages_users_and_shows_each_user_in_a_popup(self):
         admin = self.create_super_admin()
