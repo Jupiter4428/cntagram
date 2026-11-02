@@ -21,6 +21,10 @@ class LoginRequiredMiddlewareTests(TestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertTrue(response.url.startswith(login_url + "?next="))
 
+    def test_admin_index_redirects_guest_to_admin_login(self):
+        url = reverse("admin:index")
+        self.assertRedirects(self.client.get(url), f"{reverse('admin:login')}?next={url}")
+
     def test_admin_login_remains_accessible(self):
         self.assertEqual(self.client.get(reverse("admin:login")).status_code, 200)
 
