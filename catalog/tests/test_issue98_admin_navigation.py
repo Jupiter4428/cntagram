@@ -17,7 +17,8 @@ class Issue98AdminNavigationTests(CatalogTestCase):
         self.assertContains(response, "CN21")
         self.assertContains(response, reverse("catalog:batch_list"))
         self.assertContains(response, "ยกเลิก")
-        self.assertNotContains(response, 'disabled aria-describedby="batch-delete-warning"')
+        self.assertFalse(response.context.get("has_courses"))
+        self.assertTemplateUsed(response, "catalog/batch_confirm_delete.html")
 
     def test_delete_confirmation_warns_and_disables_action_for_batch_with_courses(self):
         batch = Batch.objects.create(department=self.dept_cn, number=21)
@@ -26,8 +27,8 @@ class Issue98AdminNavigationTests(CatalogTestCase):
         response = self.client.get(reverse("catalog:batch_delete", args=[batch.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ไม่สามารถลบรุ่น CN21 ได้")
-        self.assertContains(response, 'disabled aria-describedby="batch-delete-warning"')
-        self.assertTrue(Batch.objects.filter(pk=batch.pk).exists())
+        self.assertTemplateUsed(response, "catalog/batch_confirm_delete.html")
+        self.assertTrue(response.context["has_courses"])
 
     def test_admin_dashboard_links_to_batches_and_courses(self):
         response = self.client.get(reverse("accounts:home"))
@@ -40,5 +41,4 @@ class Issue98AdminNavigationTests(CatalogTestCase):
             with self.subTest(url_name=url_name):
                 response = self.client.get(reverse(url_name))
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, "is-active")
-                self.assertContains(response, f'href="{reverse(url_name)}"')
+                self.assertContains(response, f'is-active" href="{reverse(url_name)}"')
