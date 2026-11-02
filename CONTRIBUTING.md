@@ -1051,8 +1051,9 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) กฎอนุมัติ (US-9) `seed_materials` seed ให้ด้วย ส่วน `doc_type` ที่เพิ่มทีหลังรัน `python manage.py seed_approval_rules` หรือตั้งกฎที่หน้า DocType ใน Django admin (ข้อสอบต้องทั้ง moderator และ super_admin ชีทใช้คนใดคนหนึ่ง รันซ้ำได้ ถ้าไม่ seed จะไม่มีใครอนุมัติได้ ส่วน `doc_type` ที่มีอยู่แล้วตอน `migrate` ได้กฎจาก migration `0005` อัตโนมัติ ดู [ADR 0004](_docs/adr/0004-approval-tables-in-materials.md)) ส่วนตารางอื่นยังไม่มี script seed ให้ใส่ผ่าน Django admin (`/admin/`, TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36)) ไปก่อน ยกเว้น User ที่ต้องสร้างด้วย `create_user()` / `createsuperuser` ตาราง `role` ถูก seed อัตโนมัติด้วย data migration `accounts` 0004_seed_roles ตอน `migrate` (`seed_roles` ยังใช้ผูก super_admin ให้ superuser) และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5
 
 ### Migration ที่มีอยู่
-- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
+- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` และสร้างตาราง cache สำหรับ rate limit **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
+  python manage.py createcachetable
   ```
 - ถ้าเครื่องคุณเคย `migrate` ก่อนมี `AUTH_USER_MODEL` จะเจอ `InconsistentMigrationHistory` กรณีนี้เท่านั้นที่ให้ลบ `db.sqlite3` (ไฟล์ในเครื่องคุณ ไม่อยู่ใน Git) แล้ว `migrate` ใหม่ได้ (ต้อง seed ใหม่ด้วย) ส่วนโฟลเดอร์ `migrations/` **ยังห้ามลบ** ตามกฎด้านบน

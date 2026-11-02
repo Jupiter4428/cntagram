@@ -120,7 +120,9 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 ### 5. Migrate ฐานข้อมูล
 ```bash
 python manage.py migrate
+python manage.py createcachetable
 ```
+> **หมายเหตุ:** `createcachetable` ใช้สร้างตาราง cache ในฐานข้อมูลสำหรับเก็บข้อมูล rate limit (ทำงานร่วมกับ `DatabaseCache` เพื่อแชร์สถานะข้าม worker)
 
 > ⚠️ **Custom User Model:** โปรเจคใช้ `accounts.User` (สืบทอด `AbstractBaseUser` + `PermissionsMixin`) และตั้ง `AUTH_USER_MODEL = 'accounts.User'` ใน `settings.py` ไว้แล้ว **ห้ามแก้หรือลบบรรทัดนี้** เพราะต้องตั้งก่อนสั่ง `migrate` ครั้งแรกสุดของโปรเจค การเปลี่ยนย้อนหลังทำให้ฐานข้อมูลพัง (`InconsistentMigrationHistory`) อย่าสร้าง migration ของ user เอง ถ้าไม่แน่ใจให้ถามทีมก่อน (ดูรายละเอียดที่ [Database และ Models](./CONTRIBUTING.md#database-และ-models))
 
