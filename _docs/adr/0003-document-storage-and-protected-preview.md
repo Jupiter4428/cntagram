@@ -11,7 +11,7 @@ US-7 ต้องให้ผู้ใช้กดเปิดอ่าน PDF �
 ## Decision
 - เก็บไฟล์ใน `MEDIA_ROOT = BASE_DIR / "media"` ผ่าน `default_storage` ส่วน `DocumentVersion.storage_path` เก็บ path สัมพัทธ์กับ `MEDIA_ROOT`
 - **ไม่ตั้ง `MEDIA_URL`** และไม่ map URL ใดไปที่โฟลเดอร์ `media/` ดังนั้นไฟล์จะเปิดได้ผ่าน view เท่านั้น
-- view `materials:document_preview` ต้อง `@login_required` และหาเอกสารจาก `selectors.published_documents()` (ไม่ใช่ published ตอบ 404) จากนั้นส่งไฟล์เวอร์ชันล่าสุดด้วย `FileResponse` แบบ inline
+- view `materials:document_preview` ต้อง login (บังคับโดย `LoginRequiredMiddleware`) และหาเอกสารจาก `selectors.published_documents()` (ไม่ใช่ published ตอบ 404) จากนั้นส่งไฟล์เวอร์ชันล่าสุดด้วย `FileResponse` แบบ inline
 - หน้าเอกสารฝังไฟล์ด้วย `<iframe>` ที่ชี้ไปที่ view นั้น และใส่ `@xframe_options_sameorigin` เฉพาะ view นี้ ส่วน view อื่นยังใช้ `X-Frame-Options: DENY` ตามค่าตั้งต้น
 - โฟลเดอร์ `media/` อยู่ใน `.gitignore`
 

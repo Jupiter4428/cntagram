@@ -21,6 +21,39 @@ class LoginRequiredMiddlewareTests(TestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertTrue(response.url.startswith(login_url + "?next="))
 
+    def test_all_private_routes_redirect_guests(self):
+        private_urls = (
+            ("accounts:moderator_manage", ()),
+            ("accounts:moderator_remove", (1,)),
+            ("catalog:department_list", ()),
+            ("catalog:department_create", ()),
+            ("catalog:department_update", (1,)),
+            ("catalog:department_delete", (1,)),
+            ("catalog:batch_list", ()),
+            ("catalog:batch_create", ()),
+            ("catalog:batch_delete", (1,)),
+            ("catalog:batch_course_manage", (1,)),
+            ("catalog:batch_course_remove", (1, 1)),
+            ("catalog:course_list", ()),
+            ("catalog:course_create", ()),
+            ("materials:vault", ()),
+            ("materials:document_detail", (1,)),
+            ("materials:document_preview", (1,)),
+            ("materials:upload", ()),
+            ("materials:upload_done", ()),
+            ("materials:upload_course_options", (1,)),
+            ("materials:approval_queue", ()),
+            ("materials:approval_review", (1,)),
+            ("materials:approval_preview", (1,)),
+        )
+        for name, args in private_urls:
+            with self.subTest(name=name):
+                url = reverse(name, args=args)
+                self.assertRedirects(
+                    self.client.get(url),
+                    f"{reverse('accounts:login')}?next={url}",
+                )
+
     def test_admin_index_redirects_guest_to_admin_login(self):
         url = reverse("admin:index")
         self.assertRedirects(self.client.get(url), f"{reverse('admin:login')}?next={url}")
