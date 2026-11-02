@@ -1,46 +1,285 @@
-{# HTML เปล่า ยังไม่มี style รอฝั่ง front ออกแบบ #}
 <!doctype html>
 <html lang="th">
 <head>
   <meta charset="utf-8">
-  <title>วิชาในรุ่น {{ batch.code }}</title>
+  <title>วิชาในรุ่น {{ batch.code }} | CNTAGRAM</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(135deg, #18191c 0%, #3d4045 40%, #111214 100%);
+      color: #e2e8f0;
+      font-family: 'Kanit', 'Montserrat', sans-serif;
+      min-height: 100vh;
+      padding: 20px 40px;
+    }
+
+    /* ---------------- BRAND BANNER ---------------- */
+          .brand-banner {
+    display: inline-block;
+    background: linear-gradient(90deg, #201f1f 0%, #5f262d 60%, #782c2c 100%);
+    padding: 10px 120px 10px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    margin: 20px 0 20px 0;
+}
+
+.brand-title {
+    font-family: 'Montserrat', sans-serif; /* เปลี่ยนมาใช้ฟอนต์ Montserrat แบบโมเดิร์น */
+    font-size: 28px;                 /* ปรับขนาดให้พอดี ไม่ใหญ่หนาเทอะทะ */
+    font-weight: 700;                /* ความหนาระดับปานกลาง (กำลังดี ไม่หนาทึบ) */
+    color: #ffffff;
+    letter-spacing: 2.5px;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.brand-subtitle {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px;
+    font-weight: 400;                /* ปรับความหนาตัวอักษรซับไตเติลให้บางลง */
+    color: #e0cb90;
+    letter-spacing: 1.5px;
+    margin-top: 3px;
+    text-transform: uppercase;
+}
+    
+
+    /* ---------------- NAVIGATION ---------------- */
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #fadf7b;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .back-link:hover {
+      color: #ffffff;
+      transform: translateX(-3px);
+    }
+
+    /* ---------------- LAYOUT & CARDS ---------------- */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #181a20;
+      border: 1px solid #2d3139;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    .card-header-banner {
+      background: linear-gradient(90deg, #881337 0%, #450a0a 100%);
+      padding: 15px 20px;
+      border-bottom: 1px solid #991b1b;
+    }
+
+    .card-header-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #fca5a5;
+      text-transform: uppercase;
+    }
+
+    .card-header-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-top: 2px;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+
+    /* ---------------- TABLE STYLING ---------------- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+    }
+
+    th {
+      background-color: #111317;
+      color: #9ca3af;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 2px solid #2d3139;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #252830;
+      font-size: 14px;
+    }
+
+    tr:hover td {
+      background-color: #1f222a;
+    }
+
+    /* ---------------- FORMS & BUTTONS ---------------- */
+    .form-group-custom p {
+      margin-bottom: 15px;
+    }
+
+    .form-group-custom label {
+      display: block;
+      font-size: 13px;
+      color: #d1d5db;
+      margin-bottom: 6px;
+    }
+
+    .form-group-custom input, 
+    .form-group-custom select, 
+    .form-group-custom textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background-color: #0f1115;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group-custom input:focus {
+      border-color: #dc2626;
+    }
+
+    .form-help-text {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 15px;
+    }
+
+    /* Buttons */
+    .btn-submit {
+      background-color: #991b1b;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-submit:hover {
+      background-color: #dc2626;
+    }
+
+    .btn-remove {
+      background-color: transparent;
+      color: #ef4444;
+      border: 1px solid #7f1d1d;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-remove:hover {
+      background-color: #7f1d1d;
+      color: #ffffff;
+    }
+  </style>
 </head>
 <body>
-  <p><a href="{% url 'catalog:batch_manage' batch.department.code %}">กลับไปรายการรุ่น</a></p>
-  <h1>วิชาในรุ่น {{ batch.code }}</h1>
 
-  {% for message in messages %}
-    <p class="message {{ message.tags }}">{{ message }}</p>
-  {% endfor %}
+  <!-- Brand Banner ด้านซ้าย -->
+  <div class="brand-banner">
+    <div class="brand-title">CNTAGRAM</div>
+    <div class="brand-subtitle">EVEN WITHOUT SEEING HOPE IT DOESN'T MEAN THERE IS NO HOPE. PAST OR FUTURE LET THEM BE</div>
+  </div>
 
-  <table>
-    <thead>
-      <tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for batch_course in batch_courses %}
-        <tr>
-          <td>{{ batch_course.course.code }}</td>
-          <td>{{ batch_course.course.display_name }}</td>
-          <td>
-            <form method="post" action="{% url 'catalog:batch_course_remove' batch_course.pk %}">
-              {% csrf_token %}
-              <button type="submit">ถอดออก</button>
-            </form>
-          </td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="3">ยังไม่มีวิชาในรุ่นนี้</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="container">
+    <a href="{% url 'catalog:batch_manage' batch.department.code %}" class="back-link">← Back</a>
 
-  <h2>เพิ่มวิชาเข้ารุ่น</h2>
-  <p>ถ้ารหัสวิชามีในระบบแล้วจะใช้วิชาเดิม ถ้ายังไม่มีต้องกรอกชื่ออังกฤษ</p>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">เพิ่มวิชา</button>
-  </form>
+    
+      
+    
+
+    <!-- การ์ดตารางรายวิชา -->
+    <div class="card">
+      <div class="card-header-banner">
+        <div class="card-header-sub"></div>
+        <div class="card-header-title">รายวิชาในคณะวิศวกรรมศาสตร์ </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 25%;">รหัสวิชา</th>
+              <th style="width: 55%;">ชื่อวิชา</th>
+              <th style="width: 20%; text-align: right;">การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td style="font-weight: 600; color: #e0cb90;">{}</td>
+                <td>{}</td>
+                <td style="text-align: right;">
+                  <form method="post" action="{% url 'catalog:batch_course_remove' batch_course.pk %}">
+                    <button type="submit" class="btn-remove">ถอดออก</button>
+                  </form>
+                </td>
+              </tr>
+            
+              <tr>
+                <td colspan="3" style="text-align: center; color: #6b7280; padding: 30px;">ยังไม่มีรายวิชา</td>
+              </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- การ์ดฟอร์มเพิ่มวิชา -->
+    <div class="card">
+      <div class="card-header-banner">
+        <div class="card-header-sub"></div>
+        <div class="card-header-title">เพิ่มรายวิชา</div>
+      </div>
+      <div class="card-body">
+        <p class="form-help-text">* ถ้ารหัสวิชามีในระบบแล้วจะใช้วิชาเดิม ถ้ายังไม่มีต้องกรอกชื่ออังกฤษ</p>
+        <form method="post">
+         
+          <div class="form-group-custom">
+          </div>
+          <div style="margin-top: 15px;">
+            <button type="submit" class="btn-submit">+ เพิ่มรายวิชา</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
 </body>
 </html>
