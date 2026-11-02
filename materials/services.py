@@ -12,12 +12,19 @@ from .models import (
     Approval,
     DocType,
     Document,
+    DownloadLog,
     ExamDetail,
     max_upload_bytes,
     max_upload_mb,
 )
 
 logger = logging.getLogger(__name__)
+
+
+@transaction.atomic
+def record_download(*, document, user):
+    """Persist a protected download in the service layer."""
+    return DownloadLog.objects.create(document=document, user=user)
 
 PDF_MIME = "application/pdf"
 PDF_MAGIC = b"%PDF-"

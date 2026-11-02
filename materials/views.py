@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_http_methods
 
@@ -31,21 +32,33 @@ def vault(request):
 @login_required
 def document_detail(request, document_id):
     """หน้าเอกสาร + preview PDF (เอกสารที่ไม่ published ตอบ 404)"""
-    document = get_object_or_404(selectors.published_documents(), pk=document_id)
-    return render(request, "materials/document_detail.html", {"document": document})
+    document = get_object_or_404(
+        selectors.published_document_with_download_count(),
+        pk=document_id,
+    )
+    return render(request, "materials/document_detail.html", {
+        "document": document,
+        "download_count": document.download_count,
+        "download_url": reverse("materials:document_download", args=[document.pk]) if document.current_version else None,
+    })
+
+
+def open_document_pdf(document):
+    """Open a document's current PDF after its caller has checked access rights."""
+    version = document.current_version
+    # TODO(US-21): enforce virus scan status before serving any document file.
+    if version is None:
+        raise Http404("Document has no file")
+    try:
+        stream = default_storage.open(version.storage_path, "rb")
+    except (OSError, ValueError):
+        raise Http404("Document file unavailable")
+    return stream, version
 
 
 def _inline_pdf_response(document):
     """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL) ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว"""
-    version = document.current_version
-    # TODO(US-21): ยังไม่เช็ก version.scan_status เพราะยังไม่มีตัวสแกน (ทุกไฟล์ค้างที่ pending)
-    # เมื่อ US-21 มาถึง ต้องไม่ส่งไฟล์ที่ infected (ความเป็น PDF ตรวจแล้วตอนอัปโหลด US-5)
-    if version is None:
-        raise Http404("ยังไม่มีไฟล์ของเอกสารนี้")
-    try:
-        file = default_storage.open(version.storage_path, "rb")
-    except OSError:  # ไม่พบไฟล์ หรือ path ใช้เปิดไม่ได้ ตอบ 404 แทน 500
-        raise Http404("ไม่พบไฟล์ของเอกสารนี้")
+    file, version = open_document_pdf(document)
     return FileResponse(
         file, content_type="application/pdf", filename=version.original_name
     )

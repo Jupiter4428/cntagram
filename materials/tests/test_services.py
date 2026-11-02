@@ -6,9 +6,18 @@ from django.core.files.storage import default_storage
 
 from catalog.models import SystemSetting
 
-from ..models import Document
-from ..services import upload_document
-from .base import PDF_BYTES, UploadTestCase, pdf_file, stored_file_count
+from ..models import Document, DownloadLog
+from ..services import record_download, upload_document
+from .base import PDF_BYTES, SearchTestCase, UploadTestCase, pdf_file, stored_file_count
+
+
+class RecordDownloadServiceTests(SearchTestCase):
+    def test_record_download_creates_log_for_document_and_user(self):
+        document = self.make_document(self.cn200[21], title="Download service test")
+        log = record_download(document=document, user=self.uploader)
+        self.assertEqual(log.document, document)
+        self.assertEqual(log.user, self.uploader)
+        self.assertEqual(DownloadLog.objects.filter(document=document).count(), 1)
 
 
 class UploadDocumentServiceTests(UploadTestCase):
