@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
-from django.contrib import messages
+from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -104,7 +105,9 @@ REGISTER_RATE_LIMIT_ATTEMPTS = 5
 REGISTER_RATE_LIMIT_WINDOW_SECONDS = 300
 
 # แม็ประดับ error ของ messages ไปเป็น class "danger" ของ alert
-MESSAGE_TAGS = {messages.ERROR: 'danger'}
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -164,10 +167,3 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
-
-from django.contrib.messages import constants as message_constants
-
-MESSAGE_TAGS = {
-    message_constants.ERROR: "danger",
-}
-

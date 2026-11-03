@@ -4634,3 +4634,35 @@ summary:focus-visible {
         min-height: 40px;
     }
 }
+
+/* Layout stability: keep navigation in normal flow instead of overlapping content.
+   The earlier negative margins required multiple conflicting top-padding offsets,
+   causing floating-looking gaps and overlap when navigation wraps on small screens. */
+.cyber-nav {
+    margin-bottom: 0;
+}
+
+.retro-marquee {
+    margin-bottom: 0;
+}
+
+.site-layout {
+    min-width: 0;
+    padding-top: clamp(1rem, 2.5vw, 2rem);
+}
+
+.site-content,
+.site-sidebar {
+    min-width: 0;
+}
+
+@media (max-width: 679.98px) {
+    .cyber-nav {
+        margin-bottom: 0;
+    }
+
+    .site-layout,
+    .site-layout--auth {
+        padding-top: 1rem;
+    }
+}

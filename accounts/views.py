@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
+from django.contrib.auth.decorators import login_not_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
@@ -42,6 +43,7 @@ def _rate_limited_response(request, form):
     return response
 
 
+@login_not_required
 @require_GET
 def home(request):
     """Public landing page; Super Admins get their own admin index."""
@@ -51,6 +53,7 @@ def home(request):
     return render(request, "accounts/index.html")
 
 
+@login_not_required
 @require_http_methods(["GET", "POST"])
 def register(request):
     """Register a new student account with a faculty email (US-1)."""
@@ -87,6 +90,7 @@ def register(request):
     return render(request, "accounts/register.html", {"form": form})
 
 
+@login_not_required
 @require_http_methods(["GET", "POST"])
 def login(request):
     """Authenticate a user while throttling repeated failures."""
@@ -108,6 +112,7 @@ def login(request):
     return render(request, "accounts/login.html", {"form": form, "next": form.next_url})
 
 
+@login_not_required
 @require_POST
 def logout(request):
     """End the current session; CSRF middleware protects this POST endpoint."""

@@ -1,15 +1,16 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_http_methods
 
 from catalog.models import Batch
 
 from . import selectors
+from .approval_ui import attach_approval_ui
 from .forms import ReviewForm, SearchForm, UploadForm
 from .models import Document, max_upload_mb
 from .services import (
@@ -20,7 +21,6 @@ from .services import (
 )
 
 
-@login_required
 def vault(request):
     """หน้าค้นหาเอกสารด้วยรหัสวิชา รวมผลจากทุกรุ่นในหน้าเดียว (US-7)"""
     form = SearchForm(request.GET or None)
@@ -28,30 +28,40 @@ def vault(request):
     return render(request, "materials/vault.html", {"form": form, "documents": documents})
 
 
-@login_required
 def document_detail(request, document_id):
     """หน้าเอกสาร + preview PDF (เอกสารที่ไม่ published ตอบ 404)"""
-    document = get_object_or_404(selectors.published_documents(), pk=document_id)
-    return render(request, "materials/document_detail.html", {"document": document})
+    document = get_object_or_404(
+        selectors.published_document_with_download_count(),
+        pk=document_id,
+    )
+    return render(request, "materials/document_detail.html", {
+        "document": document,
+        "download_count": document.download_count,
+        "download_url": reverse("materials:document_download", args=[document.pk]) if document.current_version else None,
+    })
+
+
+def open_document_pdf(document):
+    """Open a document's current PDF after its caller has checked access rights."""
+    version = document.current_version
+    # TODO(US-21): enforce virus scan status before serving any document file.
+    if version is None:
+        raise Http404("Document has no file")
+    try:
+        stream = default_storage.open(version.storage_path, "rb")
+    except (OSError, ValueError):
+        raise Http404("Document file unavailable")
+    return stream, version
 
 
 def _inline_pdf_response(document):
     """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL) ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว"""
-    version = document.current_version
-    # TODO(US-21): ยังไม่เช็ก version.scan_status เพราะยังไม่มีตัวสแกน (ทุกไฟล์ค้างที่ pending)
-    # เมื่อ US-21 มาถึง ต้องไม่ส่งไฟล์ที่ infected (ความเป็น PDF ตรวจแล้วตอนอัปโหลด US-5)
-    if version is None:
-        raise Http404("ยังไม่มีไฟล์ของเอกสารนี้")
-    try:
-        file = default_storage.open(version.storage_path, "rb")
-    except OSError:  # ไม่พบไฟล์ หรือ path ใช้เปิดไม่ได้ ตอบ 404 แทน 500
-        raise Http404("ไม่พบไฟล์ของเอกสารนี้")
+    file, version = open_document_pdf(document)
     return FileResponse(
         file, content_type="application/pdf", filename=version.original_name
     )
 
 
-@login_required
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
 def document_preview(request, document_id):
     """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสาร published แบบ inline ผ่าน view ที่ตรวจสิทธิ์"""
@@ -59,7 +69,6 @@ def document_preview(request, document_id):
     return _inline_pdf_response(document)
 
 
-@login_required
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าพิจารณาของเว็บเราเองแสดงได้
 def approval_document_preview(request, document_id):
     """ส่งไฟล์ PDF ของเอกสารที่รอพิจารณา (pending) ให้ผู้ตรวจที่มีสิทธิ์เท่านั้น (US-6, #100)
@@ -84,18 +93,18 @@ def _add_service_errors(form, exc):
         form.add_error(field if field in form.fields else None, errors)
 
 
-@login_required
 @require_GET
 def approval_queue(request):
     """Display pending documents waiting for review by the moderator (US-6)."""
     if not selectors.can_review_any(user=request.user):
         raise PermissionDenied("เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้")
 
-    documents = selectors.pending_documents_for_moderator(user=request.user)
+    documents = attach_approval_ui(
+        selectors.pending_documents_for_moderator(user=request.user), request.user
+    )
     return render(request, "materials/approval_queue.html", {"documents": documents})
 
 
-@login_required
 @require_http_methods(["GET", "POST"])
 def upload(request):
     """ฟอร์มอัปโหลดชีท (US-5) ภาควิชาล็อกตามสังกัดของผู้ใช้
@@ -131,14 +140,12 @@ def upload(request):
     )
 
 
-@login_required
 @require_GET
 def upload_done(request):
     """หน้าหลังอัปโหลดสำเร็จ แจ้งว่าเอกสารรออนุมัติ (US-5)"""
     return render(request, "materials/upload_done.html")
 
 
-@login_required
 @require_GET
 def upload_course_options(request, batch_id):
     """JSON วิชาในรุ่น ให้ dropdown ต่อเนื่องของฟอร์มอัปโหลด (เฉพาะรุ่นในภาคของตัวเอง)"""
@@ -151,7 +158,6 @@ def upload_course_options(request, batch_id):
     return JsonResponse({"courses": courses})
 
 
-@login_required
 @require_http_methods(["GET", "POST"])
 def approval_review(request, document_id):
     """Review a single document submission (approve/reject) (US-6)."""
@@ -163,6 +169,7 @@ def approval_review(request, document_id):
     except Document.DoesNotExist:
         raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
 
+    attach_approval_ui([document], request.user)
     form = ReviewForm(request.POST or None)
     status = 200
     if request.method == "POST" and form.is_valid():
