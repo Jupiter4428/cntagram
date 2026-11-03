@@ -4,7 +4,7 @@ import datetime
 from collections import defaultdict
 from typing import NamedTuple
 
-from django.db.models import Count, DateField, Q, QuerySet
+from django.db.models import Count, DateField, OuterRef, Q, QuerySet, Subquery
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
@@ -14,6 +14,15 @@ from accounts.models import Role, UserRole
 from portal.permissions import is_super_admin
 
 from .models import Approval, DocType, DocTypeRequiredRole, Document, DocumentVersion
+
+
+def file_in_vault(*, sha256) -> bool:
+    """ตรวจ SHA-256 ในเอกสาร pending/published ทุกเวอร์ชัน (US-12)"""
+    return (
+        Document.objects.filter(versions__sha256=sha256)
+        .exclude(status__in=[Document.Status.REJECTED, Document.Status.HIDDEN])
+        .exists()
+    )
 
 
 def published_documents():
@@ -31,8 +40,59 @@ def published_document_with_download_count():
     return published_documents().annotate(download_count=Count("download_logs"))
 
 
-def search_documents(*, course_code, department=None, batch=None, doc_type=None):
-    """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น กรองเพิ่มด้วย ภาค/รุ่น/ประเภท ได้
+def user_documents(*, user) -> QuerySet[Document]:
+    """ดึงรายการเอกสารที่ผู้ใช้เป็นผู้อัปโหลด เรียงจากใหม่ไปเก่า
+
+    พร้อมเหตุผลปฏิเสธล่าสุด (ถ้าสถานะ rejected) และ preload ข้อมูลที่ต้องใช้แสดงผล
+    เพื่อป้องกัน N+1 queries ในหน้า Dashboard
+    """
+    if not user or not user.is_authenticated:
+        return Document.objects.none()
+
+    latest_rejection_reason = Subquery(
+        Approval.objects.filter(
+            document=OuterRef("pk"),
+            decision=Approval.Decision.REJECTED,
+        )
+        .order_by("-decided_at", "-id")
+        .values("reason")[:1]
+    )
+
+    return (
+        Document.objects.filter(uploader=user)
+        .annotate(rejection_reason=latest_rejection_reason)
+        .select_related(
+            "batch_course__batch__department",
+            "batch_course__course",
+            "doc_type",
+        )
+        .order_by("-created_at", "-id")
+    )
+
+
+def moderator_pending_summary(*, user) -> dict | None:
+    """จำนวนไฟล์รออนุมัติและรหัสภาคที่ Moderator ดูแล คืน None ถ้าไม่ได้เป็น Moderator"""
+    if not user or not user.is_authenticated:
+        return None
+
+    dept_codes = sorted(
+        UserRole.objects.filter(
+            user=user, role__code=Role.MODERATOR, department__isnull=False
+        ).values_list("department__code", flat=True)
+    )
+    if not dept_codes:
+        return None
+    return {
+        "count": pending_documents_for_moderator(user=user).count(),
+        "department_codes": dept_codes,
+    }
+
+
+def search_documents(
+    *, course_code, department=None, batch=None, doc_type=None,
+    exam_period=None, exam_year_be=None
+):
+    """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น กรองเพิ่มด้วย ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. ได้
 
     เทียบรหัสแบบตรงตัว (Course.code เก็บเป็นตัวพิมพ์ใหญ่) จึงใช้ UQ index ของ course.code ได้
     รหัสรุ่นไม่ได้เก็บใน DB จึงกรองรุ่นผ่าน batch_course__batch
@@ -44,6 +104,10 @@ def search_documents(*, course_code, department=None, batch=None, doc_type=None)
         conditions &= Q(batch_course__batch=batch)
     if doc_type is not None:
         conditions &= Q(doc_type=doc_type)
+    if exam_period is not None:
+        conditions &= Q(exam_detail__exam_period=exam_period)
+    if exam_year_be is not None:
+        conditions &= Q(exam_detail__exam_year_be=exam_year_be)
     return (
         published_documents()
         .filter(conditions)

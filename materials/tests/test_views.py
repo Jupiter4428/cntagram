@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Role, UserRole
+from accounts.services import delete_own_account
 from catalog.models import Batch, BatchCourse, Course, Department, SystemSetting
 
 from ..forms import SearchForm, UploadForm
@@ -107,7 +108,7 @@ class VaultViewTests(SearchTestCase):
     def test_invalid_search_shows_the_error_without_the_start_hint(self):
         response = self.client.get(reverse("materials:vault"), {"course_code": ""})
 
-        self.assertContains(response, "This field is required")
+        self.assertContains(response, "กรุณาระบุรหัสวิชา")
         self.assertNotContains(response, "กรอกรหัสวิชา เช่น CN200")
 
     def test_escapes_document_titles(self):
@@ -165,6 +166,24 @@ class DocumentDetailViewTests(SearchTestCase):
                 )
 
                 self.assertEqual(response.status_code, 404)
+
+    def test_document_of_deleted_account_shows_deleted_user_without_pii(self):
+        document = self.make_document(self.cn200[22], title="ชีท CN22")
+        delete_own_account(user=self.uploader, password="correct-horse-battery-staple")
+        viewer = User.objects.create_user(
+            email="6610000001@student.tu.ac.th",
+            password="viewer-password",
+            nickname="Viewer",
+            department=self.cn,
+            pdpa_consent_at=timezone.now(),
+        )
+        self.client.force_login(viewer)
+
+        response = self.client.get(reverse("materials:document_detail", args=[document.pk]))
+
+        self.assertContains(response, "Deleted user")
+        self.assertNotContains(response, "Uploader")
+        self.assertNotContains(response, "6610000000")
 
     def test_guest_is_redirected_to_login(self):
         document = self.make_document(self.cn200[21], title="ชีท")
@@ -261,6 +280,13 @@ class UploadViewTests(UploadTestCase):
         }
         data.update(overrides)
         return self.client.post(reverse("materials:upload"), data)
+
+    def test_duplicate_file_shows_thai_error_on_form(self):
+        self.post()
+        response = self.post()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"].errors["file"], ["ไฟล์นี้มีอยู่ในคลังแล้ว"])
+        self.assertEqual(Document.objects.count(), 1)
 
     def test_guest_is_redirected_to_login(self):
         self.client.logout()

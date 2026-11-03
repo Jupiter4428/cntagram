@@ -27,6 +27,7 @@
                     <span class="identity-capsule__signal" aria-hidden="true"></span>
                     {{ request.user.nickname }}
                 </span>
+                <a class="chrome-button chrome-button--quiet" href="{% url 'accounts:delete_account' %}">ลบบัญชี</a>
                 <form method="post" action="{% url 'accounts:logout' %}">
                     {% csrf_token %}
                     <button class="chrome-button chrome-button--quiet" type="submit">ออกจากระบบ</button>

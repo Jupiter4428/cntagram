@@ -181,3 +181,16 @@ class ModeratorAssignmentForm(forms.Form):
         label="เลือกภาควิชา",
         empty_label="-- กรุณาเลือกภาควิชา --",
     )
+
+
+class DeleteAccountForm(forms.Form):
+    """ยืนยันรหัสผ่านก่อนลบบัญชี (US-13) การตรวจรหัสผ่านอยู่ใน services.delete_own_account"""
+
+    password = forms.CharField(
+        label="รหัสผ่านปัจจุบัน",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={"autocomplete": "current-password", "class": "form-control"}
+        ),
+        error_messages=REQUIRED_ERROR,
+    )

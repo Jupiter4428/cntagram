@@ -116,10 +116,8 @@
                             <h2 class="h5 fw-bold mb-0 text-dark" id="preview-heading">ตัวอย่างเอกสาร PDF</h2>
                         </div>
                         <div class="card-body p-4">
-                            <div class="border rounded overflow-hidden bg-white">
-                                <iframe src="{% url 'materials:approval_preview' document.pk %}" title="ตัวอย่าง PDF: {{ document.title }}" class="dv-preview" loading="lazy"></iframe>
-                            </div>
-                            <p class="small text-secondary mt-2 mb-0">หากตัวอย่างไม่แสดง อาจเป็นเพราะไฟล์ยังไม่พร้อมหรือเบราว์เซอร์ไม่รองรับ PDF</p>
+                            {% url 'materials:approval_preview' document.pk as preview_url %}
+                            {% include "materials/_pdf_preview.html" %}
                         </div>
                     </section>
                 {% endif %}
