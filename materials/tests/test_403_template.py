@@ -1,4 +1,4 @@
-from django.template import RequestContext, loader
+from django.template import loader
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
@@ -31,4 +31,3 @@ class ForbiddenTemplateTests(TestCase):
 
         self.assertNotIn("<script>alert('xss')</script>", rendered)
         self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", rendered)
-

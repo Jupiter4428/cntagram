@@ -21,6 +21,8 @@ class DepartmentTests(CatalogTestCase):
         self.client.force_login(self.student)
         response = self.client.get(reverse("catalog:department_list"))
         self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+        self.assertContains(response, "เฉพาะ Super Admin เท่านั้นที่สามารถเข้าถึงได้", status_code=403)
 
     def test_duplicate_department_code(self):
         """เพิ่มรหัสภาควิชาซ้ำไม่ได้ โดย normalize เป็นตัวพิมพ์ใหญ่แล้วแจ้งเตือน"""
