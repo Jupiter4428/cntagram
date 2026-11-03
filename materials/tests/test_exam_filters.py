@@ -67,6 +67,11 @@ class ExamSearchFilterTests(SearchTestCase):
             [self.exam_final],
         )
 
+    def test_unknown_exam_period_has_thai_error(self):
+        form = SearchForm({"course_code": "CN200", "exam_period": 999})
+        self.assertFalse(form.is_valid())
+        self.assertIn("ช่วงสอบที่เลือกไม่ถูกต้อง", str(form.errors))
+
     def test_year_outside_range_has_thai_error(self):
         for year in (1999, 2701):
             with self.subTest(year=year):

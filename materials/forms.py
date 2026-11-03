@@ -14,7 +14,7 @@ class ExamPeriodChoiceField(forms.ModelChoiceField):
 
 
 class SearchForm(forms.Form):
-    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง ภาค/รุ่น/ประเภท (US-7)
+    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. (US-7, US-11)
 
     cleaned_data ส่งเข้า selectors.search_documents(**cleaned_data) ได้เลย
     """
@@ -23,6 +23,10 @@ class SearchForm(forms.Form):
         label="รหัสวิชา",
         max_length=10,
         widget=forms.TextInput(attrs={"class": "form-control"}),
+        error_messages={
+            "required": "กรุณาระบุรหัสวิชา",
+            "max_length": "รหัสวิชาต้องไม่เกิน %(limit_value)d ตัวอักษร",
+        },
     )
     department = forms.ModelChoiceField(
         label="ภาควิชา",
@@ -30,6 +34,7 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="ทุกภาค",
         widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "ภาควิชาที่เลือกไม่ถูกต้อง"},
     )
     batch = forms.ModelChoiceField(
         label="รุ่น",
@@ -37,6 +42,7 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="ทุกรุ่น",
         widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "รุ่นที่เลือกไม่ถูกต้อง"},
     )
     doc_type = forms.ModelChoiceField(
         label="ประเภท",
@@ -44,6 +50,7 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="ทุกประเภท",
         widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "ประเภทที่เลือกไม่ถูกต้อง"},
     )
 
     exam_period = ExamPeriodChoiceField(
@@ -52,15 +59,14 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="ทุกช่วงสอบ",
         widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "ช่วงสอบที่เลือกไม่ถูกต้อง"},
     )
     exam_year_be = forms.IntegerField(
         label="ปี พ.ศ.",
         min_value=2500,
         max_value=2700,
         required=False,
-        widget=forms.NumberInput(
-            attrs={"class": "form-control", "min": 2500, "max": 2700}
-        ),
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
         error_messages={
             "min_value": "ปีต้องอยู่ในช่วง พ.ศ. 2500–2700",
             "max_value": "ปีต้องอยู่ในช่วง พ.ศ. 2500–2700",
@@ -86,24 +92,67 @@ class UploadForm(forms.Form):
     """
 
     batch_course = forms.ModelChoiceField(
-        label="วิชา", queryset=BatchCourse.objects.all()
+        label="วิชา",
+        queryset=BatchCourse.objects.all(),
+        error_messages={
+            "required": "กรุณาเลือกวิชา",
+            "invalid_choice": "วิชาที่เลือกไม่ถูกต้อง",
+        },
     )
     doc_type = forms.ModelChoiceField(
-        label="ประเภท", queryset=DocType.objects.order_by("code")
+        label="ประเภท",
+        queryset=DocType.objects.order_by("code"),
+        error_messages={
+            "required": "กรุณาเลือกประเภทเอกสาร",
+            "invalid_choice": "ประเภทเอกสารที่เลือกไม่ถูกต้อง",
+        },
     )
-    title = forms.CharField(label="ชื่อเอกสาร", max_length=200)
+    title = forms.CharField(
+        label="ชื่อเอกสาร",
+        max_length=200,
+        error_messages={
+            "required": "กรุณาระบุชื่อเอกสาร",
+            "max_length": "ชื่อเอกสารต้องมีความยาวไม่เกิน %(limit_value)d ตัวอักษร",
+        },
+    )
     description = forms.CharField(
-        label="รายละเอียด", widget=forms.Textarea, required=False
+        label="รายละเอียด",
+        widget=forms.Textarea,
+        required=False,
     )
     exam_period = forms.ModelChoiceField(
-        label="ช่วงสอบ", queryset=ExamPeriod.objects.all(), required=False
+        label="ช่วงสอบ",
+        queryset=ExamPeriod.objects.all(),
+        required=False,
+        error_messages={
+            "invalid_choice": "ช่วงสอบที่เลือกไม่ถูกต้อง",
+        },
     )
     exam_year_be = forms.IntegerField(
-        label="ปี พ.ศ.", min_value=2500, max_value=2700, required=False
+        label="ปี พ.ศ.",
+        min_value=2500,
+        max_value=2700,
+        required=False,
+        error_messages={
+            "min_value": "ปี พ.ศ. ต้องไม่น้อยกว่า %(limit_value)d",
+            "max_value": "ปี พ.ศ. ต้องไม่เกิน %(limit_value)d",
+            "invalid": "กรุณาระบุปี พ.ศ. เป็นตัวเลข",
+        },
     )
-    file = forms.FileField(label="ไฟล์ PDF")
+    file = forms.FileField(
+        label="ไฟล์ PDF",
+        error_messages={
+            "required": "กรุณาแนบไฟล์ PDF",
+            "empty": "ไฟล์ที่แนบว่างเปล่า",
+            "invalid": "ไฟล์ที่แนบไม่ถูกต้อง",
+        },
+    )
     disclaimer = forms.BooleanField(
-        label="ฉันยืนยันว่าไฟล์นี้ไม่ละเมิดลิขสิทธิ์ของผู้อื่น", required=True
+        label="ฉันยืนยันว่าไฟล์นี้ไม่ละเมิดลิขสิทธิ์ของผู้อื่น",
+        required=True,
+        error_messages={
+            "required": "กรุณายืนยันว่าไฟล์นี้ไม่ละเมิดลิขสิทธิ์",
+        },
     )
 
 
