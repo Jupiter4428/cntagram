@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from .. import selectors, services
-from ..models import Role
+from ..models import Role, UserRole
 from ..services import register_user
 from .base import ModeratorTestCase, RegistrationTestCase, VALID_PASSWORD
 
@@ -95,3 +95,56 @@ class ModeratorServiceTests(ModeratorTestCase):
             services.assign_moderator(
                 user=self.user_momo, department=self.dept_cn, granted_by=self.admin
             )
+
+
+class DeleteOwnAccountServiceTests(ModeratorTestCase):
+    def test_correct_password_anonymizes_user_and_removes_roles(self):
+        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+
+        services.delete_own_account(user=self.user_momo, password="password123")
+
+        self.user_momo.refresh_from_db()
+        self.assertEqual(self.user_momo.nickname, "Deleted user")
+        self.assertFalse(self.user_momo.is_active)
+        self.assertNotIn("6510610001", self.user_momo.email + self.user_momo.student_id)
+        self.assertFalse(self.user_momo.user_roles.exists())
+
+    def test_wrong_password_raises_and_leaves_account_unchanged(self):
+        with self.assertRaises(ValidationError) as ctx:
+            services.delete_own_account(user=self.user_momo, password="wrong-password")
+
+        self.assertIn("password", ctx.exception.message_dict)
+        self.user_momo.refresh_from_db()
+        self.assertEqual(self.user_momo.nickname, "momo")
+        self.assertTrue(self.user_momo.is_active)
+        self.assertTrue(self.user_momo.check_password("password123"))
+        self.assertTrue(self.user_momo.user_roles.exists())
+
+    def test_last_super_admin_cannot_delete_own_account(self):
+        with self.assertRaises(ValidationError):
+            services.delete_own_account(user=self.admin, password="password123")
+
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)
+        self.assertTrue(self.admin.user_roles.filter(role=self.role_super_admin).exists())
+
+    def test_super_admin_can_delete_own_account_when_another_remains(self):
+        UserRole.objects.create(user=self.user_nana, role=self.role_super_admin)
+
+        services.delete_own_account(user=self.admin, password="password123")
+
+        self.admin.refresh_from_db()
+        self.assertFalse(self.admin.is_active)
+
+    def test_same_email_can_register_again_after_deletion(self):
+        services.delete_own_account(user=self.user_momo, password="password123")
+
+        user = register_user(
+            email="6510610001@student.tu.ac.th",
+            password=VALID_PASSWORD,
+            nickname="momo2",
+            department=self.dept_cn,
+            pdpa_consent_at=timezone.now(),
+        )
+
+        self.assertEqual(user.student_id, "6510610001")

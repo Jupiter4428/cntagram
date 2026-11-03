@@ -148,3 +148,20 @@ def assign_moderator(*, user, department, granted_by):
 def remove_moderator(*, user_role):
     """ถอดถอน Moderator ออกจากภาควิชา"""
     user_role.delete()
+
+
+@transaction.atomic
+def delete_own_account(*, user, password):
+    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA (US-13): ถอด role ทั้งหมดแล้วล้างข้อมูลด้วย anonymize()"""
+    if not user.check_password(password):
+        raise ValidationError({"password": "รหัสผ่านไม่ถูกต้อง"})
+    # ล็อกแถว Super Admin กันสองคนสุดท้ายลบพร้อมกันจนไม่เหลือใคร
+    super_admin_ids = list(
+        UserRole.objects.select_for_update(of=("self",))
+        .filter(role__code=Role.SUPER_ADMIN, user__is_active=True)
+        .values_list("user_id", flat=True)
+    )
+    if super_admin_ids == [user.pk]:
+        raise ValidationError("คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี")
+    user.user_roles.all().delete()
+    user.anonymize()

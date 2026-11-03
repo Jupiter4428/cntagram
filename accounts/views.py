@@ -12,7 +12,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
-from .forms import LoginForm, ModeratorAssignmentForm, RegisterForm
+from .forms import DeleteAccountForm, LoginForm, ModeratorAssignmentForm, RegisterForm
 from .models import Role, UserRole
 from .services import attempt_login
 
@@ -118,6 +118,22 @@ def logout(request):
     """End the current session; CSRF middleware protects this POST endpoint."""
     auth_logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
+
+
+@require_http_methods(["GET", "POST"])
+def delete_account(request):
+    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่าน แล้วออกจากระบบ (US-13)"""
+    form = DeleteAccountForm(request.POST or None)
+    if form.is_bound and form.is_valid():
+        try:
+            services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            auth_logout(request)
+            messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
+            return redirect("accounts:home")
+    return render(request, "accounts/delete_account.html", {"form": form})
 
 
 @super_admin_required
