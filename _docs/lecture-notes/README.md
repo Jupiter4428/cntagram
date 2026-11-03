@@ -2,7 +2,7 @@
 
 วีรชัย (อ.แจ็ค) · Department of Electrical & Computer Engineering · Thammasat School of Engineering (TSE) · Semester 1/2569
 
-เนื้อหาจากสไลด์สัปดาห์ที่ 7 (Advanced Django Queries & Sprint 1 Execution), สัปดาห์ที่ 10 (Software Architecture & Sprint 2 Planning), สัปดาห์ที่ 11 (Automated Testing in Django) และสัปดาห์ที่ 12 (CI/CD Pipelines & Static Code Analysis) จัดกลุ่มตามหัวข้อ:
+เนื้อหาจากสไลด์สัปดาห์ที่ 7 (Advanced Django Queries & Sprint 1 Execution), สัปดาห์ที่ 10 (Software Architecture & Sprint 2 Planning), สัปดาห์ที่ 11 (Automated Testing in Django), สัปดาห์ที่ 12 (CI/CD Pipelines & Static Code Analysis), สัปดาห์ที่ 13 (Web Security, Production Deployment & Refactoring) และสัปดาห์ที่ 14 (Project Presentation & Peer Evaluation) จัดกลุ่มตามหัวข้อ:
 
 | ไฟล์ | หัวข้อ | ที่มา |
 |---|---|---|
@@ -13,6 +13,8 @@
 | [05-agile-scrum-sprints.md](05-agile-scrum-sprints.md) | Sprint 1 Ceremonies (Standup, Burndown, Review, Retro), Sprint 2 Planning (Velocity, Tech Debt, Sprint Goal, DoR/DoD, Vertical Slicing, GitHub Projects) | Week 7 Part 4, Week 10 Part 3, Lab 3 |
 | [06-django-automated-testing.md](06-django-automated-testing.md) | Cost of Defect, Testing Pyramid, TDD Red-Green-Refactor, AAA, Django TestCase & DB Isolation, setUp/setUpTestData, full_clean, Form/Service/View Testing, Test Client, Mock & patch, Coverage.py, Line vs Branch, Sprint 2 DoD | Week 11 หน่วยที่ 1–4 |
 | [07-ci-cd-and-static-analysis.md](07-ci-cd-and-static-analysis.md) | CI vs Continuous Delivery vs Deployment, GitHub Flow vs GitFlow, GitHub Actions (Workflow/Job/Runner/Step), `ci.yml`, pip Caching, Coverage Gate, Encrypted Secrets, Static vs Dynamic Analysis, Flake8, Black, Bandit, Branch Protection, PR Template, Sprint 2 Retro & Sprint 3 Kickoff | Week 12 หน่วยที่ 1–4 |
+| [08-web-security-and-production-deployment.md](08-web-security-and-production-deployment.md) | OWASP Top 10, SQLi, XSS & `\|safe`, CSRF, Clickjacking, `DEBUG = False`, `ALLOWED_HOSTS`, HTTPS/HSTS & Secure Cookies, `check --deploy`, Gunicorn, `dj-database-url` & PostgreSQL, WhiteNoise, `CSRF_TRUSTED_ORIGINS`, `build.sh`/`Procfile`, Render (DB, Web Service, Env Vars, Logs, Superuser), Technical Debt, README, SemVer & Tag v1.0.0 | Week 13 หน่วยที่ 1–4 |
+| [09-final-presentation-and-peer-evaluation.md](09-final-presentation-and-peer-evaluation.md) | Grading Rubric (40%), 15-min Time Budget, Live Demo Rules, C4 & Modular Monolith Defense, Service Layer Showcase, Test & CI Evidence, Velocity & Burndown, Retrospective Lessons, Peer Evaluation Rubric, Capstone Deliverables | Week 14 หมวดที่ 1–4 |
 
 ---
 
@@ -302,3 +304,96 @@
   - *Flake8 Documentation*: https://flake8.pycqa.org/
   - *Black Formatter*: https://black.readthedocs.io/
   - *Bandit Security Linter*: https://bandit.readthedocs.io/
+
+---
+
+## สัปดาห์ที่ 13: Web Security, Production Deployment & Refactoring
+
+### วัตถุประสงค์การเรียนรู้ประจำสัปดาห์ (Learning Outcomes)
+
+เมื่อเรียนจบสัปดาห์นี้ นักศึกษาจะสามารถ:
+
+1. **วิเคราะห์และสกัดกั้นภัยคุกคามตามมาตรฐาน OWASP Top 10**: อธิบายกลไกการโจมตี SQL Injection, XSS, CSRF และ Clickjacking พร้อมประยุกต์ใช้เกราะป้องกันของ Django
+2. **ปรับแต่งความปลอดภัยระดับ Production (Security Hardening)**: ตั้งค่า `DEBUG = False`, บังคับใช้ HTTPS/SSL, HSTS Headers และรันคำสั่งตรวจสอบด้วย `manage.py check --deploy`
+3. **จัดการฐานข้อมูลระดับองค์กร (Production Database)**: ย้ายระบบจาก SQLite สู่ Managed PostgreSQL ด้วย `dj-database-url` และจัดการ Connection Pooling
+4. **บริหารจัดการ Static Files ด้วย WhiteNoise**: คอนฟิกการรวมไฟล์ด้วย `collectstatic` และให้ WhiteNoise เสิร์ฟไฟล์ CSS/JS อย่างมีประสิทธิภาพสูงโดยตรงจาก WSGI
+5. **นำเว็บแอปพลิเคชันขึ้นสู่ Cloud (Cloud Deployment)**: จัดเตรียมแพ็กเกจ Production, ปรับแต่ง `settings.py`, สร้าง Managed PostgreSQL และ Deploy บน Render พร้อมสร้าง Superuser ผ่าน Environment Variables
+6. **จัดการหนี้ทางเทคนิคและปิดรอบ Sprint 3 (Final Release)**: ทำ Refactoring โค้ดที่ซับซ้อน จัดทำเอกสารระบบ และสร้าง Git Release Tag (`v1.0.0`) พร้อมนำเสนอในสัปดาห์ที่ 14
+
+### แผนผังการเรียนรู้ประจำสัปดาห์ที่ 13 (Session Roadmap)
+
+เนื้อหาสัปดาห์นี้จะพาโปรเจกต์ของนักศึกษาก้าวข้ามจาก Local Prototype สู่ Production System:
+
+| หน่วย | หัวข้อ | เนื้อหา |
+|---|---|---|
+| หน่วยที่ 1 | OWASP Top 10 | SQLi, XSS, CSRF, Clickjacking, Built-in Django Guards |
+| หน่วยที่ 2 | Security Hardening | `DEBUG=False`, HTTPS/SSL, Cookies, `check --deploy` |
+| หน่วยที่ 3 | Cloud Deployment | Prep Packages, PostgreSQL, Render Deploy, Superuser ENV |
+| หน่วยที่ 4 | Refactoring & Release | Technical Debt, Documentation, Sprint 3 DoD, Tag `v1.0.0` |
+
+> 💡 **Takeaway** — สัปดาห์นี้คือบทสรุปทางเทคนิคเพื่อนำชิ้นงานทั้งหมดที่พัฒนาตลอดทั้งเทอมขึ้นสู่ **Live Cloud URL** พร้อมรับการประเมินในสัปดาห์ถัดไป
+
+### สะพานเชื่อมสู่สัปดาห์ที่ 14 (Bridge to Final Project Presentation)
+
+**ความสำเร็จในสัปดาห์นี้ (Week 13 Milestones)**
+- เสริมเกราะป้องกันภัยคุกคาม OWASP Top 10 ครบถ้วน
+- ล็อกระบบด้วย `DEBUG = False` และผ่าน `check --deploy`
+- เชื่อมต่อ PostgreSQL และเสิร์ฟ Static ด้วย WhiteNoise
+- ขึ้น Cloud สำเร็จ ชำระหนี้เทคนิค และติด Tag `v1.0.0`
+
+**สัปดาห์หน้า: Week 14 Final Project Presentation**
+- **Live Product Demonstration**: สาธิตการทำงานของเว็บแอปพลิเคชันบน Cloud จริง
+- **Agile Process Defense**: แสดงสถิติ GitHub Velocity, Burndown Charts และ Sprint Retrospectives
+- **Technical Q&A**: ชี้แจงสถาปัตยกรรม C4, ฐานข้อมูล ERD และผลการรัน Test Coverage
+- **Peer Review & Evaluation**
+
+> **"From idea to deployment, from code to product — welcome to Software Engineering."**
+
+### แหล่งข้อมูลอ้างอิง (Week 13)
+
+- **OWASP Foundation**:
+  - *OWASP Top 10 Web Application Security Risks*
+  - *OWASP Cheat Sheet Series* (Cross-Site Scripting, CSRF, SQL Injection)
+- **Django Official Operations Guides**:
+  - *Django Deployment Checklist*
+  - *Security in Django — Built-in Protections*
+- **Cloud & Operations Ecosystem**:
+  - *WhiteNoise Documentation*: whitenoise.readthedocs.io
+  - *Gunicorn Documentation*: docs.gunicorn.org
+  - *Render Django Deployment Guide*: render.com/docs/deploy-django
+
+---
+
+## สัปดาห์ที่ 14: Project Presentation & Peer Evaluation
+
+### วัตถุประสงค์ประจำสัปดาห์ (Session Objectives)
+
+ในสัปดาห์นี้นักศึกษาทุกคนจะได้พิสูจน์ศักยภาพและความสำเร็จของโครงงาน:
+
+1. **สาธิตระบบเว็บจริงบน Cloud (Live Software Demonstration)**: นำเสนอเว็บแอปพลิเคชัน Django ที่ทำงานบนเซิร์ฟเวอร์จริง ครอบคลุมฟังก์ชันหลัก ความปลอดภัย และการตอบสนอง
+2. **ปกป้องการตัดสินใจทางวิศวกรรม (Engineering Defense)**: อธิบายสถาปัตยกรรม C4 Model, ฐานข้อมูล ERD, ความคุ้มค่าของ Design Patterns และผลการรัน Test Coverage (> 80%)
+3. **แสดงหลักฐานกระบวนการทำงานแบบ Agile (Agile Evidence)**: นำเสนอ GitHub Projects Board, Burndown Charts, กราฟ Velocity Sprints 1–3 และบทเรียนจาก Sprint Retrospectives
+4. **ประเมินผลงานเพื่อนร่วมชั้นอย่างสร้างสรรค์ (Constructive Peer Evaluation)**: ให้ข้อเสนอแนะและให้คะแนนโครงงานของเพื่อนต่างกลุ่มตามเกณฑ์มาตรฐานวิศวกรรมที่โปร่งใส
+
+### กำหนดการประจำวัน (Presentation Agenda)
+
+| ช่วง | หัวข้อ | เนื้อหา |
+|---|---|---|
+| ช่วงที่ 1 | กติกาและเกณฑ์ | Time Allocation, Rubrics, Live Demo Guidelines |
+| ช่วงที่ 2 | การสาธิตระบบ | Live Demonstration, Core User Journeys, Edge Cases |
+| ช่วงที่ 3 | ปกป้องสถาปัตยกรรม | C4 Diagrams, Testing Evidence, CI/CD, Q&A Defense |
+| ช่วงที่ 4 | การประเมินเพื่อน | Peer Review Form, Scoring, Retrospective Wrap-up |
+
+> 💡 **Takeaway** — แต่ละกลุ่มได้ **15 นาทีสำหรับการนำเสนอและสาธิต** ตามด้วย **5 นาทีสำหรับตอบข้อซักถามเชิงเทคนิค**
+
+### แหล่งข้อมูลอ้างอิง (Week 14)
+
+- **Agile Alliance & Scrum Guide**:
+  - Ken Schwaber & Jeff Sutherland (2020). *The Scrum Guide: The Definitive Guide to Scrum*. scrumguides.org.
+  - Henrik Kniberg (2015). *Scrum and XP from the Trenches: How We Do Scrum*. InfoQ.
+- **Software Engineering Project Communication**:
+  - Ian Sommerville (2015). *Software Engineering (10th ed.)*. Pearson Education.
+  - Roger S. Pressman & Bruce R. Maxim (2019). *Software Engineering: A Practitioner's Approach (9th ed.)*. McGraw-Hill.
+- **Engineering Portfolios & Releases**:
+  - *Semantic Versioning 2.0.0*: semver.org
+  - *GitHub Documentation on Releases*: docs.github.com/en/repositories/releasing-projects-on-github
