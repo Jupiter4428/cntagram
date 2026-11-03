@@ -18,7 +18,7 @@ Requirement ที่ตารางเหล่านี้รองรับ�
 | ชีทสรุป กับ ข้อสอบเก่า | ตาราง `document` ร่วมกัน + `exam_detail` (1:1) สำหรับข้อมูลเฉพาะข้อสอบ | หลีกเลี่ยง column ที่ว่างเป็นส่วนใหญ่ และรองรับ vault 2 แบบ |
 | กฎอนุมัติ | เก็บเป็นข้อมูลใน `doc_type_required_role` ไม่ hardcode | เปลี่ยนกฎ (ข้อสอบต้อง Moderator + Admin) โดยไม่แก้โค้ด |
 | ค่ากำหนด (รุ่น ≤ 23, ขนาดไฟล์ 50 MB) | ตาราง `system_setting` | ปรับได้โดยไม่ deploy ใหม่ |
-| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | US-19 ส่งเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
+| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | US-21 ส่งเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
 | จำนวนดาวน์โหลด | นับจาก `download_log` | ไม่เก็บตัวนับซ้ำ (ถ้าช้าค่อยเพิ่ม cache ทีหลังโดยเจตนา) |
 | ลบข้อมูลผู้ใช้ (PDPA) | **anonymize** แถวเดิม ไม่ลบจริง | FK เป็น `PROTECT` จึงลบผู้ใช้ที่มีเอกสารไม่ได้ ล้างอีเมล/รหัส/ชื่อเล่นแทน แล้วปิด `is_active` |
 | อีเมล / รหัสวิชา / รหัสภาค | เก็บเป็นรูปแบบเดียว (อีเมลตัวพิมพ์เล็ก, รหัสตัวพิมพ์ใหญ่) | กัน `Alice@x` กับ `alice@x`, `cn101` กับ `CN101` เป็นคนละค่าใน UNIQUE |
@@ -394,8 +394,8 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
   *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้, US-6 → approval, US-9 → doc_type_required_role)*
   ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role`: migration `0005` seed ให้ `doc_type` ที่มีอยู่ตอน migrate ส่วน `doc_type` ที่ seed ทีหลังใช้ `seed_approval_rules` (US-9)
 - **Sprint 1:** download_log (US-8) เพิ่มใน migration ของฟีเจอร์ดาวน์โหลดแล้ว
-- **ถัดไป:** audit_log (US-24), report (US-31)
-- **ภายหลัง:** comment / rating (US-28 – US-30), email verification token (US-11), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
+- **ถัดไป:** audit_log (US-26), report (US-32)
+- **ภายหลัง:** comment / rating (US-29 – US-31), email verification token (US-14), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
 
 ## 8. Django app ↔ ตาราง
 

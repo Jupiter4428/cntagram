@@ -29,6 +29,7 @@
                     <th scope="col" class="py-3">ประเภท</th>
                     <th scope="col" class="py-3">ผู้อัปโหลด</th>
                     <th scope="col" class="py-3">วันที่อัปโหลด</th>
+                    <th scope="col" class="py-3">สถานะอนุมัติ</th>
                     <th scope="col" class="text-end pe-3 py-3">การดำเนินการ</th>
                 </tr>
             </thead>
@@ -64,15 +65,24 @@
                         <td>
                             <small class="text-muted">{{ doc.created_at|date:"d M Y, H:i" }}</small>
                         </td>
+                        <td>
+                            {% if doc.approval_ui %}
+                                <div class="small"><strong>อนุมัติแล้ว:</strong> {% for role in doc.approval_ui.approved_roles %}<span class="approval-badge">{{ role.name_th }}</span> {% empty %}ยังไม่มี{% endfor %}</div>
+                                <div class="small"><strong>รอ:</strong> {% for role in doc.approval_ui.missing_roles %}<span class="approval-badge">{{ role.name_th }}</span> {% empty %}ไม่มี{% endfor %}</div>
+                            {% else %}รอข้อมูลสถานะ{% endif %}
+                        </td>
                         <td class="text-end pe-3">
-                            <a href="{% url 'materials:approval_review' doc.id %}" class="btn btn-sm approval-action px-3 shadow-sm">
-                                ตรวจสอบ / พิจารณา
-                            </a>
+                            {% if doc.approval_ui.can_review %}
+                                <a href="{% url 'materials:approval_review' doc.id %}" class="btn btn-sm approval-action px-3 shadow-sm">ตรวจสอบ / พิจารณา</a>
+                            {% else %}
+                                <button type="button" class="btn btn-sm approval-secondary" disabled>ไม่สามารถพิจารณา</button>
+                                <small class="d-block approval-muted">{{ doc.approval_ui.reason|default:"รอข้อมูลสิทธิ์จากระบบ" }}</small>
+                            {% endif %}
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center p-5 bg-light">
+                        <td colspan="8" class="text-center p-5 bg-light">
                             <div class="display-6 text-muted mb-3" aria-hidden="true">▣</div>
                             <h3 class="h4 fw-bold text-dark">ไม่มีเอกสารรอการอนุมัติในขณะนี้</h3>
                             <p class="text-muted mx-auto mb-3 approval-empty">
