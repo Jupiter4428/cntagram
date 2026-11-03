@@ -1,3 +1,6 @@
+import mimetypes
+import re
+from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
@@ -166,3 +169,70 @@ def moderator_remove(request, pk):
     services.remove_moderator(user_role=user_role)
     messages.success(request, f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว")
     return redirect("accounts:moderator_manage")
+
+@login_not_required
+@require_GET
+def serve_audio_stream(request, filename):
+    """Stream audio files with full HTTP Range (206 Partial Content) support for seeking."""
+    audio_dir = (settings.BASE_DIR / "static" / "audio").resolve()
+    file_path = (audio_dir / filename).resolve()
+
+    # Prevent directory traversal attacks
+    if not str(file_path).startswith(str(audio_dir)):
+        raise Http404("Audio track not found")
+    if not file_path.is_file():
+        raise Http404("Audio track not found")
+
+    file_size = file_path.stat().st_size
+    content_type, _ = mimetypes.guess_type(str(file_path))
+    content_type = content_type or "audio/mpeg"
+
+    range_header = request.META.get("HTTP_RANGE", "").strip()
+    range_match = re.match(r"^bytes=(\d+)-(\d+)?$", range_header)
+
+    if range_match:
+        first_byte = int(range_match.group(1))
+        last_byte = int(range_match.group(2)) if range_match.group(2) else file_size - 1
+
+        if first_byte >= file_size or last_byte >= file_size or first_byte > last_byte:
+            response = HttpResponse(status=416)
+            response["Content-Range"] = f"bytes */{file_size}"
+            return response
+
+        content_length = last_byte - first_byte + 1
+
+        def file_iterator(start, length, chunk_size=65536):
+            with open(file_path, "rb") as f:
+                f.seek(start)
+                remaining = length
+                while remaining > 0:
+                    read_bytes = min(remaining, chunk_size)
+                    chunk = f.read(read_bytes)
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+                    yield chunk
+
+        response = StreamingHttpResponse(
+            file_iterator(first_byte, content_length),
+            status=206,
+            content_type=content_type,
+        )
+        response["Content-Range"] = f"bytes {first_byte}-{last_byte}/{file_size}"
+        response["Content-Length"] = str(content_length)
+    else:
+        def full_iterator(chunk_size=65536):
+            with open(file_path, "rb") as f:
+                while chunk := f.read(chunk_size):
+                    yield chunk
+
+        response = StreamingHttpResponse(
+            full_iterator(),
+            status=200,
+            content_type=content_type,
+        )
+        response["Content-Length"] = str(file_size)
+
+    response["Accept-Ranges"] = "bytes"
+    response["Cache-Control"] = "public, max-age=3600"
+    return response

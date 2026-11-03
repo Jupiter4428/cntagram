@@ -12,4 +12,5 @@ urlpatterns = [
     path("account/delete/", views.delete_account, name="delete_account"),
     path("moderators/", views.moderator_manage, name="moderator_manage"),
     path("moderators/<int:pk>/remove/", views.moderator_remove, name="moderator_remove"),
+    path("audio/<path:filename>", views.serve_audio_stream, name="audio_stream"),
 ]
