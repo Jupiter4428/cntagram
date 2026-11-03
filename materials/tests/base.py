@@ -55,11 +55,11 @@ class SearchTestCase(TestCase):
         )
 
     @classmethod
-    def make_document(cls, batch_course, *, title, doc_type=None, status="published"):
+    def make_document(cls, batch_course, *, title, doc_type=None, status="published", uploader=None):
         return Document.objects.create(
             batch_course=batch_course,
             doc_type=doc_type or cls.summary,
-            uploader=cls.uploader,
+            uploader=uploader or cls.uploader,
             title=title,
             description="-",
             status=status,

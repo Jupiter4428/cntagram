@@ -6,8 +6,15 @@ from catalog.models import Batch, BatchCourse, Department
 from .models import Approval, DocType, ExamPeriod
 
 
+class ExamPeriodChoiceField(forms.ModelChoiceField):
+    """แสดงชื่อช่วงสอบภาษาไทยในตัวกรองค้นหา"""
+
+    def label_from_instance(self, obj):
+        return obj.name_th
+
+
 class SearchForm(forms.Form):
-    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง ภาค/รุ่น/ประเภท (US-7)
+    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. (US-7, US-11)
 
     cleaned_data ส่งเข้า selectors.search_documents(**cleaned_data) ได้เลย
     """
@@ -44,6 +51,27 @@ class SearchForm(forms.Form):
         empty_label="ทุกประเภท",
         widget=forms.Select(attrs={"class": "form-select"}),
         error_messages={"invalid_choice": "ประเภทที่เลือกไม่ถูกต้อง"},
+    )
+
+    exam_period = ExamPeriodChoiceField(
+        label="ช่วงสอบ",
+        queryset=ExamPeriod.objects.order_by("pk"),
+        required=False,
+        empty_label="ทุกช่วงสอบ",
+        widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "ช่วงสอบที่เลือกไม่ถูกต้อง"},
+    )
+    exam_year_be = forms.IntegerField(
+        label="ปี พ.ศ.",
+        min_value=2500,
+        max_value=2700,
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        error_messages={
+            "min_value": "ปีต้องอยู่ในช่วง พ.ศ. 2500–2700",
+            "max_value": "ปีต้องอยู่ในช่วง พ.ศ. 2500–2700",
+            "invalid": "กรุณากรอกปี พ.ศ. เป็นตัวเลข",
+        },
     )
 
     def clean(self):

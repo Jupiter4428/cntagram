@@ -1,4 +1,5 @@
 """การเขียนข้อมูลของ materials ตาม ADR 0002"""
+
 import hashlib
 import logging
 import uuid
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 def record_download(*, document, user):
     """Persist a protected download in the service layer."""
     return DownloadLog.objects.create(document=document, user=user)
+
 
 PDF_MIME = "application/pdf"
 PDF_MAGIC = b"%PDF-"
@@ -104,6 +106,8 @@ def upload_document(
             raise ValidationError(missing)
     _validate_pdf(file)
     sha256 = _sha256(file)
+    if selectors.file_in_vault(sha256=sha256):
+        raise ValidationError({"file": "ไฟล์นี้มีอยู่ในคลังแล้ว"})
     storage_path = default_storage.save(_storage_path(batch_course, doc_type), file)
     try:
         with transaction.atomic():
@@ -158,10 +162,14 @@ def review_document(*, document, approver, decision, reason=None):
         raise PermissionDenied("ผู้อัปโหลดไม่สามารถอนุมัติหรือปฏิเสธเอกสารของตนเองได้")
 
     rule = selectors.approval_rule(document=locked_doc)
-    eligible = selectors.eligible_roles(document=locked_doc, user=approver, roles=rule.roles)
+    eligible = selectors.eligible_roles(
+        document=locked_doc, user=approver, roles=rule.roles
+    )
     if not eligible:
         if rule.legacy:
-            raise PermissionDenied("ข้อสอบของรุ่นนี้ให้ Super Admin เท่านั้นเป็นผู้พิจารณา")
+            raise PermissionDenied(
+                "ข้อสอบของรุ่นนี้ให้ Super Admin เท่านั้นเป็นผู้พิจารณา"
+            )
         raise PermissionDenied("คุณไม่มีสิทธิ์พิจารณาเอกสารของภาควิชานี้")
 
     if locked_doc.approvals.filter(approver=approver).exists():
@@ -180,7 +188,9 @@ def review_document(*, document, approver, decision, reason=None):
     )
 
     if decision == Approval.Decision.APPROVED:
-        if not selectors.missing_roles(rule=rule, approved_ids=approved_ids | {approver_role.pk}):
+        if not selectors.missing_roles(
+            rule=rule, approved_ids=approved_ids | {approver_role.pk}
+        ):
             locked_doc.status = Document.Status.PUBLISHED
             locked_doc.save(update_fields=["status", "updated_at"])
     elif decision == Approval.Decision.REJECTED:

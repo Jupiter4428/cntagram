@@ -44,27 +44,28 @@ class LoginAttempt:
     rate_limited: bool = False
 
 
-def _keys(*, identifier, client_ip):
-    """Build non-PII cache keys for login identity bucket and client IP bucket."""
-    ident = (identifier or "").strip().casefold()
-    ip = (client_ip or "unknown").strip()
-    return [
-        "login-failures:id:" + salted_hmac("accounts.login-rate-limit", ident).hexdigest(),
-        "login-failures:ip:" + salted_hmac("accounts.login-rate-limit", ip).hexdigest(),
-    ]
+def _login_failure_key(*, identifier, client_ip):
+    """Build a non-PII cache key for one login identity and network peer."""
+    normalized_identifier = (identifier or "").strip().casefold()
+    normalized_ip = (client_ip or "unknown").strip()
+    digest = salted_hmac(
+        "accounts.login-rate-limit",
+        f"{normalized_identifier}|{normalized_ip}",
+    ).hexdigest()
+    return f"login-failures:{digest}"
 
 
 def is_login_rate_limited(*, identifier, client_ip):
-    """Return whether either the identity bucket or the network IP bucket is exhausted."""
-    id_key, ip_key = _keys(identifier=identifier, client_ip=client_ip)
-    ip_limit = getattr(settings, "LOGIN_RATE_LIMIT_IP_ATTEMPTS", 20)
-    return (
-        cache.get(id_key, 0) >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
-        or cache.get(ip_key, 0) >= ip_limit
-    )
+    """Return whether this identity/IP pair exhausted its failure allowance."""
+    key = _login_failure_key(identifier=identifier, client_ip=client_ip)
+    attempts = cache.get(key, 0)
+    return attempts >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
 
 
-def _increment_failure_key(key, timeout):
+def record_login_failure(*, identifier, client_ip):
+    """Record one failed authentication attempt for a fixed temporary window."""
+    key = _login_failure_key(identifier=identifier, client_ip=client_ip)
+    timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
     if cache.add(key, 1, timeout=timeout):
         return 1
     try:
@@ -75,18 +76,10 @@ def _increment_failure_key(key, timeout):
         return 1
 
 
-def record_login_failure(*, identifier, client_ip):
-    """Record one failed authentication attempt for both identity and client IP."""
-    id_key, ip_key = _keys(identifier=identifier, client_ip=client_ip)
-    timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
-    _increment_failure_key(id_key, timeout)
-    _increment_failure_key(ip_key, timeout)
-
-
 def clear_login_failures(*, identifier, client_ip):
-    """Clear identity failures after successful authentication (preserves IP failures)."""
-    id_key, _ = _keys(identifier=identifier, client_ip=client_ip)
-    cache.delete(id_key)
+    """Clear failures after a successful authentication."""
+    key = _login_failure_key(identifier=identifier, client_ip=client_ip)
+    cache.delete(key)
 
 
 def attempt_login(*, identifier, password, client_ip):
@@ -95,9 +88,9 @@ def attempt_login(*, identifier, password, client_ip):
     1. Checks if identifier or client_ip is rate limited -> LoginAttempt(rate_limited=True).
     2. Authenticates credentials.
     3. If valid -> clears failure count and returns LoginAttempt(user=user).
-    4. If invalid -> records failure (if identifier and password provided) and returns LoginAttempt().
+    4. If invalid -> records failure and returns LoginAttempt().
     """
-    normalized_identifier = (identifier or "").strip().lower()
+    normalized_identifier = (identifier or "").strip().casefold()
     normalized_ip = (client_ip or "").strip()
 
     if is_login_rate_limited(identifier=normalized_identifier, client_ip=normalized_ip):
@@ -108,9 +101,7 @@ def attempt_login(*, identifier, password, client_ip):
         clear_login_failures(identifier=normalized_identifier, client_ip=normalized_ip)
         return LoginAttempt(user=user)
 
-    if normalized_identifier and password:
-        record_login_failure(identifier=normalized_identifier, client_ip=normalized_ip)
-
+    record_login_failure(identifier=normalized_identifier, client_ip=normalized_ip)
     return LoginAttempt()
 
 
@@ -163,3 +154,20 @@ def assign_moderator(*, user, department, granted_by):
 def remove_moderator(*, user_role):
     """ถอดถอน Moderator ออกจากภาควิชา"""
     user_role.delete()
+
+
+@transaction.atomic
+def delete_own_account(*, user, password):
+    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA (US-13): ถอด role ทั้งหมดแล้วล้างข้อมูลด้วย anonymize()"""
+    if not user.check_password(password):
+        raise ValidationError({"password": "รหัสผ่านไม่ถูกต้อง"})
+    # ล็อกแถว Super Admin กันสองคนสุดท้ายลบพร้อมกันจนไม่เหลือใคร
+    super_admin_ids = list(
+        UserRole.objects.select_for_update(of=("self",))
+        .filter(role__code=Role.SUPER_ADMIN, user__is_active=True)
+        .values_list("user_id", flat=True)
+    )
+    if set(super_admin_ids) == {user.pk}:
+        raise ValidationError("คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี")
+    user.user_roles.all().delete()
+    user.anonymize()

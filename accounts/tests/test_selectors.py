@@ -85,6 +85,23 @@ class AdminDashboardSelectorTests(TestCase):
             (1, 2, 3, 3),
         )
 
+    def test_new_user_counts_cut_off_at_midnight_bangkok_time(self):
+        # User created at 18:00 UTC on 2026-10-23 is 01:00 Bangkok on 2026-10-24 -> counts as "today" on 2026-10-24
+        User.objects.filter(pk=self.users[0].pk).update(
+            created_at=datetime.datetime(2026, 10, 23, 18, 0, tzinfo=datetime.timezone.utc)
+        )
+        # User created at 16:59 UTC on 2026-10-23 is 23:59 Bangkok on 2026-10-23 -> does NOT count as "today" on 2026-10-24
+        User.objects.filter(pk=self.users[1].pk).update(
+            created_at=datetime.datetime(2026, 10, 23, 16, 59, tzinfo=datetime.timezone.utc)
+        )
+        # Clear third user from today
+        User.objects.filter(pk=self.users[2].pk).update(
+            created_at=datetime.datetime(2026, 10, 20, 12, 0, tzinfo=datetime.timezone.utc)
+        )
+
+        dashboard = admin_dashboard(today=datetime.date(2026, 10, 24))
+        self.assertEqual(dashboard["new_users"]["day"], 1)
+
     def test_all_users_count_goes_up_by_one_per_created_user(self):
         before = admin_dashboard()["new_users"]["all"]
 

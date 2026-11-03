@@ -1,5 +1,6 @@
 import shutil
 import tempfile
+from datetime import datetime, timezone as dt_timezone
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -317,11 +318,16 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         # Queue page forbidden
         response = self.client.get(self.queue_url)
         self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+        self.assertContains(response, "เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้", status_code=403)
+        self.assertContains(response, reverse("accounts:home"), status_code=403)
+        self.assertContains(response, reverse("materials:vault"), status_code=403)
 
         # Review page forbidden
         review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
         response = self.client.get(review_url)
         self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
 
     def test_moderator_of_other_dept_gets_404_from_review_doc(self):
         doc_cn = self.create_document(batch_course=self.bc_cn)
@@ -385,6 +391,35 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         self.assertContains(response, "Math Summary")
         self.assertContains(response, "test.pdf")
         self.assertIsInstance(response.context["form"], ReviewForm)
+
+    def test_approval_review_renders_created_at_in_bangkok_time(self):
+        doc = self.create_document(batch_course=self.bc_cn, title="Math Summary")
+        utc_time = datetime(2026, 10, 27, 3, 0, 0, tzinfo=dt_timezone.utc)
+        Document.objects.filter(pk=doc.pk).update(created_at=utc_time)
+
+        self.client.force_login(self.mod_cn)
+        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        response = self.client.get(review_url)
+
+        self.assertEqual(response.status_code, 200)
+        # UTC 03:00 must be converted to 10:00 Bangkok time (UTC+7).
+        # Month name is English because LANGUAGE_CODE stays 'en-us' (#97).
+        self.assertContains(response, "27 October 2026, 10:00 น.")
+        self.assertNotContains(response, "03:00 น.")
+
+    def test_approval_queue_renders_created_at_in_bangkok_time(self):
+        doc = self.create_document(batch_course=self.bc_cn, title="Math Queue Doc")
+        utc_time = datetime(2026, 10, 27, 3, 0, 0, tzinfo=dt_timezone.utc)
+        Document.objects.filter(pk=doc.pk).update(created_at=utc_time)
+
+        self.client.force_login(self.mod_cn)
+        response = self.client.get(self.queue_url)
+
+        self.assertEqual(response.status_code, 200)
+        # UTC 03:00 must be converted to 10:00 Bangkok time (UTC+7).
+        # Queue template uses "d M Y, H:i" format (e.g. "27 Oct 2026, 10:00").
+        self.assertContains(response, "27 Oct 2026, 10:00")
+        self.assertNotContains(response, "03:00")
 
     def test_approval_review_already_processed_returns_404(self):
         doc_published = self.create_document(

@@ -12,9 +12,8 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
-from .forms import LoginForm, ModeratorAssignmentForm, RegisterForm
+from .forms import DeleteAccountForm, LoginForm, ModeratorAssignmentForm, RegisterForm
 from .models import Role, UserRole
-from .services import attempt_login
 
 
 def _client_ip(request):
@@ -48,6 +47,7 @@ def home(request):
     if is_super_admin(request.user):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
+
     return render(request, "accounts/index.html")
 
 
@@ -103,31 +103,21 @@ def login(request):
     status = 200
     retry_after = None
 
-    if request.method == "POST":
-        client_ip = _client_ip(request)
-        identifier = (request.POST.get("username") or "").strip()
-        password = request.POST.get("password") or ""
-
+    if request.method == "POST" and form.is_valid():
         attempt = services.attempt_login(
-            identifier=identifier,
-            password=password,
-            client_ip=client_ip,
+            identifier=form.cleaned_data["username"],
+            password=form.cleaned_data["password"],
+            client_ip=_client_ip(request),
         )
         if attempt.user:
             auth_login(request, attempt.user)
             return redirect(_safe_login_redirect(request, next_url))
-        elif attempt.rate_limited:
-            form.add_error(
-                None,
-                "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง (Too many failed login attempts)",
-            )
+        if attempt.rate_limited:
+            form.add_error(None, "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง")
             status = 429
             retry_after = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-        elif form.is_valid():
-            form.add_error(
-                None,
-                "Please enter a correct email and password. Note that both fields may be case-sensitive.",
-            )
+        else:
+            form.add_error(None, form.get_invalid_login_error())
 
     response = render(
         request,
@@ -146,6 +136,22 @@ def logout(request):
     """End the current session; CSRF middleware protects this POST endpoint."""
     auth_logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
+
+
+@require_http_methods(["GET", "POST"])
+def delete_account(request):
+    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่าน แล้วออกจากระบบ (US-13)"""
+    form = DeleteAccountForm(request.POST or None)
+    if form.is_bound and form.is_valid():
+        try:
+            services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            auth_logout(request)
+            messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
+            return redirect("accounts:home")
+    return render(request, "accounts/delete_account.html", {"form": form})
 
 
 @super_admin_required

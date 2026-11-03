@@ -67,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'materials.context_processors.approval_permissions',
             ],
         },
     },
@@ -99,7 +100,6 @@ LOGOUT_REDIRECT_URL = "accounts:home"
 # another database table. Production deployments with multiple workers should
 # configure a shared cache backend (for example Redis).
 LOGIN_RATE_LIMIT_ATTEMPTS = 5
-LOGIN_RATE_LIMIT_IP_ATTEMPTS = 20
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300
 
 REGISTER_RATE_LIMIT_ATTEMPTS = 5
@@ -134,7 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Bangkok'
 
 USE_I18N = True
 

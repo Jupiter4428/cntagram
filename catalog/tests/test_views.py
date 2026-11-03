@@ -21,6 +21,8 @@ class DepartmentTests(CatalogTestCase):
         self.client.force_login(self.student)
         response = self.client.get(reverse("catalog:department_list"))
         self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+        self.assertContains(response, "เฉพาะ Super Admin เท่านั้นที่สามารถเข้าถึงได้", status_code=403)
 
     def test_duplicate_department_code(self):
         """เพิ่มรหัสภาควิชาซ้ำไม่ได้ โดย normalize เป็นตัวพิมพ์ใหญ่แล้วแจ้งเตือน"""
@@ -63,6 +65,7 @@ class DepartmentTests(CatalogTestCase):
             follow=True,
         )
         self.assertTrue(Department.objects.filter(code="CN").exists())
+        self.assertContains(response, "admin-alert--error")
         self.assertContains(response, "ลบไม่ได้ เพราะยังมีรุ่น/วิชาอยู่ในภาคนี้")
 
     def test_cannot_delete_department_with_users(self):
@@ -82,7 +85,37 @@ class DepartmentTests(CatalogTestCase):
             follow=True,
         )
         self.assertTrue(Department.objects.filter(code="CE").exists())
+        self.assertContains(response, "admin-alert--error")
         self.assertContains(response, "ลบไม่ได้ เพราะยังมีผู้ใช้สังกัดภาคนี้อยู่")
+
+    def test_list_page_uses_themed_table_with_actions(self):
+        """หน้ารายการภาคใช้ตารางธีม admin และมีปุ่มเพิ่ม/แก้ไข/ลบ"""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:department_list"))
+        self.assertTemplateUsed(response, "catalog/department_list.html")
+        self.assertIn(self.dept_cn, response.context["departments"])
+        self.assertContains(response, "admin-table")
+        self.assertContains(response, reverse("catalog:department_create"))
+        self.assertContains(response, reverse("catalog:department_update", args=[self.dept_cn.pk]))
+        self.assertContains(response, reverse("catalog:department_delete", args=[self.dept_cn.pk]))
+
+    def test_form_page_uses_themed_form(self):
+        """หน้าเพิ่มภาคใช้ฟอร์มธีม admin พร้อมปุ่มบันทึกและยกเลิก"""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:department_create"))
+        self.assertTemplateUsed(response, "catalog/department_form.html")
+        self.assertIn("form", response.context)
+        self.assertContains(response, 'class="admin-form"')
+        self.assertContains(response, "admin-button--primary")
+        self.assertContains(response, reverse("catalog:department_list"))
+
+    def test_delete_confirm_page_is_themed_and_names_department(self):
+        """หน้ายืนยันลบใช้ธีม admin และระบุภาคที่จะลบ"""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:department_delete", args=[self.dept_cn.pk]))
+        self.assertTemplateUsed(response, "catalog/department_confirm_delete.html")
+        self.assertEqual(response.context["dept"], self.dept_cn)
+        self.assertContains(response, f"ยืนยันการลบภาควิชา {self.dept_cn.code}")
 
 
 class BatchTests(CatalogTestCase):
@@ -140,6 +173,49 @@ class BatchTests(CatalogTestCase):
         response = self.client.post(reverse("catalog:batch_delete", args=[batch.pk]), follow=True)
         self.assertTrue(Batch.objects.filter(pk=batch.pk).exists())
         self.assertContains(response, "ลบรุ่น CN21 ไม่ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้")
+
+    def test_delete_confirmation_shows_batch_code_and_cancel_link(self):
+        """รุ่นว่างแสดงปุ่มยืนยันลบและลิงก์ยกเลิก"""
+        batch = Batch.objects.create(department=self.dept_cn, number=21)
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:batch_delete", args=[batch.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CN21")
+        self.assertContains(response, reverse("catalog:batch_list"))
+        self.assertContains(response, "ยกเลิก")
+        self.assertFalse(response.context["has_courses"])
+        self.assertNotContains(response, "disabled")
+        self.assertTemplateUsed(response, "catalog/batch_confirm_delete.html")
+
+    def test_delete_confirmation_warns_and_disables_action_for_batch_with_courses(self):
+        """รุ่นที่มีวิชาแสดงคำเตือนและปิดปุ่มลบ"""
+        batch = Batch.objects.create(department=self.dept_cn, number=21)
+        course = Course.objects.create(code="CN200", name_en="Discrete Mathematics")
+        BatchCourse.objects.create(batch=batch, course=course)
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:batch_delete", args=[batch.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ไม่สามารถลบรุ่น <strong>CN21</strong> ได้")
+        self.assertTemplateUsed(response, "catalog/batch_confirm_delete.html")
+        self.assertTrue(response.context["has_courses"])
+        self.assertContains(response, "disabled")
+
+    def test_admin_dashboard_links_to_batches_and_courses(self):
+        """หน้าแรกของแอดมินมีลิงก์จัดการรุ่นและวิชา"""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("accounts:home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'href="{reverse("catalog:batch_list")}"')
+        self.assertContains(response, f'href="{reverse("catalog:course_list")}"')
+
+    def test_admin_sidebar_highlights_batch_and_course_pages(self):
+        """เมนูแอดมินแสดงสถานะ active บนหน้ารุ่นและวิชา"""
+        self.client.force_login(self.admin)
+        for url_name in ("catalog:batch_list", "catalog:course_list"):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f'is-active" href="{reverse(url_name)}"')
 
 
 class CatalogPermissionTests(CatalogTestCase):

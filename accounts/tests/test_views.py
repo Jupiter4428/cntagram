@@ -48,8 +48,6 @@ class LoginViewTests(TestCase):
             "password": self.password if password is None else password,
             **(data or {}),
         }
-        if "next" in request_kwargs:
-            payload["next"] = request_kwargs.pop("next")
         return (client or self.client).post(
             reverse("accounts:login"), payload, **request_kwargs
         )
@@ -77,12 +75,12 @@ class LoginViewTests(TestCase):
         self.assertContains(response, "Please enter a correct")
 
     def test_login_honors_safe_internal_next_url(self):
-        response = self.post_login(next=reverse("materials:vault"))
+        response = self.post_login(data={"next": reverse("materials:vault")})
 
         self.assertRedirects(response, reverse("materials:vault"))
 
     def test_login_rejects_external_next_url(self):
-        response = self.post_login(next="https://attacker.example/phishing")
+        response = self.post_login(data={"next": "https://attacker.example/phishing"})
 
         self.assertRedirects(response, reverse("accounts:home"))
 
@@ -317,3 +315,63 @@ class ModeratorViewTests(ModeratorTestCase):
         response = self.client.get(reverse("accounts:moderator_manage"))
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("accounts:login"), response.url)
+
+
+class DeleteAccountViewTests(ModeratorTestCase):
+    url = reverse("accounts:delete_account")
+
+    def test_shows_password_confirmation_form(self):
+        self.client.force_login(self.user_momo)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/delete_account.html")
+        self.assertIn("password", response.context["form"].fields)
+
+    def test_correct_password_deletes_account_and_logs_out(self):
+        self.client.force_login(self.user_momo)
+
+        response = self.client.post(self.url, {"password": "password123"})
+
+        self.assertRedirects(response, reverse("accounts:home"))
+        self.assertNotIn(SESSION_KEY, self.client.session)
+        self.user_momo.refresh_from_db()
+        self.assertFalse(self.user_momo.is_active)
+
+    def test_old_email_cannot_log_in_after_deletion(self):
+        services.delete_own_account(user=self.user_momo, password="password123")
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {"username": "6510610001@student.tu.ac.th", "password": "password123"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+
+    def test_anonymous_is_redirected_to_login(self):
+        response = self.client.get(self.url)
+
+        self.assertRedirects(response, f"{reverse('accounts:login')}?next={self.url}")
+
+    def test_wrong_password_shows_error_and_keeps_session(self):
+        self.client.force_login(self.user_momo)
+
+        response = self.client.post(self.url, {"password": "wrong-password"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors["password"])
+        self.assertEqual(int(self.client.session[SESSION_KEY]), self.user_momo.pk)
+        self.user_momo.refresh_from_db()
+        self.assertTrue(self.user_momo.is_active)
+
+    def test_last_super_admin_sees_error_and_keeps_account(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(self.url, {"password": "password123"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].non_field_errors())
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)
