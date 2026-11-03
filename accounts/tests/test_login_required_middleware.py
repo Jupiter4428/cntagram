@@ -3,13 +3,29 @@
 from types import ModuleType
 
 from django.http import HttpResponse
-from django.test import TestCase, override_settings
-from django.urls import include, path, reverse
+from django.test import Client, TestCase, override_settings
+from django.urls import URLResolver, get_resolver, include, path, reverse
 
 from accounts import urls as accounts_urls
 
 
+def _patterns(patterns, prefix=""):
+    for p in patterns:
+        if isinstance(p, URLResolver):
+            yield from _patterns(p.url_patterns, prefix + str(p.pattern))
+        else:
+            yield prefix + str(p.pattern), p.callback
+
+
 class LoginRequiredMiddlewareTests(TestCase):
+    def test_only_expected_pages_are_public(self):
+        public = {
+            route
+            for route, view in _patterns(get_resolver().url_patterns)
+            if not route.startswith("admin/") and not getattr(view, "login_required", True)
+        }
+        self.assertEqual(public, {"", "login/", "logout/", "register/"})
+
     def test_public_pages_are_accessible_to_guests(self):
         for name in ("accounts:home", "accounts:register", "accounts:login"):
             with self.subTest(name=name):
@@ -52,6 +68,11 @@ class LoginRequiredMiddlewareTests(TestCase):
     def test_guest_logout_redirects_home(self):
         response = self.client.post(reverse("accounts:logout"))
         self.assertRedirects(response, reverse("accounts:home"))
+
+    def test_guest_logout_without_csrf_token_is_forbidden(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        response = csrf_client.post(reverse("accounts:logout"))
+        self.assertEqual(response.status_code, 403)
 
     def test_admin_index_redirects_guest_to_admin_login(self):
         url = reverse("admin:index")
