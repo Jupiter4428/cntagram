@@ -1,5 +1,4 @@
 from django.core.exceptions import ValidationError
-from django.core.files.storage import default_storage
 
 from ..models import Document, DocumentVersion
 from ..services import upload_document
@@ -36,11 +35,21 @@ class DuplicateUploadTests(UploadTestCase):
         before = stored_file_count()
         with self.assertRaises(ValidationError):
             self.upload()
+        self.assertEqual(Document.objects.count(), 1)
+        self.assertEqual(DocumentVersion.objects.count(), 1)
         self.assertEqual(stored_file_count(), before)
 
     def test_rejected_duplicate_is_allowed(self):
         doc = self.upload()
         doc.status = Document.Status.REJECTED
+        doc.save(update_fields=["status"])
+        new_doc = self.upload()
+        self.assertNotEqual(doc.pk, new_doc.pk)
+        self.assertEqual(Document.objects.count(), 2)
+
+    def test_hidden_duplicate_is_allowed(self):
+        doc = self.upload()
+        doc.status = Document.Status.HIDDEN
         doc.save(update_fields=["status"])
         new_doc = self.upload()
         self.assertNotEqual(doc.pk, new_doc.pk)

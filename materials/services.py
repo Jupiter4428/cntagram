@@ -106,13 +106,7 @@ def upload_document(
             raise ValidationError(missing)
     _validate_pdf(file)
     sha256 = _sha256(file)
-    if (
-        Document.objects.filter(
-            versions__sha256=sha256,
-        )
-        .exclude(status=Document.Status.REJECTED)
-        .exists()
-    ):
+    if selectors.file_in_vault(sha256=sha256):
         raise ValidationError({"file": "ไฟล์นี้มีอยู่ในคลังแล้ว"})
     storage_path = default_storage.save(_storage_path(batch_course, doc_type), file)
     try:
