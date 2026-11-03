@@ -13,6 +13,13 @@ class DepartmentFormTests(TestCase):
 
         self.assertTrue(is_valid)
 
+
+    def test_department_form_labels(self):
+        form = DepartmentForm()
+        self.assertEqual(form.fields["code"].label, "รหัสภาควิชา")
+        self.assertEqual(form.fields["name_th"].label, "ชื่อไทย")
+        self.assertEqual(form.fields["name_en"].label, "ชื่ออังกฤษ")
+        self.assertEqual(form.fields["is_active"].label, "เปิดใช้งาน")
     def test_shows_error_on_code_for_zero_width_space(self):
         form = DepartmentForm(
             data={"code": "C\u200bN", "name_th": "คอมพิวเตอร์", "name_en": "Computer", "is_active": True}
