@@ -1,4 +1,5 @@
-from django.test import override_settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from ..forms import SearchForm
@@ -78,13 +79,16 @@ class ExamSearchFilterTests(SearchTestCase):
             for doc in search_documents(course_code="CN200", exam_period=self.final):
                 (doc.title, doc.doc_type.code, doc.batch_course.course.code)
 
-    def test_search_page_renders_filters_and_errors(self):
+    def test_search_page_shows_thai_error_for_bad_year(self):
         self.client.force_login(self.uploader)
         response = self.client.get(
             reverse("materials:vault"), {"course_code": "CN200", "exam_year_be": "1999"}
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ปีต้องอยู่ในช่วง พ.ศ. 2500–2700")
+
+    def test_search_page_filters_by_exam_period(self):
+        self.client.force_login(self.uploader)
         response = self.client.get(
             reverse("materials:vault"),
             {"course_code": "CN200", "exam_period": self.final.pk},
@@ -93,3 +97,28 @@ class ExamSearchFilterTests(SearchTestCase):
         self.assertEqual(
             [d.pk for d in response.context["documents"]], [self.exam_final.pk]
         )
+
+    def test_exam_period_choices_display_thai_labels(self):
+        form = SearchForm()
+        labels = [label for _, label in form.fields["exam_period"].choices]
+        self.assertEqual(labels, ["ทุกช่วงสอบ", "กลางภาค", "ปลายภาค"])
+
+    def test_search_page_query_count_does_not_grow_with_results(self):
+        self.client.force_login(self.uploader)
+        params = {"course_code": "CN200", "exam_period": self.final.pk}
+        with CaptureQueriesContext(connection) as one_result:
+            self.client.get(reverse("materials:vault"), params)
+
+        for number in range(3):
+            doc = self.make_document(
+                self.cn200[22], title=f"final extra {number}", doc_type=self.exam
+            )
+            ExamDetail.objects.create(
+                document=doc, exam_period=self.final, exam_year_be=2567
+            )
+
+        with CaptureQueriesContext(connection) as many_results:
+            response = self.client.get(reverse("materials:vault"), params)
+
+        self.assertEqual(len(response.context["documents"]), 4)
+        self.assertEqual(len(many_results), len(one_result))
