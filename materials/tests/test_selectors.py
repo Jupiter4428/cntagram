@@ -131,15 +131,14 @@ class UserDocumentsTests(SearchTestCase):
         for i in range(5):
             self.make_document(self.cn200[21], title=f"Doc {i}", uploader=self.uploader)
 
-        # 1 query for documents + rejection_reason subquery, 1 query for versions prefetch
-        with self.assertNumQueries(2):
+        # 1 query for documents + rejection_reason subquery
+        with self.assertNumQueries(1):
             for doc in user_documents(user=self.uploader):
                 _ = (
                     doc.batch_course.batch.department.code,
                     doc.batch_course.course.code,
                     doc.doc_type.name_th,
                     doc.rejection_reason,
-                    doc.current_version,
                 )
 
 
@@ -189,11 +188,4 @@ class ModeratorPendingSummaryTests(ApprovalBaseTestCase):
 
         self.assertIsNotNone(summary)
         self.assertEqual(summary["count"], 1)  # Only doc_cn_pending
-        self.assertEqual(summary["departments_display"], "ภาค CN")
-
-    def test_super_admin_summary(self):
-        summary = moderator_pending_summary(user=self.super_admin)
-
-        self.assertIsNotNone(summary)
-        self.assertEqual(summary["count"], 2)  # doc_cn_pending + doc_me_pending
-        self.assertEqual(summary["departments_display"], "ทุกภาควิชา")
+        self.assertEqual(summary["department_codes"], ["CN"])

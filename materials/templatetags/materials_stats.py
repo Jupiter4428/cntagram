@@ -16,3 +16,15 @@ def uploaded_file_count():
 def monthly_uploads():
     """ไฟล์ที่อัปโหลดต่อเดือน ย้อนหลัง 6 เดือน ใช้กับ `{% monthly_uploads as rows %}`"""
     return selectors.monthly_uploads()
+
+@register.simple_tag
+def my_documents(user):
+    """ไฟล์ที่ผู้ใช้อัปโหลด ใช้กับ `{% my_documents request.user as docs %}`"""
+    return selectors.user_documents(user=user)
+
+
+@register.simple_tag
+def moderator_pending(user):
+    """จำนวนไฟล์รออนุมัติของภาคที่ Moderator ดูแล ใช้กับ `{% moderator_pending request.user as pending %}`"""
+    return selectors.moderator_pending_summary(user=user)
+

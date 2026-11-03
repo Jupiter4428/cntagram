@@ -30,6 +30,7 @@ def published_document_with_download_count():
     """Published documents with download counts, without an extra detail query."""
     return published_documents().annotate(download_count=Count("download_logs"))
 
+
 def user_documents(*, user) -> QuerySet[Document]:
     """ดึงรายการเอกสารที่ผู้ใช้เป็นผู้อัปโหลด เรียงจากใหม่ไปเก่า
 
@@ -56,46 +57,26 @@ def user_documents(*, user) -> QuerySet[Document]:
             "batch_course__course",
             "doc_type",
         )
-        .prefetch_related("versions")
-        .order_by("-created_at")
+        .order_by("-created_at", "-id")
     )
 
-def moderator_pending_summary(*, user) -> dict | None:
-    """สรุปจำนวนไฟล์รออนุมัติและรายชื่อภาควิชาสำหรับ Moderator บน Dashboard
 
-    คืน None ถ้าผู้ใช้ไม่ได้เป็น Moderator หรือ Super Admin
-    คืน dict:
-        {
-            "count": int,
-            "departments_display": str,  # เช่น "ภาค CN" หรือ "ทุกภาควิชา"
-        }
-    """
+def moderator_pending_summary(*, user) -> dict | None:
+    """จำนวนไฟล์รออนุมัติและรหัสภาคที่ Moderator ดูแล คืน None ถ้าไม่ได้เป็น Moderator"""
     if not user or not user.is_authenticated:
         return None
 
-    if is_super_admin(user):
-        count = pending_documents_for_moderator(user=user).count()
-        return {
-            "count": count,
-            "departments_display": "ทุกภาควิชา",
-        }
-
-    roles = UserRole.objects.filter(
-        user=user, role__code=Role.MODERATOR, department__isnull=False
-    ).select_related("department")
-
-    if not roles.exists():
+    dept_codes = sorted(
+        UserRole.objects.filter(
+            user=user, role__code=Role.MODERATOR, department__isnull=False
+        ).values_list("department__code", flat=True)
+    )
+    if not dept_codes:
         return None
-
-    dept_codes = sorted({r.department.code for r in roles if r.department})
-    dept_display = f"ภาค {', '.join(dept_codes)}" if dept_codes else ""
-    count = pending_documents_for_moderator(user=user).count()
     return {
-        "count": count,
-        "departments_display": dept_display,
+        "count": pending_documents_for_moderator(user=user).count(),
+        "department_codes": dept_codes,
     }
-
-
 
 
 def search_documents(*, course_code, department=None, batch=None, doc_type=None):
