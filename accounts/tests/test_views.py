@@ -423,3 +423,22 @@ class DeleteAccountRateLimitViewTests(TestCase):
 
         response = self.client.get(self.url, REMOTE_ADDR="127.0.0.1")
         self.assertEqual(response.status_code, 429)
+
+    def test_can_retry_after_window_expires(self):
+        from accounts import services
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            self.client.post(self.url, {"password": "wrong-password"})
+
+        # ยืนยันว่าติด Rate Limit (429)
+        blocked_res = self.client.post(self.url, {"password": "wrong-password"})
+        self.assertEqual(blocked_res.status_code, 429)
+        self.assertContains(blocked_res, "คุณใส่รหัสผ่านผิดเกินจำนวนครั้งที่กำหนด", status_code=429)
+
+        # จำลองการพ้นช่วงเวลา Window (เคลียร์แคช)
+        services.clear_delete_account_failures(user_id=self.user.pk, client_ip="127.0.0.1")
+
+        # พ้นช่วงเวลาแล้ว ใส่รหัสผ่านถูกต้อง ต้องลบบัญชีและออกจากระบบได้สำเร็จ
+        success_res = self.client.post(self.url, {"password": "correct-password"}, follow=True)
+        self.assertEqual(success_res.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
