@@ -10,7 +10,7 @@
 - **CI, Static Analysis (Black, Flake8, Bandit) และ quality gate ของ PR** ทำตาม lecture-notes ([07 CI/CD & Static Analysis](./_docs/lecture-notes/07-ci-cd-and-static-analysis.md)) สรุปไว้ในหัวข้อ [Static Analysis และ CI](#static-analysis-และ-ci)
 - **Requirements / Product Backlog** อยู่ที่ [`_docs/requirements.md`](./_docs/requirements.md)
 
-> Setup, Sync, Project Structure และ Branch Strategy: ดูที่ [README.md](./README.md)
+> README ตาม lecture สัปดาห์ที่ 13 เหลือแค่ Overview / Live Demo / Architecture / Local Setup / Test & Coverage — รายละเอียดทีมอยู่ด้านล่างหัวข้อ [Developer Setup](#developer-setup)
 
 ## สารบัญ
 1. [Scrum ของทีมเรา](#scrum-ของทีมเรา)
@@ -29,6 +29,7 @@
 14. [Testing และการใช้ AI](#testing-และการใช้-ai-ช่วยเขียนโค้ด)
 15. [Checklist ก่อนเปิด PR](#checklist-ก่อนเปิด-pr)
 16. [Database และ Models](#database-และ-models)
+17. [Developer Setup](#developer-setup)
 
 ---
 
@@ -184,7 +185,7 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 - [ ] ใส่ค่า **Story Points** และ **Track** ครบทุก issue บน Project
 - [ ] ปักหมุด Sprint Goal ไว้ใน README/คำอธิบายของ GitHub Project
 - [ ] มอบหมาย Assignee ของงานชิ้นแรกที่จะเริ่ม
-- [ ] ตรวจ Branch Protection ของ `main` และ `develop` ยังเปิดอยู่ (ดู [README](./README.md#branch-strategy))
+- [ ] ตรวจ Branch Protection ของ `main` และ `develop` ยังเปิดอยู่ (ดู [Branch Strategy](#branch-strategy))
 
 ---
 
@@ -277,7 +278,7 @@ issue ส่วนใหญ่มีทั้งงาน Frontend และ Bac
 ### 6. Merge
 - ใช้ **Squash and Merge** หรือ **Merge commit** ตามที่ทีมตกลง แล้วลบ branch
 - `Closes #N` จะปิด issue อัตโนมัติเพราะ default branch คือ `develop` ตรวจว่าการ์ดย้ายไป **Done** จริง
-- ทุกคนรัน [Sync](./README.md#ทุกครั้งที่-pull-โค้ดใหม่-sync-ก่อนเริ่มงาน) หลังมีคน merge
+- ทุกคนรัน [Sync](#ทุกครั้งที่-pull-โค้ดใหม่-sync-ก่อนเริ่มงาน) หลังมีคน merge
 
 ### 7. ปิด Sprint
 - Demo จาก `develop` ที่ merge แล้วเท่านั้น (ไม่ demo จากเครื่องส่วนตัว)
@@ -617,7 +618,6 @@ def published_documents_for_course(*, course_code: str) -> QuerySet[Document]:
 ```
 ```python
 # materials/views.py
-@login_required
 def course_documents(request, course_code):
     documents = published_documents_for_course(course_code=course_code)
     return render(request, "materials/course_documents.html", {"documents": documents})
@@ -721,16 +721,15 @@ urlpatterns = [
 ### Views
 - ใช้ **Function-Based Views เป็นหลัก** ตามที่ทีมตกลง (อ่านจากบนลงล่างได้ตรงๆ เหมาะกับ flow ที่มีกฎเฉพาะ)
 - ใช้ **Generic CBV** (`ListView`, `DetailView` ฯลฯ) ได้กับหน้าแสดงข้อมูลแบบ CRUD ล้วนๆ โดย
-  - ใส่ Mixin ไว้**ซ้ายสุด** ตามลำดับ MRO เช่น `class DocumentListView(LoginRequiredMixin, ListView)`
+  - ใส่ Mixin ไว้**ซ้ายสุด** ตามลำดับ MRO เช่น `class DocumentListView(PermissionRequiredMixin, ListView)` (ไม่ต้องใส่ `LoginRequiredMixin` เพราะ `LoginRequiredMiddleware` บังคับล็อกอินให้แล้ว)
   - override `get_queryset()` ให้เรียก selector ไม่เขียน query ยาวในคลาส
 - ไม่ว่าแบบไหน view ต้อง**บาง**: รับ input → เรียก service/selector → ตอบ response
 - ต้อง return `HttpResponse` (หรือ `render`/`redirect`/`JsonResponse`) ห้าม return `None` หรือสตริงเปล่า
 - ค้นหา object ด้วย `get_object_or_404()` แทน `try/except DoesNotExist`
 - อ่าน query string ด้วย `request.GET.get('key', default)` ไม่ใช้ `request.GET['key']` (จะเกิด 500 เมื่อไม่มีคีย์)
-- หน้าที่ต้องล็อกอินใช้ `@login_required` / `LoginRequiredMixin` (ตั้ง `LOGIN_URL`, `LOGIN_REDIRECT_URL`, `LOGOUT_REDIRECT_URL` ใน settings)
+- ทุก view ต้องล็อกอินโดยอัตโนมัติผ่าน `LoginRequiredMiddleware` (ตั้ง `LOGIN_URL`, `LOGIN_REDIRECT_URL`, `LOGOUT_REDIRECT_URL` ใน settings) หน้าที่เปิดให้ Guest ต้องติด `@login_not_required` และมีเทสต์ยืนยัน
 - **ตรวจสิทธิ์และความเป็นเจ้าของข้อมูลฝั่ง server (กัน IDOR):** ผู้ใช้ A ต้องแก้ URL เป็นของ B แล้วทำอะไรไม่ได้ กฎสิทธิ์ทางธุรกิจ (เช่น อัปโหลดได้เฉพาะภาคตัวเอง) เขียนใน service แล้ว `raise PermissionDenied`
   ```python
-  @login_required
   @require_POST
   def document_delete(request, pk):
       document = get_object_or_404(Document, pk=pk)
@@ -746,7 +745,6 @@ urlpatterns = [
 - **ไม่อ่าน `request.POST` ดิบๆ** ให้ใช้ `forms.Form` หรือ `forms.ModelForm` เสมอ (ได้ validation, type coercion, error message และกัน XSS ในตัว)
 - รูปแบบมาตรฐานของ view ที่รับฟอร์ม + **Post/Redirect/Get** (สำเร็จแล้ว `redirect()` เสมอ กัน refresh แล้วส่งซ้ำ) และส่งข้อมูลที่ผ่าน validation ให้ service:
   ```python
-  @login_required
   def document_create(request):
       form = DocumentUploadForm(request.POST or None, request.FILES or None)
       if request.method == "POST" and form.is_valid():
@@ -781,7 +779,7 @@ urlpatterns = [
 | SQL Injection | ใช้ Django ORM เสมอ ห้ามต่อสตริงสร้าง SQL เอง |
 | XSS | Auto-escaping ของ DTL, ไม่ใช้ `\|safe` กับ user input |
 | CSRF | `{% csrf_token %}` ทุกฟอร์ม POST |
-| Broken Access Control / IDOR | `@login_required` + ตรวจสิทธิ์/ความเป็นเจ้าของใน service |
+| Broken Access Control / IDOR | `LoginRequiredMiddleware` + ตรวจสิทธิ์/ความเป็นเจ้าของใน service |
 | เข้าถึงไฟล์โดยตรง | ไฟล์ PDF ส่งผ่าน view ที่ตรวจสิทธิ์ทุกครั้ง ไม่เปิด Direct URL |
 | Secret รั่ว | เก็บใน `.env` ไม่ commit |
 
@@ -970,7 +968,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
    - ทุก Model ต้องมี __str__ และ class Meta, ห้าม side-effect ภายนอกใน save()
    - ห้าม raw SQL, ห้าม fields='__all__', ห้าม |safe กับ user input
    - ใช้ get_object_or_404, reverse()/{% url 'ns:name' %}, ไม่ hardcode URL
-   - ทุกฟอร์ม POST ต้องมี {% csrf_token %}; view ที่ต้องล็อกอินใช้ @login_required
+   - ทุกฟอร์ม POST ต้องมี {% csrf_token %}; view ที่เปิดให้ Guest ต้องติด @login_not_required
    - เขียน unit test ประกอบทุกฟีเจอร์ commit ตาม Conventional Commits
    ```
 
@@ -990,7 +988,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 - [ ] ถ้าแก้ Model: มี migration ที่ commit แล้ว ไม่ได้ลบ/แก้ migration เก่า และอัปเดต `_docs/database-design.md`
 - [ ] อัปเดต `requirements.txt` ถ้าติดตั้ง package ใหม่
 - [ ] โค้ดตาม PEP 8 มี docstring และลบ debug code / print ที่ไม่จำเป็นออก
-- [ ] ทุกฟอร์ม POST มี `{% csrf_token %}` และหน้าที่ต้องล็อกอินมี `@login_required`
+- [ ] ทุกฟอร์ม POST มี `{% csrf_token %}` และหน้าที่เปิดให้ Guest ต้องติด `@login_not_required`
 - [ ] PR มี `Closes #<เลข issue>` และย้ายการ์ดเป็น **In Review**
 
 ---
@@ -1057,3 +1055,179 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
   python manage.py createcachetable
   ```
 - ถ้าเครื่องคุณเคย `migrate` ก่อนมี `AUTH_USER_MODEL` จะเจอ `InconsistentMigrationHistory` กรณีนี้เท่านั้นที่ให้ลบ `db.sqlite3` (ไฟล์ในเครื่องคุณ ไม่อยู่ใน Git) แล้ว `migrate` ใหม่ได้ (ต้อง seed ใหม่ด้วย) ส่วนโฟลเดอร์ `migrations/` **ยังห้ามลบ** ตามกฎด้านบน
+
+
+---
+
+## Developer Setup
+
+เนื้อหาย้ายจาก README ตาม lecture สัปดาห์ที่ 13 (README เหลือ Overview / Live Demo / Architecture / Local Setup สั้นๆ / Test & Coverage)
+
+### Tech Stack
+- Python 3.12+
+- Django 6.1 (ตาม `requirements.txt`, สถาปัตยกรรม MVT, ใช้ Function-Based Views เป็นหลัก) — models ใช้ `CheckConstraint(condition=...)` จึงต้องเป็น Django 5.1 ขึ้นไป
+- Bootstrap 5 (ผ่าน CDN) สำหรับ UI
+- SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
+- Git + GitHub (Pull Request, Projects, Actions)
+- Automated Tests ด้วย Django `TestCase` และ Coverage.py (เป้าหมาย ≥ 80% ตั้งแต่ Sprint 2)
+- CI/CD ด้วย GitHub Actions และ Static Analysis ใน Sprint 3: Black, Flake8, Bandit
+- Deploy ตาม lecture: Gunicorn + WhiteNoise + Managed PostgreSQL (เช่น Render) — ดู [`_docs/deployment-prep-checklist.md`](./_docs/deployment-prep-checklist.md)
+
+### Setup ก่อนเริ่มพัฒนา (First Time Setup)
+
+#### 0. เครื่องมือที่ต้องมี
+- Python 3.12+ (ติ๊ก **Add to PATH** ตอนติดตั้ง)
+- Git และบัญชี GitHub
+- VS Code พร้อมส่วนเสริม **Python** และ **Git Graph**
+
+ตั้งค่าตัวตนของ Git ครั้งแรก (ข้อมูลนี้ติดไปกับทุก commit):
+```bash
+git config --global user.name "ชื่อของคุณ"
+git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
+git config --list
+```
+
+#### 1. Clone โปรเจค
+```bash
+git clone https://github.com/Jupiter4428/cntagram.git
+cd cntagram
+```
+
+**Repo นี้ default branch คือ `develop`** หลัง clone จะอยู่ที่ `develop` อยู่แล้ว ให้ pull ล่าสุดก่อนเริ่มงานทุกครั้ง (ห้ามทำงานหรือแตก branch จาก `main`):
+```bash
+git switch develop
+git pull origin develop
+```
+
+#### 2. สร้างและเปิดใช้งาน Virtual Environment
+```bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS/Linux
+source .venv/bin/activate
+```
+
+#### 3. ติดตั้ง dependencies
+```bash
+pip install -r requirements.txt
+```
+
+#### 4. ไฟล์ `.env` (ยังไม่ได้ใช้)
+ตอนนี้ `portal/settings.py` ยังตั้ง `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` ไว้ในไฟล์ตรงๆ สำหรับเครื่อง dev และยังไม่มี `.env.example` จึง**ข้ามขั้นนี้ไปได้** (`python-decouple` อยู่ใน `requirements.txt` แล้ว แต่ยังไม่ได้เชื่อมกับ settings)
+
+เมื่อเปลี่ยนไปอ่านค่าจาก `.env` แล้ว ค่าที่ต้องตั้งคือ:
+```
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+**ห้าม commit ไฟล์ `.env` ขึ้น git เด็ดขาด** (มีอยู่ใน `.gitignore` แล้ว)
+
+#### 5. Migrate ฐานข้อมูล
+```bash
+python manage.py migrate
+python manage.py createcachetable
+```
+> **หมายเหตุ:** `createcachetable` ใช้สร้างตาราง cache ในฐานข้อมูลสำหรับเก็บข้อมูล rate limit (ทำงานร่วมกับ `DatabaseCache` เพื่อแชร์สถานะข้าม worker)
+
+> ⚠️ **Custom User Model:** โปรเจคใช้ `accounts.User` และตั้ง `AUTH_USER_MODEL = 'accounts.User'` ไว้แล้ว **ห้ามแก้หรือลบบรรทัดนี้** การเปลี่ยนย้อนหลังทำให้ฐานข้อมูลพัง (`InconsistentMigrationHistory`) ดูรายละเอียดที่ [Database และ Models](#database-และ-models)
+
+#### 6. สร้าง superuser (สำหรับเข้า admin panel)
+User ผูกกับภาควิชา (`department` ห้ามว่าง) จึงต้องมี Department อย่างน้อย 1 แถวก่อน
+
+> ตอนนี้ `admin.py` ของทุก app ยังไม่ได้ register model จึงยังไม่เห็นตารางของโปรเจคในหน้า admin
+```bash
+python manage.py seed_catalog
+python manage.py createsuperuser
+python manage.py seed_materials
+```
+ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (เช่น `CN`), Password
+
+ระบบไม่ถามรหัสนักศึกษา ถ้าใช้อีเมล `@student.tu.ac.th` จะดึงรหัสจากหน้า @ ให้เอง ถ้าใช้อีเมลอื่นระบบจะตั้งรหัสสำรองให้
+
+#### 7. รันเซิร์ฟเวอร์
+```bash
+python manage.py runserver
+```
+เข้าใช้งานที่ `http://127.0.0.1:8000/` (หน้า admin ที่ `/admin/`)
+
+#### 8. รันเทสต์
+```bash
+python manage.py test
+```
+Django สร้างฐานข้อมูลทดสอบแยกให้เอง ไม่แตะ `db.sqlite3` คำสั่ง coverage และวิธีเขียนเทสต์ดูที่ [Testing](#testing-และการใช้-ai-ช่วยเขียนโค้ด)
+
+### ทุกครั้งที่ pull โค้ดใหม่ (Sync ก่อนเริ่มงาน)
+
+```bash
+git status
+git fetch origin
+git pull origin develop
+pip install -r requirements.txt
+python manage.py migrate
+```
+
+หลังมีคน merge PR เข้า `develop` ทุกคนควรรันชุดนี้ใหม่ทันที เพื่อไม่ให้แก้ไฟล์บนโค้ดเก่าแล้วเกิด conflict ตอนท้าย
+
+### Project Structure
+```
+cntagram/
+├── _docs/           # เอกสารทั้งหมดที่ไม่ใช่โค้ด
+│   ├── requirements.md
+│   ├── known-limitations.md
+│   ├── deployment-prep-checklist.md
+│   ├── database-design.md
+│   ├── adr/
+│   ├── architecture/
+│   ├── lecture-notes/
+│   ├── research/
+│   └── archive/
+├── portal/
+├── accounts/
+├── catalog/
+├── materials/
+├── media/           # MEDIA_ROOT (.gitignore) เปิดผ่าน view ที่ตรวจสิทธิ์เท่านั้น
+├── .github/
+├── manage.py
+├── requirements.txt
+├── CONTRIBUTING.md
+└── README.md
+```
+
+ภายในแต่ละ app ใช้โครงสร้างตาม [ADR 0002](./_docs/adr/0002-service-layer-and-selectors.md):
+```
+<app>/
+├── models.py
+├── forms.py
+├── services.py
+├── selectors.py
+├── views.py
+├── urls.py
+├── admin.py
+├── tests.py  (หรือ tests/...)
+├── migrations/
+└── templates/<app>/
+templates/
+static/
+```
+
+### Branch Strategy
+| Branch | ใช้ทำอะไร | แตกจาก → merge เข้า |
+|---|---|---|
+| `main` | โค้ดที่ผ่าน Sprint Review แล้ว (production) | — |
+| `develop` | โค้ดล่าสุดของทีม (default branch) | — |
+| `feature/issue-<เลข>-<ชื่อ>` | User Story | `develop` → `develop` |
+| `refactor/issue-<เลข>-<ชื่อ>` | Tech Debt / Refactoring | `develop` → `develop` |
+| `bugfix/issue-<เลข>-<ชื่อ>` | แก้บั๊กที่ไม่เร่งด่วน | `develop` → `develop` |
+| `spike/issue-<เลข>-<ชื่อ>` | งานสำรวจ/ออกแบบ | `develop` → `develop` |
+| `docs/issue-<เลข>-<ชื่อ>` | แก้เอกสารอย่างเดียว | `develop` → `develop` |
+| `hotfix/<ชื่อ>` | แก้บั๊กด่วนบน production | `main` → `main` และ `develop` |
+
+- ทุก branch ตั้งชื่อตาม **เลข issue** และเปิด PR ที่มี `Closes #<เลข>`
+- จบ Sprint: หลัง Sprint Review เปิด PR `develop` → `main`
+- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch, ใช้กับ admin ด้วย และเมื่อมี CI แล้วให้เปิด **Require status checks to pass**

@@ -1,4 +1,5 @@
 """การอ่านข้อมูลของ materials (ค้นหา / เปิดอ่านเอกสาร / อัปโหลด / ตรวจสอบสิทธิ์และการอนุมัติ / สถิติอัปโหลด) ตาม ADR 0002"""
+
 import datetime
 from collections import defaultdict
 from typing import NamedTuple
@@ -71,9 +72,10 @@ def can_review_any(*, user):
     """ตรวจสอบว่าผู้ใช้เป็น Super Admin หรือ Moderator ของภาควิชาใดๆ หรือไม่"""
     if not user or not user.is_authenticated:
         return False
-    return is_super_admin(user) or UserRole.objects.filter(
-        user=user, role__code=Role.MODERATOR
-    ).exists()
+    return (
+        is_super_admin(user)
+        or UserRole.objects.filter(user=user, role__code=Role.MODERATOR).exists()
+    )
 
 
 def pending_documents_for_moderator(*, user):
@@ -100,7 +102,8 @@ def pending_documents_for_moderator(*, user):
         )
 
     return (
-        qs.exclude(uploader=user)
+        qs.filter(doc_type__in=DocType.objects.filter(required_roles__isnull=False))
+        .exclude(uploader=user)
         .exclude(approvals__approver=user)
         .select_related(
             "batch_course__batch__department",
@@ -222,7 +225,9 @@ def approval_progress_for(*, documents):
     documents = list(documents)
     rules_by_type = defaultdict(list)
     for rule in (
-        DocTypeRequiredRole.objects.filter(doc_type_id__in={d.doc_type_id for d in documents})
+        DocTypeRequiredRole.objects.filter(
+            doc_type_id__in={d.doc_type_id for d in documents}
+        )
         .select_related("role")
         .order_by("role_id")
     ):
@@ -240,7 +245,9 @@ def approval_progress_for(*, documents):
         pending = d.status == Document.Status.PENDING
         progress[d.pk] = ApprovalProgress(
             approved_roles=[r for r in rule.roles if r.pk in approved],
-            missing_roles=missing_roles(rule=rule, approved_ids=approved) if pending else [],
+            missing_roles=(
+                missing_roles(rule=rule, approved_ids=approved) if pending else []
+            ),
             require_all=rule.require_all,
             approvable=pending and bool(rule.roles),
         )
@@ -251,7 +258,9 @@ def _rule_from(document, rules, legacy_max):
     roles = [rule.role for rule in rules]
     if _is_exam(document) and document.batch_course.batch.number <= legacy_max:
         return ApprovalRule(
-            roles=[r for r in roles if r.code == Role.SUPER_ADMIN], require_all=False, legacy=True
+            roles=[r for r in roles if r.code == Role.SUPER_ADMIN],
+            require_all=False,
+            legacy=True,
         )
     return ApprovalRule(
         roles=roles,

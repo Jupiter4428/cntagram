@@ -1,5 +1,4 @@
 """Protected downloads: the server, never a public media URL, serves the file."""
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -9,7 +8,6 @@ from .selectors import published_documents
 from .views import open_document_pdf
 
 
-@login_required
 @require_GET
 def document_download(request, document_id):
     document = get_object_or_404(published_documents(), pk=document_id)

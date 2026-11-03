@@ -107,7 +107,7 @@ class VaultViewTests(SearchTestCase):
     def test_invalid_search_shows_the_error_without_the_start_hint(self):
         response = self.client.get(reverse("materials:vault"), {"course_code": ""})
 
-        self.assertContains(response, "This field is required")
+        self.assertContains(response, "กรุณาระบุรหัสวิชา")
         self.assertNotContains(response, "กรอกรหัสวิชา เช่น CN200")
 
     def test_escapes_document_titles(self):
