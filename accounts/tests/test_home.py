@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from catalog.models import Department
 
+
 from ..models import Role, UserRole
 
 User = get_user_model()
@@ -237,3 +238,7 @@ class HomeViewTests(TestCase):
         self.assertContains(response, 'href="?page=1#recent-users"')
         self.assertContains(response, 'popovertarget="user-%d"' % self.user.pk)
         self.assertContains(response, self.user.email)
+
+    def test_guest_home_runs_no_document_queries(self):
+        with self.assertNumQueries(0):
+            self.client.get(reverse("accounts:home"))

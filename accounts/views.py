@@ -50,6 +50,7 @@ def home(request):
     if is_super_admin(request.user):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
+
     return render(request, "accounts/index.html")
 
 
