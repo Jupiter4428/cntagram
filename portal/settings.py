@@ -99,6 +99,7 @@ LOGOUT_REDIRECT_URL = "accounts:home"
 # another database table. Production deployments with multiple workers should
 # configure a shared cache backend (for example Redis).
 LOGIN_RATE_LIMIT_ATTEMPTS = 5
+LOGIN_RATE_LIMIT_IP_ATTEMPTS = 20
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300
 
 REGISTER_RATE_LIMIT_ATTEMPTS = 5
