@@ -82,6 +82,17 @@ def register(request):
                 pdpa_consent_at=timezone.now(),
             )
         except ValidationError as exc:
+            if hasattr(exc, "message_dict") and "password" in exc.message_dict:
+                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+                    response = render(
+                        request,
+                        "accounts/delete_account.html",
+                        {"form": form, "rate_limited": True},
+                        status=429,
+                    )
+                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+                    return response
             form.add_error(None, exc)
         else:
             messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
@@ -134,11 +145,12 @@ def delete_account(request):
         try:
             services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
         except ValidationError as exc:
-            services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
-            if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
-                response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
-                response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-                return response
+            if hasattr(exc, "message_dict") and "password" in exc.message_dict:
+                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+                    response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
+                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+                    return response
             form.add_error(None, exc)
         else:
             services.clear_delete_account_failures(user_id=request.user.pk, client_ip=client_ip)

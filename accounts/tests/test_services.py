@@ -1,3 +1,5 @@
+from django.core.cache import cache
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -148,3 +150,31 @@ class DeleteOwnAccountServiceTests(ModeratorTestCase):
         )
 
         self.assertEqual(user.student_id, "6510610001")
+
+
+
+class DeleteAccountRateLimitServiceTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+    def test_key_generation_has_no_pii(self):
+        from accounts.services import _delete_account_failure_key
+        key = _delete_account_failure_key(user_id=123, client_ip="192.168.1.1")
+        self.assertTrue(key.startswith("delete-account-failures:"))
+        self.assertNotIn("123", key)
+        self.assertNotIn("192.168.1.1", key)
+
+    def test_rate_limit_flow(self):
+        from accounts import services
+        user_id = 999
+        client_ip = "10.0.0.1"
+
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            services.record_delete_account_failure(user_id=user_id, client_ip=client_ip)
+
+        self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        services.clear_delete_account_failures(user_id=user_id, client_ip=client_ip)
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
