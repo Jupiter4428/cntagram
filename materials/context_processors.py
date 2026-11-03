@@ -4,12 +4,12 @@ from . import selectors
 
 
 def approval_permissions(request):
-    """Context processor exposing can_review_materials for navigation and UI."""
+    """ส่ง can_review_materials ให้ทุก template ไว้แสดงลิงก์ Approval Queue
 
-    def _get_can_review():
-        user = getattr(request, "user", None)
-        if not user or not user.is_authenticated:
-            return False
-        return selectors.can_review_any(user=user)
-
-    return {"can_review_materials": SimpleLazyObject(_get_can_review)}
+    ใช้ SimpleLazyObject จึง query เฉพาะหน้าที่ใช้ตัวแปรนี้จริง
+    """
+    return {
+        "can_review_materials": SimpleLazyObject(
+            lambda: selectors.can_review_any(user=getattr(request, "user", None))
+        )
+    }
