@@ -16,6 +16,15 @@ from portal.permissions import is_super_admin
 from .models import Approval, DocType, DocTypeRequiredRole, Document, DocumentVersion
 
 
+def file_in_vault(*, sha256) -> bool:
+    """ตรวจ SHA-256 ในเอกสาร pending/published ทุกเวอร์ชัน (US-12)"""
+    return (
+        Document.objects.filter(versions__sha256=sha256)
+        .exclude(status__in=[Document.Status.REJECTED, Document.Status.HIDDEN])
+        .exists()
+    )
+
+
 def published_documents():
     """เอกสารที่ผู้ใช้ทั่วไปเห็นได้ (เฉพาะ published) พร้อมข้อมูลที่หน้าเว็บต้องใช้ กัน N+1"""
     return Document.objects.filter(status=Document.Status.PUBLISHED).select_related(
