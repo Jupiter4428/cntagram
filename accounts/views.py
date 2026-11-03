@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
@@ -82,17 +82,6 @@ def register(request):
                 pdpa_consent_at=timezone.now(),
             )
         except ValidationError as exc:
-            if hasattr(exc, "message_dict") and "password" in exc.message_dict:
-                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
-                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
-                    response = render(
-                        request,
-                        "accounts/delete_account.html",
-                        {"form": form, "rate_limited": True},
-                        status=429,
-                    )
-                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-                    return response
             form.add_error(None, exc)
         else:
             messages.success(request, "สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ")
@@ -131,6 +120,7 @@ def logout(request):
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def delete_account(request):
     """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
