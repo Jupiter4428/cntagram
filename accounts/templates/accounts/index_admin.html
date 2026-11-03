@@ -60,11 +60,6 @@
         <strong class="admin-stat__value">{% uploaded_file_count %}</strong>
         <span class="admin-stat__label">ไฟล์ที่อัปโหลดทั้งหมด</span>
     </a>
-    <a class="retro-widget glass-module admin-stat admin-stat--red" href="{% url 'accounts:moderator_manage' %}">
-        <span class="admin-stat__icon" aria-hidden="true">⚑</span>
-        <strong class="admin-stat__value">จัดการ</strong>
-        <span class="admin-stat__label">แต่งตั้ง/ถอด Moderator</span>
-    </a>
 </section>
 
 <div class="admin-row">
@@ -206,6 +201,11 @@
                     <li><span aria-hidden="true">›</span> ยังไม่มีภาควิชาที่เปิดใช้</li>
                 {% endfor %}
             </ul>
+            <div class="admin-actions mt-3">
+                <a class="admin-button" href="{% url 'accounts:moderator_manage' %}">
+                    <span aria-hidden="true">⚑</span> จัดการ Moderator ประจำภาควิชา
+                </a>
+            </div>
         </div>
     </section>
 </div>

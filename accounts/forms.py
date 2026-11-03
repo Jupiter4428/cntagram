@@ -170,8 +170,13 @@ class RegisterForm(forms.ModelForm):
                 widget.attrs["class"] = f"{classes} is-invalid".strip()
 
 
+class ModeratorUserChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f"{obj.nickname} ({obj.email})"
+
+
 class ModeratorAssignmentForm(forms.Form):
-    user = forms.ModelChoiceField(
+    user = ModeratorUserChoiceField(
         queryset=User.objects.filter(is_active=True).order_by("email"),
         label="เลือกผู้ใช้",
         empty_label="-- กรุณาเลือกผู้ใช้ --",

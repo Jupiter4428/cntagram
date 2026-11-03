@@ -19,7 +19,7 @@
         <a class="admin-menu__link{% if url_name|slice:':6' == 'course' %} is-active{% endif %}" href="{% url 'catalog:course_list' %}">
             <span aria-hidden="true">✎</span> จัดการรายวิชา
         </a>
-        <a class="admin-menu__link{% if url_name == 'moderator_manage' %} is-active{% endif %}" href="{% url 'accounts:moderator_manage' %}">
+        <a class="admin-menu__link{% if url_name|slice:':9' == 'moderator' %} is-active{% endif %}" href="{% url 'accounts:moderator_manage' %}">
             <span aria-hidden="true">⚑</span> จัดการ Moderator
         </a>
 
