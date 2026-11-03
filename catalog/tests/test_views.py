@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -94,11 +96,21 @@ class DepartmentTests(CatalogTestCase):
         self.assertContains(response, reverse("catalog:department_update", args=[self.dept_cn.pk]))
         self.assertContains(response, reverse("catalog:department_delete", args=[self.dept_cn.pk]))
 
+    @patch("catalog.selectors.department_list", return_value=[])
+    def test_list_page_empty_state(self, _mock_dept_list):
+        """เมื่อไม่มีภาควิชา แสดงข้อความว่างในตาราง"""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("catalog:department_list"))
+        self.assertTemplateUsed(response, "catalog/department_list.html")
+        self.assertContains(response, "ยังไม่มีข้อมูลภาควิชา")
+
     def test_form_page_uses_themed_form(self):
-        """หน้าเพิ่ม/แก้ภาคใช้ฟอร์มธีม admin พร้อมปุ่มบันทึกและยกเลิก"""
+        """หน้าเพิ่มภาคใช้ฟอร์มธีม admin พร้อมปุ่มบันทึกและยกเลิก"""
         self.client.force_login(self.admin)
         response = self.client.get(reverse("catalog:department_create"))
-        self.assertContains(response, "admin-form")
+        self.assertTemplateUsed(response, "catalog/department_form.html")
+        self.assertIn("form", response.context)
+        self.assertContains(response, 'class="admin-form"')
         self.assertContains(response, "admin-button--primary")
         self.assertContains(response, reverse("catalog:department_list"))
 
@@ -106,9 +118,9 @@ class DepartmentTests(CatalogTestCase):
         """หน้ายืนยันลบใช้ธีม admin และระบุภาคที่จะลบ"""
         self.client.force_login(self.admin)
         response = self.client.get(reverse("catalog:department_delete", args=[self.dept_cn.pk]))
-        self.assertContains(response, "admin-button")
-        self.assertContains(response, self.dept_cn.name_th)
-        self.assertContains(response, "CN")
+        self.assertTemplateUsed(response, "catalog/department_confirm_delete.html")
+        self.assertEqual(response.context["dept"], self.dept_cn)
+        self.assertContains(response, f"ยืนยันการลบภาควิชา {self.dept_cn.code}")
 
 
 class BatchTests(CatalogTestCase):
