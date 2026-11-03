@@ -16,7 +16,10 @@ class SearchForm(forms.Form):
         label="รหัสวิชา",
         max_length=10,
         widget=forms.TextInput(attrs={"class": "form-control"}),
-        error_messages={"required": "กรุณาระบุรหัสวิชา"},
+        error_messages={
+            "required": "กรุณาระบุรหัสวิชา",
+            "max_length": "รหัสวิชาต้องไม่เกิน %(limit_value)d ตัวอักษร",
+        },
     )
     department = forms.ModelChoiceField(
         label="ภาควิชา",
@@ -24,6 +27,7 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="ทุกภาค",
         widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "ภาควิชาที่เลือกไม่ถูกต้อง"},
     )
     batch = forms.ModelChoiceField(
         label="รุ่น",
@@ -31,6 +35,7 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="ทุกรุ่น",
         widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "รุ่นที่เลือกไม่ถูกต้อง"},
     )
     doc_type = forms.ModelChoiceField(
         label="ประเภท",
@@ -38,6 +43,7 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="ทุกประเภท",
         widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={"invalid_choice": "ประเภทที่เลือกไม่ถูกต้อง"},
     )
 
     def clean(self):
@@ -85,9 +91,6 @@ class UploadForm(forms.Form):
         label="รายละเอียด",
         widget=forms.Textarea,
         required=False,
-        error_messages={
-            "required": "กรุณาระบุรายละเอียด",
-        },
     )
     exam_period = forms.ModelChoiceField(
         label="ช่วงสอบ",
@@ -103,8 +106,8 @@ class UploadForm(forms.Form):
         max_value=2700,
         required=False,
         error_messages={
-            "min_value": "ปี พ.ศ. ต้องไม่น้อยกว่า %(limit_value)s",
-            "max_value": "ปี พ.ศ. ต้องไม่เกิน %(limit_value)s",
+            "min_value": "ปี พ.ศ. ต้องไม่น้อยกว่า %(limit_value)d",
+            "max_value": "ปี พ.ศ. ต้องไม่เกิน %(limit_value)d",
             "invalid": "กรุณาระบุปี พ.ศ. เป็นตัวเลข",
         },
     )
