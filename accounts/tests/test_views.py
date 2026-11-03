@@ -147,6 +147,7 @@ class RegisterViewTests(RegistrationTestCase):
 
         self.assertRedirects(response, reverse("accounts:login"))
         self.assertContains(response, "สมัครสมาชิกสำเร็จ")
+        self.assertContains(response, 'class="alert alert-success"')
         user = User.objects.get(email="6610612345@student.tu.ac.th")
         self.assertEqual(user.student_id, "6610612345")
         self.assertEqual(user.entry_year, 66)
