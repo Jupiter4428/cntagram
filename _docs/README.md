@@ -8,10 +8,12 @@
 | ไฟล์ / โฟลเดอร์ | เนื้อหา | อ่านเมื่อ |
 |---|---|---|
 | [`requirements.md`](./requirements.md) | Product Backlog: User Story (US-x), Acceptance Criteria และลำดับความสำคัญ | อยากรู้ว่าระบบต้องทำอะไร หรือก่อนหยิบงานใน Sprint |
+| [`known-limitations.md`](./known-limitations.md) | ข้อจำกัดของระบบรุ่นที่ส่ง (ย้ายจาก README ตาม lecture สัปดาห์ 13) | อยากรู้ว่ายังไม่ทำอะไร / ตอนปิด story ที่ตัดขอบเขต |
 | [`database-design.md`](./database-design.md) | ออกแบบฐานข้อมูล (ERD 3NF) และเหตุผลของแต่ละตาราง | ก่อนแก้ `models.py` (ต้องอัปเดตไฟล์นี้ใน PR เดียวกัน) |
 | [`architecture/c4.md`](./architecture/c4.md) | ไดอะแกรม C4 Model ระดับ 1–2 (System Context, Container) | อยากเห็นภาพรวมว่าระบบประกอบด้วยอะไร |
 | [`adr/`](./adr/) | Architectural Decision Records: บันทึกว่าทำไมถึงเลือกสถาปัตยกรรมแบบนี้ | ก่อนเพิ่ม app ใหม่ หรือเปลี่ยนโครงสร้างโค้ด |
 | [`lecture-notes/`](./lecture-notes/) | สรุปเนื้อหารายวิชา CN331 (Django ORM, CBV, Architecture, Service Layer, Scrum, Automated Testing, CI/CD & Static Analysis) | ต้องการทฤษฎีหรือแนวทางที่โปรเจคอ้างอิง |
+| [`deployment-prep-checklist.md`](./deployment-prep-checklist.md) | เช็กลิสต์เตรียมก่อน Deploy (security, packages, WhiteNoise, PostgreSQL, Render, Release) ตาม lecture สัปดาห์ 13 | ก่อนขึ้น Cloud / ทำ SP-4 |
 | [`research/`](./research/) | ร่างเล่มรายงานโครงงาน แยกตามบท 1–5 พร้อมบรรณานุกรมและภาคผนวก | เขียนหรือแก้เล่มรายงาน |
 | [`archive/`](./archive/) | เอกสารเก่าที่เลิกใช้แล้ว เช่น SRS v1 (`.pdf`, `.docx`) | อยากดูที่มาของ requirement เดิมเท่านั้น |
 
