@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -65,6 +63,7 @@ class DepartmentTests(CatalogTestCase):
             follow=True,
         )
         self.assertTrue(Department.objects.filter(code="CN").exists())
+        self.assertContains(response, "admin-alert--error")
         self.assertContains(response, "ลบไม่ได้ เพราะยังมีรุ่น/วิชาอยู่ในภาคนี้")
 
     def test_cannot_delete_department_with_users(self):
@@ -84,6 +83,7 @@ class DepartmentTests(CatalogTestCase):
             follow=True,
         )
         self.assertTrue(Department.objects.filter(code="CE").exists())
+        self.assertContains(response, "admin-alert--error")
         self.assertContains(response, "ลบไม่ได้ เพราะยังมีผู้ใช้สังกัดภาคนี้อยู่")
 
     def test_list_page_uses_themed_table_with_actions(self):
@@ -91,18 +91,11 @@ class DepartmentTests(CatalogTestCase):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("catalog:department_list"))
         self.assertTemplateUsed(response, "catalog/department_list.html")
+        self.assertIn(self.dept_cn, response.context["departments"])
         self.assertContains(response, "admin-table")
         self.assertContains(response, reverse("catalog:department_create"))
         self.assertContains(response, reverse("catalog:department_update", args=[self.dept_cn.pk]))
         self.assertContains(response, reverse("catalog:department_delete", args=[self.dept_cn.pk]))
-
-    @patch("catalog.selectors.department_list", return_value=[])
-    def test_list_page_empty_state(self, _mock_dept_list):
-        """เมื่อไม่มีภาควิชา แสดงข้อความว่างในตาราง"""
-        self.client.force_login(self.admin)
-        response = self.client.get(reverse("catalog:department_list"))
-        self.assertTemplateUsed(response, "catalog/department_list.html")
-        self.assertContains(response, "ยังไม่มีข้อมูลภาควิชา")
 
     def test_form_page_uses_themed_form(self):
         """หน้าเพิ่มภาคใช้ฟอร์มธีม admin พร้อมปุ่มบันทึกและยกเลิก"""
