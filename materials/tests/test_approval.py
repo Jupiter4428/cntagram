@@ -318,11 +318,16 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         # Queue page forbidden
         response = self.client.get(self.queue_url)
         self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+        self.assertContains(response, "เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้", status_code=403)
+        self.assertContains(response, reverse("accounts:home"), status_code=403)
+        self.assertContains(response, reverse("materials:vault"), status_code=403)
 
         # Review page forbidden
         review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
         response = self.client.get(review_url)
         self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
 
     def test_moderator_of_other_dept_gets_404_from_review_doc(self):
         doc_cn = self.create_document(batch_course=self.bc_cn)
