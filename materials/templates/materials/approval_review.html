@@ -94,7 +94,7 @@
                                 <div class="flex-grow-1">
                                     <div class="fw-bold text-dark text-break">{{ document.current_version.original_name }}</div>
                                     <div class="small text-muted">
-                                        เวอร์ชัน: v{{ document.current_version.version_no }} | 
+                                        เวอร์ชัน: v{{ document.current_version.version_no }} |
                                         ขนาด: {{ document.current_version.size_bytes|filesizeformat }} |
                                         อัปโหลด: {{ document.current_version.uploaded_at|date:"d M Y, H:i" }}
                                     </div>
@@ -130,6 +130,15 @@
                         <h2 class="h5 fw-bold mb-0 text-dark">แบบฟอร์มการพิจารณา</h2>
                     </div>
                     <div class="card-body p-4">
+                        <section aria-label="ความคืบหน้าการอนุมัติ" class="mb-3">
+                            <h3 class="h6">สถานะการอนุมัติ</h3>
+                            {% if document.approval_ui %}
+                                <p class="mb-1">อนุมัติแล้ว: {% for role in document.approval_ui.approved_roles %}<span class="approval-badge">{{ role.name_th }}</span> {% empty %}ยังไม่มี{% endfor %}</p>
+                                <p class="mb-1">ยังรอ: {% for role in document.approval_ui.missing_roles %}<span class="approval-badge">{{ role.name_th }}</span> {% empty %}ไม่มี{% endfor %}</p>
+                                {% if not document.approval_ui.can_review %}<p class="alert alert-warning" role="status">{{ document.approval_ui.reason }}</p>{% endif %}
+                            {% else %}<p class="alert alert-warning" role="status">รอข้อมูลสถานะและสิทธิ์จากระบบ</p>{% endif %}
+                        </section>
+                        {% if document.approval_ui.can_review %}
                         <form method="post" action="{% url 'materials:approval_review' document.id %}" novalidate>
                             {% csrf_token %}
 
@@ -183,6 +192,10 @@
                                 </a>
                             </div>
                         </form>
+                        {% else %}
+                            {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>{% endif %}
+                            <a href="{% url 'materials:approval_queue' %}" class="btn approval-secondary">กลับไปหน้ารายการ</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
