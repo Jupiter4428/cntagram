@@ -161,7 +161,7 @@ def delete_own_account(*, user, password):
         .filter(role__code=Role.SUPER_ADMIN, user__is_active=True)
         .values_list("user_id", flat=True)
     )
-    if super_admin_ids == [user.pk]:
+    if set(super_admin_ids) == {user.pk}:
         raise ValidationError("คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี")
     user.user_roles.all().delete()
     user.anonymize()
