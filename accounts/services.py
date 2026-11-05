@@ -177,3 +177,35 @@ def delete_own_account(*, user, password):
         )
     user.user_roles.all().delete()
     user.anonymize()
+
+
+def _delete_account_failure_key(*, user_id, client_ip):
+    normalized_ip = (client_ip or "unknown").strip()
+    digest = salted_hmac(
+        "accounts.delete-account-rate-limit",
+        f"{user_id}|{normalized_ip}",
+    ).hexdigest()
+    return f"delete-account-failures:{digest}"
+
+
+def is_delete_account_rate_limited(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    attempts = cache.get(key, 0)
+    return attempts >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
+
+
+def record_delete_account_failure(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+    if cache.add(key, 1, timeout=timeout):
+        return 1
+    try:
+        return cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, timeout=timeout)
+        return 1
+
+
+def clear_delete_account_failures(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    cache.delete(key)

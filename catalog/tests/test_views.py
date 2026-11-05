@@ -70,7 +70,7 @@ class DepartmentTests(CatalogTestCase):
         )
         self.assertTrue(Department.objects.filter(code="CN").exists())
         self.assertContains(response, "admin-alert--error")
-        self.assertContains(response, "ลบไม่ได้ เพราะยังมีรุ่น/วิชาอยู่ในภาคนี้")
+        self.assertContains(response, "ลบไม่ได้ เพราะยังมีรุ่น/วิชาอยู่ในภาคนี้", count=1)
 
     def test_cannot_delete_department_with_users(self):
         """ลบภาควิชาที่มี user ผูกอยู่ (แต่ไม่มีรุ่น) ไม่ได้ พร้อมแจ้งเตือนว่ายังมีผู้ใช้สังกัดอยู่"""  # noqa: E501
