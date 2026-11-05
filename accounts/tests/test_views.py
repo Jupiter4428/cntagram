@@ -399,12 +399,13 @@ class DeleteAccountViewTests(ModeratorTestCase):
         self.assertTrue(self.admin.is_active)
 
 
-
 class DeleteAccountRateLimitViewTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
-        dept = Department.objects.create(code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering")
+        dept = Department.objects.create(
+            code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
+        )
         cls.user = User.objects.create_user(
             email="6610619999@student.tu.ac.th",
             password="correct-password",
@@ -422,7 +423,7 @@ class DeleteAccountRateLimitViewTests(TestCase):
 
     def test_repeated_wrong_passwords_trigger_429_and_block_correct_password(self):
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            response = self.client.post(self.url, {"password": "wrong-password"})
+            self.client.post(self.url, {"password": "wrong-password"})
             self.user.refresh_from_db()
             self.assertTrue(self.user.is_active)
 
@@ -440,27 +441,37 @@ class DeleteAccountRateLimitViewTests(TestCase):
 
     def test_get_request_when_rate_limited_returns_429(self):
         from accounts import services
+
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            services.record_delete_account_failure(user_id=self.user.pk, client_ip="127.0.0.1")
+            services.record_delete_account_failure(
+                user_id=self.user.pk, client_ip="127.0.0.1"
+            )
 
         response = self.client.get(self.url, REMOTE_ADDR="127.0.0.1")
         self.assertEqual(response.status_code, 429)
 
     def test_can_retry_after_window_expires(self):
         from accounts import services
+
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
             self.client.post(self.url, {"password": "wrong-password"})
 
         # ยืนยันว่าติด Rate Limit (429)
         blocked_res = self.client.post(self.url, {"password": "wrong-password"})
         self.assertEqual(blocked_res.status_code, 429)
-        self.assertContains(blocked_res, "คุณใส่รหัสผ่านผิดเกินจำนวนครั้งที่กำหนด", status_code=429)
+        self.assertContains(
+            blocked_res, "คุณใส่รหัสผ่านผิดเกินจำนวนครั้งที่กำหนด", status_code=429
+        )
 
         # จำลองการพ้นช่วงเวลา Window (เคลียร์แคช)
-        services.clear_delete_account_failures(user_id=self.user.pk, client_ip="127.0.0.1")
+        services.clear_delete_account_failures(
+            user_id=self.user.pk, client_ip="127.0.0.1"
+        )
 
         # พ้นช่วงเวลาแล้ว ใส่รหัสผ่านถูกต้อง ต้องลบบัญชีและออกจากระบบได้สำเร็จ
-        success_res = self.client.post(self.url, {"password": "correct-password"}, follow=True)
+        success_res = self.client.post(
+            self.url, {"password": "correct-password"}, follow=True
+        )
         self.assertEqual(success_res.status_code, 200)
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
