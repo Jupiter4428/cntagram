@@ -338,6 +338,22 @@ class ModeratorViewTests(ModeratorTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("accounts:login"), response.url)
 
+    def test_dashboard_and_sidebar_link_to_moderator_page(self):
+        self.client.force_login(self.admin)
+        home_res = self.client.get(reverse("accounts:home"))
+        self.assertEqual(home_res.status_code, 200)
+        # sidebar + dashboard link under DEPARTMENTS
+        self.assertContains(
+            home_res, f'href="{reverse("accounts:moderator_manage")}"', count=2
+        )
+
+        manage_res = self.client.get(reverse("accounts:moderator_manage"))
+        self.assertEqual(manage_res.status_code, 200)
+        self.assertContains(
+            manage_res,
+            f'class="admin-menu__link is-active" href="{reverse("accounts:moderator_manage")}"',
+        )
+
 
 class DeleteAccountViewTests(ModeratorTestCase):
     url = reverse("accounts:delete_account")
