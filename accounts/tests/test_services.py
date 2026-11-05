@@ -1,10 +1,12 @@
+from django.core.cache import cache
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
 from .. import selectors, services
-from ..models import Role
+from ..models import Role, UserRole
 from ..services import register_user
 from .base import ModeratorTestCase, RegistrationTestCase, VALID_PASSWORD
 
@@ -95,3 +97,84 @@ class ModeratorServiceTests(ModeratorTestCase):
             services.assign_moderator(
                 user=self.user_momo, department=self.dept_cn, granted_by=self.admin
             )
+
+
+class DeleteOwnAccountServiceTests(ModeratorTestCase):
+    def test_correct_password_anonymizes_user_and_removes_roles(self):
+        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+
+        services.delete_own_account(user=self.user_momo, password="password123")
+
+        self.user_momo.refresh_from_db()
+        self.assertEqual(self.user_momo.nickname, "Deleted user")
+        self.assertFalse(self.user_momo.is_active)
+        self.assertNotIn("6510610001", self.user_momo.email + self.user_momo.student_id)
+        self.assertFalse(self.user_momo.user_roles.exists())
+
+    def test_wrong_password_raises_and_leaves_account_unchanged(self):
+        with self.assertRaises(ValidationError) as ctx:
+            services.delete_own_account(user=self.user_momo, password="wrong-password")
+
+        self.assertIn("password", ctx.exception.message_dict)
+        self.user_momo.refresh_from_db()
+        self.assertEqual(self.user_momo.nickname, "momo")
+        self.assertTrue(self.user_momo.is_active)
+        self.assertTrue(self.user_momo.check_password("password123"))
+        self.assertTrue(self.user_momo.user_roles.exists())
+
+    def test_last_super_admin_cannot_delete_own_account(self):
+        with self.assertRaises(ValidationError):
+            services.delete_own_account(user=self.admin, password="password123")
+
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)
+        self.assertTrue(self.admin.user_roles.filter(role=self.role_super_admin).exists())
+
+    def test_super_admin_can_delete_own_account_when_another_remains(self):
+        UserRole.objects.create(user=self.user_nana, role=self.role_super_admin)
+
+        services.delete_own_account(user=self.admin, password="password123")
+
+        self.admin.refresh_from_db()
+        self.assertFalse(self.admin.is_active)
+
+    def test_same_email_can_register_again_after_deletion(self):
+        services.delete_own_account(user=self.user_momo, password="password123")
+
+        user = register_user(
+            email="6510610001@student.tu.ac.th",
+            password=VALID_PASSWORD,
+            nickname="momo2",
+            department=self.dept_cn,
+            pdpa_consent_at=timezone.now(),
+        )
+
+        self.assertEqual(user.student_id, "6510610001")
+
+
+
+class DeleteAccountRateLimitServiceTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+    def test_key_generation_has_no_pii(self):
+        from accounts.services import _delete_account_failure_key
+        key = _delete_account_failure_key(user_id=123, client_ip="192.168.1.1")
+        self.assertTrue(key.startswith("delete-account-failures:"))
+        self.assertNotIn("123", key)
+        self.assertNotIn("192.168.1.1", key)
+
+    def test_rate_limit_flow(self):
+        from accounts import services
+        user_id = 999
+        client_ip = "10.0.0.1"
+
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            services.record_delete_account_failure(user_id=user_id, client_ip=client_ip)
+
+        self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        services.clear_delete_account_failures(user_id=user_id, client_ip=client_ip)
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))

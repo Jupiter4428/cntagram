@@ -904,6 +904,7 @@ coverage run manage.py test
 coverage report -m --fail-under=80   # -m แสดงบรรทัดที่ยังไม่ถูกเทสต์, ต่ำกว่า 80% จะคืน exit code ล้มเหลว
 coverage html                        # รายงานรายบรรทัดที่ htmlcov/index.html (Windows: start htmlcov/index.html)
 ```
+CI ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) รันคำสั่งชุดเดียวกันบน Python 3.12 โดยรัน `python manage.py check` และ `python manage.py makemigrations --check --dry-run` (ตกถ้าแก้ Model แล้วยังไม่สร้าง migration) ก่อน ถ้ารันสี่คำสั่งนี้ผ่านบนเครื่อง CI ก็ควรผ่าน รายงาน coverage อยู่ใน Summary ของ run และโหลด `htmlcov/` ได้จาก Artifacts `coverage-html`
 `.coveragerc` กำหนด `source` และ `branch` ไว้แล้ว ไม่ต้องใส่ `--source='.'` เอง และ `coverage run manage.py test --keepdb` ก็ใช้ได้ ผลที่แนบใน PR ให้รันเทสต์**ครบทุก app** (ถ้ารันเฉพาะ app เดียว ไฟล์ของ app อื่นจะนับเป็นไม่ถูกเทสต์และตัวเลขต่ำผิดจริง)
 
 อ่านผล `coverage report -m`
@@ -951,7 +952,7 @@ exclude = .git, __pycache__, */migrations/*, venv, .venv
 ```
 - commit ที่จัด format อย่างเดียวใช้ type `style:` แยกจาก commit ที่แก้ logic
 - **ห้ามใช้ `# nosec`** ซ่อนสิ่งที่ Bandit เจอ ให้แก้ที่ต้นเหตุ: อ่าน secret จาก environment (`os.environ`), สร้าง token ด้วยโมดูล `secrets` ไม่ใช่ `random`
-- **CI (GitHub Actions)** อยู่ที่ `.github/workflows/ci.yml` รันทุก PR: Sprint 2 รันเทสต์ + coverage (TD-1) และ Sprint 3 เพิ่มด่าน static analysis (TD-8) เรียงตามด่าน `black --check` → `flake8` → `bandit` → `coverage run manage.py test` + `coverage report -m --fail-under=80` ด่านไหนตก PR เป็นสีแดง ใช้ `actions/setup-python` กับ `cache: "pip"` เพื่อไม่ต้องดาวน์โหลด dependency ใหม่ทุกรอบ
+- **CI (GitHub Actions)** อยู่ที่ `.github/workflows/ci.yml` รันทุก PR เข้า `develop`/`main` และทุก push เข้า `develop`: TD-1 รัน `manage.py check` + `makemigrations --check` + เทสต์ + coverage และ Sprint 3 เพิ่มด่าน static analysis (TD-8) เรียงตามด่าน `black --check` → `flake8` → `bandit` → `manage.py check` → `makemigrations --check --dry-run` → `coverage run manage.py test` + `coverage report -m --fail-under=80` ด่านไหนตก PR เป็นสีแดง ใช้ `actions/setup-python` กับ `cache: "pip"` เพื่อไม่ต้องดาวน์โหลด dependency ใหม่ทุกรอบ
 - **Secret ใน CI** เก็บใน Settings → Secrets and variables → Actions แล้วอ้างด้วย `${{ secrets.NAME }}` ห้ามใส่ค่าจริงใน `ci.yml` หรือไฟล์ใดใน repo
 
 ### การใช้ AI (Copilot, Cursor ฯลฯ)

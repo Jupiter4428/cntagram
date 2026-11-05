@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run tests with coverage
+        id: tests
+        run: coverage run manage.py test --noinput
+
+      - name: Coverage report
+        run: coverage report -m --fail-under=80
+
+      # The steps below still run when tests or the coverage gate fail, but not
+      # when an earlier step failed and there is no coverage data to report.
+      - name: Write coverage to job summary
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        run: coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate HTML coverage report
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        run: coverage html
+
+      - name: Upload HTML coverage report
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/

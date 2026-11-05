@@ -155,3 +155,52 @@ def assign_moderator(*, user, department, granted_by):
 def remove_moderator(*, user_role):
     """ถอดถอน Moderator ออกจากภาควิชา"""
     user_role.delete()
+
+
+@transaction.atomic
+def delete_own_account(*, user, password):
+    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA (US-13): ถอด role ทั้งหมดแล้วล้างข้อมูลด้วย anonymize()"""
+    if not user.check_password(password):
+        raise ValidationError({"password": "รหัสผ่านไม่ถูกต้อง"})
+    # ล็อกแถว Super Admin กันสองคนสุดท้ายลบพร้อมกันจนไม่เหลือใคร
+    super_admin_ids = list(
+        UserRole.objects.select_for_update(of=("self",))
+        .filter(role__code=Role.SUPER_ADMIN, user__is_active=True)
+        .values_list("user_id", flat=True)
+    )
+    if set(super_admin_ids) == {user.pk}:
+        raise ValidationError("คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี")
+    user.user_roles.all().delete()
+    user.anonymize()
+
+
+def _delete_account_failure_key(*, user_id, client_ip):
+    normalized_ip = (client_ip or "unknown").strip()
+    digest = salted_hmac(
+        "accounts.delete-account-rate-limit",
+        f"{user_id}|{normalized_ip}",
+    ).hexdigest()
+    return f"delete-account-failures:{digest}"
+
+
+def is_delete_account_rate_limited(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    attempts = cache.get(key, 0)
+    return attempts >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
+
+
+def record_delete_account_failure(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+    if cache.add(key, 1, timeout=timeout):
+        return 1
+    try:
+        return cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, timeout=timeout)
+        return 1
+
+
+def clear_delete_account_failures(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    cache.delete(key)

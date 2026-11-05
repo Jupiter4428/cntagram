@@ -62,7 +62,14 @@ class SearchFormTests(SearchTestCase):
         self.assertTrue(valid, form.errors)
         self.assertEqual(
             form.cleaned_data,
-            {"course_code": "cn200", "department": None, "batch": None, "doc_type": None},
+            {
+                "course_code": "cn200",
+                "department": None,
+                "batch": None,
+                "doc_type": None,
+                "exam_period": None,
+                "exam_year_be": None,
+            },
         )
 
     def test_filters_clean_to_the_selected_rows(self):

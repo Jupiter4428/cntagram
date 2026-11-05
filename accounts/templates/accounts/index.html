@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static materials_stats %}
 
 {% block title %}หน้าแรก | CNTAGRAM{% endblock %}
 
@@ -53,6 +53,91 @@
         <span>SERIAL FE-038</span><span>STATUS: UNDER CONSTRUCTION</span><span>HTML / TSE-CN</span>
     </div>
 </section>
+
+{% if request.user.is_authenticated %}
+    {% moderator_pending request.user as moderator_pending %}
+    {% my_documents request.user as my_documents %}
+    {% if moderator_pending %}
+    <div class="transmission-note mb-4" role="status" aria-label="แจ้งเตือนการอนุมัติเอกสาร">
+        <span class="transmission-note__icon" aria-hidden="true">★</span>
+        <span class="tech-label">MODERATOR QUEUE</span>
+        <p>
+            รออนุมัติ <strong>{{ moderator_pending.count }}</strong> ไฟล์ (ภาค {{ moderator_pending.department_codes|join:", " }})
+        </p>
+        <a href="{% url 'materials:approval_queue' %}" class="chrome-button chrome-button--brand ms-auto">
+            เข้าคิวอนุมัติ <span aria-hidden="true">↗</span>
+        </a>
+    </div>
+    {% endif %}
+
+    <section class="retro-widget my-documents-widget mb-4" aria-labelledby="my-documents-title">
+        <div class="retro-widget__header module-heading">
+            <span class="pixel-folder" aria-hidden="true">📁</span>
+            <span><small>MY UPLOADED MATERIALS</small><span id="my-documents-title">ไฟล์ของฉัน</span></span>
+            <span class="tech-index">{{ my_documents|length }} รายการ</span>
+        </div>
+        <div class="retro-widget__body p-3">
+            {% if my_documents %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle mb-0" style="background: rgba(14, 18, 30, 0.85); border-color: rgba(78, 91, 119, 0.3);">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--tse-red, #b11116); font-family: monospace;">
+                                <th scope="col" style="min-width: 140px;">ชื่อเอกสาร</th>
+                                <th scope="col" style="min-width: 100px;">สถานะ</th>
+                                <th scope="col">วิชา / รุ่น</th>
+                                <th scope="col" class="d-none d-sm-table-cell">ประเภท</th>
+                                <th scope="col" class="d-none d-md-table-cell">วันที่ส่ง</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in my_documents %}
+                            <tr>
+                                <td>
+                                    <strong>{{ doc.title }}</strong>
+                                    {% if doc.description %}
+                                        <div class="text-muted small text-truncate" style="max-width: 280px;">{{ doc.description }}</div>
+                                    {% endif %}
+                                    {% if doc.status == 'rejected' and doc.rejection_reason %}
+                                        <div class="alert alert-danger p-2 mt-2 mb-1 small" role="alert">
+                                            <strong>เหตุผลที่ถูกปฏิเสธ:</strong> {{ doc.rejection_reason }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if doc.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">รออนุมัติ</span>
+                                    {% elif doc.status == 'published' %}
+                                        <span class="badge bg-success">เผยแพร่แล้ว</span>
+                                    {% elif doc.status == 'rejected' %}
+                                        <span class="badge bg-danger">ถูกปฏิเสธ</span>
+                                    {% elif doc.status == 'hidden' %}
+                                        <span class="badge bg-secondary">ซ่อนอยู่</span>
+                                    {% else %}
+                                        <span class="badge bg-info text-dark">{{ doc.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ doc.batch_course.course.code }}</span>
+                                    <small class="text-muted">{{ doc.batch_course.batch.code }}</small>
+                                </td>
+                                <td class="d-none d-sm-table-cell"><span class="small">{{ doc.doc_type.name_th }}</span></td>
+                                <td class="d-none d-md-table-cell"><small class="text-muted">{{ doc.created_at|date:"d M Y H:i" }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-3">คุณยังไม่มีประวัติการอัปโหลดเอกสารในระบบ</p>
+                    <a href="{% url 'materials:upload' %}" class="chrome-button chrome-button--brand">
+                        อัปโหลดชีทเลย <span aria-hidden="true">↗</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endif %}
 
 <div class="transmission-note" role="note">
     <span class="transmission-note__icon" aria-hidden="true">✦</span>

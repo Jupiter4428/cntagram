@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.core.cache import cache
 from django.test import Client, TestCase
@@ -147,6 +148,7 @@ class RegisterViewTests(RegistrationTestCase):
 
         self.assertRedirects(response, reverse("accounts:login"))
         self.assertContains(response, "สมัครสมาชิกสำเร็จ")
+        self.assertContains(response, 'class="alert alert-success"')
         user = User.objects.get(email="6610612345@student.tu.ac.th")
         self.assertEqual(user.student_id, "6610612345")
         self.assertEqual(user.entry_year, 66)
@@ -314,3 +316,130 @@ class ModeratorViewTests(ModeratorTestCase):
         response = self.client.get(reverse("accounts:moderator_manage"))
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("accounts:login"), response.url)
+
+
+class DeleteAccountViewTests(ModeratorTestCase):
+    url = reverse("accounts:delete_account")
+
+    def test_shows_password_confirmation_form(self):
+        self.client.force_login(self.user_momo)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/delete_account.html")
+        self.assertIn("password", response.context["form"].fields)
+
+    def test_correct_password_deletes_account_and_logs_out(self):
+        self.client.force_login(self.user_momo)
+
+        response = self.client.post(self.url, {"password": "password123"})
+
+        self.assertRedirects(response, reverse("accounts:home"))
+        self.assertNotIn(SESSION_KEY, self.client.session)
+        self.user_momo.refresh_from_db()
+        self.assertFalse(self.user_momo.is_active)
+
+    def test_old_email_cannot_log_in_after_deletion(self):
+        services.delete_own_account(user=self.user_momo, password="password123")
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {"username": "6510610001@student.tu.ac.th", "password": "password123"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+
+    def test_anonymous_is_redirected_to_login(self):
+        response = self.client.get(self.url)
+
+        self.assertRedirects(response, f"{reverse('accounts:login')}?next={self.url}")
+
+    def test_wrong_password_shows_error_and_keeps_session(self):
+        self.client.force_login(self.user_momo)
+
+        response = self.client.post(self.url, {"password": "wrong-password"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors["password"])
+        self.assertEqual(int(self.client.session[SESSION_KEY]), self.user_momo.pk)
+        self.user_momo.refresh_from_db()
+        self.assertTrue(self.user_momo.is_active)
+
+    def test_last_super_admin_sees_error_and_keeps_account(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(self.url, {"password": "password123"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].non_field_errors())
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)
+
+
+
+class DeleteAccountRateLimitViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        dept = Department.objects.create(code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering")
+        cls.user = User.objects.create_user(
+            email="6610619999@student.tu.ac.th",
+            password="correct-password",
+            nickname="TestDelete",
+            department=dept,
+            pdpa_consent_at=timezone.now(),
+        )
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.client.force_login(self.user)
+        self.url = reverse("accounts:delete_account")
+
+    def test_repeated_wrong_passwords_trigger_429_and_block_correct_password(self):
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            response = self.client.post(self.url, {"password": "wrong-password"})
+            self.user.refresh_from_db()
+            self.assertTrue(self.user.is_active)
+
+        # เกินจำนวนที่กำหนด ตอบกลับด้วย HTTP 429
+        blocked_response = self.client.post(self.url, {"password": "wrong-password"})
+        self.assertEqual(blocked_response.status_code, 429)
+        self.assertIn("Retry-After", blocked_response.headers)
+
+        # บัญชียังไม่ถูกลบ แม้ส่งรหัสผ่านที่ถูกต้องมา
+        correct_response = self.client.post(self.url, {"password": "correct-password"})
+        self.assertEqual(correct_response.status_code, 429)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertEqual(self.user.email, "6610619999@student.tu.ac.th")
+
+    def test_get_request_when_rate_limited_returns_429(self):
+        from accounts import services
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            services.record_delete_account_failure(user_id=self.user.pk, client_ip="127.0.0.1")
+
+        response = self.client.get(self.url, REMOTE_ADDR="127.0.0.1")
+        self.assertEqual(response.status_code, 429)
+
+    def test_can_retry_after_window_expires(self):
+        from accounts import services
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            self.client.post(self.url, {"password": "wrong-password"})
+
+        # ยืนยันว่าติด Rate Limit (429)
+        blocked_res = self.client.post(self.url, {"password": "wrong-password"})
+        self.assertEqual(blocked_res.status_code, 429)
+        self.assertContains(blocked_res, "คุณใส่รหัสผ่านผิดเกินจำนวนครั้งที่กำหนด", status_code=429)
+
+        # จำลองการพ้นช่วงเวลา Window (เคลียร์แคช)
+        services.clear_delete_account_failures(user_id=self.user.pk, client_ip="127.0.0.1")
+
+        # พ้นช่วงเวลาแล้ว ใส่รหัสผ่านถูกต้อง ต้องลบบัญชีและออกจากระบบได้สำเร็จ
+        success_res = self.client.post(self.url, {"password": "correct-password"}, follow=True)
+        self.assertEqual(success_res.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)

@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
@@ -12,7 +12,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
-from .forms import LoginForm, ModeratorAssignmentForm, RegisterForm
+from .forms import DeleteAccountForm, LoginForm, ModeratorAssignmentForm, RegisterForm
 from .models import Role, UserRole
 from .services import attempt_login
 
@@ -57,6 +57,7 @@ def home(request):
     if is_super_admin(request.user):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
+
     return render(request, "accounts/index.html")
 
 
@@ -125,6 +126,36 @@ def logout(request):
     """End the current session; CSRF middleware protects this POST endpoint."""
     auth_logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def delete_account(request):
+    """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
+    client_ip = _client_ip(request)
+    if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+        response = render(request, "accounts/delete_account.html", {"form": DeleteAccountForm(), "rate_limited": True}, status=429)
+        response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+        return response
+
+    form = DeleteAccountForm(request.POST or None)
+    if form.is_bound and form.is_valid():
+        try:
+            services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
+        except ValidationError as exc:
+            if hasattr(exc, "message_dict") and "password" in exc.message_dict:
+                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+                    response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
+                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+                    return response
+            form.add_error(None, exc)
+        else:
+            services.clear_delete_account_failures(user_id=request.user.pk, client_ip=client_ip)
+            auth_logout(request)
+            messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
+            return redirect("accounts:home")
+    return render(request, "accounts/delete_account.html", {"form": form})
 
 
 @super_admin_required
