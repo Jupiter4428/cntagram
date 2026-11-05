@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}อัปโหลดชีท | CNTAGRAM{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="retro-widget upload-card" aria-labelledby="upload-title">
+  <header class="upload-card__titlebar">
+    <div>
+      <small class="upload-card__eyebrow">SHARE YOUR NOTES</small>
+      <h1 id="upload-title">อัปโหลดชีท</h1>
+    </div>
+    <span class="upload-card__badge">PDF ONLY</span>
+  </header>
+
+  <form method="post" enctype="multipart/form-data" class="upload-form" id="upload-form"
+        data-max-mb="{{ max_upload_mb }}" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="upload-alert" role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="upload-grid upload-grid--3">
+      <div class="upload-field">
+        <label for="id_department">ภาควิชา</label>
+        <select id="id_department" disabled aria-describedby="department-hint">
+          <option>{{ department.code }} - {{ department.name_th }}</option>
+        </select>
+        <p class="upload-field__hint" id="department-hint">ล็อกตามสังกัดของคุณ</p>
+      </div>
+
+      <div class="upload-field">
+        <label for="id_batch">รุ่น</label>
+        <select id="id_batch" data-courses-url="{% url 'materials:upload_course_options' 0 %}">
+          <option value="">เลือกรุ่น</option>
+          {% for batch in batches %}
+            <option value="{{ batch.pk }}">{{ batch.code }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="upload-field">
+        <label for="id_batch_course">วิชา <span class="upload-field__sample">(พิมพ์ค้นหา เช่น CN200)</span></label>
+        <select name="batch_course" id="id_batch_course" required disabled
+                aria-describedby="course-status">
+          <option value="">เลือกรุ่นก่อน</option>
+        </select>
+        <p class="upload-field__hint" id="course-status" role="status" aria-live="polite"></p>
+        {% include "materials/_field_errors.html" with errors=form.batch_course.errors %}
+      </div>
+    </div>
+
+    <div class="upload-grid upload-grid--2">
+      <div class="upload-field">
+        <label for="id_doc_type">ประเภท</label>
+        <select name="doc_type" id="id_doc_type" required>
+          <option value="">- Select an option -</option>
+          {% for doc_type in form.doc_type.field.queryset %}
+            <option value="{{ doc_type.pk }}" data-vault="{{ doc_type.vault }}"
+              {% if form.doc_type.value|stringformat:"s" == doc_type.pk|stringformat:"s" %}selected{% endif %}>
+              {{ doc_type.name_th }}
+            </option>
+          {% endfor %}
+        </select>
+        {% include "materials/_field_errors.html" with errors=form.doc_type.errors %}
+      </div>
+
+      <div class="upload-field">
+        <label for="id_title">ชื่อเอกสาร:</label>
+        <input type="text" name="title" id="id_title" maxlength="200" required
+               value="{{ form.title.value|default:'' }}">
+        {% include "materials/_field_errors.html" with errors=form.title.errors %}
+      </div>
+    </div>
+
+    <fieldset class="upload-grid upload-grid--2 upload-exam" id="exam-fields" hidden>
+      <legend class="visually-hidden">ข้อมูลข้อสอบ</legend>
+      <div class="upload-field">
+        <label for="id_exam_period">ช่วงสอบ</label>
+        <select name="exam_period" id="id_exam_period">
+          <option value="">- เลือกช่วงสอบ -</option>
+          {% for period in form.exam_period.field.queryset %}
+            <option value="{{ period.pk }}"
+              {% if form.exam_period.value|stringformat:"s" == period.pk|stringformat:"s" %}selected{% endif %}>
+              {{ period.name_th }}
+            </option>
+          {% endfor %}
+        </select>
+        {% include "materials/_field_errors.html" with errors=form.exam_period.errors %}
+      </div>
+      <div class="upload-field">
+        <label for="id_exam_year_be">ปี พ.ศ.</label>
+        <input type="number" name="exam_year_be" id="id_exam_year_be" min="2500" max="2700"
+               inputmode="numeric" placeholder="เช่น 2568" value="{{ form.exam_year_be.value|default:'' }}">
+        {% include "materials/_field_errors.html" with errors=form.exam_year_be.errors %}
+      </div>
+    </fieldset>
+
+    <div class="upload-field">
+      <label for="id_description">รายละเอียด</label>
+      <textarea name="description" id="id_description" rows="5">{{ form.description.value|default:'' }}</textarea>
+      {% include "materials/_field_errors.html" with errors=form.description.errors %}
+    </div>
+
+    <div class="upload-field">
+      <label for="id_file">ไฟล์ PDF:</label>
+      <input type="file" name="file" id="id_file" accept="application/pdf,.pdf" required
+             aria-describedby="file-hint file-error">
+      <p class="upload-field__hint" id="file-hint">รับเฉพาะ PDF ขนาดไม่เกิน {{ max_upload_mb }} MB</p>
+      <ul class="errorlist upload-field__errors" id="file-error" role="alert" hidden></ul>
+      {% include "materials/_field_errors.html" with errors=form.file.errors %}
+    </div>
+
+    <div class="upload-field upload-check">
+      <input type="checkbox" name="disclaimer" id="id_disclaimer" value="on" required
+             {% if form.disclaimer.value %}checked{% endif %}>
+      <label for="id_disclaimer">ฉันยืนยันว่าไฟล์นี้ไม่ละเมิดลิขสิทธิ์ของผู้อื่น</label>
+      {% include "materials/_field_errors.html" with errors=form.disclaimer.errors %}
+    </div>
+
+    <button class="upload-submit" type="submit" id="upload-submit" disabled>
+      อัปโหลด <span aria-hidden="true">↗</span>
+    </button>
+  </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'js/upload.js' %}" defer></script>{% endblock %}

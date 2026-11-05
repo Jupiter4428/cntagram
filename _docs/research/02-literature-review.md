@@ -99,7 +99,7 @@
 - กลไกของ Django: CSRF token, auto-escaping ใน template, ORM ป้องกัน SQL injection, password hashing
 - การป้องกันไฟล์: ไม่เปิด Direct URL ให้ไฟล์ (ทุกคำขอตรวจสิทธิ์), ตรวจชนิดไฟล์/ไวรัส, ป้องกัน path traversal
 
-**การนำมาใช้ในโครงงาน:** ตรวจสิทธิ์ฝั่ง server ทุก request (DoD), `storage_path` รับเฉพาะ path สัมพัทธ์ ห้าม `..` และ `\`, ล้างชื่อไฟล์ก่อนบันทึก, เก็บ `sha256` ตรวจไฟล์ซ้ำ, Spike SP-1 (สแกนไวรัส) และ SP-3 (preview แบบไม่เปิด Direct URL), ตรวจ OWASP Top 10 ใน Sprint 3
+**การนำมาใช้ในโครงงาน:** ตรวจสิทธิ์ฝั่ง server ทุก request (DoD), `storage_path` รับเฉพาะ path สัมพัทธ์ ห้าม `..` และ `\`, ล้างชื่อไฟล์ก่อนบันทึก, เก็บ `sha256` ตรวจไฟล์ซ้ำ, Spike SP-1 (สแกนไวรัส) และ SP-3 (preview แบบไม่เปิด Direct URL — ADR 0003), ตรวจ OWASP Top 10 ใน Sprint 3
 
 ## 2.8 กฎหมายที่เกี่ยวข้อง
 

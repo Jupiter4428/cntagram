@@ -1,0 +1,37 @@
+<section class="retro-widget glass-module side-module">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>USER CHANNEL</small> Member Portal</span>
+        <span class="tech-index">01</span>
+    </div>
+    <div class="retro-widget__body module-body compact-copy">
+        {% if request.user.is_authenticated %}
+            <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
+            <p class="tech-label">IDENTITY VERIFIED</p>
+            <p class="member-name">{{ request.user.nickname }}</p>
+            <a class="chrome-button chrome-button--brand w-100 text-center" href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a>
+        {% else %}
+            <div class="profile-bubble profile-bubble--guest" aria-hidden="true">?</div>
+            <p>เชื่อมต่อบัญชีเพื่อเข้าถึงคลังความรู้ของชุมชนวิศวกรรม</p>
+            <div class="d-grid gap-2">
+                <a class="chrome-button chrome-button--brand text-center" href="{% url 'accounts:login' %}">Connect / Login</a>
+                <a class="text-link text-center" href="{% url 'accounts:register' %}">สร้างบัญชีใหม่</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<details class="retro-widget glass-module side-module side-module--holo compact-disclosure">
+    <summary class="retro-widget__header module-heading">
+        <span class="module-heading__star" aria-hidden="true">✦</span>
+        <span><small>GUEST BOOK / HELP</small> Board Guide</span>
+        <span class="compact-disclosure__state" aria-hidden="true"></span>
+    </summary>
+    <div class="retro-widget__body module-body compact-copy compact-disclosure__body">
+        <ol class="cyber-steps">
+            <li><span>01</span> เลือกหมวดเอกสาร</li>
+            <li><span>02</span> ค้นหาวิชาและรุ่น</li>
+            <li><span>03</span> แบ่งปันกับเพื่อน</li>
+        </ol>
+    </div>
+</details>

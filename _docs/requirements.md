@@ -102,6 +102,19 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | US-9 | ข้อสอบเก่าต้องอนุมัติทั้ง Moderator และ Admin | E4 | Should | [#33](https://github.com/Jupiter4428/cntagram/issues/33) |
 | US-10 | แต่งตั้ง/ถอด Moderator | E4 | Should | [#27](https://github.com/Jupiter4428/cntagram/issues/27) |
 
+#### ขอบเขต Sprint 1 ตามหัวข้อของวิชา
+
+ทุกหัวข้อตัดเป็น Vertical Slice อยู่ใน story ด้านบน ไม่แยกเป็น story "ทำ Model ทั้งหมด" หรือ "ทำ Form ทั้งหมด" ([lecture 05: Vertical Slicing](./lecture-notes/05-agile-scrum-sprints.md#เทคนิคการซอยงาน-backlog-vertical-slicing-vs-horizontal-slicing))
+
+| หัวข้อ | อยู่ใน |
+|---|---|
+| **Authentication** | US-1 สมัคร (อีเมลคณะ + PDPA consent), US-2 login/logout/rate limit/บล็อก Guest, US-3 `super_admin_required` + seed `role` + Super Admin คนแรก, US-10 Moderator ตามภาค |
+| **Forms** (Django Form/ModelForm, validation ฝั่ง server เรียกกฎใน model ตัวเดียว) | US-1 `RegisterForm`, US-2 `LoginForm`, US-3 `DepartmentForm`, US-4 `BatchForm`/`CourseForm`/`BatchCourseForm`, US-5 `UploadForm`, US-6 `ReviewForm`, US-7 `SearchForm` |
+| **Core Models** | SP-0 ERD; model ที่สร้างแล้ว: `accounts` (User, Role, UserRole), `catalog` (Department, Batch, Course, BatchCourse, SystemSetting), `materials` (DocType, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval จาก US-6, DocTypeRequiredRole จาก US-9); ที่เหลือ: download_log (US-8); ข้อมูลตั้งต้น: `role` ใน US-3, รุ่น/วิชาตัวอย่าง (`seed_catalog`) ใน US-4, `doc_type`/`exam_period`/`system_setting` ใน US-5 |
+| **Dashboard** | US-2 หน้าแรก Guest + navbar, US-3 Dashboard หน้าแรก (เมนู Admin), US-6 Approval Queue ใน dashboard — ส่วน "ไฟล์ของฉัน + สถานะ" และจำนวนไฟล์รออนุมัติ (US-34) อยู่ใน Product Backlog รอ Sprint 2 |
+
+> **ปรับ 2026-10-13 ตามหลักใน lecture 05:** งานที่ค้นพบระหว่าง Sprint ไม่เพิ่มเป็น story ใหม่เข้า Sprint 1 (กัน Scope Creep และงานที่ยังไม่ผ่าน DoR) งานที่เป็น Blocker ของ story ใน Sprint (seed ข้อมูลตั้งต้น) ใส่เป็นงานย่อยของ story นั้นแทน ส่วนงานใหม่รอ Sprint 2 Planning ตาม Velocity จริง
+
 ### 6.2 Story ที่รอเข้า Sprint (ยังไม่เปิด issue)
 
 เรียงตามลำดับความสำคัญที่เสนอ PO ปรับได้ใน Sprint Planning แต่ละข้อมี **"ประเด็นที่ต้องคุย"** ซึ่งรวบรวมจาก SRS v1 ไว้เป็นจุดเริ่มต้นของบทสนทนา ไม่ใช่ AC สำเร็จรูป
@@ -111,10 +124,10 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-11 | **As a** นักศึกษา **I want** ยืนยันอีเมลด้วยลิงก์หรือ OTP **so that** ไม่มีใครเอาอีเมลคนอื่นมาสมัครแทน | Must |
-| US-12 | **As a** นักศึกษาปีสุดท้าย **I want** ผูกอีเมลส่วนตัวกับบัญชี **so that** เข้าระบบได้ต่อหลังอีเมลมหาวิทยาลัยถูกปิด | Should |
-| US-13 | **As a** ผู้ใช้ **I want** ขอลบบัญชีของตัวเอง **so that** ข้อมูลส่วนบุคคลของฉันถูกลบตาม PDPA | Should |
-| US-14 | **As a** Moderator/Super Admin **I want** ระงับผู้ใช้ที่ทำผิดกติกาพร้อมเหตุผล **so that** คลังปลอดภัย และผู้ถูกระงับรู้เหตุผลและอุทธรณ์ได้ | Could |
+| US-14 | **As a** นักศึกษา **I want** ยืนยันอีเมลด้วยลิงก์หรือ OTP **so that** ไม่มีใครเอาอีเมลคนอื่นมาสมัครแทน | Must |
+| US-15 | **As a** นักศึกษาปีสุดท้าย **I want** ผูกอีเมลส่วนตัวกับบัญชี **so that** เข้าระบบได้ต่อหลังอีเมลมหาวิทยาลัยถูกปิด | Should |
+| US-13 | **As a** ผู้ใช้ **I want** ขอลบบัญชีของตัวเอง **so that** ข้อมูลส่วนบุคคลของฉันถูกลบตาม PDPA | Should · Sprint 3 [#144](https://github.com/Jupiter4428/cntagram/issues/144) |
+| US-16 | **As a** Moderator/Super Admin **I want** ระงับผู้ใช้ที่ทำผิดกติกาพร้อมเหตุผล **so that** คลังปลอดภัย และผู้ถูกระงับรู้เหตุผลและอุทธรณ์ได้ | Could |
 
 ประเด็นที่ต้องคุย:
 - รุ่นของผู้ใช้: คำนวณจากปีเข้า (CN: ปีที่เข้า − 44) หรือให้เลือกเอง? ถ้ารุ่นนั้นยังไม่มีในระบบจะทำอย่างไร? ใครแก้รุ่น/ภาคให้ผู้ใช้ได้?
@@ -125,10 +138,10 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-15 | **As a** Super Admin **I want** นำเข้าไฟล์เดิมจำนวนมากด้วย CSV พร้อมโหมดทดลองรัน (dry run) **so that** ย้ายข้อมูล CN21–CN25 เข้าระบบได้ครบโดยไม่ต้องอัปโหลดทีละไฟล์ | Must |
-| US-16 | **As a** Super Admin **I want** ตั้งรุ่นจุดตัดของข้อสอบแยกตามภาควิชา **so that** ข้อสอบรุ่นเก่าถูกคุมโดยผู้ดูแลส่วนกลาง | Should |
-| US-17 | **As a** ผู้อัปโหลด **I want** ขอเพิ่มรายวิชาที่ยังไม่มีในระบบ **so that** อัปโหลดชีทของวิชานั้นได้ | Could |
-| US-18 | **As a** Super Admin **I want** เปิดภาควิชาใหม่พร้อมกฎจับคู่ปีเข้ากับเลขรุ่น **so that** ขยายระบบไปภาคอื่นได้โดยไม่แก้โค้ด | Could |
+| US-17 | **As a** Super Admin **I want** นำเข้าไฟล์เดิมจำนวนมากด้วย CSV พร้อมโหมดทดลองรัน (dry run) **so that** ย้ายข้อมูล CN21–CN25 เข้าระบบได้ครบโดยไม่ต้องอัปโหลดทีละไฟล์ | Must |
+| US-18 | **As a** Super Admin **I want** ตั้งรุ่นจุดตัดของข้อสอบแยกตามภาควิชา **so that** ข้อสอบรุ่นเก่าถูกคุมโดยผู้ดูแลส่วนกลาง | Should |
+| US-19 | **As a** ผู้อัปโหลด **I want** ขอเพิ่มรายวิชาที่ยังไม่มีในระบบ **so that** อัปโหลดชีทของวิชานั้นได้ | Could |
+| US-20 | **As a** Super Admin **I want** เปิดภาควิชาใหม่พร้อมกฎจับคู่ปีเข้ากับเลขรุ่น **so that** ขยายระบบไปภาคอื่นได้โดยไม่แก้โค้ด | Could |
 
 ประเด็นที่ต้องคุย: รหัสย่อภาคจริงของคณะ (เช่น CHE), กฎเลขรุ่นของภาคอื่น, รูปแบบ CSV และผลของ Bulk Import (เผยแพร่ทันทีหรือไม่ ต้องบันทึก Audit Log หรือไม่)
 
@@ -136,10 +149,12 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-19 | **As a** ผู้อัปโหลด **I want** ส่งไฟล์เวอร์ชันใหม่ แก้คำอธิบาย หรือลบไฟล์ของตัวเอง **so that** ชีทของฉันถูกต้องและทันสมัย | Should |
-| US-20 | **As a** ผู้อัปโหลด **I want** ใส่แท็กให้ไฟล์ **so that** คนอื่นค้นเจอด้วยคำที่ไม่ใช่รหัสวิชา | Could |
-| US-21 | **As a** ผู้ใช้ **I want** ระบบปฏิเสธไฟล์ซ้ำ ไฟล์อันตราย หรือไฟล์ที่ติดไวรัส **so that** คลังไม่มีไฟล์ขยะหรือไฟล์ที่เป็นอันตราย | Should |
-| US-22 | **As a** ผู้อัปโหลด **I want** เห็นสถานะและเหตุผลที่ถูกปฏิเสธของไฟล์ที่ฉันส่ง **so that** แก้แล้วส่งใหม่ได้ | Must |
+| US-21 | **As a** ผู้อัปโหลด **I want** ส่งไฟล์เวอร์ชันใหม่ แก้คำอธิบาย หรือลบไฟล์ของตัวเอง **so that** ชีทของฉันถูกต้องและทันสมัย | Should |
+| US-23 | **As a** ผู้อัปโหลด **I want** ใส่แท็กให้ไฟล์ **so that** คนอื่นค้นเจอด้วยคำที่ไม่ใช่รหัสวิชา | Could |
+| US-12 | **As a** ผู้ใช้ **I want** ระบบปฏิเสธไฟล์ที่ซ้ำกับไฟล์ในคลัง **so that** คลังไม่มีไฟล์ขยะซ้ำกันหลายฉบับ | Should · Sprint 3 [#143](https://github.com/Jupiter4428/cntagram/issues/143) |
+| US-24 | **As a** ผู้ใช้ **I want** ระบบปฏิเสธไฟล์อันตรายหรือไฟล์ที่ติดไวรัส **so that** คลังไม่มีไฟล์ที่เป็นอันตราย | Should |
+
+> US-22 (เห็นสถานะและเหตุผลที่ถูกปฏิเสธของไฟล์ที่ฉันส่ง) เปิด issue แล้วในชื่อ US-34 Dashboard ([#34](https://github.com/Jupiter4428/cntagram/issues/34)) รวมจำนวนไฟล์รออนุมัติของ Moderator ด้วย อยู่ใน Product Backlog รอ Sprint 2 Planning (ยังไม่ประเมินแต้ม)
 
 ประเด็นที่ต้องคุย: อัปโหลดข้ามรุ่น/ข้ามภาคได้หรือไม่ (SRS v1: ได้เฉพาะของตัวเอง), เวอร์ชันใหม่ของไฟล์ที่เผยแพร่แล้วต้องรออนุมัติใหม่หรือไม่, ข้อสอบที่เผยแพร่แล้วผู้อัปโหลดลบเองได้ไหม, ขนาดไฟล์สูงสุด (เริ่มที่ 50 MB ปรับได้ใน `system_setting`)
 
@@ -147,9 +162,9 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-23 | **As a** Moderator **I want** ปฏิเสธไฟล์พร้อมเหตุผล และซ่อนไฟล์ที่เผยแพร่แล้วแต่มีปัญหา **so that** คลังมีแต่เอกสารที่ถูกต้อง | Must |
-| US-24 | **As a** Super Admin **I want** ดู Audit Log ของการกระทำสำคัญ (อนุมัติ ปฏิเสธ ซ่อน ลบ เปลี่ยนสิทธิ์) **so that** ตรวจสอบย้อนหลังได้ว่าใครทำอะไร เมื่อไร เพราะอะไร | Should |
-| US-25 | **As a** Super Admin **I want** จัดการข้อสอบของรุ่นที่ไม่เกินรุ่นจุดตัด **so that** ข้อสอบรุ่นเก่าถูกคุมเข้มเป็นพิเศษ | Could |
+| US-25 | **As a** Moderator **I want** ปฏิเสธไฟล์พร้อมเหตุผล และซ่อนไฟล์ที่เผยแพร่แล้วแต่มีปัญหา **so that** คลังมีแต่เอกสารที่ถูกต้อง | Must |
+| US-26 | **As a** Super Admin **I want** ดู Audit Log ของการกระทำสำคัญ (อนุมัติ ปฏิเสธ ซ่อน ลบ เปลี่ยนสิทธิ์) **so that** ตรวจสอบย้อนหลังได้ว่าใครทำอะไร เมื่อไร เพราะอะไร | Should |
+| US-27 | **As a** Super Admin **I want** จัดการข้อสอบของรุ่นที่ไม่เกินรุ่นจุดตัด **so that** ข้อสอบรุ่นเก่าถูกคุมเข้มเป็นพิเศษ | Could |
 
 ประเด็นที่ต้องคุย (สมมติฐานจาก SRS v1 ที่ต้องยืนยันกับ PO):
 - ผู้อัปโหลดอนุมัติไฟล์ของตัวเองไม่ได้ ไม่ว่าจะมีบทบาทใด (ยกเว้น Bulk Import?)
@@ -161,24 +176,24 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-26 | **As a** นักศึกษา **I want** กรองผลค้นหาตาม ประเภทเอกสาร ปีการศึกษา ช่วงสอบ **so that** เจอข้อสอบเก่าที่ตรงกับที่จะสอบ | Should |
-| US-27 | **As a** นักศึกษา **I want** เรียงผลค้นหาตามคะแนนหรือยอดดาวน์โหลด **so that** เห็นชีทคุณภาพดีก่อน | Could |
+| US-11 | **As a** นักศึกษา **I want** กรองผลค้นหาตาม ประเภทเอกสาร ปีการศึกษา ช่วงสอบ **so that** เจอข้อสอบเก่าที่ตรงกับที่จะสอบ | Should · Sprint 3 [#142](https://github.com/Jupiter4428/cntagram/issues/142) |
+| US-28 | **As a** นักศึกษา **I want** เรียงผลค้นหาตามคะแนนหรือยอดดาวน์โหลด **so that** เห็นชีทคุณภาพดีก่อน | Could |
 
 #### E6 ชุมชน
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-28 | **As a** นักศึกษา **I want** คอมเมนต์ใต้เอกสารเพื่อถามหรือแจ้งจุดผิด **so that** ชีทถูกแก้และคนอื่นไม่เข้าใจผิดตาม | Could |
-| US-29 | **As a** นักศึกษา **I want** ให้คะแนน 1–5 ดาวพร้อมรีวิวสั้น **so that** ชีทดีถูกดันขึ้นมาก่อน | Could |
-| US-30 | **As a** Moderator **I want** ปักหมุดคอมเมนต์ที่ถูกต้องและซ่อนคอมเมนต์ที่ไม่เหมาะสม **so that** การพูดคุยมีประโยชน์ | Could |
+| US-29 | **As a** นักศึกษา **I want** คอมเมนต์ใต้เอกสารเพื่อถามหรือแจ้งจุดผิด **so that** ชีทถูกแก้และคนอื่นไม่เข้าใจผิดตาม | Could |
+| US-30 | **As a** นักศึกษา **I want** ให้คะแนน 1–5 ดาวพร้อมรีวิวสั้น **so that** ชีทดีถูกดันขึ้นมาก่อน | Could |
+| US-31 | **As a** Moderator **I want** ปักหมุดคอมเมนต์ที่ถูกต้องและซ่อนคอมเมนต์ที่ไม่เหมาะสม **so that** การพูดคุยมีประโยชน์ | Could |
 
 #### E7 ลิขสิทธิ์และความไว้วางใจ
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-31 | **As a** ผู้ใช้ **I want** รายงานเอกสารที่มีปัญหา (ละเมิดลิขสิทธิ์, ข้อสอบที่ห้ามเผยแพร่, เนื้อหาผิด) **so that** ผู้ดูแลรู้และจัดการได้ | Should |
-| US-32 | **As a** อาจารย์/เจ้าของลิขสิทธิ์ที่ไม่มีบัญชี **I want** แจ้งลบเนื้อหาผ่านแบบฟอร์มสาธารณะ **so that** งานของฉันถูกนำลงจากระบบ | Should |
-| US-33 | **As a** Super Admin **I want** ตรวจเรื่องร้องเรียนแล้วตัดสิน (ลบ, คืนสถานะ, ให้แก้ไข) พร้อมแจ้งผู้เกี่ยวข้อง **so that** ข้อพิพาทลิขสิทธิ์จบได้อย่างโปร่งใส | Should |
+| US-32 | **As a** ผู้ใช้ **I want** รายงานเอกสารที่มีปัญหา (ละเมิดลิขสิทธิ์, ข้อสอบที่ห้ามเผยแพร่, เนื้อหาผิด) **so that** ผู้ดูแลรู้และจัดการได้ | Should |
+| US-33 | **As a** อาจารย์/เจ้าของลิขสิทธิ์ที่ไม่มีบัญชี **I want** แจ้งลบเนื้อหาผ่านแบบฟอร์มสาธารณะ **so that** งานของฉันถูกนำลงจากระบบ | Should |
+| US-35 | **As a** Super Admin **I want** ตรวจเรื่องร้องเรียนแล้วตัดสิน (ลบ, คืนสถานะ, ให้แก้ไข) พร้อมแจ้งผู้เกี่ยวข้อง **so that** ข้อพิพาทลิขสิทธิ์จบได้อย่างโปร่งใส | Should |
 
 ประเด็นที่ต้องคุย: รายงานประเภทลิขสิทธิ์/ข้อสอบควรซ่อนไฟล์อัตโนมัติระหว่างรอตรวจหรือไม่, กรอบเวลาตรวจ (เริ่มที่ ~72 ชั่วโมง), ไฟล์ที่ถูกลบเก็บไว้นานแค่ไหน, ใครเป็นผู้ประสานงานลิขสิทธิ์ของคณะ
 
@@ -188,11 +203,15 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Title | Value |
 |---|---|---|
-| TD-1 | Chore: ตั้ง CI ด้วย GitHub Actions รัน `python manage.py test` ทุก PR | กันโค้ดที่เทสต์ไม่ผ่านเข้า `develop` และเป็นฐานของ coverage > 80% |
-| TD-2 | Chore: management command สำหรับ seed ข้อมูลตั้งต้น (ภาควิชา, role, doc_type, exam_period, system_setting) | สมาชิกใหม่และเครื่อง CI ตั้งระบบได้ในคำสั่งเดียว |
-| TD-3 | Chore: register model ใน Django admin | Super Admin จัดการข้อมูลได้ระหว่างที่หน้าจอจริงยังไม่เสร็จ |
+| TD-1 | Chore: ตั้ง CI ด้วย GitHub Actions รัน `python manage.py test` ทุก PR ([#107](https://github.com/Jupiter4428/cntagram/issues/107)) — ทำใน **Sprint 3** | กันโค้ดที่เทสต์ไม่ผ่านเข้า `develop` และเป็นฐานของ coverage > 80% |
+| TD-9 | Chore: ตั้ง coverage.py (`.coveragerc` + requirements) ตาม DoD ของ Sprint 2 ([#108](https://github.com/Jupiter4428/cntagram/issues/108)) | ทุกคนวัด coverage บนเครื่องได้ตัวเลขเดียวกัน และแนบผลใน PR ได้ |
+| TD-8 | Chore: เพิ่มด่าน Static Analysis ใน CI (`black --check`, `flake8` + `.flake8`, `bandit`) ตาม [lecture 07](./lecture-notes/07-ci-cd-and-static-analysis.md) — ทำใน **Sprint 3** | โค้ดใน `develop` มีรูปแบบเดียวกัน ไม่มี import/ตัวแปรที่ไม่ใช้ และไม่มี hardcoded secret ก่อน deploy ขึ้น Cloud |
 | TD-4 | Docs: C4 Context/Container Diagram ให้ตรงกับระบบที่ deploy จริง | ทีมและผู้ประเมินเห็นสถาปัตยกรรมตรงกัน |
 | TD-5 | Refactor: ย้าย business logic ที่สะสมใน view ระหว่าง Sprint 1 เข้า `services.py` / `selectors.py` | View สั้น ทดสอบ logic ได้ตรงโดยไม่ผ่าน HTTP |
+| TD-7 | Refactor: แยก partial ข้อมูลเอกสารที่ซ้ำใน `vault.html` / `document_detail.html` ([#40](https://github.com/Jupiter4428/cntagram/issues/40)) | แก้ฟิลด์ที่แสดงของเอกสารที่เดียว มีผลทั้งหน้าค้นหาและหน้าเอกสาร |
+
+> - TD-2 (seed ข้อมูลตั้งต้น) เป็น Blocker ของ story ใน Sprint 1 จึงย้ายเป็นงานย่อย: `role` + Super Admin คนแรก → US-3, `doc_type`/`exam_period`/`system_setting` → US-5 (issue [#35](https://github.com/Jupiter4428/cntagram/issues/35) ปิดแล้ว)
+> - TD-3 (Django admin) เปิด issue [#36](https://github.com/Jupiter4428/cntagram/issues/36) เป็น stretch ของ Sprint 2
 
 ### 6.3 Spike (ค้นคว้าก่อนตัดสินใจ)
 
@@ -200,7 +219,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 |---|---|---|
 | SP-1 | ตรวจไฟล์ PDF อันตราย/ไวรัสด้วยอะไร (ClamAV, ตรวจ magic bytes, ตัด JavaScript ใน PDF) | ADR เลือกวิธี + ต้นแบบที่รันได้ |
 | SP-2 | ส่งอีเมลยืนยัน/OTP ผ่านบริการใด และค่าใช้จ่าย | ADR + ค่า config ที่ต้องใช้ |
-| SP-3 | Preview PDF บนเว็บโดยไม่เปิด Direct URL (ทุกคำขอผ่านการตรวจสิทธิ์) | ต้นแบบ + ADR |
+| SP-3 | Preview PDF บนเว็บโดยไม่เปิด Direct URL (ทุกคำขอผ่านการตรวจสิทธิ์) | ต้นแบบ + ADR — ต้นแบบอยู่ใน US-7 (`materials:document_preview`), [ADR 0003](./adr/0003-document-storage-and-protected-preview.md) (Proposed) |
 | SP-4 | Deploy ที่ไหน (Cloud ของคณะ / ผู้ให้บริการภายนอก) สำรองข้อมูลอย่างไร | ADR + C4 Container Diagram ฉบับ production |
 
 ---
@@ -218,7 +237,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | ลิงก์ดาวน์โหลด/preview ต้องตรวจสิทธิ์ทุกครั้ง | ไม่มี Direct URL | **AC** ของ US-8, SP-3 |
 | ใช้งานบนมือถือ | จอกว้างตั้งแต่ ~360px, ภาษาไทย | **AC** ของ story ที่มีหน้าจอ |
 | PDPA | ขอความยินยอม, ไม่แสดงอีเมล, ลบบัญชีได้ | **AC** ของ US-1, US-13 |
-| Coverage | > 80% (Sprint 2) | **Sprint Goal** / TD-1 |
+| Coverage | > 80% (Sprint 2) | **DoD** ของ Sprint 2 / TD-9 (วัดบนเครื่อง) · TD-1 (ด่านใน CI, Sprint 3) |
 | ความพร้อมใช้งานและการสำรองข้อมูล | ~99%/เดือน, สำรองวันละครั้ง | **SP-4** แล้วกลายเป็น story ของ Sprint 3 |
 | OWASP Top 10 | ตรวจรอบสุดท้าย | **Sprint 3** |
 
@@ -229,8 +248,8 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | Sprint | Sprint Goal (ร่าง) | Epic หลัก |
 |---|---|---|
 | **Sprint 1** | นักศึกษา CN สมัคร ล็อกอิน อัปโหลดชีท และค้นหาชีทที่ Moderator อนุมัติแล้วได้ | E1, E2, E3, E4, E5 (US-1 – US-7) |
-| **Sprint 2** | ผู้ใช้เชื่อถือคลังได้: ไฟล์ทุกไฟล์ผ่านการคัดกรองที่ตรวจย้อนหลังได้ และระบบมี automated test + CI | E4, E3, TD (≥ 20% ของแต้ม) |
-| **Sprint 3** | คลังพร้อมใช้งานจริงบน Cloud: ปลอดภัยตาม OWASP และเจ้าของลิขสิทธิ์แจ้งลบเนื้อหาได้ | E7, E1, SP-4 |
+| **Sprint 2** | Must story ทั้ง 7 ของ Sprint 1 ใช้งานได้ครบทั้งหน้าเว็บและหลังบ้าน: Super Admin ตั้งค่าภาค รุ่น และวิชาผ่านหน้าเว็บได้ Moderator เปิดดู PDF ก่อนอนุมัติหรือปฏิเสธพร้อมเหตุผล และทุก story ผ่าน DoD ของ Sprint 2 (มี unit test, coverage รวม ≥ 80%) | เนื้อหาถึงสัปดาห์ที่ 11 · Velocity อ้างอิง 21 · US-2, US-3, US-4, US-6 (ยกมาจาก Sprint 1) + TD 5 แต้ม (#93, #67, TD-9) |
+| **Sprint 3** | คลังพร้อมใช้งานจริงบน Cloud: ปลอดภัยตาม OWASP และเจ้าของลิขสิทธิ์แจ้งลบเนื้อหาได้ | เนื้อหาสัปดาห์ที่ 12 ขึ้นไป · E7, E1, SP-4, TD-1 (CI), TD-8 |
 | **Final (สัปดาห์ 14)** | Live Demo + Agile Metrics (Velocity, Burndown) | — |
 
 Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็นประโยคเดียวที่ **เน้นผู้ใช้, สาธิตได้ใน Sprint Review, และแต้มรวมไม่เกิน Velocity**
@@ -242,3 +261,9 @@ Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็น
 | วันที่ | การเปลี่ยนแปลง |
 |---|---|
 | 2026-10-12 | แทน SRS v1 ด้วย Product Backlog แบบ Agile: แปลง FR เป็น Epic/User Story, แปลง NFR เป็น DoD/AC/Spike, ย้ายกฎที่ล็อกไว้ (R-1 – R-6, FR-2.4, FR-2.5) มาเป็นประเด็นที่ต้องคุยใต้ story, ย้ายประเด็นค้าง (O-1 – O-7) เป็น story/spike |
+| 2026-10-13 | ตรวจขอบเขต Sprint 1 (Authentication, Forms, Core Models, Dashboard) แล้วปรับตาม lecture 05 (ไม่เพิ่ม story ใหม่กลาง Sprint): US-34 Dashboard (#34, รวม US-22) และ TD-3 Django admin (#36) เข้า Product Backlog รอ Sprint 2, TD-2 seed (#35 ปิด) ย้ายเป็นงานย่อยของ US-3/US-5; DoD ในทุก issue เพิ่มข้อ View บาง / ไม่มี N+1 และ circular import / อัปเดตเอกสาร ตาม DoD ใน lecture; แก้ issue ให้ตรงกับ model จริง — US-1 เพิ่ม AC PDPA consent/ชื่อเล่น/ภาควิชา, US-5 ใช้ Document/ExamDetail/DocumentVersion แทน SheetFile, US-10 ใช้ `user_role` แทนตาราง M:N ใหม่, US-8 นับจาก `download_log`, US-4/US-7 index ตาม database-design §5; ระบุ Form ของแต่ละ story; DoD ใน issue เปลี่ยนเป็น merge เข้า `develop` |
+| 2026-10-16 | US-7 (#31): ต้นแบบ SP-3 (preview ผ่าน view ที่ตรวจสิทธิ์ ไม่มี `MEDIA_URL`) บันทึกเป็น ADR 0003 (Proposed); `SearchForm` ปฏิเสธรุ่นที่ไม่อยู่ในภาคที่เลือก; การเช็ก `scan_status` และชนิดไฟล์ก่อน preview ย้ายไปเป็นงานของ US-24; เพิ่ม TD-7 (#40) แยก partial ข้อมูลเอกสารจาก code review |
+| 2026-10-26 | เพิ่ม TD-8 (Static Analysis ใน CI: Black, Flake8, Bandit) ตาม lecture 07 สัปดาห์ที่ 12 กำหนดทำใน Sprint 3; TD-1 คงขอบเขตเดิม (เทสต์ + coverage ใน Sprint 2) |
+| 2026-10-27 | Sprint 2 Planning: Velocity Sprint 1 = 21 (นับ story ใน §6.1 ที่ story และ sub-issue ปิดครบ); ตั้ง Sprint 2 Goal ใหม่ใน §8; Sprint 2 ทำเนื้อหาถึงสัปดาห์ที่ 11 จึงย้าย TD-1 (CI, #107) ไป Sprint 3 และเพิ่ม TD-9 (coverage.py, #108); คง `LANGUAGE_CODE = 'en-us'` แล้วแปล error ในฟอร์มเอง (#97) |
+| 2026-10-28 | DoD ของ Sprint 2 (coverage): issue ที่เข้า Sprint 2 ขึ้นไปโดยไม่ได้ยกมาจาก Sprint 1 และยังไม่มี PR เปิดอยู่ (#42, #107, #111, #115) เพิ่มข้อ "แนบผล `coverage report -m --fail-under=80` ใน PR, coverage รวมไม่ต่ำกว่า 80%" ตาม lecture 06 (#108 มีข้อนี้อยู่แล้ว); ตั้ง coverage.py ด้วย `.coveragerc` และ `coverage==7.17.0` ใน requirements (TD-9, #108) วัดบน `develop` (`14b4da1`) ได้ 264 tests ผ่าน, coverage รวม 94% |
+| 2026-11-03 | Sprint 3 (ส่งงาน 2026-11-09 ต้องเสร็จ 2026-11-08): ดึง story ที่ผูกกับฟีเจอร์หลักและเล็กพอทำทันเข้า Sprint 3 แล้วเลื่อนเลข story ให้ต่อจาก US-10 ไม่ชนกัน (US-22 และ US-34 คงเลขเดิมเพราะมี issue แล้ว) — เข้า Sprint 3: เดิม US-26 → **US-11** ([#142](https://github.com/Jupiter4428/cntagram/issues/142)), US-21 ส่วนไฟล์ซ้ำ → **US-12** ([#143](https://github.com/Jupiter4428/cntagram/issues/143)), US-13 คงเดิม ([#144](https://github.com/Jupiter4428/cntagram/issues/144)); ที่เหลือเลื่อน: 11→14, 12→15, 14→16, 15→17, 16→18, 17→19, 18→20, 19→21, 20→23, US-21 ส่วนสแกนไวรัส → 24, 23→25, 24→26, 25→27, 27→28, 28→29, 29→30, 30→31, 31→32, 32→33, 33→35; เลขในตารางและประวัติข้างบนใช้เลขใหม่แล้ว |

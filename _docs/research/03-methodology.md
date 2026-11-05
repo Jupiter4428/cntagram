@@ -1,6 +1,6 @@
 # บทที่ 3 วิธีดำเนินงาน
 
-> แหล่งข้อมูล: [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (Scrum, DoR/DoD, Workflow, Testing) · [`requirements.md`](../requirements.md) · [`database-design.md`](../database-design.md) · [ADR 0001](../adr/0001-modular-monolith-and-app-boundaries.md), [ADR 0002](../adr/0002-service-layer-and-selectors.md) · [`architecture/c4.md`](../architecture/c4.md) · โค้ดใน `catalog/`, `accounts/`, `materials/`
+> แหล่งข้อมูล: [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (Scrum, DoR/DoD, Workflow, Testing) · [`requirements.md`](../requirements.md) · [`database-design.md`](../database-design.md) · [ADR 0001](../adr/0001-modular-monolith-and-app-boundaries.md), [ADR 0002](../adr/0002-service-layer-and-selectors.md), [ADR 0003](../adr/0003-document-storage-and-protected-preview.md) · [`architecture/c4.md`](../architecture/c4.md) · โค้ดใน `catalog/`, `accounts/`, `materials/`
 >
 > บทนี้ยาวที่สุดและมีข้อมูลพร้อมแล้วมากที่สุด เวลาเรียบเรียงลงเล่มให้ใช้ตาราง/รูปจากเอกสารต้นทางโดยตรง แล้วเขียนคำอธิบายประกอบ
 
@@ -55,13 +55,13 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 
 | Epic | คุณค่าที่ผู้ใช้ได้ | Story |
 |---|---|---|
-| E1 เข้าระบบอย่างปลอดภัย | เฉพาะคนในคณะเข้าได้ ศิษย์เก่าใช้ต่อได้ | US-1, US-2, US-11 – US-14 |
-| E2 โครงสร้างคลัง | จัดตาม ภาค → รุ่น → วิชา ขยายภาคได้ | SP-0, US-3, US-4, US-15 – US-18 |
-| E3 แบ่งปันเอกสาร | อัปโหลดเข้าที่ถูกต้องได้ง่าย | US-5, US-19 – US-22 |
-| E4 คัดกรองคุณภาพ | ตรวจก่อนเผยแพร่ ข้อสอบคุมเข้มกว่า | US-6, US-9, US-10, US-23 – US-25 |
-| E5 ค้นหาและอ่าน | พิมพ์รหัสวิชาแล้วเจอทุกรุ่นในหน้าเดียว | US-7, US-8, US-26, US-27 |
-| E6 ชุมชน | ถาม-ตอบ แจ้งจุดผิด ให้คะแนน | US-28 – US-30 |
-| E7 ลิขสิทธิ์และความไว้วางใจ | รายงาน/แจ้งลบได้ ตรวจย้อนหลังได้ | US-31 – US-33 |
+| E1 เข้าระบบอย่างปลอดภัย | เฉพาะคนในคณะเข้าได้ ศิษย์เก่าใช้ต่อได้ | US-1, US-2, US-13 – US-16 |
+| E2 โครงสร้างคลัง | จัดตาม ภาค → รุ่น → วิชา ขยายภาคได้ | SP-0, US-3, US-4, US-17 – US-20 |
+| E3 แบ่งปันเอกสาร | อัปโหลดเข้าที่ถูกต้องได้ง่าย | US-5, US-12, US-21 – US-24 |
+| E4 คัดกรองคุณภาพ | ตรวจก่อนเผยแพร่ ข้อสอบคุมเข้มกว่า | US-6, US-9, US-10, US-25 – US-27 |
+| E5 ค้นหาและอ่าน | พิมพ์รหัสวิชาแล้วเจอทุกรุ่นในหน้าเดียว | US-7, US-8, US-11, US-28 |
+| E6 ชุมชน | ถาม-ตอบ แจ้งจุดผิด ให้คะแนน | US-29 – US-31 |
+| E7 ลิขสิทธิ์และความไว้วางใจ | รายงาน/แจ้งลบได้ ตรวจย้อนหลังได้ | US-32, US-33, US-35 |
 | TD งานเทคนิค | ส่งมอบเร็วและมั่นคงขึ้น | TD-1 – TD-5 |
 
 Sprint 1 commit 11 รายการ (SP-0, US-1 – US-10) เปิดเป็น GitHub issue #23 – #33
@@ -134,7 +134,7 @@ UNF (ตารางเดียวจากตัวอย่างใน SRS v
 1. **สมัครสมาชิก (US-1):** ตรวจอีเมลซ้ำ → โดเมน → local part เป็นเลข 10 หลัก → หลัก 3–4 = `10` → บันทึก `student_id` และเวลายอมรับ PDPA
 2. **อัปโหลดเอกสาร (US-5):** เลือกรายวิชาในรุ่น → ตรวจขนาด/ชนิดไฟล์ → คำนวณ sha256 → ล้างชื่อไฟล์ → `Document.add_version()` (ล็อกแถว) → สถานะ `pending`
 3. **อนุมัติเอกสาร (US-6, US-9):** Moderator/Super Admin ตัดสิน → บันทึก `approval` → ตรวจว่าครบ `doc_type_required_role` → `published` (หรือ `rejected` พร้อมเหตุผล)
-4. **ค้นหาและดาวน์โหลด (US-7, US-8):** ค้นด้วยรหัสวิชาข้ามทุกรุ่น → แสดงเฉพาะ `published` → ดาวน์โหลดผ่าน view ที่ตรวจสิทธิ์ → บันทึก `download_log`
+4. **ค้นหาและดาวน์โหลด (US-7, US-8):** ค้นด้วยรหัสวิชาข้ามทุกรุ่น (กรองภาค/รุ่น/ประเภทได้) → แสดงเฉพาะ `published` → เปิด preview PDF ใน iframe ผ่าน view ที่ตรวจสิทธิ์ (ADR 0003) → ดาวน์โหลดผ่าน view ที่ตรวจสิทธิ์ → บันทึก `download_log`
 
 ## 3.6 เครื่องมือและเทคโนโลยี
 

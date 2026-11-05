@@ -18,7 +18,7 @@ Requirement ที่ตารางเหล่านี้รองรับ�
 | ชีทสรุป กับ ข้อสอบเก่า | ตาราง `document` ร่วมกัน + `exam_detail` (1:1) สำหรับข้อมูลเฉพาะข้อสอบ | หลีกเลี่ยง column ที่ว่างเป็นส่วนใหญ่ และรองรับ vault 2 แบบ |
 | กฎอนุมัติ | เก็บเป็นข้อมูลใน `doc_type_required_role` ไม่ hardcode | เปลี่ยนกฎ (ข้อสอบต้อง Moderator + Admin) โดยไม่แก้โค้ด |
 | ค่ากำหนด (รุ่น ≤ 23, ขนาดไฟล์ 50 MB) | ตาราง `system_setting` | ปรับได้โดยไม่ deploy ใหม่ |
-| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | US-19 ส่งเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
+| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | US-21 ส่งเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
 | จำนวนดาวน์โหลด | นับจาก `download_log` | ไม่เก็บตัวนับซ้ำ (ถ้าช้าค่อยเพิ่ม cache ทีหลังโดยเจตนา) |
 | ลบข้อมูลผู้ใช้ (PDPA) | **anonymize** แถวเดิม ไม่ลบจริง | FK เป็น `PROTECT` จึงลบผู้ใช้ที่มีเอกสารไม่ได้ ล้างอีเมล/รหัส/ชื่อเล่นแทน แล้วปิด `is_active` |
 | อีเมล / รหัสวิชา / รหัสภาค | เก็บเป็นรูปแบบเดียว (อีเมลตัวพิมพ์เล็ก, รหัสตัวพิมพ์ใหญ่) | กัน `Alice@x` กับ `alice@x`, `cn101` กับ `CN101` เป็นคนละค่าใน UNIQUE |
@@ -70,7 +70,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE; เก็บตัวพิมพ์ใหญ่) |
+| code | VARCHAR(5) | UQ, NN (เช่น CN, CE, ME, EE; เก็บตัวพิมพ์ใหญ่; รับแค่ A-Z 2-5 ตัว เพราะอยู่ใน path ไฟล์) |
 | name_th | VARCHAR(100) | NN |
 | name_en | VARCHAR(100) | NN |
 | is_active | BOOLEAN | NN, default true |
@@ -89,7 +89,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326; เก็บตัวพิมพ์ใหญ่) |
+| code | VARCHAR(10) | UQ, NN (CN101, SC135, AT326; เก็บตัวพิมพ์ใหญ่; A-Z ตามด้วยเลข 1-3 หลัก เพราะอยู่ใน path ไฟล์) |
 | name_th | VARCHAR(150) | NULL |
 | name_en | VARCHAR(150) | NN |
 
@@ -154,6 +154,16 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 > เหตุที่ UQ แยกเป็น 2 เงื่อนไข: SQL ถือว่า `NULL ≠ NULL` ถ้ามี UQ ตัวเดียว `(user, student, NULL)` จะซ้ำได้
 > กฎใน model: `department_id` ต้องมีค่าเมื่อ role = `moderator` และต้องเป็น NULL เมื่อเป็น role อื่น
+> แต่งตั้ง Moderator หลายภาค (US-10) = เพิ่มแถว `user_role` 1 แถวต่อ 1 ภาค **ไม่มีตาราง M:N user–department แยก**
+> แถว `role` ทั้ง 4 ค่า และ `user_role(super_admin)` ของ superuser คนแรก มาจาก seed ในงานย่อยของ US-3 (`createsuperuser` ตั้งแค่ `is_superuser` ไม่สร้าง `user_role`)
+
+**user_counter** (ยอดสะสมผู้ใช้ที่เคยถูกสร้าง สำหรับ Dashboard ของ Super Admin, #65)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK (มีแถวเดียว id = 1) |
+| total | INTEGER | NN, ≥ 0 |
+
+> signal `post_save` ของ `User` บวกทีละหนึ่งทุกครั้งที่สร้างผู้ใช้ ไม่ลดเมื่อลบ ตอนสร้างตารางตั้งค่าเริ่มจากจำนวนผู้ใช้ที่มีอยู่
 
 ### 3.3 เอกสารและไฟล์ (Sprint 1)
 
@@ -180,7 +190,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | doc_type_id | SMALLINT | FK → doc_type, NN |
 | uploader_id | BIGINT | FK → app_user, NN |
 | title | VARCHAR(200) | NN |
-| description | TEXT | NN |
+| description | TEXT | NN (ไม่บังคับกรอก เก็บเป็นสตริงว่าง) |
 | status | VARCHAR(15) | NN, CHECK in (`pending`, `published`, `rejected`, `hidden`), default `pending` |
 | created_at / updated_at | TIMESTAMP | NN |
 
@@ -212,6 +222,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 > - ออกเลขเวอร์ชันผ่าน `Document.add_version()` ซึ่งล็อกแถว document ก่อน กันเลขชนเมื่ออัปโหลดพร้อมกัน
 > - ขนาดไฟล์ที่ยอมรับจริง = `system_setting.max_upload_mb` (ต้องไม่เกิน 50) CHECK ใน DB เป็นเพดานสูงสุดเท่านั้น
 > - `original_name` ถูกล้าง path และอักขระควบคุมก่อนบันทึก
+> - `storage_path` สัมพัทธ์กับ `MEDIA_ROOT` (โฟลเดอร์ `media/`) และเปิดได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ([ADR 0003](./adr/0003-document-storage-and-protected-preview.md))
 
 ### 3.4 ตั้งค่าและกฎ (Sprint 1–2)
 
@@ -224,13 +235,25 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 **doc_type_required_role** (กฎ: ประเภทเอกสารไหนต้องได้รับอนุมัติจาก role ใด)
 | Column | Type | Constraint |
 |---|---|---|
-| doc_type_id | SMALLINT | PK-part, FK → doc_type |
-| role_id | SMALLINT | PK-part, FK → role |
+| id | BIGINT | PK (Django ใช้ PK เดี่ยว) |
+| doc_type_id | SMALLINT | FK → doc_type, NN |
+| role_id | SMALLINT | FK → role, NN |
+| mode | VARCHAR(3) | NN, CHECK in (`any`, `all`), default `any` |
+| | | **UQ (doc_type_id, role_id)** |
 
-ตัวอย่างข้อมูล: `summary`/`slide`/`cheatsheet` → ต้องการ approver **1 คนจาก** moderator หรือ super_admin · `exam` → ต้องการ **ทั้ง** moderator **และ** super_admin
-(ต้องเพิ่ม column `mode` = `any` หรือ `all` ถ้าอยากเก็บกฎ "อย่างใดอย่างหนึ่ง" ให้อยู่ในข้อมูลทั้งหมด)
+ตัวอย่างข้อมูล: `summary`/`slide`/`cheatsheet` → moderator + super_admin โหมด `any` (approver **1 คนจาก** role ใดก็ได้) · `exam` → moderator + super_admin โหมด `all` (ต้อง**ครบทั้งสอง**)
 
-### 3.5 การอนุมัติและการตรวจสอบ (Sprint 2)
+> กฎใน service (`materials.services.review_document`, US-9, [ADR 0004](./adr/0004-approval-tables-in-materials.md))
+> - ทุกแถวของ doc_type เดียวกันควรใช้ `mode` เดียวกัน ถ้ามีแถวใดเป็น `all` จะถือว่าทั้ง doc_type เป็น `all`
+> - doc_type ที่ไม่มีแถวกฎ = ไม่มีใครอนุมัติหรือปฏิเสธได้
+> - ข้อสอบ (`vault = exam`) ของรุ่นที่ `batch.number ≤ system_setting.legacy_batch_max` (ค่าเริ่มต้น 23) ใช้กฎพิเศษ: super_admin คนเดียวพิจารณาได้และพอ
+> - moderator ใช้สิทธิ์ได้เฉพาะเอกสารของภาคที่ตัวเองดูแล (`user_role.department_id`) · คนที่ถือหลาย role นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน
+> - ปฏิเสธ 1 ครั้งจากฝ่ายใดก็ได้ = `rejected`
+> - หน้าจอถามสถานะได้จาก `materials.selectors.approval_progress` (เอกสารเดียว) หรือ `approval_progress_for` (หน้าคิว ไม่เกิน 3 query ไม่ว่ากี่แถว) คืน role ที่อนุมัติแล้ว / ยังรอ และ `approvable` (False = ไม่ใช่ `pending` หรือกฎไม่มี role ที่อนุมัติได้)
+
+### 3.5 การอนุมัติและการตรวจสอบ (Sprint 1–2)
+
+> `approval` สร้างใน Sprint 1 กับ US-6 · `download_log` กับ US-8 (Stretch) · `report`, `audit_log` ใน Sprint 2
 
 **approval**
 | Column | Type | Constraint |
@@ -330,6 +353,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 1. `audit_log.target_type/target_id` — polymorphic reference ไม่มี FK (เหตุผลในหัวข้อ 3.5)
 2. `document.status` เป็นค่า enum ในตาราง ไม่แยกเป็น lookup table (ค่าน้อยและตายตัว ลด join)
 3. `approval.approver_role_id` — เก็บ "ตัดสินในบทบาทใด" เพราะผู้ใช้คนเดียวอาจมีหลาย role (ไม่ซ้ำซ้อน เพราะไม่ได้ derive จาก user ได้ตรงๆ)
+4. `user_counter.total` — เก็บยอดสะสมแยกไว้ เพราะนับจาก `app_user` ไม่ได้หลังมีการลบผู้ใช้
 
 ---
 
@@ -349,6 +373,8 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | download_log | IDX (document_id) | นับจำนวนดาวน์โหลด |
 | audit_log | IDX (actor_id), IDX (target_type, target_id), IDX (created_at) | filter หน้า Audit Log |
 
+> **การค้นหาของ US-7** (`materials.selectors.search_documents`) ใช้ index ที่มีอยู่แล้วทั้งหมด จึงไม่ต้องเพิ่ม migration: เทียบ `course.code` แบบตรงตัว (ตัวพิมพ์ใหญ่) เพื่อใช้ UQ (code) → `batch_course` ผ่าน IDX (course_id) → `document` ผ่าน IDX (batch_course_id, status) / IDX (doc_type_id, status) ส่วนรุ่นไม่ได้เก็บรหัส `CN21` จึงกรองผ่าน `batch_course__batch` ผลค้นหาทั้งหน้าโหลดด้วย query เดียว (`select_related`) ตรวจด้วย `assertNumQueries(1)`
+
 ## 6. กฎทางธุรกิจที่ฐานข้อมูลบังคับให้เอง
 
 - ลบ Department / Batch / Course ที่ยังมี batch_course หรือ document ผูกอยู่ไม่ได้ (FK RESTRICT/`PROTECT`)
@@ -364,10 +390,12 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ตารางถูกสร้างเมื่อ story ที่ใช้ถูกดึงเข้า Sprint (ไม่สร้างล่วงหน้า) ลำดับด้านล่างเป็นแผนปัจจุบัน ปรับได้ตอน Sprint Planning
 
-- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting
-  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้)*
-- **ถัดไป:** approval (US-6, US-9, US-23), doc_type_required_role (US-9), download_log (US-8), audit_log (US-24), report (US-31)
-- **ภายหลัง:** comment / rating (US-28 – US-30), email verification token (US-11), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
+- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting, approval, doc_type_required_role
+  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้, US-6 → approval, US-9 → doc_type_required_role)*
+  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role`: migration `0005` seed ให้ `doc_type` ที่มีอยู่ตอน migrate ส่วน `doc_type` ที่ seed ทีหลังใช้ `seed_approval_rules` (US-9)
+- **Sprint 1:** download_log (US-8) เพิ่มใน migration ของฟีเจอร์ดาวน์โหลดแล้ว
+- **ถัดไป:** audit_log (US-26), report (US-32)
+- **ภายหลัง:** comment / rating (US-29 – US-31), email verification token (US-14), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
 
 ## 8. Django app ↔ ตาราง
 
@@ -375,7 +403,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 |---|---|---|
 | `catalog` | Department, Batch, Course, BatchCourse, SystemSetting | department, batch, course, batch_course, system_setting |
 | `accounts` | User, Role, UserRole | app_user, role, user_role |
-| `materials` | DocType, ExamPeriod, Document, ExamDetail, DocumentVersion | doc_type, exam_period, document, exam_detail, document_version |
+| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval | doc_type, doc_type_required_role, exam_period, document, exam_detail, document_version, approval |
 
 - แอป `materials` ชื่อเดิมคือ `documents` ชื่อตารางไม่เปลี่ยนเพราะตั้ง `db_table` ไว้ทุก model ตรงกับ ERD
 - ตั้ง `AUTH_USER_MODEL = "accounts.User"` ก่อน `migrate` ครั้งแรก

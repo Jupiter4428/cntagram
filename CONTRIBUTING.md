@@ -3,12 +3,14 @@
 คู่มือสำหรับสมาชิกทีม: กระบวนการ Agile/Scrum, การใช้ Git/GitHub, สถาปัตยกรรมและมาตรฐานโค้ด Django และเกณฑ์ส่งงาน (DoR/DoD)
 อ่านให้จบก่อนเปิด Pull Request ครั้งแรก
 
-**แหล่งอ้างอิงหลัก:** [`_docs/lecture-notes/`](./_docs/lecture-notes/README.md) ของวิชา CN331 (สัปดาห์ที่ 7 และ 10) คือแกนของคู่มือนี้ ส่วนเนื้อหาสัปดาห์ที่ 1–6 สรุปไว้ในหัวข้อมาตรฐานโค้ด
+**แหล่งอ้างอิงหลัก:** [`_docs/lecture-notes/`](./_docs/lecture-notes/README.md) ของวิชา CN331 (สัปดาห์ที่ 7, 10, 11 และ 12) คือแกนของคู่มือนี้ ส่วนเนื้อหาสัปดาห์ที่ 1–6 สรุปไว้ในหัวข้อมาตรฐานโค้ด
 - **กระบวนการ Agile และ Git/GitHub** ทำตาม lecture-notes ([05 Agile Scrum](./_docs/lecture-notes/05-agile-scrum-sprints.md))
 - **สถาปัตยกรรมและ logic ของโค้ด** ทำตามเอกสารของโปรเจค ([`_docs/database-design.md`](./_docs/database-design.md), [ADR](./_docs/adr/)) โดยมีหลักจาก lecture-notes ([03 Architecture](./_docs/lecture-notes/03-software-architecture-and-decomposition.md), [04 Service Layer](./_docs/lecture-notes/04-django-service-layer-and-transactions.md), [01 ORM](./_docs/lecture-notes/01-django-orm-queries-and-optimization.md), [02 CBV](./_docs/lecture-notes/02-django-class-based-views.md)) เป็นแกน
+- **การเขียนเทสต์และเกณฑ์ coverage** ทำตาม lecture-notes ([06 Automated Testing](./_docs/lecture-notes/06-django-automated-testing.md)) สรุปไว้ในหัวข้อ [Testing](#testing)
+- **CI, Static Analysis (Black, Flake8, Bandit) และ quality gate ของ PR** ทำตาม lecture-notes ([07 CI/CD & Static Analysis](./_docs/lecture-notes/07-ci-cd-and-static-analysis.md)) สรุปไว้ในหัวข้อ [Static Analysis และ CI](#static-analysis-และ-ci)
 - **Requirements / Product Backlog** อยู่ที่ [`_docs/requirements.md`](./_docs/requirements.md)
 
-> Setup, Sync, Project Structure และ Branch Strategy: ดูที่ [README.md](./README.md)
+> README ตาม lecture สัปดาห์ที่ 13 เหลือแค่ Overview / Live Demo / Architecture / Local Setup / Test & Coverage — รายละเอียดทีมอยู่ด้านล่างหัวข้อ [Developer Setup](#developer-setup)
 
 ## สารบัญ
 1. [Scrum ของทีมเรา](#scrum-ของทีมเรา)
@@ -27,6 +29,7 @@
 14. [Testing และการใช้ AI](#testing-และการใช้-ai-ช่วยเขียนโค้ด)
 15. [Checklist ก่อนเปิด PR](#checklist-ก่อนเปิด-pr)
 16. [Database และ Models](#database-และ-models)
+17. [Developer Setup](#developer-setup)
 
 ---
 
@@ -58,9 +61,9 @@ flowchart LR
 ### แผน 3 Sprint (ร่าง ปรับทุก Sprint Planning ตาม Velocity จริง)
 | Sprint | เนื้อหาหลัก | สิ่งที่ส่งมอบ |
 |---|---|---|
-| **Sprint 1** | Authentication, Core Models, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้จริง, Backlog บน GitHub |
-| **Sprint 2** | Business Logic (Service Layer), Unit Testing, CI | ฟีเจอร์หลัก, **coverage > 80%**, CI, Refactoring Stories (**≥ 20% ของแต้ม**) |
-| **Sprint 3** | Security (OWASP), Cloud Deploy | ระบบที่ปลอดภัยและ deploy บน Cloud Server |
+| **Sprint 1** | Authentication, Forms, Core Models, Dashboard, อัปโหลด/อนุมัติ/ค้นหาขั้นแรก | Increment ที่รันได้จริง, Backlog บน GitHub |
+| **Sprint 2** | Business Logic (Service Layer), Unit Testing (เนื้อหาถึงสัปดาห์ที่ 11) | ฟีเจอร์หลัก, **coverage > 80%**, Refactoring Stories (**≥ 20% ของแต้ม**) |
+| **Sprint 3** | CI/CD + Static Analysis (สัปดาห์ที่ 12), Security (OWASP Top 10, XSS, CSRF), Production Config (`DEBUG=False`, WhiteNoise), Cloud Deploy (Render + PostgreSQL) | ระบบที่ปลอดภัยและ deploy บน Cloud Server, Release Tag และเอกสารคู่มือ (ไม่เพิ่มฟีเจอร์ใหม่ที่เสี่ยงพัง) |
 | **Final** | Demo สัปดาห์ที่ 14 | Live Demo, Agile Metrics (Velocity, Burndown), ประเมินเพื่อนร่วมกลุ่ม |
 
 ร่าง Sprint Goal ของแต่ละรอบอยู่ใน [`_docs/requirements.md`](./_docs/requirements.md#8-roadmap-ร่าง--ปรับทุก-sprint-planning-ตาม-velocity-จริง) คะแนนประเมินจากงานที่ส่งมอบจริงบน GitHub ในแต่ละ Sprint
@@ -137,13 +140,15 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 ### Definition of Done (DoD)
 การ์ดจะย้ายเป็น **Done** ได้ต่อเมื่อครบทุกข้อ ("It works on my machine" ไม่นับว่าเสร็จ)
 - [ ] ผ่าน Acceptance Criteria ครบทุกข้อของ story
-- [ ] มี Automated Tests (โดยเฉพาะ service และกฎสิทธิ์) และรันผ่านทั้งหมด
-- [ ] เปิด PR ผ่าน Peer Code Review และได้ **Approve อย่างน้อย 1 คน**
+- [ ] มี Automated Tests ประกอบโค้ดใหม่ทุกชิ้น (โดยเฉพาะ service และกฎสิทธิ์) และรันผ่าน **100%** (**No Tests, No Merge**)
+- [ ] ตั้งแต่ Sprint 2: coverage รวม**ไม่ต่ำกว่า 80%** (`coverage report -m --fail-under=80` ผ่าน)
+- [ ] เปิด PR ผ่าน Peer Code Review และได้ **Approve อย่างน้อย 1 คน** (ผู้ตรวจอ่านเทสต์ด้วย ไม่ใช่แค่โค้ด)
 - [ ] Merge เข้า `develop` แล้ว ไม่มี merge conflict และไม่ทำให้ migration พัง
 - [ ] **View บาง:** business logic อยู่ใน `services.py` การอ่านข้อมูลอยู่ใน `selectors.py` ไม่มี Fat View และไม่มี side-effect ภายนอกใน `Model.save()`
 - [ ] **ไม่มี N+1 query** และ**ไม่มี circular import** (ทิศทาง dependency ตาม [ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md))
 - [ ] ผ่าน security พื้นฐาน (CSRF, escape output, ตรวจสิทธิ์และความเป็นเจ้าของฝั่ง server)
-- [ ] โค้ดตาม PEP 8 มี docstring ไม่มี debug code
+- [ ] โค้ดตาม PEP 8 มี docstring ไม่มี debug code (ตั้งแต่ Sprint 3: `black --check .`, `flake8 .` และ `bandit` ผ่าน ดู [Static Analysis และ CI](#static-analysis-และ-ci))
+- [ ] เมื่อมี CI แล้ว: status check ของ CI บน PR เป็นสีเขียว
 - [ ] ทดสอบบนเครื่อง local (และ staging เมื่อมี) และรันบนเครื่องอื่นในทีมได้
 - [ ] อัปเดตเอกสารที่เกี่ยวข้อง: README (setup เปลี่ยน), `_docs/database-design.md` (Model เปลี่ยน), ADR (ตัดสินใจเชิงสถาปัตยกรรม)
 
@@ -180,7 +185,7 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 - [ ] ใส่ค่า **Story Points** และ **Track** ครบทุก issue บน Project
 - [ ] ปักหมุด Sprint Goal ไว้ใน README/คำอธิบายของ GitHub Project
 - [ ] มอบหมาย Assignee ของงานชิ้นแรกที่จะเริ่ม
-- [ ] ตรวจ Branch Protection ของ `main` และ `develop` ยังเปิดอยู่ (ดู [README](./README.md#branch-strategy))
+- [ ] ตรวจ Branch Protection ของ `main` และ `develop` ยังเปิดอยู่ (ดู [Branch Strategy](#branch-strategy))
 
 ---
 
@@ -211,7 +216,10 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 | **Track** | Single select | `Feature` / `Tech Debt` |
 
 ### Issue
-- เปิดด้วย template ใน `.github/ISSUE_TEMPLATE/`: **Feature Story** (`[US-X]`), **Tech Debt / Refactoring Story** (`[TD-X]`), **Bug Report** (`[Bug]`) ส่วนงานสำรวจใช้ `[SP-X]`
+- repo ไม่มี Issue template ให้เลือก ตอนกด **New issue** ให้ตั้งชื่อตามประเภทและเขียนเนื้อหาให้มีหัวข้อตามนี้ ส่วนงานสำรวจใช้ `[SP-X]`
+  - **Feature Story** (`[US-X]`, label `story`): User Story แบบ As a / I want / So that, Epic, MoSCoW, Owner/Pair, Acceptance Criteria 3–5 ข้อ (checklist หรือ Given-When-Then), งานย่อยแบบ Vertical Slice และ checklist Definition of Ready
+  - **Tech Debt / Refactoring Story** (`[TD-X]`, label `tech-debt`): สิ่งที่จะ refactor, คุณค่าที่ได้, ปัญหาปัจจุบัน และ AC ที่ต้องรวมข้อ "พฤติกรรมเดิมเหมือนเดิม 100% (Regression-free)" และ ADR ถ้าเป็นการตัดสินใจเชิงสถาปัตยกรรม
+  - **Bug Report** (`[Bug]`, label `bug`): อาการ, ขั้นตอนทำซ้ำ, ผลที่คาดหวัง vs ผลจริง, branch/commit, screenshot/log และ AC ที่ต้องมีเทสต์จับบั๊ก (ล้มก่อนแก้ ผ่านหลังแก้)
 - ตั้ง Label: ประเภท (`story` / `spike` / `tech-debt` / `bug`), MoSCoW (`must` / `should` / `could`), ฝั่งงาน (`backend` / `frontend`)
 - ผูก Milestone `Sprint N` เมื่อถูกเลือกเข้า Sprint (ยังไม่เลือก = อยู่ใน Product Backlog)
 
@@ -251,9 +259,17 @@ git switch -c feature/issue-29-upload-sheet
 ```bash
 git push -u origin feature/issue-29-upload-sheet
 ```
-- เปิด PR เข้า `develop` (**base = develop, compare = branch ของเรา**) กรอกตาม PR template และเขียน **`Closes #29`**
+- เปิด PR เข้า `develop` (**base = develop, compare = branch ของเรา**) เขียนเนื้อหาตาม[หัวข้อที่ PR ต้องมี](#pull-request-และ-code-review) และเขียน **`Closes #29`** ทำผ่านหน้าเว็บ GitHub หรือ command line ก็ได้ (ดู[ขั้นตอน](#ขั้นตอนใน-github))
 - ย้ายการ์ดเป็น **In Review**
 - PR เล็ก รีวิวง่าย (ถ้าเกิน ~400–500 บรรทัด ให้พิจารณาแตก story)
+
+#### Story ที่มีทั้งงาน Backend และ Frontend
+issue ส่วนใหญ่มีทั้งงาน Frontend และ Backend ถ้างานยังไม่เสร็จทั้งสองฝั่ง ให้แยกเปิด PR เป็นฝั่ง Frontend กับ Backend ไม่ต้องรอให้เสร็จพร้อมกัน ฝั่งไหนเสร็จก่อนเปิด PR ก่อนได้เลย เหตุผลคือ PR ของแต่ละฝั่งเล็กลงและรีวิวง่ายขึ้น เพราะผู้ตรวจดู logic ฝั่ง server กับหน้าตาฝั่ง UI แยกกันได้ และฝั่งที่เสร็จแล้วไม่ต้องค้าง branch ไว้รออีกฝั่ง
+- **Backend เปิด PR ก่อน** (เพราะเป็นตัวกำหนด view/URL ที่ฝั่ง Frontend ใช้) เขียน **`Refs #29`** ไม่ใช่ `Closes` เพื่อให้ issue ยังเปิดอยู่ template ที่ใส่มาเป็นแค่โครงพื้นฐานให้ view และ test ทำงานได้
+- **Frontend แตก branch ของตัวเองจาก `develop` หลัง PR ของ Backend merge แล้ว** (ไม่ push ต่อบน branch ของคนอื่น) แล้วเปิด PR แยกโดยเขียน **`Closes #29`**
+- ใน issue ทำ checklist ของแต่ละฝั่งไว้ เช่น `- [ ] Backend #39` / `- [ ] Frontend #<เลข PR>` ทุกคนจะได้เห็นว่ายังเหลืออะไร
+- Story ยังไม่ **Done** จนกว่า PR ของทั้งสองฝั่งจะ merge ครบ (การ์ดอยู่ **In Review** / **In Progress** ไปก่อน)
+- ถ้า story เล็ก (เช่น เพิ่มฟิลด์เดียวแล้วแสดงบนหน้า) หรือคนเดียวทำทั้งสองฝั่งแล้วเสร็จในวันสองวัน รวมเป็น PR เดียวใส่ `Closes #29` ได้
 
 ### 5. Code Review
 - ต้องได้ **Approve อย่างน้อย 1 คน** ก่อน merge ห้าม self-merge
@@ -262,7 +278,7 @@ git push -u origin feature/issue-29-upload-sheet
 ### 6. Merge
 - ใช้ **Squash and Merge** หรือ **Merge commit** ตามที่ทีมตกลง แล้วลบ branch
 - `Closes #N` จะปิด issue อัตโนมัติเพราะ default branch คือ `develop` ตรวจว่าการ์ดย้ายไป **Done** จริง
-- ทุกคนรัน [Sync](./README.md#ทุกครั้งที่-pull-โค้ดใหม่-sync-ก่อนเริ่มงาน) หลังมีคน merge
+- ทุกคนรัน [Sync](#ทุกครั้งที่-pull-โค้ดใหม่-sync-ก่อนเริ่มงาน) หลังมีคน merge
 
 ### 7. ปิด Sprint
 - Demo จาก `develop` ที่ merge แล้วเท่านั้น (ไม่ demo จากเครื่องส่วนตัว)
@@ -448,10 +464,37 @@ feat:add stuff and fix x  # ไม่เว้นวรรค และรวม
 
 ## Pull Request และ Code Review
 
-PR template อยู่ที่ [`.github/pull_request_template.md`](./.github/pull_request_template.md) (GitHub เติมให้อัตโนมัติ) ต้องมี: ทำอะไร, วิธีทดสอบ, screenshot (UI) หรือ Before/After (refactor), checklist DoD และ **`Closes #N`**
+repo ไม่มี PR template ให้ GitHub เติมอัตโนมัติ ผู้เปิด PR ต้องเขียนเนื้อหาเองให้มีหัวข้อตามนี้ (คัดลอกไปใช้ได้เลย)
+
+```markdown
+## Summary of Changes
+- ทำอะไรไป
+- validation / กฎธุรกิจสำคัญที่เพิ่ม (อยู่ใน `services.py` ไหน)
+
+## วิธีทดสอบ
+1. ...
+2. รัน `python manage.py test`
+3. ผลของ `coverage report -m --fail-under=80` (แปะข้อความหรือภาพ Terminal ตั้งแต่ Sprint 2)
+
+## Screenshot (ถ้าแก้ UI) / Before–After (ถ้าเป็น Refactor)
+
+## Checklist (Definition of Done)
+- [ ] ผ่าน Acceptance Criteria ครบทุกข้อของ issue
+- [ ] มี automated test และรันผ่านทั้งหมด (coverage ≥ 80% ตั้งแต่ Sprint 2)
+- [ ] ตั้งแต่ Sprint 3: `black --check .`, `flake8 .` และ `bandit` ผ่าน (และ CI เป็นสีเขียวเมื่อมี CI แล้ว)
+- [ ] View บาง: business logic อยู่ใน `services.py` การอ่านข้อมูลอยู่ใน `selectors.py`
+- [ ] ไม่มี N+1 query และไม่มี circular import
+- [ ] ผ่าน security พื้นฐาน (CSRF, escape output, ตรวจสิทธิ์ฝั่ง server)
+- [ ] ถ้าแก้ Model: มี migration และอัปเดต `_docs/database-design.md` ใน PR นี้
+- [ ] อัปเดตเอกสารที่เกี่ยวข้อง (README / ADR) ถ้ามีการเปลี่ยน setup หรือสถาปัตยกรรม
+
+Closes #N
+```
 
 ### หน้าที่ของผู้เปิด PR (Author)
 - อธิบายเจตนาของ PR และสิ่งที่แก้ให้ชัดเจน
+- **แนบภาพ Screenshot ใน PR body โดยตรง** ด้วยการลากไฟล์ภาพลงช่อง Description/Comment ของ GitHub (GitHub จะเก็บเป็น attachment) **ไม่ต้อง commit ภาพประกอบ PR ลงใน repository** เช่น `docs/pr-screenshots/` เพื่อไม่ให้ repository และ Git history โตโดยไม่จำเป็น
+- ถ้าจำเป็นต้องใช้ลิงก์รูปจาก repository ให้ชี้ไปที่ commit SHA ที่มีรูปจริง ไม่ใช่ branch ที่อาจถูกลบหลัง Merge
 - แนบ screenshot ถ้าแก้ UI / แสดง Before–After ถ้าเป็น refactor
 - รัน automated tests ให้ผ่านทั้งหมด **ก่อน** ขอ review
 - merge/rebase `develop` ล่าสุดเข้า branch ตัวเองก่อนเปิด PR
@@ -461,12 +504,39 @@ PR template อยู่ที่ [`.github/pull_request_template.md`](./.github
 - **อ่านและเข้าใจตรรกะของโค้ด** ไม่ใช่แค่กด Approve
 - ตรวจความถูกต้อง เคสที่อาจเกิดบั๊ก ความปลอดภัย (input validation, สิทธิ์, CSRF, IDOR)
 - ตรวจสถาปัตยกรรม: logic อยู่ถูกชั้นไหม (view บาง / service / selector), มี N+1 ไหม, import ย้อนทิศทาง dependency ไหม
+- ตรวจเทสต์: ครอบกิ่งที่ล้มเหลว (unhappy path) ไหม, assert ผลจริงในฐานข้อมูลไหม, mock เฉพาะระบบภายนอกไหม (ดู [Testing](#testing)) ไม่มีเทสต์ = ไม่ approve
 - ให้คำแนะนำอย่างสร้างสรรค์และสุภาพ (Constructive Feedback)
 
 ### ขั้นตอนใน GitHub
-**Author:** push branch → **Compare & pull request** → base = `develop` → กรอก template → **Create pull request** → ย้ายการ์ดเป็น **In Review**
+**ผ่านหน้าเว็บ**
+
+**Author:** push branch → **Compare & pull request** → base = `develop` → เขียนเนื้อหาตามหัวข้อด้านบน → **Create pull request** → ย้ายการ์ดเป็น **In Review**
 **Reviewer:** แท็บ **Files changed** อ่าน diff → **Submit review** → **Approve** หรือ **Request changes**
 เมื่อ approve ครบ กด **Merge pull request** แล้วลบ branch
+
+**ผ่าน command line** (ใช้ [GitHub CLI](https://cli.github.com/) `gh` ติดตั้งแล้ว login ครั้งแรกด้วย `gh auth login`)
+
+Author: เซฟเนื้อหา PR ตามหัวข้อด้านบนเป็นไฟล์ เช่น `pr-body.md` (ไฟล์ชั่วคราว ไม่ต้อง commit) แล้วรัน
+```bash
+git push -u origin feature/issue-29-upload-sheet
+gh pr create --base develop --title "feat: upload sheet (US-5)" --body-file pr-body.md
+gh pr view --web                 # เปิด PR ที่เพิ่งสร้างในเบราว์เซอร์ (ถ้าต้องการ)
+```
+> ไม่ใส่ `--title` / `--body-file` ก็ได้ `gh pr create` จะถามทีละข้อและเปิด editor ให้เขียนเนื้อหา
+
+Reviewer:
+```bash
+gh pr list --base develop         # ดู PR ที่รอ review
+gh pr checkout 42                 # ดึง branch ของ PR #42 มารันเทสในเครื่อง
+gh pr diff 42                     # อ่าน diff
+gh pr review 42 --approve
+gh pr review 42 --request-changes --body "เหตุผลที่ขอให้แก้"
+```
+
+Merge (หลัง approve ครบ ห้าม self-merge):
+```bash
+gh pr merge 42 --squash --delete-branch    # หรือ --merge ตามที่ทีมตกลง
+```
 
 ---
 
@@ -548,7 +618,6 @@ def published_documents_for_course(*, course_code: str) -> QuerySet[Document]:
 ```
 ```python
 # materials/views.py
-@login_required
 def course_documents(request, course_code):
     documents = published_documents_for_course(course_code=course_code)
     return render(request, "materials/course_documents.html", {"documents": documents})
@@ -630,7 +699,7 @@ query ทั้งหมดที่ซับซ้อนอยู่ใน `sel
 - สถิติรายแถวใช้ `annotate()` สถิติทั้งตารางใช้ `aggregate()` **ไม่ดึง `.all()` มาวนลูปนับใน Python**
 - เงื่อนไข OR/NOT หรือค้นหาแบบมีตัวกรองหลายตัว ใช้ `Q()` (เริ่มจาก `Q()` เปล่าแล้วต่อเงื่อนไขตามตัวกรองที่ผู้ใช้เลือก)
 - อัปเดตค่าจากค่าเดิม (นับยอด, บวกลบ) ใช้ `F()` ไม่อ่านมาบวกใน Python แล้ว save (Race Condition)
-- เช็กว่ามีข้อมูลไหมใช้ `.exists()` นับใช้ `.count()` ไม่ใช้ `len(qs)`
+- เช็กว่ามีข้อมูลไหมใช้ `.exists()` นับใช้ `.count()` ไม่ใช้ `len(qs)` ยกเว้นใน template ที่ต้องวนแสดงทุกแถวอยู่แล้ว ใช้ `{{ qs|length }}` ได้ เพราะใช้ผลที่โหลดมาแล้ว ไม่ยิง `COUNT` เพิ่ม
 - filter ข้าม M2M แล้วได้แถวซ้ำ ให้ใส่ `.distinct()`
 - ป้องกัน N+1 กลับมาด้วยเทสต์ `self.assertNumQueries(n)` ใน view/selector ที่แสดงรายการ
 
@@ -652,16 +721,15 @@ urlpatterns = [
 ### Views
 - ใช้ **Function-Based Views เป็นหลัก** ตามที่ทีมตกลง (อ่านจากบนลงล่างได้ตรงๆ เหมาะกับ flow ที่มีกฎเฉพาะ)
 - ใช้ **Generic CBV** (`ListView`, `DetailView` ฯลฯ) ได้กับหน้าแสดงข้อมูลแบบ CRUD ล้วนๆ โดย
-  - ใส่ Mixin ไว้**ซ้ายสุด** ตามลำดับ MRO เช่น `class DocumentListView(LoginRequiredMixin, ListView)`
+  - ใส่ Mixin ไว้**ซ้ายสุด** ตามลำดับ MRO เช่น `class DocumentListView(PermissionRequiredMixin, ListView)` (ไม่ต้องใส่ `LoginRequiredMixin` เพราะ `LoginRequiredMiddleware` บังคับล็อกอินให้แล้ว)
   - override `get_queryset()` ให้เรียก selector ไม่เขียน query ยาวในคลาส
 - ไม่ว่าแบบไหน view ต้อง**บาง**: รับ input → เรียก service/selector → ตอบ response
 - ต้อง return `HttpResponse` (หรือ `render`/`redirect`/`JsonResponse`) ห้าม return `None` หรือสตริงเปล่า
 - ค้นหา object ด้วย `get_object_or_404()` แทน `try/except DoesNotExist`
 - อ่าน query string ด้วย `request.GET.get('key', default)` ไม่ใช้ `request.GET['key']` (จะเกิด 500 เมื่อไม่มีคีย์)
-- หน้าที่ต้องล็อกอินใช้ `@login_required` / `LoginRequiredMixin` (ตั้ง `LOGIN_URL`, `LOGIN_REDIRECT_URL`, `LOGOUT_REDIRECT_URL` ใน settings)
+- ทุก view ต้องล็อกอินโดยอัตโนมัติผ่าน `LoginRequiredMiddleware` (ตั้ง `LOGIN_URL`, `LOGIN_REDIRECT_URL`, `LOGOUT_REDIRECT_URL` ใน settings) หน้าที่เปิดให้ Guest ต้องติด `@login_not_required` และมีเทสต์ยืนยัน
 - **ตรวจสิทธิ์และความเป็นเจ้าของข้อมูลฝั่ง server (กัน IDOR):** ผู้ใช้ A ต้องแก้ URL เป็นของ B แล้วทำอะไรไม่ได้ กฎสิทธิ์ทางธุรกิจ (เช่น อัปโหลดได้เฉพาะภาคตัวเอง) เขียนใน service แล้ว `raise PermissionDenied`
   ```python
-  @login_required
   @require_POST
   def document_delete(request, pk):
       document = get_object_or_404(Document, pk=pk)
@@ -677,7 +745,6 @@ urlpatterns = [
 - **ไม่อ่าน `request.POST` ดิบๆ** ให้ใช้ `forms.Form` หรือ `forms.ModelForm` เสมอ (ได้ validation, type coercion, error message และกัน XSS ในตัว)
 - รูปแบบมาตรฐานของ view ที่รับฟอร์ม + **Post/Redirect/Get** (สำเร็จแล้ว `redirect()` เสมอ กัน refresh แล้วส่งซ้ำ) และส่งข้อมูลที่ผ่าน validation ให้ service:
   ```python
-  @login_required
   def document_create(request):
       form = DocumentUploadForm(request.POST or None, request.FILES or None)
       if request.method == "POST" and form.is_valid():
@@ -712,7 +779,7 @@ urlpatterns = [
 | SQL Injection | ใช้ Django ORM เสมอ ห้ามต่อสตริงสร้าง SQL เอง |
 | XSS | Auto-escaping ของ DTL, ไม่ใช้ `\|safe` กับ user input |
 | CSRF | `{% csrf_token %}` ทุกฟอร์ม POST |
-| Broken Access Control / IDOR | `@login_required` + ตรวจสิทธิ์/ความเป็นเจ้าของใน service |
+| Broken Access Control / IDOR | `LoginRequiredMiddleware` + ตรวจสิทธิ์/ความเป็นเจ้าของใน service |
 | เข้าถึงไฟล์โดยตรง | ไฟล์ PDF ส่งผ่าน view ที่ตรวจสิทธิ์ทุกครั้ง ไม่เปิด Direct URL |
 | Secret รั่ว | เก็บใน `.env` ไม่ commit |
 
@@ -723,20 +790,170 @@ urlpatterns = [
 ## Testing และการใช้ AI ช่วยเขียนโค้ด
 
 ### Testing
+รายละเอียดและเหตุผลอยู่ใน [lecture-notes 06](./_docs/lecture-notes/06-django-automated-testing.md) ส่วนนี้คือข้อตกลงของทีม
+
+ทำไมต้องเขียน: การกดทดสอบเองทีละหน้าช้าลงเรื่อยๆ ตามจำนวนฟีเจอร์ และจับ regression (แก้จุดหนึ่งไปพังอีกจุด) ไม่ได้ บั๊กที่เจอตอนเขียนโค้ดแก้ถูกที่สุด (1×) ถ้าหลุดไปถึง CI แพงขึ้น 5–10× ถึง QA 15–25× ถึง production 50–100× (Boehm) ชุดเทสต์อัตโนมัติจึงเป็นตาข่ายที่ทำให้กล้า refactor และกล้า merge
+
+#### รันเทสต์
 ```bash
-python manage.py test                 # รันทั้งหมด
-python manage.py test materials       # รันเฉพาะ app
+python manage.py test                                    # รันทั้งหมด
+python manage.py test catalog                            # เฉพาะ app
+python manage.py test catalog.tests.test_views.BatchTests           # เฉพาะ class
+python manage.py test catalog.tests.test_views.BatchTests.test_xxx  # เฉพาะ method
+python manage.py test --keepdb -v 2                      # ใช้ test DB เดิม (เร็วขึ้น) และแสดงชื่อทุกเทสต์
+python manage.py test --failfast                         # หยุดทันทีที่เจอเทสต์แรกที่ล้ม
 ```
-- ทุก story ต้องมี automated test (เป็นส่วนหนึ่งของ DoD) และต้องผ่าน **100%** ก่อนเปิด PR
-- **เทสต์ service และ selector โดยตรง** (ไม่ต้องผ่าน HTTP client) สำหรับกฎธุรกิจและกฎสิทธิ์ แล้วเสริมด้วยเทสต์ view สำหรับ flow หลัก
-- ควรเทสต์อย่างน้อย: validation ของ Form, view ที่ต้องล็อกอิน (ไม่ล็อกอินต้อง redirect), สิทธิ์ของเจ้าของข้อมูล, กฎใน service และจำนวน query ของหน้าที่แสดงรายการ (`assertNumQueries`)
-- เป้าหมาย Sprint 2: **coverage > 80%**
-  ```bash
-  pip install coverage
-  coverage run manage.py test && coverage report
-  ```
-- แนวทาง TDD: เขียนเทสต์ก่อน แล้วค่อยเขียนฟังก์ชันจริง (ไม่บังคับ แต่แนะนำ)
+ระหว่างพัฒนาใช้ `--keepdb -v 2` กับ class/method ที่กำลังทำ ก่อนเปิด PR รันทั้งหมดอีกรอบ (ไม่ใส่ `--keepdb` ถ้าเพิ่งแก้ migration)
+
+เบื้องหลัง `manage.py test`: Django สร้างฐานข้อมูลชั่วคราว (`test_<ชื่อ DB>`) จาก migrations ไม่แตะ `db.sqlite3` ของเรา ครอบแต่ละ test method ด้วย transaction แล้ว **rollback** เมื่อจบ และลบ test DB ทิ้งตอนรันเสร็จ ทุกเทสต์จึงเริ่มจาก DB สะอาด (`--keepdb` แค่เก็บ test DB ไว้ใช้รอบหน้า ข้อมูลในเทสต์ยังถูก rollback เหมือนเดิม)
+
+#### กฎหลัก
+- ทุก story ต้องมี automated test (เป็นส่วนหนึ่งของ DoD) และต้องผ่าน **100%** ก่อนเปิด PR (**No Tests, No Merge**)
+- **TDD (Red-Green-Refactor):** เขียนเทสต์ตาม AC ให้ล้มก่อน (Red) → เขียนโค้ดเท่าที่ทำให้ผ่าน (Green) → จัดโครงสร้าง/ดึงเข้า service โดยเทสต์ยังผ่าน (Refactor) แนะนำให้ทำ และบั๊กทุกตัวต้องมีเทสต์ที่ล้มก่อนแก้
+- **สัดส่วนตาม Testing Pyramid:** เทสต์ service/selector/model/form เป็นฐานหลัก (เร็ว ชี้จุดพังแม่น) เสริมด้วยเทสต์ view ผ่าน `self.client` สำหรับ flow หลัก ยังไม่ใช้ E2E บนเบราว์เซอร์
+- **Arrange-Act-Assert:** แต่ละเทสต์มี 3 ช่วงชัดเจน และ **Act ครั้งเดียว** ต่อเทสต์ ชื่อเทสต์บอกพฤติกรรม เช่น `test_student_cannot_upload_to_other_department`
+- **ค่าที่คาดหวังเป็นค่าคงที่ที่รู้คำตอบ** (`self.assertEqual(total, 15)`) ไม่คำนวณซ้ำแบบเดียวกับโค้ด
+- **เทสต์ต้องเป็นอิสระต่อกัน** รันสลับลำดับแล้วต้องผ่านเท่าเดิม (ไม่พึ่งข้อมูลที่เทสต์อื่นสร้าง)
 - commit เทสต์ด้วย type `test:`
+
+ตัวอย่าง AAA จาก [materials/tests/test_services.py](./materials/tests/test_services.py)
+```python
+def test_docx_file_is_rejected(self):
+    # Arrange: ไฟล์ .docx ที่ไม่ใช่ PDF
+    docx = pdf_file(b"PK\x03\x04 fake docx", name="sheet.docx", content_type="...")
+
+    # Act: เรียก service ครั้งเดียว (ต้องล้ม)
+    with self.assertRaises(ValidationError) as ctx:
+        self.upload(file=docx)
+
+    # Assert: ข้อความผิดอยู่ที่ฟิลด์ file และไม่มีข้อมูลค้างใน DB
+    self.assertEqual(ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"])
+    self.assertFalse(Document.objects.exists())
+```
+
+#### โครงสร้างไฟล์
+เริ่มจาก `tests.py` ไฟล์เดียวต่อ app เมื่อยาวเกิน ~300 บรรทัดให้แตกเป็นโฟลเดอร์ตามชั้นของโค้ด (Django หาไฟล์ `test_*.py` ให้เอง)
+```
+<app>/tests/
+├── __init__.py
+├── test_models.py      # method ของ model, clean()/save()
+├── test_forms.py
+├── test_services.py    # กฎธุรกิจ, สิทธิ์, rollback
+├── test_selectors.py   # ผลของ query + assertNumQueries
+└── test_views.py       # self.client: สิทธิ์, status, template, redirect
+```
+
+#### เลือกคลาสและ fixture
+| ใช้ | เมื่อ | ความเร็วโดยประมาณ |
+|---|---|---|
+| `SimpleTestCase` | ไม่แตะฐานข้อมูลเลย (form ที่ไม่มี `ModelChoiceField`, ฟังก์ชันคำนวณ) ถ้าเผลอ query จะ error | เร็วที่สุด (< 5 ms) |
+| `TestCase` | ค่าเริ่มต้นของโปรเจค (model, service, selector, view) แต่ละเทสต์ถูกครอบ transaction แล้ว rollback | ~50 ms |
+| `TransactionTestCase` | เฉพาะเทสต์ที่ต้องเห็น commit จริง เช่น `transaction.on_commit()` (หรือใช้ `self.captureOnCommitCallbacks()` ใน `TestCase` แทนได้) | ช้า (~500 ms) |
+| `LiveServerTestCase` | เปิด HTTP server จริงให้เบราว์เซอร์ (Playwright/Selenium) ทีมยังไม่ใช้ | ช้ามาก (> 2 s) |
+
+- ข้อมูลอ้างอิงที่ไม่ถูกแก้ (ภาค, รุ่น, role, ผู้ใช้) สร้างใน **`setUpTestData(cls)`** ครั้งเดียวต่อ class ข้อมูลที่เทสต์จะแก้ค่าค่อยสร้างใน `setUp(self)`
+- ผู้ใช้สร้างด้วย `User.objects.create_user(...)` ตาม[ข้อตกลง](#ข้อตกลงที่ห้ามฝ่าฝืน) และล็อกอินในเทสต์ด้วย `self.client.force_login(user)` (ไม่ต้องผ่านการ hash รหัสผ่าน)
+
+#### เทสต์แต่ละชั้น
+- **Model:** เทสต์พฤติกรรมและกฎของเรา (`__str__`, method, `clean()`/`save()`) ไม่เทสต์สิ่งที่ Django รับประกันอยู่แล้ว **`create()`/`save()` ไม่เรียก `clean()` ให้** กฎที่อยู่ใน `clean()` ต้องเรียก `instance.full_clean()` เองใน `assertRaises(ValidationError)` แล้วเช็กชื่อฟิลด์ใน `ctx.exception.message_dict` (ดูตาราง[กฎถูกบังคับที่ชั้นไหน](#กฎถูกบังคับที่ชั้นไหน))
+- **Form:** happy path (`is_valid()` เป็น `True`), ฟิลด์บังคับที่ขาดต้องอยู่ใน `form.errors`, ข้อความของ custom validation
+- **Service:** เรียกฟังก์ชันตรงๆ ไม่ผ่าน HTTP ตรวจสถานะข้อมูลหลังเรียก, exception ที่คาดหวัง (`ValidationError` / `PermissionDenied`) และ**ข้อมูลต้องไม่ค้าง**เมื่อล้มกลางทาง (`@transaction.atomic` rollback)
+- **Selector:** ผลลัพธ์ถูกต้อง และจำนวน query คงที่ด้วย `self.assertNumQueries(n)` (กัน N+1 กลับมา)
+- **View:** สร้าง URL ด้วย `reverse()` เสมอ แล้วตรวจ
+  - ไม่ล็อกอิน → redirect ไปหน้า login, ผู้ใช้ที่ไม่มีสิทธิ์ / ของคนอื่น → 403 หรือ 404 (IDOR)
+  - ผู้มีสิทธิ์ → 200 + `assertTemplateUsed` + ข้อมูลใน `response.context` (หน้า 200 ที่ว่างเปล่าก็คือบั๊ก)
+  - POST สำเร็จ → `assertRedirects` (Post/Redirect/Get) **และ**ตรวจว่าข้อมูลถูกสร้าง/แก้ในฐานข้อมูลจริง
+
+#### Assertion ที่ใช้บ่อย
+| Assertion | ใช้ตรวจ |
+|---|---|
+| `assertEqual(a, b)` | ค่าที่ได้, status code |
+| `assertTrue(x)` / `assertFalse(x)` | ค่า bool เช่น `form.is_valid()`, `Model.objects.filter(...).exists()` |
+| `assertIn(x, container)` | ชื่อฟิลด์ใน `form.errors`, key ใน `response.context` |
+| `assertRaises(Exc)` | exception ที่คาดหวัง เช่น `ValidationError`, `PermissionDenied` (ใช้ `as ctx` แล้วตรวจ `ctx.exception`) |
+| `assertRedirects(res, url)` | Post/Redirect/Get หลังส่งฟอร์ม และ redirect ไปหน้า login |
+| `assertTemplateUsed(res, name)` | view เรนเดอร์ template ที่ถูกไฟล์ |
+| `assertContains(res, text)` / `assertNotContains` | ข้อความในหน้า HTML (ตรวจ status 200 ให้ด้วย) เช่น ข้อมูลของคนอื่นต้องไม่โผล่ |
+| `assertNumQueries(n)` | จำนวน SQL คงที่ กัน N+1 |
+
+#### Mock
+- **Mock เฉพาะระบบภายนอกที่เราคุมไม่ได้:** อีเมล, API ภายนอก, เวลา/ค่าสุ่ม ห้าม mock service/selector/model ของเราเอง (เทสต์จะผ่านโดยไม่ได้ทดสอบอะไร)
+- อีเมลของ Django ไม่ต้อง mock: test runner เปลี่ยนเป็น locmem backend ให้แล้ว ตรวจผ่าน `django.core.mail.outbox`
+- `@patch` **ตรงที่ถูก import ไปใช้ ไม่ใช่ที่ประกาศไว้** เช่น service ใน `materials/services.py` ที่ `from x import client` ต้อง patch `"materials.services.client"`
+- ตั้ง `return_value` สำหรับ happy path, ใช้ `side_effect = SomeError(...)` จำลองระบบภายนอกล่ม แล้ว assert ว่า rollback ครบ ตรวจ argument ด้วย `assert_called_once_with(...)`
+
+ตัวอย่างจาก [materials/tests/test_views.py](./materials/tests/test_views.py) จำลอง storage ปฏิเสธไฟล์ แล้วตรวจว่าผู้ใช้เห็นข้อความ (ไม่ใช่หน้า 500) และไม่มี `Document` ค้าง
+```python
+from unittest import mock
+
+def test_error_without_field_names_is_shown_not_500(self):
+    error = ValidationError("Storage rejected the file.")
+    with mock.patch("materials.services.default_storage.save", side_effect=error):
+        response = self.post()
+
+    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.context["form"].non_field_errors(), ["Storage rejected the file."])
+    self.assertFalse(Document.objects.exists())
+```
+
+#### Coverage
+เป้าหมายตั้งแต่ Sprint 2: **ไม่ต่ำกว่า 80%** และเปิด branch coverage
+```bash
+pip install -r requirements.txt     # มี coverage อยู่แล้ว
+coverage run manage.py test
+coverage report -m --fail-under=80   # -m แสดงบรรทัดที่ยังไม่ถูกเทสต์, ต่ำกว่า 80% จะคืน exit code ล้มเหลว
+coverage html                        # รายงานรายบรรทัดที่ htmlcov/index.html (Windows: start htmlcov/index.html)
+```
+CI ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) รันคำสั่งชุดเดียวกันบน Python 3.12 โดยรัน `python manage.py check` และ `python manage.py makemigrations --check --dry-run` (ตกถ้าแก้ Model แล้วยังไม่สร้าง migration) ก่อน ถ้ารันสี่คำสั่งนี้ผ่านบนเครื่อง CI ก็ควรผ่าน รายงาน coverage อยู่ใน Summary ของ run และโหลด `htmlcov/` ได้จาก Artifacts `coverage-html`
+`.coveragerc` กำหนด `source` และ `branch` ไว้แล้ว ไม่ต้องใส่ `--source='.'` เอง และ `coverage run manage.py test --keepdb` ก็ใช้ได้ ผลที่แนบใน PR ให้รันเทสต์**ครบทุก app** (ถ้ารันเฉพาะ app เดียว ไฟล์ของ app อื่นจะนับเป็นไม่ถูกเทสต์และตัวเลขต่ำผิดจริง)
+
+อ่านผล `coverage report -m`
+```
+Name                Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------------------
+catalog\views.py      109      4     24      2    95%   26-28, 39->45, 58
+```
+- `Stmts`/`Miss` จำนวนบรรทัดคำสั่งทั้งหมด / ที่ไม่ถูกรัน, `Branch`/`BrPart` จำนวนทางแยกทั้งหมด / ที่รันไม่ครบทุกทาง
+- `Missing`: `26-28` คือบรรทัดที่ไม่ถูกรัน, `39->45` คือกิ่งจากบรรทัด 39 ไป 45 ไม่เคยเกิด (เช่น `if` ที่เป็นจริงทุกครั้ง ไม่เคยข้ามไป), `->exit` คือไม่เคยออกจากฟังก์ชันทางนั้น
+- ถ้าต่ำกว่า 80% หรือไฟล์ที่เราแก้มีบรรทัดใน `Missing` ให้เปิด `htmlcov/index.html` ดูบรรทัดสีแดง/เหลือง แล้วเพิ่มเทสต์ให้กิ่งนั้น อย่าแก้ `omit` เพื่อซ่อนโค้ด
+
+ตั้งค่าใน `.coveragerc` ที่ root (`.coverage` และ `htmlcov/` อยู่ใน `.gitignore` แล้ว)
+```ini
+[run]
+branch = True
+source = .
+omit =
+    */migrations/*
+    */tests/*
+    */tests.py
+    manage.py
+    portal/asgi.py
+    portal/wsgi.py
+    .venv/*
+```
+- **Branch coverage** นับว่าทุกทางแยกของ `if`/`else` ถูกรัน ไม่ใช่แค่บรรทัด (line coverage 100% ยังพลาดกิ่ง `else` ได้)
+- **Coverage สูง ≠ ไม่มีบั๊ก** ใช้ตัวเลขหาโค้ดที่ยังไม่มีเทสต์ แต่คุณภาพอยู่ที่ assertion และค่าขอบ (boundary) เช่น ขนาดไฟล์ 50 MB พอดี, รุ่น = `legacy_batch_max` พอดี
+- แนบผล `coverage report -m --fail-under=80` ใน PR
+
+### Static Analysis และ CI
+ตาม [lecture 07](./_docs/lecture-notes/07-ci-cd-and-static-analysis.md) static analysis ตรวจโค้ดโดยไม่ต้องรัน (style, import ที่ไม่ใช้, ช่องโหว่) ส่วนเทสต์ตรวจพฤติกรรม ต้องผ่านทั้งสองด่าน **เริ่มบังคับตั้งแต่ Sprint 3** (TD-8) จากนั้นรันบนเครื่องตัวเองให้ผ่านก่อน push ทุกครั้ง
+```bash
+pip install black flake8 bandit
+black .                                        # จัดรูปแบบโค้ดให้ (ใน CI ใช้ black --check --diff .)
+flake8 .                                       # PEP 8, import/ตัวแปรที่ไม่ใช้ (F401, F841), บรรทัดยาว (E501)
+bandit -r . -x "*/tests/*,*/migrations/*"      # hardcoded secret (B105), random กับ token (B311), eval/exec
+```
+ตั้งค่าใน `.flake8` ที่ root (เพิ่มพร้อม PR ของ TD-8)
+```ini
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503
+exclude = .git, __pycache__, */migrations/*, venv, .venv
+```
+- commit ที่จัด format อย่างเดียวใช้ type `style:` แยกจาก commit ที่แก้ logic
+- **ห้ามใช้ `# nosec`** ซ่อนสิ่งที่ Bandit เจอ ให้แก้ที่ต้นเหตุ: อ่าน secret จาก environment (`os.environ`), สร้าง token ด้วยโมดูล `secrets` ไม่ใช่ `random`
+- **CI (GitHub Actions)** อยู่ที่ `.github/workflows/ci.yml` รันทุก PR เข้า `develop`/`main` และทุก push เข้า `develop`: TD-1 รัน `manage.py check` + `makemigrations --check` + เทสต์ + coverage และ Sprint 3 เพิ่มด่าน static analysis (TD-8) เรียงตามด่าน `black --check` → `flake8` → `bandit` → `manage.py check` → `makemigrations --check --dry-run` → `coverage run manage.py test` + `coverage report -m --fail-under=80` ด่านไหนตก PR เป็นสีแดง ใช้ `actions/setup-python` กับ `cache: "pip"` เพื่อไม่ต้องดาวน์โหลด dependency ใหม่ทุกรอบ
+- **Secret ใน CI** เก็บใน Settings → Secrets and variables → Actions แล้วอ้างด้วย `${{ secrets.NAME }}` ห้ามใส่ค่าจริงใน `ci.yml` หรือไฟล์ใดใน repo
 
 ### การใช้ AI (Copilot, Cursor ฯลฯ)
 AI เขียนโค้ดเร็วขึ้นมาก แต่ **คอขวดย้ายไปที่การตรวจสอบ** AI อาจสร้างข้อมูลมั่ว (hallucination) และช่องโหว่ความปลอดภัยโดยไม่รู้ตัว กฎของทีม:
@@ -752,7 +969,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
    - ทุก Model ต้องมี __str__ และ class Meta, ห้าม side-effect ภายนอกใน save()
    - ห้าม raw SQL, ห้าม fields='__all__', ห้าม |safe กับ user input
    - ใช้ get_object_or_404, reverse()/{% url 'ns:name' %}, ไม่ hardcode URL
-   - ทุกฟอร์ม POST ต้องมี {% csrf_token %}; view ที่ต้องล็อกอินใช้ @login_required
+   - ทุกฟอร์ม POST ต้องมี {% csrf_token %}; view ที่เปิดให้ Guest ต้องติด @login_not_required
    - เขียน unit test ประกอบทุกฟีเจอร์ commit ตาม Conventional Commits
    ```
 
@@ -762,7 +979,9 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 
 - [ ] Pull โค้ดล่าสุดจาก `develop` และ merge/rebase เข้า branch ตัวเองแล้ว
 - [ ] รันโค้ดแล้วไม่มี error
-- [ ] เขียน automated test ประกอบ และรันผ่านทั้งหมด
+- [ ] เขียน automated test ประกอบ และรันผ่านทั้งหมด (`python manage.py test` แบบไม่ใส่ `--keepdb`)
+- [ ] ตั้งแต่ Sprint 2: `coverage report -m --fail-under=80` ผ่าน และแนบผลใน PR
+- [ ] ตั้งแต่ Sprint 3: `black --check .`, `flake8 .` และ `bandit -r . -x "*/tests/*,*/migrations/*"` ผ่านบนเครื่องตัวเอง
 - [ ] ผ่าน Acceptance Criteria ครบทุกข้อของ issue
 - [ ] logic อยู่ถูกชั้น (view บาง / `services.py` / `selectors.py`) ไม่มี N+1 และไม่ import ย้อนทิศ
 - [ ] ไม่มีไฟล์ `.env`, `db.sqlite3`, หรือไฟล์ credential หลุดไปใน commit (เช็ค `git diff --staged`)
@@ -770,7 +989,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 - [ ] ถ้าแก้ Model: มี migration ที่ commit แล้ว ไม่ได้ลบ/แก้ migration เก่า และอัปเดต `_docs/database-design.md`
 - [ ] อัปเดต `requirements.txt` ถ้าติดตั้ง package ใหม่
 - [ ] โค้ดตาม PEP 8 มี docstring และลบ debug code / print ที่ไม่จำเป็นออก
-- [ ] ทุกฟอร์ม POST มี `{% csrf_token %}` และหน้าที่ต้องล็อกอินมี `@login_required`
+- [ ] ทุกฟอร์ม POST มี `{% csrf_token %}` และหน้าที่เปิดให้ Guest ต้องติด `@login_not_required`
 - [ ] PR มี `Closes #<เลข issue>` และย้ายการ์ดเป็น **In Review**
 
 ---
@@ -803,7 +1022,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 |---|---|
 | **DB** (UNIQUE / CHECK / PROTECT) | รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, เวอร์ชันซ้ำของเอกสาร, `storage_path` ซ้ำ · `size_bytes` ต้อง > 0 และ ≤ 50 MB, `status`/`vault`/`scan_status` นอกค่าที่กำหนด, `batch.number` < 1, `exam_year_be` นอก 2500–2700 · ลบ Department/Batch/Course ที่ยังถูกอ้างอยู่ไม่ได้ |
 | **Model** (`save()` เช็กให้เอง) | `UserRole`: moderator ต้องมี `department` / role อื่นห้ามมี และห้ามซ้ำ · `ExamDetail`: ผูกได้เฉพาะเอกสารที่ `vault = exam` · `DocumentVersion`: ขนาดไฟล์ไม่เกิน `max_upload_mb`, `storage_path`/`sha256` ต้องปลอดภัย และล้าง `original_name` |
-| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน |
+| **Model** (ต้องเรียก `full_clean()` หรือผ่าน ModelForm) | `User`: อีเมลต้องเป็น `@student.tu.ac.th` และดึง `student_id` จากหน้า @ (`create_user()` เช็กให้ด้วย), รูปแบบ `student_id`, ชื่อเล่นห้ามเป็นคำสงวน · `Department.code` รับแค่ A-Z 2-5 ตัว, `Course.code` ต้องเป็น A-Z ตามด้วยเลข 1-3 หลัก เช่น CN201 (อยู่ใน path ไฟล์) |
 | **Service** (ต้องเขียนใน `services.py`) | ผู้ใช้อัปโหลดได้เฉพาะภาควิชาของตัวเอง (US-5), รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น, Super Admin ต้องมีอย่างน้อย 2 คน, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้ (US-6) |
 
 ### `SystemSetting` (ค่ากำหนดปรับได้โดยไม่ deploy ใหม่)
@@ -817,7 +1036,7 @@ from catalog.models import SystemSetting
 
 legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่า default ถ้ายังไม่มีแถวนี้
 ```
-ข้อควรระวัง: `DocumentVersion` มี CHECK ขนาดไฟล์ 50 MB แบบ**ตายตัว** (`MAX_UPLOAD_BYTES` ใน `materials/models.py`) การแก้ `max_upload_mb` ใน DB ไม่เปลี่ยน CHECK นี้ แต่ `DocumentVersion.save()` เช็กกับ `max_upload_mb` ให้อยู่แล้ว จึงลดเพดานได้ทันทีโดยไม่ต้องแก้โค้ด ถ้าจะเพิ่มเกิน 50 MB ต้องแก้ค่าคงที่และสร้าง migration
+ข้อควรระวัง: `DocumentVersion` มี CHECK ขนาดไฟล์ 50 MB แบบ**ตายตัว** (`MAX_UPLOAD_MB` ใน `materials/models.py`) การแก้ `max_upload_mb` ใน DB ไม่เปลี่ยน CHECK นี้ แต่ `DocumentVersion.save()` เช็กกับ `max_upload_mb` ให้อยู่แล้ว จึงลดเพดานได้ทันทีโดยไม่ต้องแก้โค้ด ถ้าจะเพิ่มเกิน 50 MB ต้องแก้ค่าคงที่และสร้าง migration
 
 ### ข้อมูลตั้งต้น (seed) ที่ระบบต้องมี
 | ตาราง | ข้อมูล |
@@ -828,11 +1047,185 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 | `ExamPeriod` | `midterm`, `final` |
 | `SystemSetting` | `legacy_batch_max`, `max_upload_mb` ตามตารางด้านบน |
 
-ตอนนี้ยังไม่มี script seed อัตโนมัติ และ `admin.py` ยังไม่ได้ register model จึงต้องใส่ผ่าน `manage.py shell` ไปก่อน (seed ภาควิชาเป็นงานของ US-3, seed รุ่น/วิชาเป็นงานของ US-4) การทำเป็น management command อยู่ใน Product Backlog แล้ว (TD-2, TD-3 ใน [`_docs/requirements.md`](./_docs/requirements.md))
+รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) กฎอนุมัติ (US-9) `seed_materials` seed ให้ด้วย ส่วน `doc_type` ที่เพิ่มทีหลังรัน `python manage.py seed_approval_rules` หรือตั้งกฎที่หน้า DocType ใน Django admin (ข้อสอบต้องทั้ง moderator และ super_admin ชีทใช้คนใดคนหนึ่ง รันซ้ำได้ ถ้าไม่ seed จะไม่มีใครอนุมัติได้ ส่วน `doc_type` ที่มีอยู่แล้วตอน `migrate` ได้กฎจาก migration `0005` อัตโนมัติ ดู [ADR 0004](_docs/adr/0004-approval-tables-in-materials.md)) ส่วนตารางอื่นยังไม่มี script seed ให้ใส่ผ่าน Django admin (`/admin/`, TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36)) ไปก่อน ยกเว้น User ที่ต้องสร้างด้วย `create_user()` / `createsuperuser` ตาราง `role` ถูก seed อัตโนมัติด้วย data migration `accounts` 0004_seed_roles ตอน `migrate` (`seed_roles` ยังใช้ผูก super_admin ให้ superuser) และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5
 
 ### Migration ที่มีอยู่
-- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0003, `catalog` 0002, `materials` 0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
+- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
   ```
 - ถ้าเครื่องคุณเคย `migrate` ก่อนมี `AUTH_USER_MODEL` จะเจอ `InconsistentMigrationHistory` กรณีนี้เท่านั้นที่ให้ลบ `db.sqlite3` (ไฟล์ในเครื่องคุณ ไม่อยู่ใน Git) แล้ว `migrate` ใหม่ได้ (ต้อง seed ใหม่ด้วย) ส่วนโฟลเดอร์ `migrations/` **ยังห้ามลบ** ตามกฎด้านบน
+
+
+---
+
+## Developer Setup
+
+เนื้อหาย้ายจาก README ตาม lecture สัปดาห์ที่ 13 (README เหลือ Overview / Live Demo / Architecture / Local Setup สั้นๆ / Test & Coverage)
+
+### Tech Stack
+- Python 3.12+
+- Django 6.1 (ตาม `requirements.txt`, สถาปัตยกรรม MVT, ใช้ Function-Based Views เป็นหลัก) — models ใช้ `CheckConstraint(condition=...)` จึงต้องเป็น Django 5.1 ขึ้นไป
+- Bootstrap 5 (ผ่าน CDN) สำหรับ UI
+- SQLite (ตอนพัฒนา) และ PostgreSQL (production): Django ORM ทำให้สลับได้โดยไม่ต้องแก้โค้ด Model
+- Git + GitHub (Pull Request, Projects, Actions)
+- Automated Tests ด้วย Django `TestCase` และ Coverage.py (เป้าหมาย ≥ 80% ตั้งแต่ Sprint 2)
+- CI/CD ด้วย GitHub Actions และ Static Analysis ใน Sprint 3: Black, Flake8, Bandit
+- Deploy ตาม lecture: Gunicorn + WhiteNoise + Managed PostgreSQL (เช่น Render) — ดู [`_docs/deployment-prep-checklist.md`](./_docs/deployment-prep-checklist.md)
+
+### Setup ก่อนเริ่มพัฒนา (First Time Setup)
+
+#### 0. เครื่องมือที่ต้องมี
+- Python 3.12+ (ติ๊ก **Add to PATH** ตอนติดตั้ง)
+- Git และบัญชี GitHub
+- VS Code พร้อมส่วนเสริม **Python** และ **Git Graph**
+
+ตั้งค่าตัวตนของ Git ครั้งแรก (ข้อมูลนี้ติดไปกับทุก commit):
+```bash
+git config --global user.name "ชื่อของคุณ"
+git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
+git config --list
+```
+
+#### 1. Clone โปรเจค
+```bash
+git clone https://github.com/Jupiter4428/cntagram.git
+cd cntagram
+```
+
+**Repo นี้ default branch คือ `develop`** หลัง clone จะอยู่ที่ `develop` อยู่แล้ว ให้ pull ล่าสุดก่อนเริ่มงานทุกครั้ง (ห้ามทำงานหรือแตก branch จาก `main`):
+```bash
+git switch develop
+git pull origin develop
+```
+
+#### 2. สร้างและเปิดใช้งาน Virtual Environment
+```bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS/Linux
+source .venv/bin/activate
+```
+
+#### 3. ติดตั้ง dependencies
+```bash
+pip install -r requirements.txt
+```
+
+#### 4. ไฟล์ `.env` (ยังไม่ได้ใช้)
+ตอนนี้ `portal/settings.py` ยังตั้ง `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` ไว้ในไฟล์ตรงๆ สำหรับเครื่อง dev และยังไม่มี `.env.example` จึง**ข้ามขั้นนี้ไปได้** (`python-decouple` อยู่ใน `requirements.txt` แล้ว แต่ยังไม่ได้เชื่อมกับ settings)
+
+เมื่อเปลี่ยนไปอ่านค่าจาก `.env` แล้ว ค่าที่ต้องตั้งคือ:
+```
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+**ห้าม commit ไฟล์ `.env` ขึ้น git เด็ดขาด** (มีอยู่ใน `.gitignore` แล้ว)
+
+#### 5. Migrate ฐานข้อมูล
+```bash
+python manage.py migrate
+```
+
+> ⚠️ **Custom User Model:** โปรเจคใช้ `accounts.User` และตั้ง `AUTH_USER_MODEL = 'accounts.User'` ไว้แล้ว **ห้ามแก้หรือลบบรรทัดนี้** การเปลี่ยนย้อนหลังทำให้ฐานข้อมูลพัง (`InconsistentMigrationHistory`) ดูรายละเอียดที่ [Database และ Models](#database-และ-models)
+
+#### 6. สร้าง superuser (สำหรับเข้า admin panel)
+User ผูกกับภาควิชา (`department` ห้ามว่าง) จึงต้องมี Department อย่างน้อย 1 แถวก่อน
+
+> ตอนนี้ `admin.py` ของทุก app ยังไม่ได้ register model จึงยังไม่เห็นตารางของโปรเจคในหน้า admin
+```bash
+python manage.py seed_catalog
+python manage.py createsuperuser
+python manage.py seed_materials
+```
+ระบบ login ด้วย **อีเมล** (ไม่มี username) ตอน `createsuperuser` จะถามตามลำดับ: Email, Nickname, Department code (เช่น `CN`), Password
+
+ระบบไม่ถามรหัสนักศึกษา ถ้าใช้อีเมล `@student.tu.ac.th` จะดึงรหัสจากหน้า @ ให้เอง ถ้าใช้อีเมลอื่นระบบจะตั้งรหัสสำรองให้
+
+#### 7. รันเซิร์ฟเวอร์
+```bash
+python manage.py runserver
+```
+เข้าใช้งานที่ `http://127.0.0.1:8000/` (หน้า admin ที่ `/admin/`)
+
+#### 8. รันเทสต์
+```bash
+python manage.py test
+```
+Django สร้างฐานข้อมูลทดสอบแยกให้เอง ไม่แตะ `db.sqlite3` คำสั่ง coverage และวิธีเขียนเทสต์ดูที่ [Testing](#testing-และการใช้-ai-ช่วยเขียนโค้ด)
+
+### ทุกครั้งที่ pull โค้ดใหม่ (Sync ก่อนเริ่มงาน)
+
+```bash
+git status
+git fetch origin
+git pull origin develop
+pip install -r requirements.txt
+python manage.py migrate
+```
+
+หลังมีคน merge PR เข้า `develop` ทุกคนควรรันชุดนี้ใหม่ทันที เพื่อไม่ให้แก้ไฟล์บนโค้ดเก่าแล้วเกิด conflict ตอนท้าย
+
+### Project Structure
+```
+cntagram/
+├── _docs/           # เอกสารทั้งหมดที่ไม่ใช่โค้ด
+│   ├── requirements.md
+│   ├── known-limitations.md
+│   ├── deployment-prep-checklist.md
+│   ├── database-design.md
+│   ├── adr/
+│   ├── architecture/
+│   ├── lecture-notes/
+│   ├── research/
+│   └── archive/
+├── portal/
+├── accounts/
+├── catalog/
+├── materials/
+├── media/           # MEDIA_ROOT (.gitignore) เปิดผ่าน view ที่ตรวจสิทธิ์เท่านั้น
+├── .github/
+├── manage.py
+├── requirements.txt
+├── CONTRIBUTING.md
+└── README.md
+```
+
+ภายในแต่ละ app ใช้โครงสร้างตาม [ADR 0002](./_docs/adr/0002-service-layer-and-selectors.md):
+```
+<app>/
+├── models.py
+├── forms.py
+├── services.py
+├── selectors.py
+├── views.py
+├── urls.py
+├── admin.py
+├── tests.py  (หรือ tests/...)
+├── migrations/
+└── templates/<app>/
+templates/
+static/
+```
+
+### Branch Strategy
+| Branch | ใช้ทำอะไร | แตกจาก → merge เข้า |
+|---|---|---|
+| `main` | โค้ดที่ผ่าน Sprint Review แล้ว (production) | — |
+| `develop` | โค้ดล่าสุดของทีม (default branch) | — |
+| `feature/issue-<เลข>-<ชื่อ>` | User Story | `develop` → `develop` |
+| `refactor/issue-<เลข>-<ชื่อ>` | Tech Debt / Refactoring | `develop` → `develop` |
+| `bugfix/issue-<เลข>-<ชื่อ>` | แก้บั๊กที่ไม่เร่งด่วน | `develop` → `develop` |
+| `spike/issue-<เลข>-<ชื่อ>` | งานสำรวจ/ออกแบบ | `develop` → `develop` |
+| `docs/issue-<เลข>-<ชื่อ>` | แก้เอกสารอย่างเดียว | `develop` → `develop` |
+| `hotfix/<ชื่อ>` | แก้บั๊กด่วนบน production | `main` → `main` และ `develop` |
+
+- ทุก branch ตั้งชื่อตาม **เลข issue** และเปิด PR ที่มี `Closes #<เลข>`
+- จบ Sprint: หลัง Sprint Review เปิด PR `develop` → `main`
+- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch, ใช้กับ admin ด้วย และเมื่อมี CI แล้วให้เปิด **Require status checks to pass**

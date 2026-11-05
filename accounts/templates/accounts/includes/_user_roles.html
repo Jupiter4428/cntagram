@@ -1,0 +1,5 @@
+{% for user_role in user.user_roles.all %}
+    <span class="admin-badge{% if user_role.role.code == 'super_admin' %} admin-badge--red{% elif user_role.role.code == 'moderator' %} admin-badge--violet{% endif %}">{{ user_role.role.name_th }}</span>
+{% empty %}
+    <span class="admin-badge">ไม่มี</span>
+{% endfor %}

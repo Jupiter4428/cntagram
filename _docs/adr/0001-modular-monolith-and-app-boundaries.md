@@ -20,6 +20,9 @@
   - `accounts` พึ่ง `catalog` ได้
   - `materials` พึ่งได้ทั้งสอง
 - FK ข้าม app อ้างด้วย string (`"catalog.BatchCourse"`) และอ้างผู้ใช้ด้วย `settings.AUTH_USER_MODEL`
+- **ข้อยกเว้นสำหรับการอ่านข้อมูล (เพิ่ม 2026-10-26, #65):** app ต้นทางใช้ข้อมูลของ app ปลายทางได้ 2 ทาง โดยโค้ด Python ของ app ต้นทางไม่ต้อง import app ปลายทาง
+  - template ของ app ต้นทาง `{% load %}` template tag ของ app ปลายทางได้ (เช่น `accounts/index_admin.html` ใช้ `materials_stats`) tag ต้องเรียก selector และอ่านอย่างเดียว
+  - selector ของ app ต้นทางนับหรือกรองผ่าน reverse relation ได้ (เช่น `Count("documents")` ใน `accounts/selectors.py`)
 - การทำงานที่ต้องประสานหลาย app (เช่น อนุมัติเอกสารแล้วบันทึก Audit Log) เขียนใน `services.py` ของ app ที่อยู่ปลายทาง dependency ไม่ให้ app ต้นทางเรียกย้อนกลับ
 - ตารางของ Sprint 2 (`approval`, `download_log`, `audit_log`, `report`, `doc_type_required_role`) จะอยู่ app ไหน ให้ตกลงใน Sprint 2 Planning แล้วเขียน ADR ใหม่
 
@@ -32,3 +35,4 @@
 - แบ่งงานใน Sprint ตาม app ได้ ลด merge conflict
 - ต้องคอยระวัง circular import ถ้าเกิดขึ้นถือเป็นสัญญาณว่าขอบเขต app ปนกัน ต้อง refactor (ย้าย logic ไป service หรือย้าย model)
 - ข้อมูลอยู่ฐานเดียว จึงใช้ `@transaction.atomic` ข้าม app ได้ตามปกติ
+- query ของ template tag ข้าม app เกิดตอน render จึงไม่อยู่ใน `assertNumQueries` ของ selector ฝั่งต้นทาง ต้องเทสต์ที่ selector ของ app ปลายทางเอง และเปลี่ยนชื่อ `related_name` ฝั่งปลายทางแล้วต้องแก้ selector ของ app ต้นทางตาม

@@ -1,0 +1,25 @@
+{% extends "admin_page.html" %}
+
+{% block title %}{{ title }} | CNTAGRAM{% endblock %}
+
+{% block content %}
+<section class="retro-widget glass-module">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>CATALOG / DEPARTMENTS / {% if dept %}EDIT{% else %}NEW{% endif %}</small><h1 class="admin-title">{{ title }}</h1></span>
+        <span class="tech-index">{% if dept %}{{ dept.code }}{% else %}+{% endif %}</span>
+    </div>
+    <div class="retro-widget__body module-body">
+        <p class="admin-hint mb-3">รหัสภาควิชาเป็นตัวอักษรภาษาอังกฤษ A-Z 2-5 ตัว (เช่น CN) และใช้เป็นส่วนหนึ่งของ path เอกสาร จึงไม่ควรเปลี่ยนหลังมีข้อมูลแล้ว</p>
+
+        <form class="admin-form" method="post">
+            {% csrf_token %}
+            {% include "includes/_admin_form_fields.html" %}
+            <div class="admin-form__buttons">
+                <button class="admin-button admin-button--primary" type="submit">บันทึก</button>
+                <a class="admin-button" href="{% url 'catalog:department_list' %}">ยกเลิก</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

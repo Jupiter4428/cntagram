@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+from django.contrib.messages import constants as message_constants
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -48,6 +50,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -57,13 +60,14 @@ ROOT_URLCONF = 'portal.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'materials.context_processors.approval_permissions',
             ],
         },
     },
@@ -88,9 +92,30 @@ DATABASES = {
 
 AUTH_USER_MODEL = "accounts.User"
 
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "accounts:home"
+LOGOUT_REDIRECT_URL = "accounts:home"
+
+# Login throttling is deliberately cache-backed so authentication does not need
+# another database table. Production deployments with multiple workers should
+# configure a shared cache backend (for example Redis).
+LOGIN_RATE_LIMIT_ATTEMPTS = 5
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300
+
+REGISTER_RATE_LIMIT_ATTEMPTS = 5
+REGISTER_RATE_LIMIT_WINDOW_SECONDS = 300
+
+# แม็ประดับ error ของ messages ไปเป็น class "danger" ของ alert
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'OPTIONS': {
+            'user_attributes': ('email', 'nickname'),
+        },
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
@@ -109,7 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Bangkok'
 
 USE_I18N = True
 
@@ -120,6 +145,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# ไฟล์เอกสารที่อัปโหลด (DocumentVersion.storage_path สัมพัทธ์กับโฟลเดอร์นี้)
+# ตั้งใจไม่มี MEDIA_URL: เปิดไฟล์ได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ไม่มี Direct URL
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ข้ามไฟล์ที่เกิน max_upload_mb ตั้งแต่ตอนรับ ก่อนลง temp file ทั้งก้อน
+# มีผลกับทุกการอัปโหลดในระบบ (รวม admin) ตอนนี้มีแค่ฟอร์มอัปโหลดชีทที่รับไฟล์
+FILE_UPLOAD_HANDLERS = [
+    'materials.uploadhandlers.MaxSizeUploadHandler',
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
 
 
 # Email

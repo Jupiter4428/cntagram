@@ -1,0 +1,23 @@
+<section class="retro-widget auth-help" aria-labelledby="auth-help-title">
+    <div class="retro-widget__header retro-widget__titlebar">
+        <span aria-hidden="true">?</span>
+        <strong id="auth-help-title">Member Help</strong>
+        <small>SAFE LOGIN</small>
+    </div>
+    <div class="retro-widget__body auth-help__body">
+        <p>เชื่อมต่อบัญชีเพื่อเข้าสู่คลังความรู้ของชุมชนวิศวกรรม</p>
+        <ul>
+            <li><span aria-hidden="true">✓</span> Session ปลอดภัยด้วย Django</li>
+            <li><span aria-hidden="true">✓</span> แบบฟอร์มมี CSRF protection</li>
+        </ul>
+        <nav class="auth-help__links" aria-label="ทางลัดบัญชี">
+            {% if request.resolver_match.url_name == "login" %}
+                <a href="{% url 'accounts:register' %}">ยังไม่มีบัญชี? สมัครสมาชิก</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}">มีบัญชีแล้ว? เข้าสู่ระบบ</a>
+            {% endif %}
+            <a href="{% url 'accounts:home' %}">กลับหน้าแรก</a>
+        </nav>
+        <p class="demo-note mb-0">สมาชิกใหม่ใช้เฉพาะอีเมลนักศึกษาตามข้อกำหนดของระบบ</p>
+    </div>
+</section>

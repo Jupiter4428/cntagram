@@ -1,0 +1,5 @@
+{% for message in messages %}
+    <div class="admin-alert admin-alert--{% if message.level_tag == 'danger' or message.level_tag == 'error' %}error{% else %}{{ message.level_tag }}{% endif %}" role="{% if message.level_tag == 'error' or message.level_tag == 'danger' %}alert{% else %}status{% endif %}">
+        {{ message }}
+    </div>
+{% endfor %}

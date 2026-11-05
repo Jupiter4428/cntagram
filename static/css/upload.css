@@ -1,0 +1,348 @@
+/* หน้าอัปโหลดชีท (US-5 FE) ใช้ตัวแปรสี/คลาสพื้นฐานจาก retro.css */
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.upload-card {
+    position: relative;
+    overflow: hidden;
+    color: #25263d;
+    background: linear-gradient(180deg, rgb(231 234 248 / 92%), rgb(206 211 235 / 90%));
+    border: 1px solid rgb(255 255 255 / 55%);
+    border-radius: 8px;
+    box-shadow: var(--surface-shadow);
+}
+
+/* แถบหัวสีแดง-ม่วงแบบ titlebar */
+.upload-card__titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 0.9rem 0.65rem;
+    color: var(--plastic-white);
+    background: linear-gradient(90deg, #8c191c 0%, #5b1f4f 55%, #3b2a6b 100%);
+    border-bottom: 2px solid rgb(255 255 255 / 35%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%);
+}
+
+.upload-card__eyebrow {
+    display: block;
+    color: var(--tse-gold);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+}
+
+.upload-card__titlebar h1 {
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 45%);
+}
+
+.upload-card__badge {
+    flex: none;
+    padding: 0.15rem 0.6rem;
+    color: #3a2f12;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    background: linear-gradient(180deg, #fff, #d9deea);
+    border: 1px solid rgb(255 255 255 / 80%);
+    border-radius: 4px;
+}
+
+.upload-card__badge--pending {
+    background: linear-gradient(180deg, #fff3c4, var(--tse-gold));
+}
+
+/* ฟอร์ม */
+.upload-form {
+    display: grid;
+    gap: 1rem;
+    padding: 1.1rem 1.1rem 1.25rem;
+}
+
+.upload-grid {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.upload-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.upload-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.upload-grid[hidden] {
+    display: none;
+}
+
+.upload-field {
+    min-width: 0;
+}
+
+.upload-field label {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: #2b2c47;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.upload-field__sample {
+    color: #6a6d8a;
+    font-weight: 500;
+}
+
+.upload-field select,
+.upload-field input[type="text"],
+.upload-field input[type="number"],
+.upload-field input[type="file"],
+.upload-field textarea {
+    width: 100%;
+    min-height: 2.4rem;
+    padding: 0.45rem 0.85rem;
+    color: #25263d;
+    font: inherit;
+    background: rgb(244 246 255 / 92%);
+    border: 1px solid rgb(120 126 168 / 55%);
+    border-radius: 999px;
+    box-shadow: inset 0 2px 4px rgb(40 44 90 / 14%);
+}
+
+.upload-field textarea {
+    min-height: 8rem;
+    resize: vertical;
+    border-radius: 14px;
+}
+
+.upload-field input[type="file"] {
+    padding: 0.3rem 0.5rem;
+}
+
+.upload-field input[type="file"]::file-selector-button {
+    margin-right: 0.7rem;
+    padding: 0.3rem 0.9rem;
+    color: #25263d;
+    font: inherit;
+    font-weight: 700;
+    background: linear-gradient(180deg, #fff, #d6dbea);
+    border: 1px solid rgb(120 126 168 / 70%);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.upload-field select:disabled {
+    color: #4a4d6c;
+    background: rgb(214 218 238 / 90%);
+    cursor: not-allowed;
+}
+
+.upload-field select:focus,
+.upload-field input:focus,
+.upload-field textarea:focus {
+    border-color: var(--tse-red);
+}
+
+.upload-field__hint {
+    margin: 0.3rem 0 0;
+    color: #5f6384;
+    font-size: 0.75rem;
+}
+
+.upload-field__hint:empty {
+    display: none;
+}
+
+/* error */
+.upload-field__errors,
+.errorlist.upload-field__errors {
+    margin: 0.35rem 0 0;
+    padding: 0.35rem 0.7rem;
+    list-style: none;
+    color: #7a0f14;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgb(255 226 226 / 90%);
+    border: 1px solid rgb(180 40 48 / 55%);
+    border-radius: 8px;
+}
+
+.upload-field__errors[hidden] {
+    display: none;
+}
+
+.upload-field input[aria-invalid="true"] {
+    border-color: #b4282f;
+    box-shadow: 0 0 0 2px rgb(180 40 48 / 25%);
+}
+
+.upload-alert {
+    padding: 0.6rem 0.9rem;
+    color: #7a0f14;
+    font-weight: 700;
+    background: rgb(255 226 226 / 92%);
+    border: 1px solid rgb(180 40 48 / 55%);
+    border-radius: 8px;
+}
+
+.upload-alert p {
+    margin: 0;
+}
+
+/* checkbox disclaimer */
+.upload-check {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.upload-check input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--tse-red);
+}
+
+.upload-check label {
+    margin: 0;
+    font-weight: 600;
+}
+
+.upload-check .upload-field__errors {
+    flex-basis: 100%;
+}
+
+/* ปุ่มส่ง */
+.upload-submit {
+    display: block;
+    width: 100%;
+    padding: 0.7rem 1rem;
+    color: var(--plastic-white);
+    font: inherit;
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none;
+    background: linear-gradient(180deg, #d94a4f 0%, #a8272c 48%, #7c1a1e 100%);
+    border: 1px solid rgb(255 255 255 / 45%);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 4px 12px rgb(124 26 30 / 40%);
+    cursor: pointer;
+}
+
+.upload-submit:hover:not(:disabled) {
+    color: #fff;
+    filter: brightness(1.1);
+}
+
+.upload-submit:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.7) brightness(0.9);
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+/* หน้าสำเร็จ */
+.upload-done__body {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 1.6rem 1.2rem 1.8rem;
+    text-align: center;
+}
+
+.upload-done__body p {
+    margin: 0;
+}
+
+.upload-done__icon {
+    display: grid;
+    width: 4rem;
+    height: 4rem;
+    place-items: center;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 800;
+    background: radial-gradient(circle at 35% 30%, #e8ff9d, #7fbf1a 70%);
+    border: 2px solid rgb(255 255 255 / 70%);
+    border-radius: 50%;
+    box-shadow: 0 6px 16px rgb(60 100 10 / 35%);
+}
+
+.upload-done__lead {
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.upload-done__steps {
+    display: grid;
+    gap: 0.4rem;
+    width: min(100%, 22rem);
+    margin: 0.8rem 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+}
+
+.upload-done__steps li {
+    padding: 0.4rem 0.8rem;
+    color: #5f6384;
+    background: rgb(244 246 255 / 80%);
+    border: 1px solid rgb(120 126 168 / 40%);
+    border-radius: 999px;
+}
+
+.upload-done__steps li span {
+    margin-right: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+.upload-done__steps li.is-done {
+    color: #2c5a0c;
+}
+
+.upload-done__steps li.is-current {
+    color: #5a3b00;
+    font-weight: 800;
+    background: rgb(255 232 150 / 90%);
+    border-color: #c99a1d;
+}
+
+.upload-done__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.7rem;
+}
+
+.upload-submit--inline {
+    display: inline-block;
+    width: auto;
+    padding-inline: 1.6rem;
+}
+
+@media (max-width: 767.98px) {
+    .upload-grid--3,
+    .upload-grid--2 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
