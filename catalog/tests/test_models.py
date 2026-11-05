@@ -16,7 +16,9 @@ class DepartmentCodeTests(TestCase):
         self.assertIn("code", ctx.exception.message_dict)
 
     def test_full_clean_rejects_non_ascii_letter_that_uppercases_to_ascii(self):
-        dept = Department(code="c\u00df", name_th="คอมพิวเตอร์", name_en="Computer")  # \u00df.upper() = "SS"
+        dept = Department(
+            code="c\u00df", name_th="คอมพิวเตอร์", name_en="Computer"
+        )  # \u00df.upper() = "SS"
 
         with self.assertRaises(ValidationError) as ctx:
             dept.full_clean()
@@ -32,7 +34,7 @@ class DepartmentCodeTests(TestCase):
 
 
 class CourseCodeTests(TestCase):
-    """รหัสวิชา = อักษรภาค + เลขวิชาไม่เกิน 3 หลัก เช่น CN201 และอยู่ใน path ไฟล์ (issue #63)"""
+    """รหัสวิชา = อักษรภาค + เลขวิชาไม่เกิน 3 หลัก เช่น CN201 และอยู่ใน path ไฟล์ (issue #63)"""  # noqa: E501
 
     def test_full_clean_rejects_code_not_letters_then_up_to_three_digits(self):
         for code in ["101", "CN", "CN1234", "CN10A"]:
@@ -53,7 +55,9 @@ class CourseCodeTests(TestCase):
         self.assertIn("code", ctx.exception.message_dict)
 
     def test_full_clean_rejects_non_ascii_letter_that_uppercases_to_ascii(self):
-        course = Course(code="cn\u0131101", name_en="Programming")  # \u0131.upper() = "I"
+        course = Course(
+            code="cn\u0131101", name_en="Programming"
+        )  # \u0131.upper() = "I"
 
         with self.assertRaises(ValidationError) as ctx:
             course.full_clean()

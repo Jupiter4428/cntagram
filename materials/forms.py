@@ -1,4 +1,5 @@
 """ฟอร์มของ materials รับค่าอย่างเดียว การอ่าน/เขียนทำผ่าน selectors / services"""
+
 from django import forms
 
 from catalog.models import Batch, BatchCourse, Department
@@ -14,7 +15,7 @@ class ExamPeriodChoiceField(forms.ModelChoiceField):
 
 
 class SearchForm(forms.Form):
-    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. (US-7, US-11)
+    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. (US-7, US-11)  # noqa: E501
 
     cleaned_data ส่งเข้า selectors.search_documents(**cleaned_data) ได้เลย
     """
@@ -80,12 +81,14 @@ class SearchForm(forms.Form):
         department = cleaned_data.get("department")
         batch = cleaned_data.get("batch")
         if department and batch and batch.department_id != department.pk:
-            self.add_error("batch", f"รุ่น {batch.code} ไม่ได้อยู่ในภาค {department.code}")
+            self.add_error(
+                "batch", f"รุ่น {batch.code} ไม่ได้อยู่ในภาค {department.code}"
+            )
         return cleaned_data
 
 
 class UploadForm(forms.Form):
-    """อัปโหลดชีท (US-5) cleaned_data ยกเว้น disclaimer ส่งเข้า services.upload_document ได้เลย
+    """อัปโหลดชีท (US-5) cleaned_data ยกเว้น disclaimer ส่งเข้า services.upload_document ได้เลย  # noqa: E501
 
     batch_course รับได้ทุกภาค โดยตั้งใจ: view เช็กภาคของผู้ใช้ก่อนดูผลฟอร์ม
     และ service เช็กซ้ำ จึงตอบ 403 เมื่อมีคนแก้ request ข้ามภาค (ไม่ใช่แค่ฟอร์มไม่ผ่าน)
@@ -184,12 +187,18 @@ class ReviewForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.is_bound and self.data.get("decision") == Approval.Decision.REJECTED and not (self.data.get("reason") or "").strip():
-            self.fields["reason"].widget.attrs.update({
-                "class": "form-control is-invalid",
-                "aria-invalid": "true",
-                "aria-describedby": "reason-errors",
-            })
+        if (
+            self.is_bound
+            and self.data.get("decision") == Approval.Decision.REJECTED
+            and not (self.data.get("reason") or "").strip()
+        ):
+            self.fields["reason"].widget.attrs.update(
+                {
+                    "class": "form-control is-invalid",
+                    "aria-invalid": "true",
+                    "aria-describedby": "reason-errors",
+                }
+            )
 
     def clean(self):
         cleaned_data = super().clean()

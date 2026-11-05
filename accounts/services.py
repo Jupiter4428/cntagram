@@ -28,7 +28,8 @@ def register_user(*, email, password, nickname, department, pdpa_consent_at):
         )
     except IntegrityError as exc:
         # สองคนสมัครอีเมลเดียวกันพร้อมกันจนผ่านเช็กซ้ำในฟอร์มทั้งคู่
-        # UNIQUE ที่ชนได้มีแค่ email กับ student_id ซึ่งได้มาจาก email จึงแจ้งที่ช่อง email
+        # UNIQUE ที่ชนได้มีแค่ email กับ student_id
+        # ซึ่งได้มาจาก email จึงแจ้งที่ช่อง email
         raise ValidationError({"email": "อีเมลนี้ถูกใช้สมัครแล้ว"}) from exc
 
     student_role = Role.objects.get(code=Role.STUDENT)
@@ -100,12 +101,17 @@ def attempt_login(*, form, client_ip):
 
 
 def _register_attempt_key(client_ip):
-    digest = salted_hmac("accounts.register-throttle", client_ip or "unknown").hexdigest()
+    digest = salted_hmac(
+        "accounts.register-throttle", client_ip or "unknown"
+    ).hexdigest()
     return f"register-attempts:{digest}"
 
 
 def is_register_rate_limited(client_ip):
-    return cache.get(_register_attempt_key(client_ip), 0) >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+    return (
+        cache.get(_register_attempt_key(client_ip), 0)
+        >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+    )
 
 
 def record_register_attempt(client_ip):
@@ -152,9 +158,13 @@ def remove_moderator(*, user_role):
 
 @transaction.atomic
 def delete_own_account(*, user, password):
-    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA (US-13): ถอด role ทั้งหมดแล้วล้างข้อมูลด้วย anonymize()"""
+    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA (US-13):
+
+    ถอด role ทั้งหมดแล้วล้างข้อมูลด้วย anonymize()
+    """
     if not user.check_password(password):
-        raise ValidationError({"password": "รหัสผ่านไม่ถูกต้อง"})
+        error_field = "password"
+        raise ValidationError({error_field: "รหัสผ่านไม่ถูกต้อง"})
     # ล็อกแถว Super Admin กันสองคนสุดท้ายลบพร้อมกันจนไม่เหลือใคร
     super_admin_ids = list(
         UserRole.objects.select_for_update(of=("self",))
@@ -162,6 +172,8 @@ def delete_own_account(*, user, password):
         .values_list("user_id", flat=True)
     )
     if set(super_admin_ids) == {user.pk}:
-        raise ValidationError("คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี")
+        raise ValidationError(
+            "คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี"
+        )
     user.user_roles.all().delete()
     user.anonymize()

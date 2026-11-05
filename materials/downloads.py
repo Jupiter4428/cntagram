@@ -1,4 +1,5 @@
 """Protected downloads: the server, never a public media URL, serves the file."""
+
 from django.views.decorators.http import require_GET
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -21,7 +22,8 @@ def document_download(request, document_id):
         stream.close()
         raise
     response = FileResponse(
-        stream, as_attachment=True,
+        stream,
+        as_attachment=True,
         content_type="application/pdf",
         filename=version.original_name,
     )

@@ -187,15 +187,24 @@ class RegisterViewTests(RegistrationTestCase):
         self.assertContains(response, "is-invalid")
 
     def test_rejects_reserved_nickname(self):
-        response = self.assertRegistrationRejected(self.payload(nickname="Admin"), "nickname")
-        self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", response.context["form"].errors["nickname"][0])
+        response = self.assertRegistrationRejected(
+            self.payload(nickname="Admin"), "nickname"
+        )
+        self.assertIn(
+            "ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น",
+            response.context["form"].errors["nickname"][0],
+        )
 
     def test_rejects_duplicate_email(self):
         self.register(nickname="First")
-        response = self.client.post(self.url, self.payload(email="6610612345@student.tu.ac.th"))
+        response = self.client.post(
+            self.url, self.payload(email="6610612345@student.tu.ac.th")
+        )
         self.assertEqual(response.status_code, 200)
         self.assertIn("email", response.context["form"].errors)
-        self.assertIn("อีเมลนี้ถูกใช้สมัครแล้ว", response.context["form"].errors["email"])
+        self.assertIn(
+            "อีเมลนี้ถูกใช้สมัครแล้ว", response.context["form"].errors["email"]
+        )
 
     def test_rejects_missing_pdpa_consent(self):
         self.assertRegistrationRejected(self.payload(pdpa_consent=None), "pdpa_consent")
@@ -216,7 +225,9 @@ class RegisterViewTests(RegistrationTestCase):
     def test_authenticated_user_post_is_redirected_home(self):
         self.client.force_login(self.register())
 
-        response = self.client.post(self.url, self.payload(email="6610600000@student.tu.ac.th"))
+        response = self.client.post(
+            self.url, self.payload(email="6610600000@student.tu.ac.th")
+        )
 
         self.assertRedirects(response, reverse("accounts:home"))
         self.assertEqual(User.objects.count(), 1)
@@ -295,20 +306,30 @@ class ModeratorViewTests(ModeratorTestCase):
         admin_role = UserRole.objects.get(user=self.admin, role=self.role_super_admin)
         self.client.force_login(self.admin)
 
-        response = self.client.post(reverse("accounts:moderator_remove", args=[admin_role.pk]))
+        response = self.client.post(
+            reverse("accounts:moderator_remove", args=[admin_role.pk])
+        )
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(UserRole.objects.filter(pk=admin_role.pk).exists())
 
     def test_non_super_admin_cannot_open_or_post_manage_page(self):
-        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+        services.assign_moderator(
+            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
+        )
         self.client.force_login(self.user_momo)
         url = reverse("accounts:moderator_manage")
 
         self.assertEqual(self.client.get(url).status_code, 403)
-        response = self.client.post(url, {"user": self.user_nana.pk, "department": self.dept_ce.pk})
+        response = self.client.post(
+            url, {"user": self.user_nana.pk, "department": self.dept_ce.pk}
+        )
         self.assertEqual(response.status_code, 403)
-        self.assertFalse(UserRole.objects.filter(user=self.user_nana, role=self.role_moderator).exists())
+        self.assertFalse(
+            UserRole.objects.filter(
+                user=self.user_nana, role=self.role_moderator
+            ).exists()
+        )
 
     def test_anonymous_user_redirected_to_login(self):
         response = self.client.get(reverse("accounts:moderator_manage"))

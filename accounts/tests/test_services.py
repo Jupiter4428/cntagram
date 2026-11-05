@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
 from django.utils import timezone
 
 from .. import selectors, services
@@ -40,7 +39,9 @@ class RegisterUserServiceTests(RegistrationTestCase):
         with self.assertRaises(Role.DoesNotExist):
             self.register()
 
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+        self.assertFalse(
+            User.objects.filter(email="6610612345@student.tu.ac.th").exists()
+        )
 
     def test_duplicate_email_at_database_insertion_raises_validation_error(self):
         self.register(email="6610612345@student.tu.ac.th")
@@ -58,7 +59,9 @@ class RegisterUserServiceTests(RegistrationTestCase):
                 department=self.department,
             )
 
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+        self.assertFalse(
+            User.objects.filter(email="6610612345@student.tu.ac.th").exists()
+        )
 
 
 class ModeratorServiceTests(ModeratorTestCase):
@@ -66,23 +69,31 @@ class ModeratorServiceTests(ModeratorTestCase):
         ur1 = services.assign_moderator(
             user=self.user_momo, department=self.dept_cn, granted_by=self.admin
         )
-        ur2 = services.assign_moderator(
+        services.assign_moderator(
             user=self.user_momo, department=self.dept_ce, granted_by=self.admin
         )
 
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_cn
+            )
         )
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_ce
+            )
         )
 
         services.remove_moderator(user_role=ur1)
         self.assertFalse(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_cn
+            )
         )
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_ce
+            )
         )
 
     def test_cannot_assign_duplicate_moderator(self):
@@ -99,7 +110,9 @@ class ModeratorServiceTests(ModeratorTestCase):
 
 class DeleteOwnAccountServiceTests(ModeratorTestCase):
     def test_correct_password_anonymizes_user_and_removes_roles(self):
-        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+        services.assign_moderator(
+            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
+        )
 
         services.delete_own_account(user=self.user_momo, password="password123")
 
@@ -126,7 +139,9 @@ class DeleteOwnAccountServiceTests(ModeratorTestCase):
 
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.is_active)
-        self.assertTrue(self.admin.user_roles.filter(role=self.role_super_admin).exists())
+        self.assertTrue(
+            self.admin.user_roles.filter(role=self.role_super_admin).exists()
+        )
 
     def test_super_admin_can_delete_own_account_when_another_remains(self):
         UserRole.objects.create(user=self.user_nana, role=self.role_super_admin)

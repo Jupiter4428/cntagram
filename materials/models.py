@@ -1,4 +1,4 @@
-#..\materials\models.py
+# ..\materials\models.py
 # Create your models here.
 import unicodedata
 
@@ -20,6 +20,7 @@ def _mb_to_bytes(mb):
 
 
 MAX_UPLOAD_BYTES = _mb_to_bytes(MAX_UPLOAD_MB)
+
 
 def max_upload_mb():
     """ขนาดไฟล์สูงสุดที่รับได้ (MB) จาก system_setting แต่ไม่เกินเพดาน CHECK ของ DB"""
@@ -274,7 +275,9 @@ class DocumentVersion(models.Model):
     )
     original_name = models.CharField(max_length=255)
     size_bytes = models.PositiveBigIntegerField()
-    sha256 = models.CharField(max_length=64, db_index=True, validators=[sha256_validator])
+    sha256 = models.CharField(
+        max_length=64, db_index=True, validators=[sha256_validator]
+    )
     scan_status = models.CharField(
         max_length=10, choices=ScanStatus.choices, default=ScanStatus.PENDING
     )
@@ -328,6 +331,7 @@ class DocumentVersion(models.Model):
     def __str__(self):
         return f"{self.document_id} v{self.version_no}"
 
+
 class DownloadLog(models.Model):
     """One row per successful protected download; no duplicated count column."""
 
@@ -342,7 +346,9 @@ class DownloadLog(models.Model):
     class Meta:
         db_table = "download_log"
         indexes = [
-            models.Index(fields=["document", "downloaded_at"], name="idx_download_doc_time"),
+            models.Index(
+                fields=["document", "downloaded_at"], name="idx_download_doc_time"
+            ),
         ]
 
     def __str__(self):
@@ -363,9 +369,7 @@ class Approval(models.Model):
     approver_role = models.ForeignKey(
         "accounts.Role", on_delete=models.PROTECT, related_name="approvals"
     )
-    decision = models.CharField(
-        max_length=10, choices=Decision.choices
-    )
+    decision = models.CharField(max_length=10, choices=Decision.choices)
     reason = models.TextField(blank=True, null=True)
     decided_at = models.DateTimeField(auto_now_add=True)
 
@@ -383,8 +387,12 @@ class Approval(models.Model):
 
     def clean(self):
         super().clean()
-        if self.decision == self.Decision.REJECTED and not (self.reason and self.reason.strip()):
-            raise ValidationError({"reason": "Reason is required when rejecting a document."})
+        if self.decision == self.Decision.REJECTED and not (
+            self.reason and self.reason.strip()
+        ):
+            raise ValidationError(
+                {"reason": "Reason is required when rejecting a document."}
+            )
 
     def save(self, *args, **kwargs):
         self.clean()

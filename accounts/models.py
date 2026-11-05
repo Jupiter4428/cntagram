@@ -1,4 +1,4 @@
-#..\accounts\models.py
+# ..\accounts\models.py
 # Create your models here.
 import re
 
@@ -15,13 +15,15 @@ from django.utils import timezone
 STUDENT_EMAIL_DOMAIN = "student.tu.ac.th"
 
 # ตัวที่ 1-2 = ปีเข้า, ตัวที่ 3-4 = คณะ (ต้องเป็น 10), รวม 10 หลัก
-# ใช้ [0-9] แทน \d (\d รับเลขไทย/เลขยูนิโค้ดอื่นด้วย) และใช้ \Z แทน $ ($ ยอมให้มี \n ต่อท้าย)
+# ใช้ [0-9] แทน \d (\d รับเลขไทย/เลขยูนิโค้ดอื่นด้วย)
+# และใช้ \Z แทน $ ($ ยอมให้มี \n ต่อท้าย)
 student_id_validator = RegexValidator(
     regex=r"^[0-9]{2}10[0-9]{6}\Z",
     message="Student ID must be 10 ASCII digits, and characters 3-4 must be 10.",
 )
 
-# ชื่อเล่นที่ห้ามใช้ เพื่อกันการสวมรอยเป็นผู้ดูแล เทียบหลังตัดช่องว่าง/ขีด/จุด และทำ casefold
+# ชื่อเล่นที่ห้ามใช้ เพื่อกันการสวมรอยเป็นผู้ดูแล
+# เทียบหลังตัดช่องว่าง/ขีด/จุด และทำ casefold
 # คำภาษาไทยตั้งใจเก็บไว้ เพราะเป็นข้อมูลที่ใช้กันการสวมรอยด้วยภาษาไทย
 # ("แอดมิน" = admin, "ผู้ดูแล" = moderator, "ผู้ดูแลระบบ" = system administrator)
 RESERVED_NICKNAMES = {
@@ -53,7 +55,9 @@ class UserManager(BaseUserManager):
         # createsuperuser อาจส่ง department มาเป็น instance หรือเป็น pk ก็ได้
         dept = extra_fields.pop("department", None)
         if dept is not None:
-            extra_fields["department" if hasattr(dept, "pk") else "department_id"] = dept
+            extra_fields["department" if hasattr(dept, "pk") else "department_id"] = (
+                dept
+            )
         email = self.normalize_email(email.strip()).lower()
         # รหัสนักศึกษาดึงจากหน้า @ ของอีเมลเสมอ (superuser ข้ามได้)
         if not extra_fields.get("is_superuser") and not extra_fields.get("student_id"):
@@ -126,7 +130,8 @@ class DepartmentCodeField(models.ForeignKey):
 class User(AbstractBaseUser, PermissionsMixin):
     """Custom User (ตาราง app_user ใน ERD)
 
-    - password_hash ใน ERD = field `password` ของ AbstractBaseUser (เก็บเป็น hash อยู่แล้ว)
+    - password_hash ใน ERD = field `password` ของ AbstractBaseUser
+      (เก็บเป็น hash อยู่แล้ว)
     - ปีเข้า/คณะ ไม่เก็บ ดึงจาก student_id ตอนใช้ (3NF)
     - email / personal_email เก็บเป็นตัวพิมพ์เล็กเสมอ กัน Alice@x กับ alice@x
       กลายเป็นคนละบัญชี
@@ -208,7 +213,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         # 2) โดเมนต้องเป็น @student.tu.ac.th
         local, _, domain = email.partition("@")
         if domain != STUDENT_EMAIL_DOMAIN:
-            raise ValidationError(f"ต้องใช้อีเมลนักศึกษา @{STUDENT_EMAIL_DOMAIN} เท่านั้น")
+            raise ValidationError(
+                f"ต้องใช้อีเมลนักศึกษา @{STUDENT_EMAIL_DOMAIN} เท่านั้น"
+            )
 
         # 3) หน้า @ ต้องเป็นรหัสนักศึกษา 10 หลัก (ใช้ [0-9] กันเลขไทย/ยูนิโค้ด)
         if not re.fullmatch(r"[0-9]{10}", local):
@@ -297,12 +304,8 @@ class UserRole(models.Model):
     department ใช้เฉพาะ moderator (ภาคที่ดูแล) role อื่นเป็น NULL
     """
 
-    user = models.ForeignKey(
-        User, on_delete=models.PROTECT, related_name="user_roles"
-    )
-    role = models.ForeignKey(
-        Role, on_delete=models.PROTECT, related_name="user_roles"
-    )
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="user_roles")
+    role = models.ForeignKey(Role, on_delete=models.PROTECT, related_name="user_roles")
     department = models.ForeignKey(
         "catalog.Department",
         on_delete=models.PROTECT,
@@ -330,7 +333,8 @@ class UserRole(models.Model):
             # SQL ถือว่า NULL != NULL จึงต้องแยก UQ เป็น 2 เงื่อนไข
             # ไม่งั้น (user, student, NULL) ซ้ำกันได้
             # หมายเหตุ: partial UQ ใช้ได้บน PostgreSQL/SQLite เท่านั้น
-            # MySQL จะข้าม constraint นี้ (models.W036) จึงเช็กซ้ำใน clean() ด้านล่างด้วย
+            # MySQL จะข้าม constraint นี้ (models.W036)
+            # จึงเช็กซ้ำใน clean() ด้านล่างด้วย
             models.UniqueConstraint(
                 fields=["user", "role", "department"],
                 condition=models.Q(department__isnull=False),
@@ -383,7 +387,8 @@ class UserRole(models.Model):
 class UserCounter(models.Model):
     """ยอดสะสมผู้ใช้ที่เคยถูกสร้าง มีแถวเดียว (pk=1)
 
-    signal post_save ของ User บวกทีละหนึ่ง ไม่ลดเมื่อลบผู้ใช้ (ต่างจาก Max("pk") ที่ลดเมื่อลบคนล่าสุด)
+    signal post_save ของ User บวกทีละหนึ่ง ไม่ลดเมื่อลบผู้ใช้
+    (ต่างจาก Max("pk") ที่ลดเมื่อลบคนล่าสุด)
     """
 
     total = models.PositiveIntegerField(default=0)

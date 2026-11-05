@@ -22,7 +22,9 @@ class DepartmentTests(CatalogTestCase):
         response = self.client.get(reverse("catalog:department_list"))
         self.assertEqual(response.status_code, 403)
         self.assertTemplateUsed(response, "403.html")
-        self.assertContains(response, "เฉพาะ Super Admin เท่านั้นที่สามารถเข้าถึงได้", status_code=403)
+        self.assertContains(
+            response, "เฉพาะ Super Admin เท่านั้นที่สามารถเข้าถึงได้", status_code=403
+        )
 
     def test_duplicate_department_code(self):
         """เพิ่มรหัสภาควิชาซ้ำไม่ได้ โดย normalize เป็นตัวพิมพ์ใหญ่แล้วแจ้งเตือน"""
@@ -37,7 +39,9 @@ class DepartmentTests(CatalogTestCase):
             },
         )
         self.assertEqual(Department.objects.filter(code="CN").count(), 1)
-        self.assertFormError(response.context["form"], "code", "รหัสภาควิชานี้มีอยู่ในระบบแล้ว")
+        self.assertFormError(
+            response.context["form"], "code", "รหัสภาควิชานี้มีอยู่ในระบบแล้ว"
+        )
 
     def test_update_department_keep_same_code(self):
         """แก้ไขภาคโดยใช้ code เดิมต้องผ่านและ redirect ได้ปกติ"""
@@ -69,8 +73,10 @@ class DepartmentTests(CatalogTestCase):
         self.assertContains(response, "ลบไม่ได้ เพราะยังมีรุ่น/วิชาอยู่ในภาคนี้")
 
     def test_cannot_delete_department_with_users(self):
-        """ลบภาควิชาที่มี user ผูกอยู่ (แต่ไม่มีรุ่น) ไม่ได้ พร้อมแจ้งเตือนว่ายังมีผู้ใช้สังกัดอยู่"""
-        dept_ce = Department.objects.create(code="CE", name_th="วิศวกรรมโยธา", name_en="Civil Engineering")
+        """ลบภาควิชาที่มี user ผูกอยู่ (แต่ไม่มีรุ่น) ไม่ได้ พร้อมแจ้งเตือนว่ายังมีผู้ใช้สังกัดอยู่"""  # noqa: E501
+        dept_ce = Department.objects.create(
+            code="CE", name_th="วิศวกรรมโยธา", name_en="Civil Engineering"
+        )
         User.objects.create_user(
             email="6810610003@student.tu.ac.th",
             password="password123",
@@ -96,8 +102,12 @@ class DepartmentTests(CatalogTestCase):
         self.assertIn(self.dept_cn, response.context["departments"])
         self.assertContains(response, "admin-table")
         self.assertContains(response, reverse("catalog:department_create"))
-        self.assertContains(response, reverse("catalog:department_update", args=[self.dept_cn.pk]))
-        self.assertContains(response, reverse("catalog:department_delete", args=[self.dept_cn.pk]))
+        self.assertContains(
+            response, reverse("catalog:department_update", args=[self.dept_cn.pk])
+        )
+        self.assertContains(
+            response, reverse("catalog:department_delete", args=[self.dept_cn.pk])
+        )
 
     def test_form_page_uses_themed_form(self):
         """หน้าเพิ่มภาคใช้ฟอร์มธีม admin พร้อมปุ่มบันทึกและยกเลิก"""
@@ -112,7 +122,9 @@ class DepartmentTests(CatalogTestCase):
     def test_delete_confirm_page_is_themed_and_names_department(self):
         """หน้ายืนยันลบใช้ธีม admin และระบุภาคที่จะลบ"""
         self.client.force_login(self.admin)
-        response = self.client.get(reverse("catalog:department_delete", args=[self.dept_cn.pk]))
+        response = self.client.get(
+            reverse("catalog:department_delete", args=[self.dept_cn.pk])
+        )
         self.assertTemplateUsed(response, "catalog/department_confirm_delete.html")
         self.assertEqual(response.context["dept"], self.dept_cn)
         self.assertContains(response, f"ยืนยันการลบภาควิชา {self.dept_cn.code}")
@@ -129,7 +141,9 @@ class BatchTests(CatalogTestCase):
         )
         self.assertRedirects(response, reverse("catalog:batch_list"))
         self.assertContains(response, "CN21")
-        self.assertTrue(Batch.objects.filter(department=self.dept_cn, number=21).exists())
+        self.assertTrue(
+            Batch.objects.filter(department=self.dept_cn, number=21).exists()
+        )
 
     def test_duplicate_batch_rejected(self):
         """ใส่เลข 21 ซ้ำในภาคเดิม → แจ้งว่ารุ่นนี้มีแล้ว และไม่สร้างซ้ำ"""
@@ -139,13 +153,17 @@ class BatchTests(CatalogTestCase):
             reverse("catalog:batch_create"),
             {"department": self.dept_cn.pk, "number": 21},
         )
-        self.assertEqual(Batch.objects.filter(department=self.dept_cn, number=21).count(), 1)
+        self.assertEqual(
+            Batch.objects.filter(department=self.dept_cn, number=21).count(), 1
+        )
         self.assertFormError(response.context["form"], None, "รุ่นนี้มีอยู่แล้ว")
         self.assertContains(response, "รุ่นนี้มีอยู่แล้ว")
 
     def test_batch_list_groups_batches_under_their_department(self):
         """หน้ารายการรุ่นแยกตามภาควิชา: รุ่นของแต่ละภาคอยู่ใต้ชื่อภาคนั้น"""
-        dept_ee = Department.objects.create(code="EE", name_th="วิศวกรรมไฟฟ้า", name_en="Electrical Engineering")
+        dept_ee = Department.objects.create(
+            code="EE", name_th="วิศวกรรมไฟฟ้า", name_en="Electrical Engineering"
+        )
         Batch.objects.create(department=dept_ee, number=24)
         Batch.objects.create(department=self.dept_cn, number=21)
         self.client.force_login(self.admin)
@@ -153,14 +171,19 @@ class BatchTests(CatalogTestCase):
         response = self.client.get(reverse("catalog:batch_list"))
 
         html = response.content.decode()
-        positions = [html.index(text) for text in ["วิศวกรรมคอมพิวเตอร์", "CN21", "วิศวกรรมไฟฟ้า", "EE24"]]
+        positions = [
+            html.index(text)
+            for text in ["วิศวกรรมคอมพิวเตอร์", "CN21", "วิศวกรรมไฟฟ้า", "EE24"]
+        ]
         self.assertEqual(positions, sorted(positions))
 
     def test_delete_empty_batch(self):
         """ลบรุ่นที่ยังไม่มีวิชาได้"""
         batch = Batch.objects.create(department=self.dept_cn, number=21)
         self.client.force_login(self.admin)
-        response = self.client.post(reverse("catalog:batch_delete", args=[batch.pk]), follow=True)
+        response = self.client.post(
+            reverse("catalog:batch_delete", args=[batch.pk]), follow=True
+        )
         self.assertRedirects(response, reverse("catalog:batch_list"))
         self.assertFalse(Batch.objects.filter(pk=batch.pk).exists())
 
@@ -170,9 +193,13 @@ class BatchTests(CatalogTestCase):
         course = Course.objects.create(code="CN200", name_en="Discrete Mathematics")
         BatchCourse.objects.create(batch=batch, course=course)
         self.client.force_login(self.admin)
-        response = self.client.post(reverse("catalog:batch_delete", args=[batch.pk]), follow=True)
+        response = self.client.post(
+            reverse("catalog:batch_delete", args=[batch.pk]), follow=True
+        )
         self.assertTrue(Batch.objects.filter(pk=batch.pk).exists())
-        self.assertContains(response, "ลบรุ่น CN21 ไม่ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้")
+        self.assertContains(
+            response, "ลบรุ่น CN21 ไม่ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้"
+        )
 
     def test_delete_confirmation_shows_batch_code_and_cancel_link(self):
         """รุ่นว่างแสดงปุ่มยืนยันลบและลิงก์ยกเลิก"""
@@ -246,7 +273,11 @@ class CourseTests(CatalogTestCase):
         self.client.force_login(self.admin)
         response = self.client.post(
             reverse("catalog:course_create"),
-            {"code": "cn200", "name_th": "คณิตศาสตร์ดิสครีต", "name_en": "Discrete Mathematics"},
+            {
+                "code": "cn200",
+                "name_th": "คณิตศาสตร์ดิสครีต",
+                "name_en": "Discrete Mathematics",
+            },
             follow=True,
         )
         self.assertRedirects(response, reverse("catalog:course_list"))
@@ -261,7 +292,9 @@ class CourseTests(CatalogTestCase):
             {"code": "cn200", "name_th": "", "name_en": "Discrete Math 2"},
         )
         self.assertEqual(Course.objects.filter(code="CN200").count(), 1)
-        self.assertFormError(response.context["form"], "code", "รหัสวิชานี้มีอยู่ในระบบแล้ว")
+        self.assertFormError(
+            response.context["form"], "code", "รหัสวิชานี้มีอยู่ในระบบแล้ว"
+        )
         self.assertContains(response, "รหัสวิชานี้มีอยู่ในระบบแล้ว")
 
     def test_empty_course_form_has_no_bind_hint(self):
@@ -293,12 +326,16 @@ class CourseTests(CatalogTestCase):
             {"code": "", "name_th": "", "name_en": "Discrete Mathematics"},
         )
 
-        self.assertFormError(response.context["form"], "code", "This field is required.")
+        self.assertFormError(
+            response.context["form"], "code", "This field is required."
+        )
         self.assertNotContains(response, "ผูกวิชาเดิมเข้ารุ่น")
 
     def test_course_list_shows_thai_and_english_names(self):
         """หน้ารายการวิชาแสดงทั้งชื่อไทยและชื่ออังกฤษ"""
-        Course.objects.create(code="CN200", name_th="คณิตศาสตร์ดิสครีต", name_en="Discrete Mathematics")
+        Course.objects.create(
+            code="CN200", name_th="คณิตศาสตร์ดิสครีต", name_en="Discrete Mathematics"
+        )
         self.client.force_login(self.admin)
 
         response = self.client.get(reverse("catalog:course_list"))
@@ -340,7 +377,9 @@ class BatchCourseTests(CatalogTestCase):
         response = self.add(self.cn21, self.cn200)
 
         self.assertEqual(BatchCourse.objects.filter(batch=self.cn21).count(), 1)
-        self.assertFormError(response.context["form"], "course", "วิชานี้อยู่ในรุ่นนี้แล้ว")
+        self.assertFormError(
+            response.context["form"], "course", "วิชานี้อยู่ในรุ่นนี้แล้ว"
+        )
         self.assertContains(response, "วิชานี้อยู่ในรุ่นนี้แล้ว")
 
     def test_remove_course_from_batch_keeps_course(self):
@@ -350,17 +389,23 @@ class BatchCourseTests(CatalogTestCase):
         batch_course = BatchCourse.objects.get(batch=self.cn21, course=self.cn200)
 
         response = self.client.post(
-            reverse("catalog:batch_course_remove", args=[self.cn21.pk, batch_course.pk]),
+            reverse(
+                "catalog:batch_course_remove", args=[self.cn21.pk, batch_course.pk]
+            ),
             follow=True,
         )
 
-        self.assertRedirects(response, reverse("catalog:batch_course_manage", args=[self.cn21.pk]))
+        self.assertRedirects(
+            response, reverse("catalog:batch_course_manage", args=[self.cn21.pk])
+        )
         self.assertFalse(BatchCourse.objects.filter(batch=self.cn21).exists())
-        self.assertTrue(BatchCourse.objects.filter(batch=self.cn22, course=self.cn200).exists())
+        self.assertTrue(
+            BatchCourse.objects.filter(batch=self.cn22, course=self.cn200).exists()
+        )
         self.assertTrue(Course.objects.filter(pk=self.cn200.pk).exists())
 
     def test_list_pages_have_no_n_plus_one(self):
-        """จำนวน query คงที่ไม่ว่าจะมีกี่รุ่น/กี่วิชา (session, user, เช็กสิทธิ์ + query ของหน้า)"""
+        """จำนวน query คงที่ไม่ว่าจะมีกี่รุ่น/กี่วิชา (session, user, เช็กสิทธิ์ + query ของหน้า)"""  # noqa: E501
         for i, number in enumerate([23, 24, 25]):
             batch = Batch.objects.create(department=self.dept_cn, number=number)
             course = Course.objects.create(code=f"CN10{i}", name_en=f"Course {i}")

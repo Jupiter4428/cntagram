@@ -33,7 +33,7 @@ PDF_MAGIC = b"%PDF-"
 
 
 def _storage_path(batch_course, doc_type):
-    """path ใน storage ตั้งชื่อไฟล์ด้วย uuid ไม่ใช้ชื่อที่ผู้ใช้ส่งมา จึงเดา path หรือชนกันไม่ได้"""
+    """path ใน storage ตั้งชื่อไฟล์ด้วย uuid ไม่ใช้ชื่อที่ผู้ใช้ส่งมา จึงเดา path หรือชนกันไม่ได้"""  # noqa: E501
     batch = batch_course.batch
     return (
         f"vault/{batch.department.code}/{batch.number}/{batch_course.course.code}/"
@@ -42,12 +42,12 @@ def _storage_path(batch_course, doc_type):
 
 
 def file_too_large_message():
-    """ข้อความเมื่อไฟล์เกิน max_upload_mb ใช้ทั้งที่ service และตอน upload handler ข้ามไฟล์"""
+    """ข้อความเมื่อไฟล์เกิน max_upload_mb ใช้ทั้งที่ service และตอน upload handler ข้ามไฟล์"""  # noqa: E501
     return f"ไฟล์ต้องมีขนาดไม่เกิน {max_upload_mb()} MB"
 
 
 def _validate_pdf(file):
-    """รับเฉพาะ PDF: MIME ที่ browser ส่งมาต้องเป็น PDF และ magic bytes ต้องขึ้นต้นด้วย %PDF-
+    """รับเฉพาะ PDF: MIME ที่ browser ส่งมาต้องเป็น PDF และ magic bytes ต้องขึ้นต้นด้วย %PDF-  # noqa: E501
 
     MIME ปลอมได้ฝั่ง client จึงต้องเช็ก magic bytes ของเนื้อไฟล์จริงด้วย
     """
@@ -175,7 +175,7 @@ def review_document(*, document, approver, decision, reason=None):
     if locked_doc.approvals.filter(approver=approver).exists():
         raise ValidationError("คุณพิจารณาเอกสารนี้ไปแล้ว")
 
-    # คนที่มีหลาย role ให้นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน ไม่งั้นกฎ all จะไม่มีวันครบ
+    # คนที่มีหลาย role ให้นับเป็นฝ่ายที่ยังไม่มีใครอนุมัติก่อน ไม่งั้นกฎ all จะไม่มีวันครบ  # noqa: E501
     approved_ids = selectors.approved_role_ids(document=locked_doc)
     approver_role = next((r for r in eligible if r.pk not in approved_ids), eligible[0])
 
