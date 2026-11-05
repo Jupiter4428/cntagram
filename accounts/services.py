@@ -46,7 +46,7 @@ class LoginAttempt:
 
 def _login_failure_key(*, identifier, client_ip):
     """Build a non-PII cache key for one login identity and network peer."""
-    normalized_identifier = (identifier or "").strip().casefold()
+    normalized_identifier = (identifier or "").strip().lower()
     normalized_ip = (client_ip or "unknown").strip()
     digest = salted_hmac(
         "accounts.login-rate-limit",
@@ -85,7 +85,7 @@ def clear_login_failures(*, identifier, client_ip):
 def attempt_login(*, identifier, password, client_ip):
     """Authenticate credentials while checking and recording rate limits.
 
-    1. Checks if identifier or client_ip is rate limited -> LoginAttempt(rate_limited=True).
+    1. Checks if this identifier/IP pair is rate limited -> LoginAttempt(rate_limited=True).
     2. Authenticates credentials.
     3. If valid -> clears failure count and returns LoginAttempt(user=user).
     4. If invalid -> records failure and returns LoginAttempt().
@@ -106,12 +106,17 @@ def attempt_login(*, identifier, password, client_ip):
 
 
 def _register_attempt_key(client_ip):
-    digest = salted_hmac("accounts.register-throttle", client_ip or "unknown").hexdigest()
+    digest = salted_hmac(
+        "accounts.register-throttle", client_ip or "unknown"
+    ).hexdigest()
     return f"register-attempts:{digest}"
 
 
 def is_register_rate_limited(client_ip):
-    return cache.get(_register_attempt_key(client_ip), 0) >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+    return (
+        cache.get(_register_attempt_key(client_ip), 0)
+        >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+    )
 
 
 def record_register_attempt(client_ip):
@@ -168,6 +173,40 @@ def delete_own_account(*, user, password):
         .values_list("user_id", flat=True)
     )
     if set(super_admin_ids) == {user.pk}:
-        raise ValidationError("คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี")
+        raise ValidationError(
+            "คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี"
+        )
     user.user_roles.all().delete()
     user.anonymize()
+
+
+def _delete_account_failure_key(*, user_id, client_ip):
+    normalized_ip = (client_ip or "unknown").strip()
+    digest = salted_hmac(
+        "accounts.delete-account-rate-limit",
+        f"{user_id}|{normalized_ip}",
+    ).hexdigest()
+    return f"delete-account-failures:{digest}"
+
+
+def is_delete_account_rate_limited(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    attempts = cache.get(key, 0)
+    return attempts >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
+
+
+def record_delete_account_failure(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+    if cache.add(key, 1, timeout=timeout):
+        return 1
+    try:
+        return cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, timeout=timeout)
+        return 1
+
+
+def clear_delete_account_failures(*, user_id, client_ip):
+    key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
+    cache.delete(key)

@@ -1,8 +1,8 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django.test import TestCase
 
-from ..forms import LoginForm, RegisterForm
-from .base import RegistrationTestCase
+from ..forms import LoginForm, ModeratorAssignmentForm, RegisterForm
+from .base import ModeratorTestCase, RegistrationTestCase
 
 
 class LoginFormTests(TestCase):
@@ -105,3 +105,10 @@ class RegisterFormTests(RegistrationTestCase):
         form = self.assertFieldError(self.payload(nickname="admin"), "nickname")
         self.assertIn("is-invalid", form.fields["nickname"].widget.attrs["class"])
         self.assertNotIn("is-invalid", form.fields["email"].widget.attrs["class"])
+
+
+class ModeratorAssignmentFormTests(ModeratorTestCase):
+    def test_moderator_user_choice_field_label_format(self):
+        form = ModeratorAssignmentForm()
+        label = form.fields["user"].label_from_instance(self.user_momo)
+        self.assertEqual(label, f"{self.user_momo.nickname} ({self.user_momo.email})")

@@ -1,4 +1,4 @@
-import time
+from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -8,7 +8,13 @@ from django.utils import timezone
 from .. import selectors, services
 from ..models import Role, UserRole
 from ..services import register_user
-from .base import ModeratorTestCase, RegistrationTestCase, ThrottleTestCase, VALID_PASSWORD, make_department
+from .base import (
+    ModeratorTestCase,
+    RegistrationTestCase,
+    ThrottleTestCase,
+    VALID_PASSWORD,
+    make_department,
+)
 
 User = get_user_model()
 
@@ -42,7 +48,9 @@ class RegisterUserServiceTests(RegistrationTestCase):
         with self.assertRaises(Role.DoesNotExist):
             self.register()
 
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+        self.assertFalse(
+            User.objects.filter(email="6610612345@student.tu.ac.th").exists()
+        )
 
     def test_duplicate_email_at_database_insertion_raises_validation_error(self):
         self.register(email="6610612345@student.tu.ac.th")
@@ -60,7 +68,9 @@ class RegisterUserServiceTests(RegistrationTestCase):
                 department=self.department,
             )
 
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+        self.assertFalse(
+            User.objects.filter(email="6610612345@student.tu.ac.th").exists()
+        )
 
 
 class ModeratorServiceTests(ModeratorTestCase):
@@ -73,18 +83,26 @@ class ModeratorServiceTests(ModeratorTestCase):
         )
 
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_cn
+            )
         )
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_ce
+            )
         )
 
         services.remove_moderator(user_role=ur1)
         self.assertFalse(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_cn
+            )
         )
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_ce
+            )
         )
 
     def test_cannot_assign_duplicate_moderator(self):
@@ -113,20 +131,34 @@ class LoginServiceTests(ThrottleTestCase):
 
     def test_record_login_failure_increments_attempts(self):
         ip = "192.0.2.1"
-        self.assertFalse(services.is_login_rate_limited(identifier=self.user.email, client_ip=ip))
 
-        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+        counts = [
             services.record_login_failure(identifier=self.user.email, client_ip=ip)
+            for _ in range(3)
+        ]
 
-        self.assertTrue(services.is_login_rate_limited(identifier=self.user.email, client_ip=ip))
+        self.assertEqual(counts, [1, 2, 3])
 
-    @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=2, LOGIN_RATE_LIMIT_WINDOW_SECONDS=1)
     def test_record_login_failure_resets_window_when_key_expired(self):
         ip = "192.0.2.1"
         services.record_login_failure(identifier=self.user.email, client_ip=ip)
-        time.sleep(1.1)
+        cache.delete(
+            services._login_failure_key(identifier=self.user.email, client_ip=ip)
+        )
         services.record_login_failure(identifier=self.user.email, client_ip=ip)
-        self.assertFalse(services.is_login_rate_limited(identifier=self.user.email, client_ip=ip))
+        self.assertFalse(
+            services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
+        )
+
+    def test_attempt_login_inactive_user_fails(self):
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+
+        attempt = services.attempt_login(
+            identifier=self.user.email, password=VALID_PASSWORD, client_ip="192.0.2.1"
+        )
+
+        self.assertIsNone(attempt.user)
 
     def test_attempt_login_success(self):
         ip = "192.0.2.1"
@@ -137,7 +169,9 @@ class LoginServiceTests(ThrottleTestCase):
         )
         self.assertEqual(attempt.user, self.user)
         self.assertFalse(attempt.rate_limited)
-        self.assertFalse(services.is_login_rate_limited(identifier=self.user.email, client_ip=ip))
+        self.assertFalse(
+            services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
+        )
 
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=1)
     def test_attempt_login_failure_records_attempt(self):
@@ -149,7 +183,9 @@ class LoginServiceTests(ThrottleTestCase):
         )
         self.assertIsNone(attempt.user)
         self.assertFalse(attempt.rate_limited)
-        self.assertTrue(services.is_login_rate_limited(identifier=self.user.email, client_ip=ip))
+        self.assertTrue(
+            services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
+        )
 
     def test_attempt_login_rate_limited(self):
         ip = "192.0.2.1"
@@ -167,7 +203,9 @@ class LoginServiceTests(ThrottleTestCase):
 
 class DeleteOwnAccountServiceTests(ModeratorTestCase):
     def test_correct_password_anonymizes_user_and_removes_roles(self):
-        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+        services.assign_moderator(
+            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
+        )
 
         services.delete_own_account(user=self.user_momo, password="password123")
 
@@ -194,7 +232,9 @@ class DeleteOwnAccountServiceTests(ModeratorTestCase):
 
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.is_active)
-        self.assertTrue(self.admin.user_roles.filter(role=self.role_super_admin).exists())
+        self.assertTrue(
+            self.admin.user_roles.filter(role=self.role_super_admin).exists()
+        )
 
     def test_super_admin_can_delete_own_account_when_another_remains(self):
         UserRole.objects.create(user=self.user_nana, role=self.role_super_admin)
@@ -216,3 +256,44 @@ class DeleteOwnAccountServiceTests(ModeratorTestCase):
         )
 
         self.assertEqual(user.student_id, "6510610001")
+
+
+class DeleteAccountRateLimitServiceTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+    def test_key_generation_has_no_pii(self):
+        from accounts.services import _delete_account_failure_key
+
+        key = _delete_account_failure_key(user_id=123, client_ip="192.168.1.1")
+        self.assertTrue(key.startswith("delete-account-failures:"))
+        self.assertNotIn("123", key)
+        self.assertNotIn("192.168.1.1", key)
+
+    def test_rate_limit_flow(self):
+        from accounts import services
+
+        user_id = 999
+        client_ip = "10.0.0.1"
+
+        self.assertFalse(
+            services.is_delete_account_rate_limited(
+                user_id=user_id, client_ip=client_ip
+            )
+        )
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            services.record_delete_account_failure(user_id=user_id, client_ip=client_ip)
+
+        self.assertTrue(
+            services.is_delete_account_rate_limited(
+                user_id=user_id, client_ip=client_ip
+            )
+        )
+        services.clear_delete_account_failures(user_id=user_id, client_ip=client_ip)
+        self.assertFalse(
+            services.is_delete_account_rate_limited(
+                user_id=user_id, client_ip=client_ip
+            )
+        )
