@@ -941,9 +941,9 @@ omit =
 pip install black flake8 bandit
 black .                                        # จัดรูปแบบโค้ดให้ (ใน CI ใช้ black --check --diff .)
 flake8 .                                       # PEP 8, import/ตัวแปรที่ไม่ใช้ (F401, F841), บรรทัดยาว (E501)
-bandit -r . -x "*/tests/*,*/migrations/*"      # hardcoded secret (B105), random กับ token (B311), eval/exec
+bandit -c bandit.yaml -r .                         # hardcoded secret (B105), random กับ token (B311), eval/exec
 ```
-ตั้งค่าใน `.flake8` ที่ root (เพิ่มพร้อม PR ของ TD-8)
+ตั้งค่าใน `pyproject.toml`, `.flake8` และ `bandit.yaml` ที่ root (เพิ่มพร้อม PR ของ TD-8 #141)
 ```ini
 [flake8]
 max-line-length = 88

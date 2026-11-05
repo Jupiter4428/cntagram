@@ -1,6 +1,9 @@
 asgiref==3.12.1
+bandit==1.9.4
+black==26.10.1
 coverage==7.17.0
 Django==6.1.2
+flake8==7.5.0
 pillow==12.3.0
 python-decouple==3.8
 sqlparse==0.6.0
