@@ -201,6 +201,11 @@
                     <li><span aria-hidden="true">›</span> ยังไม่มีภาควิชาที่เปิดใช้</li>
                 {% endfor %}
             </ul>
+            <div class="admin-actions mt-3">
+                <a class="admin-button" href="{% url 'accounts:moderator_manage' %}">
+                    <span aria-hidden="true">⚑</span> จัดการ Moderator ประจำภาควิชา
+                </a>
+            </div>
         </div>
     </section>
 </div>

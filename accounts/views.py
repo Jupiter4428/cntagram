@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
@@ -124,16 +124,30 @@ def logout(request):
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def delete_account(request):
-    """ผู้ใช้ลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่าน แล้วออกจากระบบ (US-13)"""
+    """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
+    client_ip = _client_ip(request)
+    if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+        response = render(request, "accounts/delete_account.html", {"form": DeleteAccountForm(), "rate_limited": True}, status=429)
+        response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+        return response
+
     form = DeleteAccountForm(request.POST or None)
     if form.is_bound and form.is_valid():
         try:
             services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
         except ValidationError as exc:
+            if hasattr(exc, "message_dict") and "password" in exc.message_dict:
+                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+                    response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
+                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+                    return response
             form.add_error(None, exc)
         else:
+            services.clear_delete_account_failures(user_id=request.user.pk, client_ip=client_ip)
             auth_logout(request)
             messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
             return redirect("accounts:home")

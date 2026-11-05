@@ -13,7 +13,7 @@ def moderator_list():
     """ดึงรายชื่อ Moderator ทั้งหมดพร้อมข้อมูลเชื่อมโยง (ป้องกัน N+1 Queries)"""
     return (
         UserRole.objects.filter(role__code=Role.MODERATOR)
-        .select_related("user", "granted_by")
+        .select_related("user", "granted_by", "department")
         .order_by("department__code", "user__email")
     )
 
