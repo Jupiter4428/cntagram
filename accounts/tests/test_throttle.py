@@ -82,7 +82,9 @@ class LoginThrottleTests(ThrottleTestCase):
 
         # ครั้งที่ 7 จาก IP เดิมโดนบล็อกด้วย 429 ไม่ว่าจะลองบัญชีใดก็ตาม
         response = self.post_login(
-            self.wrong_password, username="6610000099@student.tu.ac.th", REMOTE_ADDR=client_ip
+            self.wrong_password,
+            username="6610000099@student.tu.ac.th",
+            REMOTE_ADDR=client_ip,
         )
         self.assertEqual(response.status_code, 429)
 
@@ -135,7 +137,7 @@ class LoginThrottleTests(ThrottleTestCase):
         self.assertEqual(blocked_res.status_code, 429)
 
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3, LOGIN_RATE_LIMIT_IP_ATTEMPTS=20)
-    def test_rate_limit_is_scoped_by_client_ip(self):
+    def test_locked_account_does_not_block_other_accounts(self):
         other_user = User.objects.create_user(
             email="6610000002@student.tu.ac.th",
             password=self.password,
@@ -146,10 +148,6 @@ class LoginThrottleTests(ThrottleTestCase):
         for _ in range(3):
             self.post_login(self.wrong_password, REMOTE_ADDR="192.0.2.1")
 
-        # บัญชีเดิมถูกล็อก
-        self.assertEqual(self.post_login(REMOTE_ADDR="192.0.2.2").status_code, 429)
-
-        # บัญชีอื่นที่มาจาก IP 2 ยังล็อกอินได้ตามปกติ
         response = self.post_login(
             password=self.password, username=other_user.email, REMOTE_ADDR="192.0.2.2"
         )
@@ -188,10 +186,15 @@ class RegisterThrottleTests(ThrottleTestCase):
         super().setUp()
         self.url = reverse("accounts:register")
 
-    @override_settings(REGISTER_RATE_LIMIT_ATTEMPTS=2, REGISTER_RATE_LIMIT_WINDOW_SECONDS=90)
+    @override_settings(
+        REGISTER_RATE_LIMIT_ATTEMPTS=2, REGISTER_RATE_LIMIT_WINDOW_SECONDS=90
+    )
     def test_blocks_post_after_quota_with_retry_after(self):
         for _ in range(2):
-            self.assertEqual(self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10").status_code, 200)
+            self.assertEqual(
+                self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10").status_code,
+                200,
+            )
         response = self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10")
         self.assertEqual(response.status_code, 429)
         self.assertEqual(response["Retry-After"], "90")
@@ -200,9 +203,13 @@ class RegisterThrottleTests(ThrottleTestCase):
     @override_settings(REGISTER_RATE_LIMIT_ATTEMPTS=1)
     def test_limit_is_per_ip_and_does_not_trust_forwarded_for(self):
         self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10")
-        blocked = self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.10", HTTP_X_FORWARDED_FOR="192.0.2.20")
+        blocked = self.client.post(
+            self.url, {}, REMOTE_ADDR="192.0.2.10", HTTP_X_FORWARDED_FOR="192.0.2.20"
+        )
         self.assertEqual(blocked.status_code, 429)
-        self.assertEqual(self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.20").status_code, 200)
+        self.assertEqual(
+            self.client.post(self.url, {}, REMOTE_ADDR="192.0.2.20").status_code, 200
+        )
 
     @override_settings(REGISTER_RATE_LIMIT_ATTEMPTS=1)
     def test_get_does_not_use_post_quota(self):

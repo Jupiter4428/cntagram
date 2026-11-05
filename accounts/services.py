@@ -44,27 +44,30 @@ class LoginAttempt:
     rate_limited: bool = False
 
 
-def _keys(*, identifier, client_ip):
+LOGIN_RATE_LIMIT_SALT = "accounts.login-rate-limit"
+
+
+def _login_failure_keys(*, identifier, client_ip):
     """Build non-PII cache keys for login identity bucket and client IP bucket."""
     ident = (identifier or "").strip().casefold()
     ip = (client_ip or "unknown").strip()
-    return [
-        "login-failures:id:" + salted_hmac("accounts.login-rate-limit", ident).hexdigest(),
-        "login-failures:ip:" + salted_hmac("accounts.login-rate-limit", ip).hexdigest(),
-    ]
+    return (
+        "login-failures:id:" + salted_hmac(LOGIN_RATE_LIMIT_SALT, ident).hexdigest(),
+        "login-failures:ip:" + salted_hmac(LOGIN_RATE_LIMIT_SALT, ip).hexdigest(),
+    )
 
 
 def is_login_rate_limited(*, identifier, client_ip):
     """Return whether either the identity bucket or the network IP bucket is exhausted."""
-    id_key, ip_key = _keys(identifier=identifier, client_ip=client_ip)
-    ip_limit = getattr(settings, "LOGIN_RATE_LIMIT_IP_ATTEMPTS", 20)
+    id_key, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     return (
         cache.get(id_key, 0) >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
-        or cache.get(ip_key, 0) >= ip_limit
+        or cache.get(ip_key, 0) >= settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS
     )
 
 
 def _increment_failure_key(key, timeout):
+    """Increment one failure counter, starting a fresh window if it expired."""
     if cache.add(key, 1, timeout=timeout):
         return 1
     try:
@@ -77,7 +80,7 @@ def _increment_failure_key(key, timeout):
 
 def record_login_failure(*, identifier, client_ip):
     """Record one failed authentication attempt for both identity and client IP."""
-    id_key, ip_key = _keys(identifier=identifier, client_ip=client_ip)
+    id_key, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
     _increment_failure_key(id_key, timeout)
     _increment_failure_key(ip_key, timeout)
@@ -85,7 +88,7 @@ def record_login_failure(*, identifier, client_ip):
 
 def clear_login_failures(*, identifier, client_ip):
     """Clear identity failures after successful authentication (preserves IP failures)."""
-    id_key, _ = _keys(identifier=identifier, client_ip=client_ip)
+    id_key, _ = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     cache.delete(id_key)
 
 
@@ -107,12 +110,17 @@ def attempt_login(*, form, client_ip):
 
 
 def _register_attempt_key(client_ip):
-    digest = salted_hmac("accounts.register-throttle", client_ip or "unknown").hexdigest()
+    digest = salted_hmac(
+        "accounts.register-throttle", client_ip or "unknown"
+    ).hexdigest()
     return f"register-attempts:{digest}"
 
 
 def is_register_rate_limited(client_ip):
-    return cache.get(_register_attempt_key(client_ip), 0) >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+    return (
+        cache.get(_register_attempt_key(client_ip), 0)
+        >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+    )
 
 
 def record_register_attempt(client_ip):
@@ -169,7 +177,9 @@ def delete_own_account(*, user, password):
         .values_list("user_id", flat=True)
     )
     if set(super_admin_ids) == {user.pk}:
-        raise ValidationError("คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี")
+        raise ValidationError(
+            "คุณเป็น Super Admin คนสุดท้าย ต้องแต่งตั้ง Super Admin คนอื่นก่อนลบบัญชี"
+        )
     user.user_roles.all().delete()
     user.anonymize()
 
