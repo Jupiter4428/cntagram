@@ -15,7 +15,8 @@ class ExamPeriodChoiceField(forms.ModelChoiceField):
 
 
 class SearchForm(forms.Form):
-    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. (US-7, US-11)  # noqa: E501
+    """ค้นหาเอกสาร (GET) ด้วยรหัสวิชา + ตัวกรอง
+    ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. (US-7, US-11)
 
     cleaned_data ส่งเข้า selectors.search_documents(**cleaned_data) ได้เลย
     """
@@ -88,7 +89,8 @@ class SearchForm(forms.Form):
 
 
 class UploadForm(forms.Form):
-    """อัปโหลดชีท (US-5) cleaned_data ยกเว้น disclaimer ส่งเข้า services.upload_document ได้เลย  # noqa: E501
+    """อัปโหลดชีท (US-5) cleaned_data ยกเว้น disclaimer
+    ส่งเข้า services.upload_document ได้เลย
 
     batch_course รับได้ทุกภาค โดยตั้งใจ: view เช็กภาคของผู้ใช้ก่อนดูผลฟอร์ม
     และ service เช็กซ้ำ จึงตอบ 403 เมื่อมีคนแก้ request ข้ามภาค (ไม่ใช่แค่ฟอร์มไม่ผ่าน)

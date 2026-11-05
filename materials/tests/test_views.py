@@ -389,7 +389,8 @@ class UploadViewTests(UploadTestCase):
         self.assertFalse(Document.objects.exists())
 
     def test_model_error_outside_form_fields_is_shown_not_500(self):
-        """รหัสภาคมี zero-width space (U+200B) ที่ระบบไฟล์รับ แต่ DocumentVersion ปฏิเสธ storage_path  # noqa: E501
+        """รหัสภาคมี zero-width space (U+200B) ที่ระบบไฟล์รับ
+        แต่ DocumentVersion ปฏิเสธ storage_path
 
         error key storage_path ไม่ใช่ช่องในฟอร์ม จึงต้องแสดงเป็น non-field error
         """

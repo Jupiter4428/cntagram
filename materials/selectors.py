@@ -97,9 +97,11 @@ def search_documents(
     exam_period=None,
     exam_year_be=None,
 ):
-    """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น กรองเพิ่มด้วย ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. ได้  # noqa: E501
+    """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น
+    กรองเพิ่มด้วย ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. ได้
 
-    เทียบรหัสแบบตรงตัว (Course.code เก็บเป็นตัวพิมพ์ใหญ่) จึงใช้ UQ index ของ course.code ได้  # noqa: E501
+    เทียบรหัสแบบตรงตัว (Course.code เก็บเป็นตัวพิมพ์ใหญ่)
+    จึงใช้ UQ index ของ course.code ได้
     รหัสรุ่นไม่ได้เก็บใน DB จึงกรองรุ่นผ่าน batch_course__batch
     """
     conditions = Q(batch_course__course__code=course_code.strip().upper())
@@ -148,7 +150,8 @@ def can_review_any(*, user):
 
 
 def pending_documents_for_moderator(*, user):
-    """ดึงรายการเอกสารรออนุมัติ (pending) ของภาควิชาที่ผู้ใช้ดูแล (หรือทุกภาคถ้าเป็น Super Admin)  # noqa: E501
+    """ดึงรายการเอกสารรออนุมัติ (pending) ของภาควิชาที่ผู้ใช้ดูแล
+    (หรือทุกภาคถ้าเป็น Super Admin)
 
     ไม่รวมไฟล์ที่ตนเองเป็นผู้อัปโหลด และไม่รวมไฟล์ที่ตนเองพิจารณาไปแล้ว
     """
@@ -196,7 +199,8 @@ def uploaded_file_count() -> int:
 
 
 def monthly_uploads(*, today=None, months=6) -> list[dict]:
-    """ไฟล์ที่อัปโหลดต่อเดือน (นับทุกเวอร์ชัน) ย้อนหลัง `months` เดือนรวมเดือนนี้ เดือนที่ไม่มีเป็น 0  # noqa: E501
+    """ไฟล์ที่อัปโหลดต่อเดือน (นับทุกเวอร์ชัน) ย้อนหลัง `months` เดือน
+    รวมเดือนนี้ เดือนที่ไม่มีเป็น 0
 
     `percent` เทียบกับเดือนที่มากที่สุด ใช้เป็นความสูงแท่งกราฟ
     """
@@ -288,7 +292,8 @@ def approval_progress(*, document):
 def approval_progress_for(*, documents):
     """สถานะอนุมัติของหลายเอกสาร (หน้าคิว) คืน {document.pk: ApprovalProgress}
 
-    ไม่เกิน 3 query ไม่ว่ากี่เอกสาร เอกสารควร select_related "doc_type", "batch_course__batch" มาแล้ว  # noqa: E501
+    ไม่เกิน 3 query ไม่ว่ากี่เอกสาร
+    เอกสารควร select_related "doc_type", "batch_course__batch" มาแล้ว
     เอกสารที่ไม่ใช่ pending จะได้ missing_roles = []
     """
     documents = list(documents)

@@ -163,8 +163,11 @@ def delete_own_account(*, user, password):
     ถอด role ทั้งหมดแล้วล้างข้อมูลด้วย anonymize()
     """
     if not user.check_password(password):
-        error_field = "password"
-        raise ValidationError({error_field: "รหัสผ่านไม่ถูกต้อง"})
+        raise ValidationError(
+            {
+                "password": "รหัสผ่านไม่ถูกต้อง"
+            }  # nosec B105 - ชื่อ field ของฟอร์ม ไม่ใช่รหัสผ่าน
+        )
     # ล็อกแถว Super Admin กันสองคนสุดท้ายลบพร้อมกันจนไม่เหลือใคร
     super_admin_ids = list(
         UserRole.objects.select_for_update(of=("self",))

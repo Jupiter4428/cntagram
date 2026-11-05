@@ -89,7 +89,8 @@ def document_preview(request, document_id):
 
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าพิจารณาของเว็บเราเองแสดงได้
 def approval_document_preview(request, document_id):
-    """ส่งไฟล์ PDF ของเอกสารที่รอพิจารณา (pending) ให้ผู้ตรวจที่มีสิทธิ์เท่านั้น (US-6, #100)  # noqa: E501
+    """ส่งไฟล์ PDF ของเอกสารที่รอพิจารณา (pending)
+    ให้ผู้ตรวจที่มีสิทธิ์เท่านั้น (US-6, #100)
 
     สิทธิ์และสถานะตัดสินที่ selectors.get_document_for_review:
     ผู้ใช้ทั่วไป, Moderator ภาคอื่น,

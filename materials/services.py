@@ -47,7 +47,8 @@ def file_too_large_message():
 
 
 def _validate_pdf(file):
-    """รับเฉพาะ PDF: MIME ที่ browser ส่งมาต้องเป็น PDF และ magic bytes ต้องขึ้นต้นด้วย %PDF-  # noqa: E501
+    """รับเฉพาะ PDF: MIME ที่ browser ส่งมาต้องเป็น PDF
+    และ magic bytes ต้องขึ้นต้นด้วย %PDF-
 
     MIME ปลอมได้ฝั่ง client จึงต้องเช็ก magic bytes ของเนื้อไฟล์จริงด้วย
     """

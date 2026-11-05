@@ -349,9 +349,10 @@ class ModeratorViewTests(ModeratorTestCase):
 
         manage_res = self.client.get(reverse("accounts:moderator_manage"))
         self.assertEqual(manage_res.status_code, 200)
+        expected_link = reverse("accounts:moderator_manage")
         self.assertContains(
             manage_res,
-            f'class="admin-menu__link is-active" href="{reverse("accounts:moderator_manage")}"',
+            f'class="admin-menu__link is-active" href="{expected_link}"',
         )
 
 
