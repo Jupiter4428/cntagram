@@ -125,8 +125,7 @@ def logout(request):
 @require_http_methods(["GET", "POST"])
 def delete_account(request):
     """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
-    client_ip = _client_ip(request)
-    if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+    if services.is_delete_account_rate_limited(user_id=request.user.pk):
         response = render(request, "accounts/delete_account.html", {"form": DeleteAccountForm(), "rate_limited": True}, status=429)
         response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
         return response
@@ -137,14 +136,14 @@ def delete_account(request):
             services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
         except ValidationError as exc:
             if hasattr(exc, "message_dict") and "password" in exc.message_dict:
-                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
-                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
+                services.record_delete_account_failure(user_id=request.user.pk)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk):
                     response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
                     response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
                     return response
             form.add_error(None, exc)
         else:
-            services.clear_delete_account_failures(user_id=request.user.pk, client_ip=client_ip)
+            services.clear_delete_account_failures(user_id=request.user.pk)
             auth_logout(request)
             messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
             return redirect("accounts:home")
