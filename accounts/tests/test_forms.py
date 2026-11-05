@@ -106,6 +106,7 @@ class RegisterFormTests(RegistrationTestCase):
         self.assertIn("is-invalid", form.fields["nickname"].widget.attrs["class"])
         self.assertNotIn("is-invalid", form.fields["email"].widget.attrs["class"])
 
+
 class ModeratorAssignmentFormTests(ModeratorTestCase):
     def test_moderator_user_choice_field_label_format(self):
         form = ModeratorAssignmentForm()

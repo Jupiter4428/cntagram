@@ -319,7 +319,10 @@ class ModeratorViewTests(ModeratorTestCase):
         self.client.force_login(self.admin)
         home_res = self.client.get(reverse("accounts:home"))
         self.assertEqual(home_res.status_code, 200)
-        self.assertContains(home_res, reverse("accounts:moderator_manage"))
+        # sidebar + dashboard link under DEPARTMENTS
+        self.assertContains(
+            home_res, f'href="{reverse("accounts:moderator_manage")}"', count=2
+        )
 
         manage_res = self.client.get(reverse("accounts:moderator_manage"))
         self.assertEqual(manage_res.status_code, 200)
