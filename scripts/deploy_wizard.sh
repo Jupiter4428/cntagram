@@ -21,7 +21,7 @@ fi
 
 TOTAL_STAGES=0
 _STAGE_INDEX=0
-ENV_FILE="${ENV_FILE:-.env}"
+ENV_FILE="${ENV_FILE:-.env.render}"
 WRITTEN_ENV=()
 WRITTEN_SECRET=()
 SKIPPED=()
@@ -171,7 +171,7 @@ step "2. Name: cntagram"
 step "3. Region: Singapore (MUST match PostgreSQL region!)"
 step "4. Branch: develop (or main)"
 step "5. Runtime: Python 3"
-step "6. Build Command: ./build.sh"
+step "6. Build Command: ./build.sh (or bash build.sh)"
 step "7. Start Command: gunicorn portal.wsgi:application"
 step "8. Auto-Deploy: Yes"
 ask SERVICE_SLUG "Enter your service name/slug (e.g. cntagram):"
@@ -187,6 +187,8 @@ DEFAULT_SECRET=$(python -c "import secrets; print(secrets.token_urlsafe(50))" 2>
 CURRENT_SECRET=$(_existing "SECRET_KEY" || echo "$DEFAULT_SECRET")
 write_env SECRET_KEY "$CURRENT_SECRET"
 write_env DEBUG "False"
+ask DJANGO_SUPERUSER_EMAIL "Enter email for admin superuser (e.g. admin@example.com):"
+write_env DJANGO_SUPERUSER_EMAIL "$DJANGO_SUPERUSER_EMAIL"
 ask_secret DJANGO_SUPERUSER_PASSWORD "Enter desired password for admin superuser:"
 write_env DJANGO_SUPERUSER_PASSWORD "$DJANGO_SUPERUSER_PASSWORD"
 
@@ -194,10 +196,11 @@ open_url "https://dashboard.render.com"
 say "In Render Web Service → 'Environment' tab, add these Key-Value pairs:"
 note "  - PYTHON_VERSION = 3.12.0"
 note "  - DEBUG = False"
-note "  - SECRET_KEY = (saved in your .env)"
+note "  - SECRET_KEY = (saved in your $ENV_FILE)"
 note "  - DATABASE_URL = $INTERNAL_DATABASE_URL"
 note "  - ALLOWED_HOSTS = .onrender.com,localhost,127.0.0.1"
 note "  - CSRF_TRUSTED_ORIGINS = https://*.onrender.com"
+note "  - DJANGO_SUPERUSER_EMAIL = $DJANGO_SUPERUSER_EMAIL"
 note "  - DJANGO_SUPERUSER_PASSWORD = (entered above)"
 pause "Press Enter after adding all environment variables in Render..."
 
@@ -208,7 +211,7 @@ open_url "https://${APP_HOSTNAME}"
 step "1. In Render Dashboard → 'Events' & 'Logs', confirm build.sh ran successfully."
 step "2. Check: Static files loaded with styling (CSS/JS present)."
 step "3. Check: HTTPS padlock icon in browser address bar."
-step "4. Open https://${APP_HOSTNAME}/admin/ and verify login with username 'admin'."
+step "4. Open https://${APP_HOSTNAME}/admin/ and verify login with email '${DJANGO_SUPERUSER_EMAIL:-admin@example.com}'."
 pause "Press Enter once you verified the live deployment..."
 
 # ── Stage 5: Test Backup & Disaster Recovery ──────────────────────────────

@@ -14,8 +14,13 @@ BACKUP_DIR="${2:-backups}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 mkdir -p "$BACKUP_DIR"
 
+MEDIA_DIR="${MEDIA_ROOT:-media}"
+
 # Read DATABASE_URL or fallback to local SQLite
-DB_URL="${DATABASE_URL:-}"
+DB_URL="${DATABASE_URL:-${EXTERNAL_DATABASE_URL:-}}"
+if [[ -z "$DB_URL" && -f ".env.render" ]]; then
+  DB_URL=$(grep -E "^EXTERNAL_DATABASE_URL=" .env.render | cut -d'=' -f2- | tr -d "'" | tr -d '"' || true)
+fi
 if [[ -z "$DB_URL" && -f ".env" ]]; then
   DB_URL=$(grep -E "^DATABASE_URL=" .env | cut -d'=' -f2- | tr -d "'" | tr -d '"' || true)
 fi
@@ -49,10 +54,10 @@ con.close()
 
   # Backup media vault if present
   local media_backup_file=""
-  if [[ -d "media" && $(ls -A media 2>/dev/null) ]]; then
+  if [[ -d "$MEDIA_DIR" && $(ls -A "$MEDIA_DIR" 2>/dev/null) ]]; then
     echo "--> Backing up protected media vault..."
     media_backup_file="$BACKUP_DIR/media_${TIMESTAMP}.tar.gz"
-    tar -czf "$media_backup_file" media/
+    tar -czf "$media_backup_file" -C "$MEDIA_DIR" .
     echo "--> Media archive saved: $media_backup_file"
   else
     echo "--> Media folder empty or not present; skipping media archive."
@@ -91,7 +96,8 @@ restore() {
 
   elif [[ "$target_file" == *.tar.gz ]]; then
     echo "--> Restoring media vault from $target_file..."
-    tar -xzf "$target_file"
+    mkdir -p "$MEDIA_DIR"
+    tar -xzf "$target_file" -C "$MEDIA_DIR"
     echo "--> Media vault restore completed."
 
   else
@@ -135,6 +141,27 @@ test_routine() {
       else
         echo "✓ Dump file exists: $(basename "$f")"
       fi
+    fi
+  done
+
+  echo "--> 4. Testing actual restore and table count comparison..."
+  for f in "$test_dir"/*; do
+    if [[ "$f" == *.sqlite3 ]]; then
+      local restored="$test_dir/restored.sqlite3"
+      cp "$f" "$restored"
+      python -c "
+import sqlite3, sys, os
+if os.path.exists('db.sqlite3'):
+    src = sqlite3.connect('db.sqlite3')
+    dst = sqlite3.connect(r'$restored')
+    for (t,) in src.execute(\"select name from sqlite_master where type='table'\"):
+        a = src.execute(f'select count(*) from \"{t}\"').fetchone()
+        b = dst.execute(f'select count(*) from \"{t}\"').fetchone()
+        assert a == b, f'Mismatch in table {t}: {a} vs {b}'
+    print('✓ SQLite table row verification passed')
+else:
+    print('✓ SQLite restore verification skipped (no local db.sqlite3)')
+"
     fi
   done
 

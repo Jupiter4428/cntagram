@@ -29,23 +29,13 @@ TESTING = "test" in sys.argv
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config(
     "SECRET_KEY",
-    default="django-insecure-=)*b-=!qgjibnv)o_=wpe&f)tmcwpk#t258#9bg%%ur8&)k@5a",
+    default=(
+        "django-insecure-=)*b-=!qgjibnv)o_=wpe&f)tmcwpk#t258#9bg%%ur8&)k@5a"
+    ),
 )
 
-
-def parse_debug_value(val):
-    if isinstance(val, bool):
-        return val
-    s = str(val).strip().lower()
-    if s in ("true", "1", "yes", "t", "on", "dev", "development"):
-        return True
-    if s in ("false", "0", "no", "f", "off", "release", "prod", "production"):
-        return False
-    return False
-
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=True, cast=parse_debug_value)
+DEBUG = config("DEBUG", default=True, cast=bool)
 
 ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
@@ -63,55 +53,55 @@ CSRF_TRUSTED_ORIGINS = config(
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "accounts",
-    "catalog",
-    "materials",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'accounts',
+    'catalog',
+    'materials',
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.auth.middleware.LoginRequiredMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.LoginRequiredMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = "portal.urls"
+ROOT_URLCONF = 'portal.urls'
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "materials.context_processors.approval_permissions",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'materials.context_processors.approval_permissions',
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = "portal.wsgi.application"
+WSGI_APPLICATION = 'portal.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(
+    'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
         conn_health_checks=True,
@@ -144,22 +134,19 @@ MESSAGE_TAGS = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "UserAttributeSimilarityValidator"
-        ),
-        "OPTIONS": {
-            "user_attributes": ("email", "nickname"),
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'OPTIONS': {
+            'user_attributes': ('email', 'nickname'),
         },
     },
     {
-        "NAME": ("django.contrib.auth.password_validation." "MinimumLengthValidator"),
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
     {
-        "NAME": ("django.contrib.auth.password_validation." "CommonPasswordValidator"),
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
-        "NAME": ("django.contrib.auth.password_validation." "NumericPasswordValidator"),
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
 
@@ -167,9 +154,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = "Asia/Bangkok"
+TIME_ZONE = 'Asia/Bangkok'
 
 USE_I18N = True
 
@@ -179,34 +166,36 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Ensure directory exists to suppress WhiteNoise start-up warning
+# if run before collectstatic
 STATIC_ROOT.mkdir(parents=True, exist_ok=True)
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
-    "staticfiles": {
-        "BACKEND": (
-            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    'staticfiles': {
+        'BACKEND': (
+            'whitenoise.storage.CompressedManifestStaticFilesStorage'
             if not DEBUG and not TESTING
-            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+            else 'django.contrib.staticfiles.storage.StaticFilesStorage'
         ),
     },
 }
 
 # ไฟล์เอกสารที่อัปโหลด (DocumentVersion.storage_path สัมพัทธ์กับโฟลเดอร์นี้)
 # ตั้งใจไม่มี MEDIA_URL: เปิดไฟล์ได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น ไม่มี Direct URL
-MEDIA_ROOT = Path(config("MEDIA_ROOT", default=str(BASE_DIR / "media")))
+MEDIA_ROOT = Path(config('MEDIA_ROOT', default=str(BASE_DIR / 'media')))
 
 # ข้ามไฟล์ที่เกิน max_upload_mb ตั้งแต่ตอนรับ ก่อนลง temp file ทั้งก้อน
 # มีผลกับทุกการอัปโหลดในระบบ (รวม admin) ตอนนี้มีแค่ฟอร์มอัปโหลดชีทที่รับไฟล์
 FILE_UPLOAD_HANDLERS = [
-    "materials.uploadhandlers.MaxSizeUploadHandler",
-    "django.core.files.uploadhandler.MemoryFileUploadHandler",
-    "django.core.files.uploadhandler.TemporaryFileUploadHandler",
+    'materials.uploadhandlers.MaxSizeUploadHandler',
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
 
 
@@ -214,31 +203,28 @@ FILE_UPLOAD_HANDLERS = [
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
 _email_backend = config(
-    "EMAIL_BACKEND",
+    'EMAIL_BACKEND',
     default=(
-        "django.core.mail.backends.smtp.EmailBackend"
+        'django.core.mail.backends.smtp.EmailBackend'
         if not DEBUG
-        else "django.core.mail.backends.console.EmailBackend"
+        else 'django.core.mail.backends.console.EmailBackend'
     ),
 )
 
 MAILERS = {
-    "default": {
-        "BACKEND": _email_backend,
+    'default': {
+        'BACKEND': _email_backend,
     },
 }
 
 
 # Production Security Hardening
-TESTING = "test" in sys.argv
-
 if not DEBUG and not TESTING:
-    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
-    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=3600, cast=int)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    X_FRAME_OPTIONS = "DENY"
+    X_FRAME_OPTIONS = 'DENY'

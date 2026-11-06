@@ -42,48 +42,68 @@ Sprint 3 มีเป้าหมายสำคัญตาม Roadmap คื�
 
 ### 4. การจัดเก็บไฟล์เอกสาร PDF (Document Storage & Protected Access)
 - **ยืนยันหลักการของ ADR 0003:** ไม่มีการตั้ง `MEDIA_URL` และไม่เปิดให้ Web Server เสิร์ฟโฟลเดอร์ไฟล์เอกสารโดยตรง ทุกคำขอดูไฟล์ยังคงต้องผ่าน View ที่ตรวจสิทธิ์ (`materials:document_preview` และ `materials:document_download`) ซึ่งส่งคืนผ่าน `FileResponse`
-- **การจัดการกับ Ephemeral Disk บน PaaS:**
-  - *สำหรับ Prototype และ Production บน Render:* ใช้ **Render Persistent Disk** ทำการ Mount ไว้ที่ `/var/data/media` (กำหนดผ่าน `MEDIA_ROOT = config("MEDIA_ROOT", default=str(BASE_DIR / "media"))`) ทำให้ไฟล์ PDF คงอยู่ถาวรไม่สูญหายเมื่อเซิร์ฟเวอร์รีสตาร์ต
+- **การจัดการกับ Ephemeral Disk บน PaaS และผลกระทบตาม Pricing Plan:**
+  - *สำหรับ Production เต็มรูปแบบ (Paid Instance):* Render Persistent Disk รองรับบน Instance แบบมีค่าใช้จ่าย (Starter $7/เดือน + ค่า Disk $0.25/GB/เดือน) ทำการ Mount ไว้ที่ `/var/data/media` (กำหนดผ่าน `MEDIA_ROOT = config("MEDIA_ROOT", default=str(BASE_DIR / "media"))`) ทำให้ไฟล์ PDF คงอยู่ถาวรไม่สูญหายเมื่อเซิร์ฟเวอร์รีสตาร์ต
+  - *สำหรับ Prototype บน Free Plan ($0/เดือน):* Free Web Service บน Render ไม่มี Persistent Disk ให้ใช้งาน (ระบบไฟล์เป็น Ephemeral 100%) ส่งผลให้ไฟล์ PDF ที่อัปโหลดจะสูญหายทุกครั้งที่มีการ Redeploy หรือเซิร์ฟเวอร์หมุนรอบใหม่ และจำเป็นต้องสำรองไฟล์ PDF ผ่านสคริปต์ `scripts/backup_restore.sh`
   - *แผนขยายระยะยาว (Scalable Storage):* หากเปลี่ยนไปใช้ Object Storage ภายนอก (เช่น Cloudflare R2 หรือ Supabase Storage) จะคงคอนฟิกแบบ Private Bucket 100% แล้วให้ Django View ทำหน้าที่ Stream ข้อมูลหรือสร้าง Pre-signed URL แบบมีอายุสั้นพิเศษ (15–60 วินาที)
 
 ### 5. การจัดการค่าคอนฟิกและการเพิ่มความปลอดภัย (Environment & Hardening)
-- จัดการ Environment Variables ผ่าน `python-decouple` (หรือ `os.environ`):
-  - `DEBUG = config("DEBUG", default=False, cast=bool)`
-  - `SECRET_KEY = config("SECRET_KEY")` (บังคับตั้งค่าบน Cloud ห้ามใช้ค่าเริ่มต้น)
-  - `ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())`
-  - `CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())`
-- เมื่อ `DEBUG = False`:
-  - เปิดใช้งาน `SECURE_SSL_REDIRECT = True`
+- จัดการ Environment Variables ผ่าน `python-decouple`:
+  ```python
+  SECRET_KEY = config(
+      "SECRET_KEY",
+      default="django-insecure-=)*b-=!qgjibnv)o_=wpe&f)tmcwpk#t258#9bg%%ur8&)k@5a",
+  )
+  DEBUG = config("DEBUG", default=True, cast=bool)
+  ALLOWED_HOSTS = config(
+      "ALLOWED_HOSTS",
+      default="localhost,127.0.0.1",
+      cast=Csv(),
+  )
+  CSRF_TRUSTED_ORIGINS = config(
+      "CSRF_TRUSTED_ORIGINS",
+      default="",
+      cast=Csv(),
+  )
+  ```
+  - ระหว่างพัฒนาบนเครื่อง Local Dev สามารถใช้งานค่าเริ่มต้นได้อย่างสะดวก
+  - ในขั้นตอน `build.sh` กำหนดคำสั่ง `python manage.py check --deploy --fail-level WARNING` เพื่อทำหน้าที่เป็น Security Gate สั่งล้ม Build ทันทีหากขึ้น Production โดยไม่ตั้ง `SECRET_KEY` หรือลืมตั้ง `DEBUG=False`
+- เมื่อ `DEBUG = False` และไม่อยู่ในโหมดรันเทสต์ (`not TESTING`):
+  - เปิดใช้งาน `SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)`
   - กำหนด `SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")`
   - เปิด Secure Cookie Flags: `SESSION_COOKIE_SECURE = True`, `CSRF_COOKIE_SECURE = True`, `SESSION_COOKIE_HTTPONLY = True`
-  - เปิดใช้ HSTS: `SECURE_HSTS_SECONDS = 31536000`, `SECURE_HSTS_INCLUDE_SUBDOMAINS = True`, `SECURE_HSTS_PRELOAD = True`
+  - เปิดใช้ HSTS: `SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=3600, cast=int)` และ `SECURE_HSTS_INCLUDE_SUBDOMAINS = True` (เริ่มต้นจาก 3,600 วินาทีเพื่อความปลอดภัย ไม่ส่ง `*.onrender.com` เข้า Preload list สาธารณะ)
+  - กำหนด `X_FRAME_OPTIONS = "DENY"` เพื่อป้องกัน Clickjacking โดยหน้าเอกสารที่ต้อง Preview ภายใน iframe มีการใช้ `@xframe_options_sameorigin` รองรับไว้อย่างถูกต้อง
 
 ### 6. กลยุทธ์การสำรองและกู้คืนข้อมูล (Backup & Disaster Recovery Strategy)
 - **Automated Daily Database Backup:**
-  - ใช้งานระบบ Automated Daily Snapshots บน Managed PostgreSQL ซึ่งทำการ Snapshot สำรองข้อมูลให้อัตโนมัติทุกวัน
-  - แผนสำรองข้อมูลภายนอก (Offsite Logical Backup): มีสคริปต์สำรองข้อมูลด้วยคำสั่ง `pg_dump` แบบ Custom Compressed Format (`-Fc`):
+  - บน Render Managed PostgreSQL แบบเสียเงิน (Paid Plan เริ่มต้น $7/เดือน) จะมีระบบ Automated Daily Snapshots ให้บริการอัตโนมัติ
+  - บน Render Free PostgreSQL ฐานข้อมูลมีอายุจำกัด 30 วันและไม่มี Automated Snapshots จึงต้องพึ่งพาสคริปต์สำรองข้อมูลภายนอก (Offsite Logical Backup) ด้วย `scripts/backup_restore.sh`
+  - สคริปต์สำรองข้อมูลรองรับทั้ง PostgreSQL ผ่านคำสั่ง `pg_dump` แบบ Custom Compressed Format (`-Fc`):
     ```bash
     pg_dump "$DATABASE_URL" -Fc -f "backups/cntagram_backup_$(date +%Y%m%d_%H%M%S).dump"
     ```
+    และรองรับ SQLite สำหรับ Local Development/Testing ผ่าน Python SQLite backup API
 - **การกู้คืนข้อมูล (Restore Procedure):**
   - กู้คืนฐานข้อมูลผ่านคำสั่ง `pg_restore`:
     ```bash
     pg_restore --clean --if-exists --no-owner --no-privileges -d "$DATABASE_URL" "backups/<backup_file>.dump"
     ```
-  - จัดทำขั้นตอนการทดสอบ Restore จริงลงในคู่มือและสคริปต์ Wizard เพื่อให้มั่นใจว่าเมื่อเกิดเหตุฉุกเฉินสามารถนำข้อมูลกลับมาได้ภายใน RTO < 1 ชั่วโมง และ RPO ≤ 24 ชั่วโมง
+    หรือกู้คืน SQLite จากไฟล์ backup ได้ทันที พร้อมตรวจสอบความสมบูรณ์ของตารางและจำนวนแถว
+  - จัดทำขั้นตอนการทดสอบ Restore จริงลงในสคริปต์ `scripts/backup_restore.sh test` ซึ่งทำการสำรองและกู้คืนเปรียบเทียบข้อมูลแถวจริง เพื่อให้มั่นใจในเกณฑ์ RTO < 1 ชั่วโมง และ RPO ≤ 24 ชั่วโมง
 - **การสำรองไฟล์เอกสาร (PDF Backups):**
-  - มีสคริปต์ Archive บีบอัดโฟลเดอร์ `media/vault` เป็น `tar.gz` ประจำวันเพื่อเก็บสำรองไว้นอกเซิร์ฟเวอร์
+  - สคริปต์ Archive บีบอัดโฟลเดอร์เอกสารตาม `MEDIA_ROOT` (หรือ `media/`) เป็น `tar.gz` ประจำวันเพื่อเก็บสำรองไว้นอกเซิร์ฟเวอร์
 
 ---
 
 ## Alternatives considered
 
-| ตัวเลือก | ข้อดี | ข้อเสีย / เหตุผลที่ไม่เลือก |
-|---|---|---|
-| **Render (PaaS)** *(เลือก)* | • มีในเนื้อหาและคู่มือหลักของวิชา CN331 (Lecture 08)<br/>• มี Managed PostgreSQL ในสิงคโปร์ (Latency ต่ำ)<br/>• รองรับ Gunicorn, WhiteNoise, Auto-Deploy จาก GitHub ง่ายดาย<br/>• มี SSL อัตโนมัติ | • Free Web Service มีอาการ Sleep เมื่อไม่มีคนเข้า (แก้ได้โดยเตรียมพร้อมก่อนพรีเซนต์) |
-| **Railway (PaaS)** | • Developer Experience ดีมาก, สั่งสร้าง PostgreSQL ได้ในคลิกเดียว<br/>• ไม่ Sleep | • ให้เครดิตทดลองใช้เพียง $5 ครั้งเดียว (ไม่มี Free Tier ถาวร)<br/>• Data Center ส่วนใหญ่อยู่สหรัฐฯ/ยุโรป ทำให้ Latency สูงกว่าสิงคโปร์ |
-| **Fly.io** | • ทำงานผ่าน Micro-VMs รวดเร็ว<br/>• มี Region Singapore (`sin`)<br/>• มี Persistent Volume ฟรี | • บังคับผูกบัตรเครดิตเพื่อยืนยันตัวตนตั้งแต่เริ่มต้น<br/>• การคอนฟิก `fly.toml` และ Dockerfile ซับซ้อนกว่าสำหรับทีม |
-| **Cloud VM ของมหาวิทยาลัย / คณะ** | • ทรัพยากรเครื่องฟรีและไม่มีขีดจำกัดด้านเวลา | • ขั้นตอนการขออนุมัติใช้งานและการเปิดพอร์ตเครือข่ายใช้เวลานาน ไม่ทันกรอบเวลา Sprint<br/>• ต้องตั้งค่า Nginx, Let's Encrypt, Security Hardening และ Firewall เองทั้งหมด |
+| ตัวเลือก | ค่าใช้จ่ายต่อเดือน | ข้อดี | ข้อเสีย / เหตุผลที่ไม่เลือก |
+|---|---|---|---|
+| **Render (PaaS)** *(เลือก)* | • **Free Tier:** $0/เดือน<br/>• **Production (Paid):** ~$14.25/เดือน (Starter $7 + DB $7 + Disk $0.25) | • มีในเนื้อหาและคู่มือหลักของวิชา CN331 (Lecture 08)<br/>• มี Managed PostgreSQL ในสิงคโปร์ (Latency ต่ำ)<br/>• รองรับ Gunicorn, WhiteNoise, Auto-Deploy จาก GitHub ง่ายดาย<br/>• มี SSL อัตโนมัติ | • Free Web Service มีอาการ Sleep เมื่อไม่มีคนเข้า และไม่มี Persistent Disk<br/>• Free DB หมดอายุใน 30 วันและไม่มี Auto Snapshot |
+| **Railway (PaaS)** | ~$5–$10/เดือน (เครดิตทดลองฟรี $5 ครั้งเดียว) | • Developer Experience ดีมาก, สั่งสร้าง PostgreSQL ได้ในคลิกเดียว<br/>• ไม่ Sleep | • ไม่มี Free Tier ถาวร<br/>• Data Center ส่วนใหญ่อยู่สหรัฐฯ/ยุโรป ทำให้ Latency สูงกว่าสิงคโปร์ |
+| **Fly.io** | ~$5/เดือน (มี Free Allowance บางส่วน) | • ทำงานผ่าน Micro-VMs รวดเร็ว<br/>• มี Region Singapore (`sin`)<br/>• มี Persistent Volume ฟรี | • บังคับผูกบัตรเครดิตเพื่อยืนยันตัวตนตั้งแต่เริ่มต้น<br/>• การคอนฟิก `fly.toml` และ Dockerfile ซับซ้อนกว่าสำหรับทีม |
+| **Cloud VM ของมหาวิทยาลัย / คณะ** | $0/เดือน | • ทรัพยากรเครื่องฟรีและไม่มีขีดจำกัดด้านเวลา | • ขั้นตอนการขออนุมัติใช้งานและการเปิดพอร์ตเครือข่ายใช้เวลานาน ไม่ทันกรอบเวลา Sprint<br/>• ต้องตั้งค่า Nginx, Let's Encrypt, Security Hardening และ Firewall เองทั้งหมด |
 
 ---
 
@@ -94,7 +114,10 @@ Sprint 3 มีเป้าหมายสำคัญตาม Roadmap คื�
    - ฐานข้อมูลแยกอิสระจาก Application Container รองรับ Concurrency สูงและมี Daily Backup
    - Static Files ถูกบีบอัดและเสิร์ฟอย่างรวดเร็วผ่าน WhiteNoise โดยไม่ต้องพึ่ง Nginx เพิ่มเติม
    - เอกสาร PDF ได้รับการรักษาความปลอดภัยตามหลักการของ ADR 0003 อย่างสมบูรณ์
+   - มีกระบวนการทดสอบ Backup & Restore จริงที่ตรวจสอบจำนวนแถวของข้อมูล
 2. **สิ่งที่ต้องแลก / งานที่ต้องทำเพิ่ม (Trade-offs & Next Steps):**
+   - **กรณีใช้งาน Render Free Tier ($0/เดือน):** PDF จะสูญหายทุกครั้งที่มีการ Redeploy เนื่องจากไม่มี Persistent Disk และ Managed DB จะไม่มี Auto Daily Snapshot ต้องรันสคริปต์ `scripts/backup_restore.sh` เป็นระยะด้วยตนเองหรือตั้ง Cron Job ภายนอก
+   - **กรณีใช้งาน Production Plan (~$14.25/เดือน):** ต้องจัดเตรียมงบประมาณสำหรับ Starter Instance, Managed DB และ Persistent Disk
    - ต้องเพิ่ม Dependency: `gunicorn`, `psycopg2-binary`, `dj-database-url`, `whitenoise` ใน `requirements.txt`
    - ต้องสร้างไฟล์ `build.sh` และ `Procfile` ที่รากโปรเจกต์
    - ต้องปรับแก้ `portal/settings.py` ให้อ่านค่าจาก Decouple และรองรับทั้ง SQLite (Local dev) และ PostgreSQL (Production)
