@@ -75,6 +75,22 @@ class LoginThrottleTests(ThrottleTestCase):
         self.assertRedirects(response, reverse("accounts:home"))
 
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3)
+    def test_rate_limit_ignores_spoofed_forwarded_for_header(self):
+        for i in range(3):
+            self.post_login(
+                self.wrong_password,
+                REMOTE_ADDR="192.0.2.1",
+                HTTP_X_FORWARDED_FOR=f"10.0.0.{i}",
+            )
+
+        response = self.post_login(
+            REMOTE_ADDR="192.0.2.1",
+            HTTP_X_FORWARDED_FOR="10.0.0.99",
+        )
+
+        self.assertEqual(response.status_code, 429)
+
+    @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3)
     def test_successful_login_clears_previous_failures(self):
         client_ip = "192.0.2.1"
         for _ in range(2):
