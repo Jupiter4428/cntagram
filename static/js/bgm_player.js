@@ -19,48 +19,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const disc = document.getElementById("bgm-disc");
     const tracklistContainer = document.getElementById("bgm-tracklist");
 
-    const playlist = [
-        {
-            title: "เบาเบา",
-            artist: "Singular",
-            src: "/audio/singular_bao_bao.mp3"
-        },
-        {
-            title: "ลอง",
-            artist: "Singular",
-            src: "/audio/singular_long.mp3"
-        },
-        {
-            title: "ให้ฉันดูแลเธอ",
-            artist: "แหนม รณเดช",
-            src: "/audio/hai_chan_doolae_ter.mp3"
-        },
-        {
-            title: "สาบานได้เลย",
-            artist: "ฮันเตอร์",
-            src: "/audio/saban_dai_loei.mp3"
-        },
-        {
-            title: "วิชามาร",
-            artist: "เท่ห์ อุเทน พรหมมินทร์",
-            src: "/audio/wicha_marn.mp3"
-        },
-        {
-            title: "TSE Cyber Campus (8-Bit)",
-            artist: "CNTAGRAM BGM",
-            src: "/audio/tse_cyber_campus.wav"
-        },
-        {
-            title: "Midnight Study (Lofi)",
-            artist: "Lofi Engineer",
-            src: "/audio/midnight_study_lofi.wav"
-        },
-        {
-            title: "Final Exam Rush (Chiptune)",
-            artist: "Retro Chiptune",
-            src: "/audio/final_exam_rush.wav"
-        }
-    ];
+    const playlist = Array.from(document.querySelectorAll("#bgm-playlist li"), (li) => ({
+        title: li.textContent.trim(),
+        artist: li.dataset.artist,
+        src: li.dataset.src,
+    }));
 
     let currentTrackIndex = 0;
     let isSeeking = false;
@@ -222,18 +185,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // Volume & Mute control
     if (volumeSlider) {
         // Restore saved volume
-        const savedVolume = localStorage.getItem("cntagram_bgm_volume");
-        if (savedVolume !== null) {
-            audio.volume = parseFloat(savedVolume);
-            volumeSlider.value = audio.volume;
-        } else {
-            audio.volume = 0.7;
+        let savedVolume = NaN;
+        try {
+            savedVolume = parseFloat(localStorage.getItem("cntagram_bgm_volume"));
+        } catch (e) {
+            // storage blocked (private mode / disabled): fall back to default
         }
+        audio.volume = Number.isFinite(savedVolume) ? Math.min(Math.max(savedVolume, 0), 1) : 0.7;
+        volumeSlider.value = audio.volume;
 
         volumeSlider.addEventListener("input", (e) => {
             audio.volume = parseFloat(e.target.value);
             audio.muted = false;
-            localStorage.setItem("cntagram_bgm_volume", audio.volume.toString());
+            try {
+                localStorage.setItem("cntagram_bgm_volume", audio.volume.toString());
+            } catch (e) {
+                // storage blocked: volume still applies for this page
+            }
             updateMuteButton();
         });
     }
