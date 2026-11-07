@@ -149,9 +149,8 @@ class LoginServiceTests(ThrottleTestCase):
         cache.delete(id_key)
         cache.delete(ip_key)
         services.record_login_failure(identifier=self.user.email, client_ip=ip)
-        self.assertFalse(
-            services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
-        )
+        self.assertEqual(cache.get(id_key), 1)
+        self.assertEqual(cache.get(ip_key), 1)
 
     def test_attempt_login_inactive_user_fails(self):
         self.user.is_active = False

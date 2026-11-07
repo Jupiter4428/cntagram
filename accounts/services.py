@@ -97,7 +97,7 @@ def clear_login_failures(*, identifier, client_ip):
 def attempt_login(*, identifier, password, client_ip):
     """Authenticate credentials while checking and recording rate limits.
 
-    1. Checks if this identifier/IP pair is rate limited -> LoginAttempt(
+    1. Checks the account and IP buckets; if either is full -> LoginAttempt(
        rate_limited=True).
     2. Authenticates credentials.
     3. If valid -> clears failure count and returns LoginAttempt(user=user).

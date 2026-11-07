@@ -23,7 +23,7 @@ THAI_PASSWORD_VALIDATION_ERRORS = {
 
 
 class LoginForm(AuthenticationForm):
-    """Authenticate against the custom email-based user model."""
+    """Validate login fields; authentication happens in services.attempt_login."""
 
     username = forms.EmailField(
         label="Student email",
