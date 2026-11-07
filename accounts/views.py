@@ -18,7 +18,14 @@ from .services import attempt_login
 
 
 def _client_ip(request):
-    """Return the direct peer address without trusting spoofable proxy headers."""
+    """Return the direct peer address without trusting spoofable proxy headers.
+
+    Security Note (Refs #42 / #47):
+    Do NOT read raw X-Forwarded-For headers from the client directly because clients
+    can easily spoof them. When deploying behind a reverse proxy (e.g. Nginx, Cloudflare),
+    configure the proxy to rewrite REMOTE_ADDR with the verified client IP
+    (e.g. Nginx set_real_ip_from / real_ip_header, or trusted ProxyFix middleware).
+    """
     return request.META.get("REMOTE_ADDR", "")
 
 
@@ -36,7 +43,9 @@ def _safe_login_redirect(request, next_url=""):
 
 def _rate_limited_response(request, form):
     """HTTP 429 login page with Retry-After, keeping the typed username."""
-    limited_form = LoginForm(request=request, initial={"username": form.submitted_username})
+    limited_form = LoginForm(
+        request=request, initial={"username": form.submitted_username}
+    )
     context = {"form": limited_form, "next": form.next_url, "rate_limited": True}
     response = render(request, "accounts/login.html", context, status=429)
     response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
@@ -64,9 +73,15 @@ def register(request):
     if request.method == "POST":
         client_ip = _client_ip(request)
         if services.is_register_rate_limited(client_ip):
-            response = render(request, "accounts/register.html", {
-                "form": RegisterForm(), "rate_limited": True,
-            }, status=429)
+            response = render(
+                request,
+                "accounts/register.html",
+                {
+                    "form": RegisterForm(),
+                    "rate_limited": True,
+                },
+                status=429,
+            )
             response["Retry-After"] = str(settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
             return response
         services.record_register_attempt(client_ip)
@@ -125,26 +140,39 @@ def logout(request):
 @require_http_methods(["GET", "POST"])
 def delete_account(request):
     """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
-    client_ip = _client_ip(request)
-    if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
-        response = render(request, "accounts/delete_account.html", {"form": DeleteAccountForm(), "rate_limited": True}, status=429)
+    if services.is_delete_account_rate_limited(user_id=request.user.pk):
+        response = render(
+            request,
+            "accounts/delete_account.html",
+            {"form": DeleteAccountForm(), "rate_limited": True},
+            status=429,
+        )
         response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
         return response
 
     form = DeleteAccountForm(request.POST or None)
     if form.is_bound and form.is_valid():
         try:
-            services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
+            services.delete_own_account(
+                user=request.user, password=form.cleaned_data["password"]
+            )
         except ValidationError as exc:
             if hasattr(exc, "message_dict") and "password" in exc.message_dict:
-                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
-                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
-                    response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
-                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+                services.record_delete_account_failure(user_id=request.user.pk)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk):
+                    response = render(
+                        request,
+                        "accounts/delete_account.html",
+                        {"form": form, "rate_limited": True},
+                        status=429,
+                    )
+                    response["Retry-After"] = str(
+                        settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+                    )
                     return response
             form.add_error(None, exc)
         else:
-            services.clear_delete_account_failures(user_id=request.user.pk, client_ip=client_ip)
+            services.clear_delete_account_failures(user_id=request.user.pk)
             auth_logout(request)
             messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
             return redirect("accounts:home")
@@ -159,12 +187,17 @@ def moderator_manage(request):
     if request.method == "POST" and form.is_valid():
         user, dept = form.cleaned_data["user"], form.cleaned_data["department"]
         try:
-            services.assign_moderator(user=user, department=dept, granted_by=request.user)
+            services.assign_moderator(
+                user=user, department=dept, granted_by=request.user
+            )
         except ValidationError as e:
             for msg in e.messages:
                 messages.error(request, msg)
         else:
-            messages.success(request, f"แต่งตั้ง {user.email} เป็น Moderator ภาควิชา {dept.code} สำเร็จแล้ว")
+            messages.success(
+                request,
+                f"แต่งตั้ง {user.email} เป็น Moderator ภาควิชา {dept.code} สำเร็จแล้ว",
+            )
             return redirect("accounts:moderator_manage")
     context = {"form": form, "moderators": selectors.moderator_list()}
     return render(request, "accounts/moderator_manage.html", context)
@@ -178,5 +211,8 @@ def moderator_remove(request, pk):
     user_email = user_role.user.email
     dept_code = user_role.department.code
     services.remove_moderator(user_role=user_role)
-    messages.success(request, f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว")
+    messages.success(
+        request,
+        f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว",
+    )
     return redirect("accounts:moderator_manage")

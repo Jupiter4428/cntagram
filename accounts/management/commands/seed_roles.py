@@ -17,7 +17,9 @@ class Command(BaseCommand):
         ]
 
         for code, name_th in ROLES:
-            role, created = Role.objects.get_or_create(code=code, defaults={"name_th": name_th})
+            role, created = Role.objects.get_or_create(
+                code=code, defaults={"name_th": name_th}
+            )
             status = "Created" if created else "Already exists"
             self.stdout.write(f"[{status}] Role: {role.code}")
 
@@ -29,4 +31,6 @@ class Command(BaseCommand):
             status = "Assigned" if created else "Already assigned"
             self.stdout.write(f"[{status}] super_admin to superuser: {su.email}")
 
-        self.stdout.write(self.style.SUCCESS("Successfully seeded roles and superuser permissions!"))
+        self.stdout.write(
+            self.style.SUCCESS("Successfully seeded roles and superuser permissions!")
+        )

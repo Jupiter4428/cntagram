@@ -5,6 +5,7 @@
 
 ต้องมี doc_type ก่อน (seed_materials ของ US-5) รันซ้ำได้ ไม่แก้กฎที่แอดมินปรับไปแล้ว
 """
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -19,15 +20,19 @@ MODE_BY_VAULT = {
 
 
 class Command(BaseCommand):
-    help = "Seed approval rules: exams need moderator and super_admin, others need either."
+    help = (
+        "Seed approval rules: exams need moderator and super_admin, others need either."
+    )
 
     @transaction.atomic
     def handle(self, *args, **options):
         doc_types = list(DocType.objects.all())
         if not doc_types:
-            self.stdout.write(self.style.WARNING("No doc types yet: run seed_materials first."))
+            self.stdout.write(
+                self.style.WARNING("No doc types yet: run seed_materials first.")
+            )
             return
-        # role seed หลักคือ seed_roles (US-3) ที่นี่สร้างเฉพาะ role ที่อนุมัติได้ถ้ายังไม่มี
+        # role seed หลักคือ seed_roles (US-3) ที่นี่สร้างเฉพาะ role ที่อนุมัติได้ถ้ายังไม่มี  # noqa: E501
         roles = [
             Role.objects.get_or_create(code=code, defaults={"name_th": name_th})[0]
             for code, name_th in APPROVER_ROLES
