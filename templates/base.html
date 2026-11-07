@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#090911">
+    <meta name="theme-color" content="#2E6DB4">
     <title>{% block title %}CNTAGRAM{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/retro.css' %}">
@@ -14,34 +14,20 @@
     <a class="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
 
     <div class="site-frame">
-        <div class="ambient-orb ambient-orb--violet" aria-hidden="true"></div>
-        <div class="ambient-orb ambient-orb--red" aria-hidden="true"></div>
-
         <header class="site-header">
-            <div class="brand-rail" aria-hidden="true">
-                <span></span><span></span><span></span>
-            </div>
-            <div class="site-masthead container-xl">
-                <div class="web-statusbar" aria-label="ข้อมูลเว็บไซต์">
-                    <span>WWW.CNTAGRAM.TSE</span>
-                    <span>BEST VIEWED WITH CURIOSITY ★</span>
-                </div>
+            <div class="site-masthead">
                 <a class="site-brand" href="{% url 'accounts:home' %}" aria-label="CNTAGRAM หน้าแรก">
-                    <span class="site-brand__eyebrow">TSE DIGITAL COMMUNITY / EST. 2000s STYLE</span>
                     <strong class="site-brand__wordmark">CNTAGRAM</strong>
-                    <span class="site-brand__tagline">CONNECT · SHARE · REMEMBER</span>
+                    <span class="site-brand__tagline">เว็บบอร์ดแลกชีท ของเด็กวิศวะ มธ.</span>
                 </a>
-
-                <div class="masthead-graphic" aria-hidden="true">
-                    <span class="masthead-graphic__ring"></span>
-                    <span class="masthead-graphic__core">TSE</span>
-                    <span class="masthead-graphic__flare"></span>
-                    <span class="masthead-graphic__pixel">+ +</span>
-                </div>
-
-                <div class="masthead-status" aria-label="สถานะเว็บไซต์">
-                    <span class="status-light" aria-hidden="true"></span>
-                    <span><strong>COMMUNITY</strong> / ONLINE</span>
+                <div class="masthead-status" aria-label="สถานะผู้ใช้">
+                    {% if request.user.is_authenticated %}
+                        <span>สวัสดีคุณ <b>{{ request.user.nickname }}</b></span>
+                        <span class="masthead-status__sub">ยินดีต้อนรับกลับมา</span>
+                    {% else %}
+                        <span>สวัสดี <b>ผู้มาเยือน</b></span>
+                        <span class="masthead-status__sub">เข้าสู่ระบบเพื่อเปิดคลังชีท</span>
+                    {% endif %}
                 </div>
             </div>
             {% include "includes/_navbar.html" %}
