@@ -258,6 +258,7 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 python manage.py migrate
+python manage.py createcachetable
 python manage.py seed_catalog
 python manage.py createsuperuser
 python manage.py seed_materials

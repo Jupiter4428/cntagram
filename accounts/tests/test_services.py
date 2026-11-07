@@ -42,7 +42,9 @@ class RegisterUserServiceTests(RegistrationTestCase):
         with self.assertRaises(Role.DoesNotExist):
             self.register()
 
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+        self.assertFalse(
+            User.objects.filter(email="6610612345@student.tu.ac.th").exists()
+        )
 
     def test_duplicate_email_at_database_insertion_raises_validation_error(self):
         self.register(email="6610612345@student.tu.ac.th")
@@ -60,7 +62,9 @@ class RegisterUserServiceTests(RegistrationTestCase):
                 department=self.department,
             )
 
-        self.assertFalse(User.objects.filter(email="6610612345@student.tu.ac.th").exists())
+        self.assertFalse(
+            User.objects.filter(email="6610612345@student.tu.ac.th").exists()
+        )
 
 
 class ModeratorServiceTests(ModeratorTestCase):
@@ -68,23 +72,31 @@ class ModeratorServiceTests(ModeratorTestCase):
         ur1 = services.assign_moderator(
             user=self.user_momo, department=self.dept_cn, granted_by=self.admin
         )
-        ur2 = services.assign_moderator(
+        services.assign_moderator(
             user=self.user_momo, department=self.dept_ce, granted_by=self.admin
         )
 
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_cn
+            )
         )
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_ce
+            )
         )
 
         services.remove_moderator(user_role=ur1)
         self.assertFalse(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_cn
+            )
         )
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_ce)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_ce
+            )
         )
 
     def test_cannot_assign_duplicate_moderator(self):
@@ -101,7 +113,9 @@ class ModeratorServiceTests(ModeratorTestCase):
 
 class DeleteOwnAccountServiceTests(ModeratorTestCase):
     def test_correct_password_anonymizes_user_and_removes_roles(self):
-        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+        services.assign_moderator(
+            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
+        )
 
         services.delete_own_account(user=self.user_momo, password="password123")
 
@@ -128,7 +142,9 @@ class DeleteOwnAccountServiceTests(ModeratorTestCase):
 
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.is_active)
-        self.assertTrue(self.admin.user_roles.filter(role=self.role_super_admin).exists())
+        self.assertTrue(
+            self.admin.user_roles.filter(role=self.role_super_admin).exists()
+        )
 
     def test_super_admin_can_delete_own_account_when_another_remains(self):
         UserRole.objects.create(user=self.user_nana, role=self.role_super_admin)
@@ -152,7 +168,6 @@ class DeleteOwnAccountServiceTests(ModeratorTestCase):
         self.assertEqual(user.student_id, "6510610001")
 
 
-
 class DeleteAccountRateLimitServiceTests(TestCase):
     def setUp(self):
         super().setUp()
@@ -161,20 +176,20 @@ class DeleteAccountRateLimitServiceTests(TestCase):
 
     def test_key_generation_has_no_pii(self):
         from accounts.services import _delete_account_failure_key
-        key = _delete_account_failure_key(user_id=123, client_ip="192.168.1.1")
+
+        key = _delete_account_failure_key(user_id=9876543210)
         self.assertTrue(key.startswith("delete-account-failures:"))
-        self.assertNotIn("123", key)
-        self.assertNotIn("192.168.1.1", key)
+        self.assertNotIn("9876543210", key)
 
     def test_rate_limit_flow(self):
         from accounts import services
+
         user_id = 999
-        client_ip = "10.0.0.1"
 
-        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id))
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            services.record_delete_account_failure(user_id=user_id, client_ip=client_ip)
+            services.record_delete_account_failure(user_id=user_id)
 
-        self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
-        services.clear_delete_account_failures(user_id=user_id, client_ip=client_ip)
-        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id))
+        services.clear_delete_account_failures(user_id=user_id)
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id))

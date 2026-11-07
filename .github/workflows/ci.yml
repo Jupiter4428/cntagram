@@ -27,6 +27,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Code formatting check (Black)
+        run: black --check --diff .
+
+      - name: Static code linting (Flake8)
+        run: flake8 .
+
+      - name: Security vulnerability scan (Bandit)
+        run: bandit -c bandit.yaml -r .
+
       - name: Django system check
         run: python manage.py check
 
