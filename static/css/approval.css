@@ -24,3 +24,11 @@
 .approval-page .approval-sticky { top: 1.5rem; }
 .approval-page .approval-action:focus-visible, .approval-page .approval-secondary:focus-visible, .approval-page .approval-radio:focus-visible { outline: 3px solid #155e9b; outline-offset: 2px; }
 @media (max-width: 767px) { .approval-page .approval-sticky { position: static !important; } }
+/* ใช้ตัวแปรสีจาก retro.css หรือกำหนดสีที่มี Contrast Ratio ไม่ต่ำกว่า 4.5:1 บนพื้นขาว */
+.approval-muted {
+    color: var(--tse-charcoal, #58595B) !important; /* Contrast บน #fff คือ 6.98:1 ผ่านเกณฑ์ WCAG AA */
+}
+
+.approval-panel-soft {
+    background-color: var(--plastic-white, #F8F9FF) !important;
+}
