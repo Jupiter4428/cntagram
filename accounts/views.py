@@ -4,6 +4,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -79,6 +80,12 @@ def poll_vote(request):
         success, _ = services.record_poll_vote(choice_key=choice)
         if success:
             request.session["has_voted_poll"] = True
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "ok": True,
+            "poll": services.get_weekly_poll(),
+            "has_voted": request.session.get("has_voted_poll", False),
+        })
     return redirect("accounts:home")
 
 
@@ -92,6 +99,11 @@ def shoutbox_post(request):
         dept_code = user.department.code if user.department else "Member"
         author = f"[{dept_code}] {user.nickname}"
         services.add_shoutbox_message(author=author, text=message)
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "ok": True,
+            "messages": services.get_shoutbox_messages(),
+        })
     return redirect("accounts:home")
 
 

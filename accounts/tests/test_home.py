@@ -175,6 +175,7 @@ class HomeViewTests(TestCase):
     def test_retro_stylesheet_is_discoverable(self):
         self.assertIsNotNone(finders.find("css/retro.css"))
         self.assertIsNotNone(finders.find("img/cyber-orb.svg"))
+        self.assertIsNotNone(finders.find("js/home_widgets.js"))
 
     def test_guest_can_access_public_pages(self):
         for url_name in ("accounts:home", "accounts:login", "accounts:register"):
@@ -188,6 +189,7 @@ class HomeViewTests(TestCase):
         self.assertTemplateUsed(response, "accounts/index.html")
         self.assertTemplateNotUsed(response, "accounts/index_admin.html")
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
+        self.assertContains(response, 'src="/static/js/home_widgets.js"')
 
     def test_member_home_uses_the_public_index_without_the_admin_menu(self):
         self.client.force_login(self.user)
@@ -356,6 +358,34 @@ class HomeViewTests(TestCase):
         home_resp = self.client.get(reverse("accounts:home"))
         self.assertContains(home_resp, self.user.nickname)
         self.assertContains(home_resp, "ยินดีที่ได้รู้จักครับ")
+
+    def test_poll_vote_ajax_returns_json_and_records_vote(self):
+        response = self.client.post(
+            reverse("accounts:poll_vote"),
+            {"choice": "circuit"},
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertTrue(data["has_voted"])
+        self.assertEqual(data["poll"]["total"], 1)
+        circuit = next(c for c in data["poll"]["choices"] if c["key"] == "circuit")
+        self.assertEqual(circuit["votes"], 1)
+
+    def test_shoutbox_post_ajax_returns_json_with_messages(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("accounts:shoutbox_post"),
+            {"message": "ข้อความ AJAX ไม่รีเฟรช"},
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["messages"][-1]["text"], "ข้อความ AJAX ไม่รีเฟรช")
+        self.assertIn(self.user.nickname, data["messages"][-1]["author"])
+
 
 
 
