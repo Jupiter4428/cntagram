@@ -88,13 +88,18 @@
     <div class="retro-widget__header retro-widget__titlebar">
         <span aria-hidden="true">»</span>
         <strong id="directory-title">เมนูชุมชน</strong>
-        <small>เร็วๆ นี้</small>
+        <small>นำทาง</small>
     </div>
     <div class="retro-widget__body module-body">
         <ul class="directory-list">
-            <li>หมวดชีทและโน้ต <b>DEMO</b></li>
-            <li>ข่าวจากชุมชน <b>DEMO</b></li>
-            <li>สมาชิกออนไลน์ <b>DEMO</b></li>
+            {% if user.is_authenticated %}
+                <li><a href="{% url 'materials:vault' %}">คลังชีทและข้อสอบ</a> <b>เปิดอ่าน</b></li>
+                <li><a href="{% url 'materials:upload' %}">อัปโหลดชีทใหม่</a> <b>ส่งไฟล์</b></li>
+            {% else %}
+                <li><a href="{% url 'accounts:login' %}">คลังชีทและข้อสอบ</a> <b>ต้องล็อกอิน</b></li>
+                <li><a href="{% url 'accounts:login' %}">เข้าสู่ระบบนักศึกษา</a> <b>ล็อกอิน</b></li>
+            {% endif %}
+            <li><a href="{% url 'accounts:register' %}">สมัครสมาชิกใหม่</a> <b>ฟรี</b></li>
         </ul>
     </div>
 </section>

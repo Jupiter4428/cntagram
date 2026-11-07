@@ -11,7 +11,7 @@
 <div class="webboard-banner-wrap">
     <div class="webboard-banner" role="note" aria-label="แบนเนอร์ประชาสัมพันธ์">
         <strong>★ ฝากชีทวันนี้ ช่วยรุ่นน้องผ่านมิดเทอม ★</strong>
-        <span>CNTAGRAM · คลังชีทสรุปและข้อสอบเก่าของชาววิศวะ มธ. (แบนเนอร์ตัวอย่าง 468×60)</span>
+        <span>CNTAGRAM · คลังชีทสรุปและข้อสอบเก่าของชาววิศวะ มธ.</span>
     </div>
 </div>
 
@@ -132,8 +132,8 @@
 <section class="retro-widget forum-panel" aria-labelledby="board-index-title">
     <div class="retro-widget__header retro-widget__titlebar">
         <span aria-hidden="true">»</span>
-        <strong id="board-index-title">หมวดเว็บบอร์ดตัวอย่าง</strong>
-        <small>ตัวอย่าง 3 หมวด</small>
+        <strong id="board-index-title">หมวดหมู่คลังเอกสาร</strong>
+        <small>3 หมวดหลัก</small>
     </div>
     <div class="table-responsive">
         <table class="board-index">
@@ -141,8 +141,8 @@
                 <tr>
                     <th scope="col" class="board-index__icon">ไอคอน</th>
                     <th scope="col">หมวด</th>
-                    <th scope="col" class="board-index__count">กระทู้</th>
-                    <th scope="col" class="board-index__last">ตอบล่าสุด</th>
+                    <th scope="col" class="board-index__count">สถานะ</th>
+                    <th scope="col" class="board-index__last">การนำทาง</th>
                 </tr>
             </thead>
             <tbody>
@@ -151,43 +151,43 @@
                         <img src="{% static 'img/icons/note.png' %}" width="16" height="16" class="pixel-icon" alt="" aria-hidden="true">
                     </td>
                     <td>
-                        <strong class="board-index__name">Lecture Notes</strong> <b class="new-sticker">NEW!</b>
+                        <strong class="board-index__name">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}">Lecture Notes</a>{% else %}<a href="{% url 'accounts:login' %}">Lecture Notes</a>{% endif %}</strong> <b class="new-sticker">NEW!</b>
                         <p>ชีทสรุป บันทึกในห้องเรียน และสไลด์ประกอบการเรียน อ่านแล้วอาจเข้าใจ (มั้ง)</p>
                     </td>
-                    <td class="board-index__count">—</td>
-                    <td class="board-index__last">— <span class="cyber-badge">ตัวอย่าง</span></td>
+                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">เปิดอ่าน</span>{% else %}<span class="cyber-badge">สมาชิก</span>{% endif %}</td>
+                    <td class="board-index__last">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--quiet">เข้าสู่คลัง »</a>{% else %}<a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet">เข้าสู่ระบบเพื่ออ่าน »</a>{% endif %}</td>
                 </tr>
                 <tr>
                     <td class="board-index__icon">
                         <img src="{% static 'img/icons/lightning.png' %}" width="16" height="16" class="pixel-icon" alt="" aria-hidden="true">
                     </td>
                     <td>
-                        <strong class="board-index__name">Cheat Sheets</strong> <b class="hot-sticker">HOT!</b>
+                        <strong class="board-index__name">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}">Cheat Sheets</a>{% else %}<a href="{% url 'accounts:login' %}">Cheat Sheets</a>{% endif %}</strong> <b class="hot-sticker">HOT!</b>
                         <p>สูตรสำคัญและสรุปแบบอ่านเร็ว เปิดตำราแล้ว แต่สมองยัง loading...</p>
                     </td>
-                    <td class="board-index__count">—</td>
-                    <td class="board-index__last">— <span class="cyber-badge">ตัวอย่าง</span></td>
+                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">เปิดอ่าน</span>{% else %}<span class="cyber-badge">สมาชิก</span>{% endif %}</td>
+                    <td class="board-index__last">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--quiet">เข้าสู่คลัง »</a>{% else %}<a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet">เข้าสู่ระบบเพื่ออ่าน »</a>{% endif %}</td>
                 </tr>
                 <tr>
                     <td class="board-index__icon">
                         <img src="{% static 'img/icons/award_star_gold.png' %}" width="16" height="16" class="pixel-icon" alt="" aria-hidden="true">
                     </td>
                     <td>
-                        <strong class="board-index__name">Exam Archive</strong>
-                        <p>หมวดข้อสอบเก่า แสดงโครงหน้าตาเท่านั้น ยังไม่มีเอกสารจริง</p>
+                        <strong class="board-index__name">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}">Exam Archive</a>{% else %}<a href="{% url 'accounts:login' %}">Exam Archive</a>{% endif %}</strong>
+                        <p>คลังข้อสอบเก่า มิดเทอมและไฟนอล แยกตามรายวิชาและรุ่น</p>
                     </td>
-                    <td class="board-index__count">—</td>
-                    <td class="board-index__last">— <span class="cyber-badge">ตัวอย่าง</span></td>
+                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">เปิดอ่าน</span>{% else %}<span class="cyber-badge">สมาชิก</span>{% endif %}</td>
+                    <td class="board-index__last">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--quiet">เข้าสู่คลัง »</a>{% else %}<a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet">เข้าสู่ระบบเพื่ออ่าน »</a>{% endif %}</td>
                 </tr>
             </tbody>
         </table>
     </div>
-    <div class="board-pager" aria-label="เลขหน้าตัวอย่าง">
-        <span>หน้า</span>
-        <span class="board-pager__current">[1]</span>
-        <span class="board-pager__page">2</span>
-        <span class="board-pager__page">3</span>
-        <span class="board-pager__page">» ถัดไป</span>
+    <div class="board-pager text-center" aria-label="นำทางคลังเอกสาร">
+        {% if request.user.is_authenticated %}
+            <a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--brand">เปิดคลังเอกสารทั้งหมด »</a>
+        {% else %}
+            <a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--brand">เข้าสู่ระบบเพื่อเปิดคลังเอกสาร »</a>
+        {% endif %}
     </div>
 </section>
 
@@ -247,7 +247,7 @@
 
 <div class="transmission-note" role="note">
     <span class="transmission-note__icon" aria-hidden="true">i</span>
-    <p>ข้อมูลหมวดและโพสต์ในหน้าแรกเป็นตัวอย่าง ยังไม่มีโพสต์ ยอดอ่าน หรือไฟล์จริง</p>
+    <p>คลังเอกสารและข้อสอบเก่าเปิดให้บริการแล้ว สามารถค้นหาและดาวน์โหลดชีทได้ที่คลังเอกสาร</p>
 </div>
 
 {% endblock %}

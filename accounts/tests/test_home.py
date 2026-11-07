@@ -115,6 +115,8 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, f'href="{reverse("accounts:login")}"')
         self.assertContains(response, f'href="{reverse("accounts:register")}"')
+        self.assertContains(response, "เมนูชุมชน")
+        self.assertContains(response, "สมัครสมาชิกใหม่")
         self.assertNotContains(response, f'href="{reverse("materials:vault")}"')
         self.assertNotContains(response, f'action="{reverse("accounts:logout")}"')
 
@@ -125,6 +127,9 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, self.user.nickname)
         self.assertContains(response, f'href="{reverse("materials:vault")}"')
+        self.assertContains(response, f'href="{reverse("materials:upload")}"')
+        self.assertContains(response, "เมนูชุมชน")
+        self.assertContains(response, "อัปโหลดชีทใหม่")
         self.assertContains(response, 'form method="post"')
         self.assertContains(response, f'action="{reverse("accounts:logout")}"')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
