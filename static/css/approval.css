@@ -4,21 +4,21 @@
 .approval-page .approval-panel { border: 1px solid #aeb3b8; border-radius: .75rem; background: #fff; overflow: hidden; }
 .approval-page .approval-panel .card-header { background: #fff; border-bottom: 2px solid var(--tse-red); }
 .approval-page .approval-table { --bs-table-bg: #fff; }
-.approval-page .approval-table thead th { background: var(--tse-red); color: #fff; }
+.approval-page .approval-table thead th { background: var(--bar-gradient); color: #fff; }
 .approval-page .approval-table td { vertical-align: middle; }
-.approval-page .approval-badge { display: inline-block; border: 1px solid #731215; color: #731215; background: #fff; padding: .2rem .55rem; border-radius: .35rem; font-weight: 700; }
-.approval-page .approval-action { background: var(--tse-red); border: 2px solid var(--tse-red); color: #fff; font-weight: 700; }
-.approval-page .approval-action:hover, .approval-page .approval-action:focus-visible { background: #661114; border-color: #661114; color: #fff; }
-.approval-page .approval-secondary { border: 2px solid #731215; color: #731215; background: #fff; font-weight: 700; }
-.approval-page .approval-secondary:hover, .approval-page .approval-secondary:focus-visible { background: #731215; color: #fff; }
-.approval-page .approval-radio { border: 2px solid #731215; color: #731215; background: #fff; }
+.approval-page .approval-badge { display: inline-block; border: 1px solid var(--navy); color: var(--navy); background: #fff; padding: .2rem .55rem; border-radius: .35rem; font-weight: 700; }
+.approval-page .approval-action { background: var(--action-gradient); border: 1px solid var(--orange-deep); color: #fff; font-weight: 700; }
+.approval-page .approval-action:hover, .approval-page .approval-action:focus-visible { background: var(--orange-deep); border-color: var(--orange-deep); color: #fff; }
+.approval-page .approval-secondary { border: 2px solid var(--navy); color: var(--navy); background: #fff; font-weight: 700; }
+.approval-page .approval-secondary:hover, .approval-page .approval-secondary:focus-visible { background: var(--navy); color: #fff; }
+.approval-page .approval-radio { border: 2px solid var(--navy); color: var(--navy); background: #fff; }
 .approval-page .approval-choice { padding-left: 0; position: relative; }
 .approval-page .approval-choice .form-check-input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
-.approval-page .approval-choice .form-check-input:checked + .approval-radio { background: #731215; color: #fff; }
+.approval-page .approval-choice .form-check-input:checked + .approval-radio { background: var(--navy); color: #fff; }
 .approval-page .approval-choice .form-check-input:focus-visible + .approval-radio { outline: 3px solid #155e9b; outline-offset: 2px; }
 .approval-page .approval-description { white-space: pre-wrap; background: #f5f5f5; color: #303030; padding: 1rem; border-radius: .4rem; }
 .approval-page .approval-muted, .approval-page .approval-meta-label { color: #51565c; }
-.approval-page .approval-link { color: #731215; }
+.approval-page .approval-link { color: var(--navy); }
 .approval-page .approval-truncate { max-width: 250px; }
 .approval-page .approval-empty { max-width: 450px; margin-inline: auto; }
 .approval-page .approval-sticky { top: 1.5rem; }

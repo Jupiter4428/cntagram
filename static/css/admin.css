@@ -2,11 +2,11 @@
 .site-layout--admin {
     grid-template-columns: minmax(235px, 265px) minmax(0, 1fr);
     grid-template-areas: "sidebar content";
-    --slice-1: #3f9f6b;
-    --slice-2: #7b5cf0;
-    --slice-3: #4d7296;
-    --slice-4: #d39b1f;
-    --slice-5: #c2477a;
+    --slice-1: var(--navy);
+    --slice-2: var(--orange);
+    --slice-3: var(--blue-light);
+    --slice-4: var(--cream-line);
+    --slice-5: #9fb3c8;
 }
 
 .site-layout--admin .site-content {
@@ -18,7 +18,7 @@
 /* ---------- Sidebar menu ---------- */
 .admin-menu__label {
     margin: 0.6rem 0 0.25rem;
-    color: #653054;
+    color: var(--navy);
     font-family: "Courier New", monospace;
     font-size: 0.68rem;
     font-weight: 900;
@@ -54,11 +54,11 @@
 .admin-menu__link.is-active {
     color: #fff;
     font-weight: 700;
-    background: linear-gradient(100deg, var(--tse-red), #763158);
+    background: var(--bar-gradient);
     border-color: var(--tse-red);
 }
 
-.admin-menu__link.is-active > span { color: var(--tse-yellow); }
+.admin-menu__link.is-active > span { color: #fff3c4; }
 
 .admin-account {
     display: flex;
@@ -84,7 +84,7 @@
 }
 
 .admin-new-users dt {
-    color: #653054;
+    color: var(--navy);
     font-family: "Courier New", monospace;
     font-size: 0.68rem;
     font-weight: 900;
@@ -107,7 +107,7 @@
 }
 
 .admin-new-users > .admin-new-users__all {
-    background: linear-gradient(100deg, var(--tse-red), #763158);
+    background: var(--bar-gradient);
     border-color: var(--tse-red);
 }
 
@@ -148,11 +148,11 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 
 .admin-stat__value { font-family: var(--display-font); font-size: 1.7rem; line-height: 1.1; }
 .admin-stat__label { color: #505872; font-size: 0.78rem; }
-.admin-stat--red { --accent: var(--tse-red); }
-.admin-stat--violet { --accent: #6b5bb5; }
-.admin-stat--blue { --accent: #4d7296; }
-.admin-stat--green { --accent: #3f9f6b; }
-.admin-stat--amber { --accent: #d39b1f; }
+.admin-stat--red { --accent: var(--orange-deep); }
+.admin-stat--violet { --accent: var(--blue-light); }
+.admin-stat--blue { --accent: #9fb3c8; }
+.admin-stat--green { --accent: var(--blue); }
+.admin-stat--amber { --accent: var(--orange); }
 
 /* ---------- Rows ---------- */
 .admin-row {
@@ -188,7 +188,7 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
     width: min(42px, 100%);
     min-height: 3px;
     max-height: calc(100% - 2.6rem);
-    background: linear-gradient(180deg, #4d7296, #a9d8ff);
+    background: linear-gradient(180deg, var(--blue), var(--blue-light));
     border: 1px solid rgb(37 40 58 / 35%);
     border-radius: 3px 3px 0 0;
 }
@@ -224,7 +224,7 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 
 .admin-table th {
     padding: 0.4rem 0.5rem;
-    color: #653054;
+    color: var(--navy);
     font-family: "Courier New", monospace;
     font-size: 0.68rem;
     letter-spacing: 0.06em;
@@ -262,7 +262,7 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
     height: 28px;
     color: #fff;
     font-weight: 700;
-    background: linear-gradient(135deg, #4d7296, #8e557d);
+    background: linear-gradient(135deg, var(--orange-light), var(--orange-deep));
     border-radius: 50%;
 }
 
@@ -278,8 +278,8 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
     border-radius: 999px;
 }
 
-.admin-badge--red { color: var(--tse-red); border-color: rgb(140 25 28 / 35%); }
-.admin-badge--violet { color: #6b5bb5; border-color: rgb(107 91 181 / 35%); }
+.admin-badge--red { color: var(--orange-deep); border-color: var(--cream-line); }
+.admin-badge--violet { color: var(--blue); border-color: var(--line); }
 .admin-badge--green { color: #2c7a50; border-color: rgb(63 159 107 / 40%); }
 .admin-badge--amber { color: #9a6a06; border-color: rgb(211 155 31 / 45%); }
 
@@ -315,7 +315,7 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 
 .admin-pager__page.is-current {
     color: #fff;
-    background: linear-gradient(100deg, var(--tse-red), #763158);
+    background: var(--bar-gradient);
     border-style: inset;
 }
 
@@ -350,7 +350,7 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 }
 
 .admin-facts dt {
-    color: #653054;
+    color: var(--navy);
     font-family: "Courier New", monospace;
     font-size: 0.72rem;
     font-weight: 900;
@@ -399,10 +399,10 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 .admin-button--primary:hover,
 .admin-button--primary:focus-visible {
     color: #fff;
-    background: linear-gradient(100deg, var(--tse-red), #763158);
+    background: var(--bar-gradient);
 }
 
-.admin-button--danger { color: var(--tse-red); }
+.admin-button--danger { color: var(--danger); }
 
 .admin-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: flex-end; }
 .admin-actions form { margin: 0; }
@@ -418,12 +418,12 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
     border-radius: 4px;
 }
 
-.admin-alert--error { background: #fbe6e7; border-color: var(--tse-red); }
+.admin-alert--error { background: #fbe6e7; border-color: var(--danger); }
 
 /* ฟอร์มบนแผงสีอ่อน: .form-control ของ retro.css ทำไว้สำหรับพื้นมืดหน้า login */
 .admin-form { display: grid; gap: 0.8rem; max-width: 520px; }
 .admin-form__field { display: grid; gap: 0.25rem; }
-.admin-form label { color: #653054; font-size: 0.8rem; font-weight: 800; }
+.admin-form label { color: var(--navy); font-size: 0.8rem; font-weight: 800; }
 
 .admin-form input,
 .admin-form select {
@@ -438,10 +438,10 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 }
 
 .admin-form input:focus,
-.admin-form select:focus { border-color: var(--tse-red); outline: 2px solid rgb(140 25 28 / 25%); }
+.admin-form select:focus { border-color: var(--orange); outline: 2px solid #ffe3c2; }
 .admin-form .helptext { color: #505872; font-size: 0.72rem; }
-.admin-form .errorlist { margin: 0; color: var(--tse-red); font-size: 0.78rem; font-weight: 700; }
-.admin-form .errorlist.nonfield { padding: 0.5rem 0.75rem; background: #fbe6e7; border: 1px solid var(--tse-red); border-radius: 4px; }
+.admin-form .errorlist { margin: 0; color: var(--danger); font-size: 0.78rem; font-weight: 700; }
+.admin-form .errorlist.nonfield { padding: 0.5rem 0.75rem; background: #fbe6e7; border: 1px solid var(--danger); border-radius: 4px; }
 .admin-form__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .admin-group + .admin-group { margin-top: 1rem; }
