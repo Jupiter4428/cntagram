@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'accounts',
     'catalog',
@@ -217,6 +218,8 @@ MAILERS = {
     },
 }
 
+# WhiteNoise does not recognize .wav by default so maps it to application/octet-stream
+WHITENOISE_MIMETYPES = {".wav": "audio/wav"}
 
 # Production Security Hardening
 # ปิด warning W021 เพราะโดเมน *.onrender.com ส่งเข้า HSTS preload list ไม่ได้
