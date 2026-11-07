@@ -32,3 +32,24 @@ class BgmStaticAudioTests(TestCase):
         self.assertContains(response, 'id="bgm-playlist"')
         self.assertContains(response, 'data-src="/static/audio/singular_bao_bao.mp3"')
         self.assertNotContains(response, '"/audio/')
+        self.assertContains(response, 'id="bgm-audio"')
+        self.assertContains(response, 'id="bgm-play-pause"')
+        self.assertContains(response, 'id="bgm-mute"')
+        self.assertContains(response, 'id="bgm-seekbar"')
+        self.assertContains(response, 'id="bgm-tracklist"')
+
+    def test_bgm_player_js_served_and_secures_against_xss(self):
+        response = self.client.get("/static/js/bgm_player.js")
+
+        self.assertEqual(response.status_code, 200)
+        content = b"".join(response.streaming_content).decode("utf-8")
+        # Ensure track title is appended safely without innerHTML
+        self.assertNotIn('innerHTML = `<span aria-hidden="true">', content)
+        self.assertIn("btn.append(", content)
+        # Ensure play and pause event listeners exist for external controls
+        self.assertIn('audio.addEventListener("play"', content)
+        self.assertIn('audio.addEventListener("pause"', content)
+        # Ensure 2-digit padding with padStart
+        self.assertIn('padStart(2, "0")', content)
+        # Ensure updateMuteButton sets aria-label
+        self.assertIn('muteBtn.setAttribute("aria-label"', content)
