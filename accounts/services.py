@@ -45,28 +45,30 @@ class LoginAttempt:
     rate_limited: bool = False
 
 
-def _login_failure_key(*, identifier, client_ip):
-    """Build a non-PII cache key for one login identity and network peer."""
-    normalized_identifier = (identifier or "").strip().casefold()
-    normalized_ip = (client_ip or "unknown").strip()
-    digest = salted_hmac(
-        "accounts.login-rate-limit",
-        f"{normalized_identifier}|{normalized_ip}",
-    ).hexdigest()
-    return f"login-failures:{digest}"
+LOGIN_RATE_LIMIT_SALT = "accounts.login-rate-limit"
+
+
+def _login_failure_keys(*, identifier, client_ip):
+    """Build non-PII cache keys for login identity bucket and client IP bucket."""
+    ident = (identifier or "").strip().casefold()
+    ip = (client_ip or "unknown").strip()
+    return (
+        "login-failures:id:" + salted_hmac(LOGIN_RATE_LIMIT_SALT, ident).hexdigest(),
+        "login-failures:ip:" + salted_hmac(LOGIN_RATE_LIMIT_SALT, ip).hexdigest(),
+    )
 
 
 def is_login_rate_limited(*, identifier, client_ip):
-    """Return whether this identity/IP pair exhausted its failure allowance."""
-    key = _login_failure_key(identifier=identifier, client_ip=client_ip)
-    attempts = cache.get(key, 0)
-    return attempts >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
+    """Return whether either the identity bucket or the network IP bucket is exhausted."""
+    id_key, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
+    return (
+        cache.get(id_key, 0) >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
+        or cache.get(ip_key, 0) >= settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS
+    )
 
 
-def record_login_failure(*, identifier, client_ip):
-    """Record one failed authentication attempt for a fixed temporary window."""
-    key = _login_failure_key(identifier=identifier, client_ip=client_ip)
-    timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+def _increment_failure_key(key, timeout):
+    """Increment one failure counter, starting a fresh window if it expired."""
     if cache.add(key, 1, timeout=timeout):
         return 1
     try:
@@ -77,10 +79,18 @@ def record_login_failure(*, identifier, client_ip):
         return 1
 
 
+def record_login_failure(*, identifier, client_ip):
+    """Record one failed authentication attempt for both identity and client IP."""
+    id_key, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
+    timeout = settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+    _increment_failure_key(id_key, timeout)
+    _increment_failure_key(ip_key, timeout)
+
+
 def clear_login_failures(*, identifier, client_ip):
-    """Clear failures after a successful authentication."""
-    key = _login_failure_key(identifier=identifier, client_ip=client_ip)
-    cache.delete(key)
+    """Clear identity failures after successful authentication (preserves IP failures)."""
+    id_key, _ = _login_failure_keys(identifier=identifier, client_ip=client_ip)
+    cache.delete(id_key)
 
 
 def attempt_login(*, form, client_ip):
