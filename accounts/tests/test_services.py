@@ -161,20 +161,18 @@ class DeleteAccountRateLimitServiceTests(TestCase):
 
     def test_key_generation_has_no_pii(self):
         from accounts.services import _delete_account_failure_key
-        key = _delete_account_failure_key(user_id=123, client_ip="192.168.1.1")
+        key = _delete_account_failure_key(user_id=9876543210)
         self.assertTrue(key.startswith("delete-account-failures:"))
-        self.assertNotIn("123", key)
-        self.assertNotIn("192.168.1.1", key)
+        self.assertNotIn("9876543210", key)
 
     def test_rate_limit_flow(self):
         from accounts import services
         user_id = 999
-        client_ip = "10.0.0.1"
 
-        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id))
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            services.record_delete_account_failure(user_id=user_id, client_ip=client_ip)
+            services.record_delete_account_failure(user_id=user_id)
 
-        self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
-        services.clear_delete_account_failures(user_id=user_id, client_ip=client_ip)
-        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id, client_ip=client_ip))
+        self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id))
+        services.clear_delete_account_failures(user_id=user_id)
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id))
