@@ -154,11 +154,15 @@ import sqlite3, sys, os
 if os.path.exists('db.sqlite3'):
     src = sqlite3.connect('db.sqlite3')
     dst = sqlite3.connect(r'$restored')
-    for (t,) in src.execute(\"select name from sqlite_master where type='table'\"):
-        a = src.execute(f'select count(*) from \"{t}\"').fetchone()
-        b = dst.execute(f'select count(*) from \"{t}\"').fetchone()
+    tables = [t for (t,) in src.execute(\"select name from sqlite_master where type='table'\")]
+    key_tables = {'department', 'batch', 'course', 'batch_course', 'app_user', 'role', 'user_role', 'doc_type', 'exam_period', 'doc_type_required_role', 'document'}
+    for t in tables:
+        a = src.execute(f'select count(*) from \"{t}\"').fetchone()[0]
+        b = dst.execute(f'select count(*) from \"{t}\"').fetchone()[0]
         assert a == b, f'Mismatch in table {t}: {a} vs {b}'
-    print('✓ SQLite table row verification passed')
+        if t in key_tables:
+            print(f'  - {t}: src={a}, restored={b} (OK)')
+    print(f'✓ SQLite table row verification passed ({len(tables)} tables matched 100%)')
 else:
     print('✓ SQLite restore verification skipped (no local db.sqlite3)')
 "
