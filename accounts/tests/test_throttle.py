@@ -72,7 +72,8 @@ class LoginThrottleTests(ThrottleTestCase):
     )
     def test_password_spraying_from_single_ip_is_rate_limited(self):
         client_ip = "198.51.100.1"
-        # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
+        # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน
+        # (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
         for i in range(6):
             username = f"66100000{i:02d}@student.tu.ac.th"
             response = self.post_login(
@@ -149,6 +150,11 @@ class LoginThrottleTests(ThrottleTestCase):
         )
         blocked_res = self.post_login(self.password, REMOTE_ADDR=client_ip)
         self.assertEqual(blocked_res.status_code, 429)
+
+    def test_default_ip_rate_limit_setting_is_one_hundred(self):
+        from django.conf import settings
+
+        self.assertEqual(settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS, 100)
 
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3, LOGIN_RATE_LIMIT_IP_ATTEMPTS=20)
     def test_locked_account_does_not_block_other_accounts(self):
