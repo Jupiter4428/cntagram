@@ -70,8 +70,9 @@ class HomeViewTests(TestCase):
         response = self.client.get(reverse("accounts:home"))
 
         self.assertContains(response, 'class="post-entry"', count=2)
-        self.assertContains(response, "สมุดบันทึกชุมชน — โพสต์ตัวอย่าง")
-        self.assertContains(response, "DEMO POST · ไม่มีหน้ารายละเอียด")
+        self.assertContains(response, "สมุดบันทึกและประกาศชุมชน")
+        self.assertContains(response, "ประกาศปักหมุด")
+        self.assertNotContains(response, "DEMO POST")
         self.assertContains(response, "Community Archive")
         self.assertContains(response, "ปีการศึกษา 2569")
         self.assertContains(response, "ภาคเรียนที่ 1")

@@ -194,8 +194,8 @@
 <section class="retro-widget community-feed" aria-labelledby="community-feed-title">
     <div class="retro-widget__header retro-widget__titlebar retro-widget__titlebar--pink">
         <span aria-hidden="true">✎</span>
-        <strong id="community-feed-title">สมุดบันทึกชุมชน — โพสต์ตัวอย่าง</strong>
-        <small>2 โพสต์</small>
+        <strong id="community-feed-title">สมุดบันทึกและประกาศชุมชน</strong>
+        <small>2 ประกาศ</small>
     </div>
     <div class="retro-widget__body community-feed__body">
         <article class="post-entry" aria-labelledby="welcome-post-title">
@@ -208,7 +208,7 @@
                 <span class="new-sticker">NEW!</span>
             </header>
             <div class="post-entry__body">
-                <p>พื้นที่ทดลองสำหรับส่งต่อชีท โน้ต และเรื่องเล่าจากห้องเรียน รูปแบบนี้สาธิตบรรยากาศบล็อกและเว็บบอร์ดไทยยุค 2000s เท่านั้น ยังไม่มีโพสต์หรือยอดอ่านจริง</p>
+                <p>พื้นที่แลกเปลี่ยนชีทสรุป บันทึกการเรียน และข้อสอบเก่าของเด็กวิศวะ มธ. ทุกไฟล์จัดหมวดหมู่ตามภาควิชาและรุ่นการศึกษาอย่างเป็นระเบียบ</p>
                 <p class="post-entry__aside"><span aria-hidden="true">♥</span> รุ่นพี่ส่งต่อ รุ่นน้องไม่ต้องเริ่มจากศูนย์</p>
             </div>
             <hr>
@@ -216,7 +216,7 @@
             <footer class="post-entry__meta">
                 <span>เขียนโดย <b>CNTAGRAM TEAM</b></span>
                 <span>หมวด: ประกาศชุมชน</span>
-                <span class="post-entry__demo">DEMO POST · ไม่มีหน้ารายละเอียด</span>
+                <span class="post-entry__demo">ประกาศปักหมุด</span>
             </footer>
         </article>
 
@@ -229,17 +229,22 @@
                 </div>
             </header>
             <div class="post-entry__body">
-                <p>ตัวอย่างโพสต์สั้นแบบบล็อกยุคก่อน หัวข้อชัด เนื้อหาอ่านต่อเนื่อง และรายละเอียดอยู่ท้ายโพสต์</p>
+                <p>รวมชีทสรุปวิชายอดนิยมและแนวข้อสอบสำหรับทบทวนความรู้ก่อนสอบมิดเทอม สามารถค้นหาและดาวน์โหลดได้จากคลังเอกสาร</p>
                 <ul class="post-entry__list">
-                    <li>CN101 Starter Notes — รายการสาธิต ไม่มีไฟล์จริง</li>
-                    <li>Engineering Math Cheat Sheet — รายการสาธิต ไม่มีไฟล์จริง</li>
+                    {% if request.user.is_authenticated %}
+                        <li><a href="{% url 'materials:vault' %}?query=CN101">CN101 Starter Notes</a> — สรุปพื้นฐานวิศวกรรมคอมพิวเตอร์</li>
+                        <li><a href="{% url 'materials:vault' %}?query=Math">Engineering Math Cheat Sheet</a> — สรุปสูตรและแนวข้อสอบคณิตศาสตร์วิศวกรรม</li>
+                    {% else %}
+                        <li><a href="{% url 'accounts:login' %}">CN101 Starter Notes</a> — สรุปพื้นฐานวิศวกรรมคอมพิวเตอร์ (เข้าสู่ระบบเพื่อเปิดอ่าน)</li>
+                        <li><a href="{% url 'accounts:login' %}">Engineering Math Cheat Sheet</a> — สรุปสูตรและแนวข้อสอบคณิตศาสตร์วิศวกรรม (เข้าสู่ระบบเพื่อเปิดอ่าน)</li>
+                    {% endif %}
                 </ul>
             </div>
             <hr>
             <p class="post-entry__sig">— ลายเซ็น: "อ่านชีทวันละนิด จิตแจ่มใส (ถ้าไม่ง่วงก่อน)" · <b>ชมรมคนรักชีทสรุป</b></p>
             <footer class="post-entry__meta">
                 <span>อารมณ์: <b>midterm survival mode</b></span>
-                <span class="post-entry__demo">ตัวอย่างเนื้อหา</span>
+                <span class="post-entry__demo">แนะนำโดยชุมชน</span>
             </footer>
         </article>
     </div>
