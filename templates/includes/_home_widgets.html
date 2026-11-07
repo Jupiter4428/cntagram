@@ -4,6 +4,45 @@
 
 {% include "includes/_music_player.html" %}
 
+<section class="retro-widget side-module shoutbox-widget" aria-labelledby="shoutbox-title">
+    <div class="retro-widget__header retro-widget__titlebar">
+        <span aria-hidden="true">💬</span>
+        <strong id="shoutbox-title">Shoutbox ทักทาย</strong>
+        <small>ตัวอย่าง</small>
+    </div>
+    <div class="retro-widget__body module-body">
+        <div class="shoutbox-log" role="log" aria-label="ข้อความทักทายตัวอย่าง">
+            <p><b>[CN21] พี่บอย:</b> น้องๆ อย่าลืมทวนวงจรไฟฟ้านะ</p>
+            <p><b>[CN23] น้ำหวาน:</b> ขอบคุณสำหรับชีทแคลคูลัสค่า!</p>
+            <p><b>[ME22] ก้อง:</b> ใครมีแนวข้อสอบ Thermo ฝากอัปหน่อย</p>
+            <p><b>[CE24] เต้ย:</b> สู้ๆ กับมิดเทอมทุกคนครับ</p>
+        </div>
+        <div class="shoutbox-controls">
+            <input type="text" placeholder="พิมพ์ข้อความ (ตัวอย่าง)..." aria-label="ข้อความทักทายตัวอย่าง" disabled>
+            <button type="button" class="chrome-button chrome-button--quiet" disabled>ส่ง</button>
+        </div>
+        <p class="demo-note mb-0">กล่องข้อความสาธิต (DEMO) · ยังไม่เปิดรับข้อความจริง</p>
+    </div>
+</section>
+
+<section class="retro-widget side-module poll-widget" aria-labelledby="poll-title">
+    <div class="retro-widget__header retro-widget__titlebar retro-widget__titlebar--pink">
+        <span aria-hidden="true">📊</span>
+        <strong id="poll-title">โพลประจำสัปดาห์</strong>
+        <small>DEMO</small>
+    </div>
+    <div class="retro-widget__body module-body">
+        <p class="mb-1"><strong>วิชาไหนโหดสุดเทอมนี้</strong></p>
+        <div class="poll-options" role="radiogroup" aria-labelledby="poll-title">
+            <label><input type="radio" name="demo_poll" checked disabled> Engineering Math / Calculus</label>
+            <label><input type="radio" name="demo_poll" disabled> Data Structures &amp; Algorithms</label>
+            <label><input type="radio" name="demo_poll" disabled> Circuit Analysis / Physics</label>
+        </div>
+        <button type="button" class="chrome-button chrome-button--quiet w-100" disabled>โหวต</button>
+        <p class="demo-note mb-0">โพลตัวอย่าง · ผลโหวต [จำนวน] (DEMO)</p>
+    </div>
+</section>
+
 <section class="retro-widget side-module retro-directory" aria-labelledby="directory-title">
     <div class="retro-widget__header retro-widget__titlebar">
         <span aria-hidden="true">»</span>
