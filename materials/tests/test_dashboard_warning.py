@@ -1,6 +1,5 @@
 from django.urls import reverse
 
-from accounts.models import Role, UserRole
 from ..models import DocType, Document
 from .base import ApprovalBaseTestCase
 
