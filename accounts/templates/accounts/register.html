@@ -5,9 +5,7 @@
 {% block content %}
 <div class="auth-shell">
     <section class="retro-widget auth-surface" aria-labelledby="register-title">
-        <div class="auth-surface__halo" aria-hidden="true"></div>
         <header class="retro-widget__header auth-surface__head">
-            <span class="tech-label">NEW IDENTITY CHANNEL / TSE NODE</span>
             <h1 id="register-title">สมัครสมาชิก <em>Register</em></h1>
             <p>ใช้อีเมลนักศึกษาคณะวิศวกรรมศาสตร์ <strong>@student.tu.ac.th</strong> เท่านั้น</p>
         </header>
@@ -59,7 +57,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <div class="pdpa-box border p-3 mb-2" style="max-height: 9rem; overflow-y: auto; font-size: .875rem; background: rgba(255, 255, 255, 0.05); border-radius: .6rem;">
+                    <div class="pdpa-box border p-3 mb-2">
                         <p class="fw-semibold mb-1">นโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA)</p>
                         <ul class="mb-0 ps-3">
                             <li>ระบบเก็บอีเมลนักศึกษา รหัสนักศึกษา ชื่อเล่น และภาควิชา เพื่อยืนยันว่าคุณเป็นนักศึกษาคณะวิศวกรรมศาสตร์</li>
@@ -74,12 +72,11 @@
                     </div>
                 </div>
 
-                <button class="chrome-button chrome-button--brand chrome-button--large w-100" type="submit" id="register-submit">สมัครสมาชิก <span aria-hidden="true">↗</span></button>
+                <button class="chrome-button chrome-button--brand chrome-button--large w-100" type="submit" id="register-submit">สมัครสมาชิก</button>
             </form>
         </div>
         <footer class="auth-surface__foot">
             <span>มีบัญชีอยู่แล้ว? <a href="{% url 'accounts:login' %}">เข้าสู่ระบบ</a></span>
-            <span>REG / 01</span>
         </footer>
     </section>
 </div>

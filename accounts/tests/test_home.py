@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.staticfiles import finders
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from catalog.models import Department
 
-
+from .. import services
 from ..models import Role, UserRole
 
 User = get_user_model()
@@ -31,6 +32,11 @@ class HomeViewTests(TestCase):
             department=department,
             pdpa_consent_at=timezone.now(),
         )
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self.addCleanup(cache.clear)
 
     def create_super_admin(self):
         role, _ = Role.objects.get_or_create(
@@ -80,7 +86,8 @@ class HomeViewTests(TestCase):
         self.assertContains(response, 'class="retro-marquee"')
         self.assertContains(response, 'tabindex="0"')
         self.assertContains(response, 'aria-hidden="true">WELCOME TO CNTAGRAM!')
-        self.assertContains(response, "ไม่ใช่ยอดผู้เข้าชมจริง")
+        self.assertContains(response, "สถิติยอดผู้เข้าชมสะสมแบบเรียลไทม์")
+        self.assertNotContains(response, "ไม่ใช่ยอดผู้เข้าชมจริง")
         self.assertContains(response, "88×31-inspired decorative badges · DEMO")
         self.assertContains(
             response, 'class="retro-widget counter-widget compact-disclosure"'
@@ -116,6 +123,8 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, f'href="{reverse("accounts:login")}"')
         self.assertContains(response, f'href="{reverse("accounts:register")}"')
+        self.assertContains(response, "เมนูชุมชน")
+        self.assertContains(response, "สมัครสมาชิกใหม่")
         self.assertNotContains(response, f'href="{reverse("materials:vault")}"')
         self.assertNotContains(response, f'action="{reverse("accounts:logout")}"')
 
@@ -126,6 +135,9 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, self.user.nickname)
         self.assertContains(response, f'href="{reverse("materials:vault")}"')
+        self.assertContains(response, f'href="{reverse("materials:upload")}"')
+        self.assertContains(response, "เมนูชุมชน")
+        self.assertContains(response, "อัปโหลดชีทใหม่")
         self.assertContains(response, 'form method="post"')
         self.assertContains(response, f'action="{reverse("accounts:logout")}"')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
@@ -178,6 +190,7 @@ class HomeViewTests(TestCase):
     def test_retro_stylesheet_is_discoverable(self):
         self.assertIsNotNone(finders.find("css/retro.css"))
         self.assertIsNotNone(finders.find("img/cyber-orb.svg"))
+        self.assertIsNotNone(finders.find("js/home_widgets.js"))
 
     def test_guest_can_access_public_pages(self):
         for url_name in ("accounts:home", "accounts:login", "accounts:register"):
@@ -191,6 +204,7 @@ class HomeViewTests(TestCase):
         self.assertTemplateUsed(response, "accounts/index.html")
         self.assertTemplateNotUsed(response, "accounts/index_admin.html")
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
+        self.assertContains(response, 'src="/static/js/home_widgets.js"')
 
     def test_member_home_uses_the_public_index_without_the_admin_menu(self):
         self.client.force_login(self.user)
@@ -284,3 +298,120 @@ class HomeViewTests(TestCase):
     def test_guest_home_runs_no_document_queries(self):
         with self.assertNumQueries(0):
             self.client.get(reverse("accounts:home"))
+
+    def test_record_home_visit_increments_and_zero_pads_counter(self):
+        first = services.record_home_visit()
+        second = services.record_home_visit()
+
+        self.assertEqual(first, "000039")
+        self.assertEqual(second, "000040")
+
+    def test_home_visitor_counter_is_open_and_increments_on_each_visit(self):
+        first_response = self.client.get(reverse("accounts:home"))
+        second_response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(
+            first_response,
+            '<details class="retro-widget counter-widget compact-disclosure" open>',
+        )
+        self.assertContains(
+            first_response,
+            "<span>0</span><span>0</span><span>0</span><span>0</span><span>3</span><span>9</span>",
+        )
+        self.assertContains(
+            second_response,
+            "<span>0</span><span>0</span><span>0</span><span>0</span><span>4</span><span>0</span>",
+        )
+
+    def test_poll_services_record_vote_and_calculate_percentages(self):
+        initial = services.get_weekly_poll()
+        self.assertEqual(initial["total"], 0)
+        self.assertEqual(len(initial["choices"]), 3)
+
+        success, updated = services.record_poll_vote(choice_key="math")
+        self.assertTrue(success)
+        self.assertEqual(updated["total"], 1)
+        math_choice = next(c for c in updated["choices"] if c["key"] == "math")
+        self.assertEqual(math_choice["votes"], 1)
+        self.assertEqual(math_choice["percent"], 100)
+
+        # Invalid choice rejected
+        invalid_success, _ = services.record_poll_vote(choice_key="nonexistent")
+        self.assertFalse(invalid_success)
+
+        services.record_poll_vote(choice_key="dsa")
+        poll = services.get_weekly_poll()
+        self.assertEqual(poll["total"], 2)
+        math_c = next(c for c in poll["choices"] if c["key"] == "math")
+        dsa_c = next(c for c in poll["choices"] if c["key"] == "dsa")
+        self.assertEqual(math_c["percent"], 50)
+        self.assertEqual(dsa_c["percent"], 50)
+
+    def test_poll_vote_view_post_records_vote_and_redirects(self):
+        response = self.client.post(reverse("accounts:poll_vote"), {"choice": "math"})
+        self.assertRedirects(response, reverse("accounts:home"))
+
+        # Verify home page renders results when voted
+        home_resp = self.client.get(reverse("accounts:home"))
+        self.assertContains(home_resp, "ผลโหวตทั้งหมด 1 เสียง")
+        self.assertContains(home_resp, "Engineering Math / Calculus")
+        self.assertContains(home_resp, "100%")
+
+        # Verify ?poll_view=form allows viewing choices with back link
+        form_resp = self.client.get(reverse("accounts:home") + "?poll_view=form")
+        self.assertContains(form_resp, "กลับไปดูผลโหวต")
+        self.assertContains(form_resp, 'name="choice"')
+
+    def test_shoutbox_services_add_and_retrieve_messages(self):
+        initial = services.get_shoutbox_messages()
+        self.assertTrue(len(initial) > 0)
+
+        services.add_shoutbox_message(author="Tester", text="สวัสดีชาววิศวะ!")
+        updated = services.get_shoutbox_messages()
+        self.assertEqual(updated[-1]["author"], "Tester")
+        self.assertEqual(updated[-1]["text"], "สวัสดีชาววิศวะ!")
+
+    def test_shoutbox_post_view_requires_authentication(self):
+        response = self.client.post(reverse("accounts:shoutbox_post"), {"message": "ลองพิมพ์"})
+        # Anonymous user redirected to login
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(reverse("accounts:login") in response.url)
+
+        self.client.force_login(self.user)
+        auth_response = self.client.post(reverse("accounts:shoutbox_post"), {"message": "ยินดีที่ได้รู้จักครับ"})
+        self.assertRedirects(auth_response, reverse("accounts:home"))
+
+        home_resp = self.client.get(reverse("accounts:home"))
+        self.assertContains(home_resp, self.user.nickname)
+        self.assertContains(home_resp, "ยินดีที่ได้รู้จักครับ")
+
+    def test_poll_vote_ajax_returns_json_and_records_vote(self):
+        response = self.client.post(
+            reverse("accounts:poll_vote"),
+            {"choice": "circuit"},
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertTrue(data["has_voted"])
+        self.assertEqual(data["poll"]["total"], 1)
+        circuit = next(c for c in data["poll"]["choices"] if c["key"] == "circuit")
+        self.assertEqual(circuit["votes"], 1)
+
+    def test_shoutbox_post_ajax_returns_json_with_messages(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("accounts:shoutbox_post"),
+            {"message": "ข้อความ AJAX ไม่รีเฟรช"},
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["messages"][-1]["text"], "ข้อความ AJAX ไม่รีเฟรช")
+        self.assertIn(self.user.nickname, data["messages"][-1]["author"])
+
+
+
+

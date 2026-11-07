@@ -4,6 +4,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -60,7 +61,62 @@ def home(request):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
 
-    return render(request, "accounts/index.html")
+    poll = services.get_weekly_poll()
+    has_voted = request.session.get("has_voted_poll", False)
+    # Allows temporarily viewing options/form again via ?poll_view=form
+    view_mode = request.GET.get("poll_view")
+    show_form = (view_mode == "form") or (not has_voted)
+
+    return render(
+        request,
+        "accounts/index.html",
+        {
+            "visitor_digits": services.record_home_visit(),
+            "poll": poll,
+            "has_voted_poll": has_voted,
+            "show_poll_form": show_form,
+            "shoutbox_messages": services.get_shoutbox_messages(),
+        },
+    )
+
+
+@login_not_required
+@require_POST
+def poll_vote(request):
+    """Record vote for the weekly poll."""
+    choice = request.POST.get("choice")
+    if choice:
+        success, _ = services.record_poll_vote(choice_key=choice)
+        if success:
+            request.session["has_voted_poll"] = True
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "ok": True,
+            "poll": services.get_weekly_poll(),
+            "has_voted": request.session.get("has_voted_poll", False),
+        })
+    return redirect("accounts:home")
+
+
+@login_required
+@require_POST
+def shoutbox_post(request):
+    """Post message to the community shoutbox."""
+    message = request.POST.get("message")
+    if message:
+        user = request.user
+        dept_code = user.department.code if user.department else "Member"
+        author = f"[{dept_code}] {user.nickname}"
+        services.add_shoutbox_message(author=author, text=message)
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "ok": True,
+            "messages": services.get_shoutbox_messages(),
+        })
+    return redirect("accounts:home")
+
+
+
 
 
 @login_not_required

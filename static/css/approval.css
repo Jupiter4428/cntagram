@@ -1,26 +1,29 @@
-/* Moderator approval screens: FE-1 theme tokens and accessible controls. */
-.approval-page { color: var(--text-primary, #242424); }
-.approval-page .approval-hero { border-left: 5px solid var(--tse-red); padding: 1.25rem; background: #fff; border-radius: .65rem; }
-.approval-page .approval-panel { border: 1px solid #aeb3b8; border-radius: .75rem; background: #fff; overflow: hidden; }
-.approval-page .approval-panel .card-header { background: #fff; border-bottom: 2px solid var(--tse-red); }
-.approval-page .approval-table { --bs-table-bg: #fff; }
-.approval-page .approval-table thead th { background: var(--tse-red); color: #fff; }
-.approval-page .approval-table td { vertical-align: middle; }
-.approval-page .approval-badge { display: inline-block; border: 1px solid #731215; color: #731215; background: #fff; padding: .2rem .55rem; border-radius: .35rem; font-weight: 700; }
-.approval-page .approval-action { background: var(--tse-red); border: 2px solid var(--tse-red); color: #fff; font-weight: 700; }
-.approval-page .approval-action:hover, .approval-page .approval-action:focus-visible { background: #661114; border-color: #661114; color: #fff; }
-.approval-page .approval-secondary { border: 2px solid #731215; color: #731215; background: #fff; font-weight: 700; }
-.approval-page .approval-secondary:hover, .approval-page .approval-secondary:focus-visible { background: #731215; color: #fff; }
-.approval-page .approval-radio { border: 2px solid #731215; color: #731215; background: #fff; }
+/* Moderator approval screens: 2004–2007 classic webboard theme */
+.approval-page { color: var(--ink); }
+.approval-page .approval-hero { border: 1px solid var(--blue); border-left: 4px solid var(--navy); padding: 8px 10px; background: var(--cream); border-radius: 0; }
+.approval-page .approval-panel { border: 1px solid var(--blue); border-radius: 0; background: #fff; overflow: hidden; box-shadow: none; }
+.approval-page .approval-panel .card-header { background: var(--bar-gradient); color: #fff; border-bottom: 1px solid var(--navy); border-radius: 0; }
+.approval-page .approval-panel .card-header h2,
+.approval-page .approval-panel .card-header h3 { color: #fff; margin: 0; font-size: 12px; }
+.approval-page .approval-table { --bs-table-bg: #fff; border-collapse: separate; border-spacing: 1px; background: var(--line); }
+.approval-page .approval-table thead th { background: var(--sky); color: var(--navy); border: 0; }
+.approval-page .approval-table td { vertical-align: middle; background: #fff; border: 0; }
+.approval-page .approval-badge { display: inline-block; border: 1px solid var(--navy); color: var(--navy); background: var(--row-alt); padding: 1px 6px; border-radius: 0; font-weight: 700; }
+.approval-page .approval-action { background: var(--orange-bar-gradient); border: 2px outset var(--orange-light); color: #000; font-weight: 700; border-radius: 0; text-decoration: none; }
+.approval-page .approval-action:hover, .approval-page .approval-action:focus-visible { background: var(--navy); border-color: var(--blue-light); color: #fff; text-decoration: none; }
+.approval-page .approval-secondary { border: 2px outset #fff; color: #000; background: #d4d0c8; font-weight: 700; border-radius: 0; text-decoration: none; }
+.approval-page .approval-secondary:hover, .approval-page .approval-secondary:focus-visible { background: var(--cream); color: #000; text-decoration: none; }
+.approval-page .approval-radio { border: 2px outset #fff; color: #000; background: #d4d0c8; border-radius: 0; }
 .approval-page .approval-choice { padding-left: 0; position: relative; }
 .approval-page .approval-choice .form-check-input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
-.approval-page .approval-choice .form-check-input:checked + .approval-radio { background: #731215; color: #fff; }
-.approval-page .approval-choice .form-check-input:focus-visible + .approval-radio { outline: 3px solid #155e9b; outline-offset: 2px; }
-.approval-page .approval-description { white-space: pre-wrap; background: #f5f5f5; color: #303030; padding: 1rem; border-radius: .4rem; }
-.approval-page .approval-muted, .approval-page .approval-meta-label { color: #51565c; }
-.approval-page .approval-link { color: #731215; }
-.approval-page .approval-truncate { max-width: 250px; }
+.approval-page .approval-choice .form-check-input:checked + .approval-radio { background: var(--navy); color: #fff; border-style: inset; }
+.approval-page .approval-choice .form-check-input:focus-visible + .approval-radio { outline: 2px solid var(--orange-deep); outline-offset: 2px; }
+.approval-page .approval-description { white-space: pre-wrap; background: var(--row-alt); color: var(--ink); padding: 8px; border: 1px solid var(--line); border-radius: 0; }
+.approval-page .approval-muted, .approval-page .approval-meta-label { color: var(--muted); }
+.approval-page .approval-link { color: var(--navy); }
+.approval-page .approval-truncate { max-width: 240px; }
 .approval-page .approval-empty { max-width: 450px; margin-inline: auto; }
-.approval-page .approval-sticky { top: 1.5rem; }
-.approval-page .approval-action:focus-visible, .approval-page .approval-secondary:focus-visible, .approval-page .approval-radio:focus-visible { outline: 3px solid #155e9b; outline-offset: 2px; }
+.approval-page .approval-sticky { top: 1rem; }
+.approval-page .approval-action:focus-visible, .approval-page .approval-secondary:focus-visible, .approval-page .approval-radio:focus-visible { outline: 2px solid var(--orange-deep); outline-offset: 2px; }
 @media (max-width: 767px) { .approval-page .approval-sticky { position: static !important; } }
+@media (max-width: 575.98px) { .approval-page .approval-action, .approval-page .approval-secondary, .approval-page .approval-radio { min-height: 40px; } }
