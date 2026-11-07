@@ -1,58 +1,68 @@
 /* US-7 / Issue #86: document vault pages. Theme tokens come from static/css/retro.css. */
-.document-vault { display: flex; flex-direction: column; gap: 12px; }
+.document-vault { display: flex; flex-direction: column; gap: 8px; }
 .document-vault > * { margin-bottom: 0 !important; }
 
 .document-vault .dv-hero {
-  padding: 10px 14px;
+  padding: 8px 10px;
   color: #fff;
   background: var(--bar-gradient);
-  border: 1px solid #23558f;
-  border-radius: 4px 4px 0 0;
+  border: 1px solid var(--navy);
+  border-radius: 0;
 }
 .document-vault .dv-hero h1 {
   margin: 0;
   color: #fff;
-  font-size: 1.25rem;
-  text-shadow: 0 1px 0 rgb(0 0 0 / 30%);
+  font-size: 1.15rem;
 }
 .document-vault .dv-hero .dv-eyebrow { display: none; }
-.document-vault .dv-hero .dv-subtitle { color: #e8f3ff; font-size: 0.82rem; }
-.document-vault .dv-hero .dv-panel { color: var(--ink); text-shadow: none; }
+.document-vault .dv-hero .dv-subtitle { color: #ffffff; font-size: 12px; }
+.document-vault .dv-hero .dv-panel { color: var(--ink); }
 
 .document-vault .dv-panel {
   color: var(--ink);
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid var(--blue);
   border-radius: 0;
+  box-shadow: none;
 }
-.document-vault .dv-panel .card-body { padding: 12px 14px; }
-.document-vault .dv-panel h2 {
-  margin: -12px -14px 10px;
-  padding: 4px 10px;
-  color: #1f4f8a;
-  font-size: 0.88rem;
-  background: linear-gradient(180deg, #f3f9ff 0%, #d7e8f8 100%);
-  border-bottom: 1px solid var(--line);
+.document-vault .dv-panel .card-body { padding: 8px 10px; }
+.document-vault .dv-panel > .card-body > h2,
+.document-vault .dv-results-bar {
+  margin: -8px -10px 8px;
+  padding: 3px 8px;
+  color: #ffffff;
+  font-size: 12px;
+  background: var(--bar-gradient);
+  border-bottom: 1px solid var(--navy);
+}
+.document-vault .dv-results-bar h2 {
+  color: #ffffff;
+  font-size: 12px;
+}
+.document-vault .dv-results-bar .badge {
+  color: var(--navy) !important;
+  background: #ffffff !important;
 }
 
 .document-vault .dv-action {
-  color: #fff;
-  background: linear-gradient(180deg, #ffb35c 0%, var(--orange) 50%, #f27a00 51%, #ff9a33 100%);
-  border: 1px solid var(--orange-deep);
+  color: #000000;
+  background: linear-gradient(180deg, var(--orange-light) 0%, var(--orange-light) 50%, var(--orange) 50%, var(--orange) 100%);
+  border: 2px outset var(--orange-light);
+  border-radius: 0;
+  text-decoration: none;
 }
 .document-vault .dv-action:hover,
 .document-vault .dv-action:focus-visible {
-  color: #fff;
-  background: linear-gradient(180deg, #ffc47f 0%, #ff9b3d 50%, #ff8a1c 51%, #ffae5a 100%);
+  color: #ffffff;
+  background: var(--navy);
+  border-color: var(--blue-light);
+  text-decoration: none;
 }
+.document-vault .dv-action:active { border-style: inset; }
 
-/* results read like forum threads */
-.document-vault .dv-result { border-left: 4px solid var(--bar-top); }
-.document-vault .dv-result:hover { background: var(--row-hover); }
-.document-vault .dv-result h3 { margin: -12px -14px 8px; padding: 6px 12px; font-size: 0.95rem; background: var(--row-alt); border-bottom: 1px dotted var(--line); }
 .document-vault .dv-result a,
 .document-vault .dv-meta { overflow-wrap: anywhere; }
-.document-vault .dv-meta { font-size: 0.82rem; }
+.document-vault .dv-meta { font-size: 12px; }
 
 .document-vault .dv-preview {
   display: block;
@@ -60,10 +70,10 @@
   height: 70vh;
   min-height: 360px;
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid var(--blue);
 }
 
 @media (max-width: 575.98px) {
-  .document-vault .dv-hero h1 { font-size: 1.1rem; }
+  .document-vault .dv-hero h1 { font-size: 1.05rem; }
   .document-vault .dv-preview { height: 65vh; min-height: 320px; }
 }
