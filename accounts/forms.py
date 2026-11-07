@@ -172,13 +172,8 @@ class RegisterForm(forms.ModelForm):
                 for err in exc.error_list:
                     template = THAI_PASSWORD_VALIDATION_ERRORS.get(err.code)
                     if template:
-                        message = template % err.params if err.params else template
-                        self.add_error(
-                            "password",
-                            ValidationError(message, code=err.code),
-                        )
-                    else:
-                        self.add_error("password", err)
+                        err = ValidationError(template, code=err.code, params=err.params)
+                    self.add_error("password", err)
         return cleaned_data
 
     def full_clean(self):

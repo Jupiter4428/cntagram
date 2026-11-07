@@ -82,21 +82,29 @@ class RegisterFormTests(RegistrationTestCase):
             self.payload(password_confirm="Something-Else-123"), "password_confirm"
         )
 
-    def test_rejects_weak_password(self):
+    def test_rejects_common_password(self):
         form = self.assertFieldError(
-            self.payload(password="12345678", password_confirm="12345678"),
+            self.payload(password="password", password_confirm="password"),
             "password",
         )
-        self.assertTrue(
-            any("ใช้บ่อย" in err or "ตัวเลข" in err for err in form.errors["password"])
+        self.assertIn("รหัสผ่านนี้ใช้บ่อยเกินไป", form.errors["password"])
+
+    def test_rejects_entirely_numeric_password(self):
+        form = self.assertFieldError(
+            self.payload(password="83920174", password_confirm="83920174"),
+            "password",
         )
+        self.assertIn("รหัสผ่านต้องไม่เป็นตัวเลขล้วน", form.errors["password"])
 
     def test_rejects_short_password(self):
         form = self.assertFieldError(
             self.payload(password="short", password_confirm="short"),
             "password",
         )
-        self.assertTrue(any("สั้นเกินไป" in err for err in form.errors["password"]))
+        self.assertIn(
+            "รหัสผ่านสั้นเกินไป ต้องมีความยาวอย่างน้อย 8 ตัวอักษร",
+            form.errors["password"],
+        )
 
     def test_rejects_password_too_similar_to_nickname(self):
         form = self.assertFieldError(
@@ -107,7 +115,24 @@ class RegisterFormTests(RegistrationTestCase):
             ),
             "password",
         )
-        self.assertTrue(any("คล้าย" in err for err in form.errors["password"]))
+        self.assertIn(
+            "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",
+            form.errors["password"],
+        )
+
+    def test_rejects_password_too_similar_to_email(self):
+        form = self.assertFieldError(
+            self.payload(
+                email="6610000001@student.tu.ac.th",
+                password="6610000001Pass!",
+                password_confirm="6610000001Pass!",
+            ),
+            "password",
+        )
+        self.assertIn(
+            "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",
+            form.errors["password"],
+        )
 
     def test_rejects_nickname_exceeding_max_length(self):
         form = self.assertFieldError(self.payload(nickname="A" * 51), "nickname")
