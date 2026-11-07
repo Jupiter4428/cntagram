@@ -176,8 +176,8 @@ class UserDashboardTemplateTagsTests(TestCase):
         self.assertContains(response, "รออนุมัติ <strong>1</strong> ไฟล์ (ภาค CN)")
         self.assertContains(response, reverse("materials:approval_queue"))
 
-        # Check queries count with 1 pending: 8 queries
-        with self.assertNumQueries(8):
+        # Baseline dashboard 8 queries + 3 fixed poll/shoutbox DB queries.
+        with self.assertNumQueries(11):
             self.client.get(reverse("accounts:home"))
 
         # Add 4 more pending documents in CN (total 5)
@@ -190,8 +190,8 @@ class UserDashboardTemplateTagsTests(TestCase):
                 status=Document.Status.PENDING,
             )
 
-        # Query count remains constant at 8 (no N+1)!
-        with self.assertNumQueries(8):
+        # Query count remains constant with 5 documents (no N+1).
+        with self.assertNumQueries(11):
             resp = self.client.get(reverse("accounts:home"))
         self.assertContains(resp, "รออนุมัติ <strong>5</strong> ไฟล์ (ภาค CN)")
 
@@ -214,8 +214,8 @@ class UserDashboardTemplateTagsTests(TestCase):
             title="Doc 0",
             status=Document.Status.PUBLISHED,
         )
-        # Session + User + super_admin check + moderator check + user_documents = 5
-        with self.assertNumQueries(5):
+        # Dashboard: 5 queries + poll aggregate, vote existence, shoutbox = 8.
+        with self.assertNumQueries(8):
             self.client.get(reverse("accounts:home"))
 
         # Add 4 more documents (total 5)
@@ -228,6 +228,6 @@ class UserDashboardTemplateTagsTests(TestCase):
                 status=Document.Status.PUBLISHED,
             )
 
-        # Same 5 queries regardless of 1 or 5 documents (no N+1)!
-        with self.assertNumQueries(5):
+        # Same 8 queries regardless of document count (no N+1).
+        with self.assertNumQueries(8):
             self.client.get(reverse("accounts:home"))
