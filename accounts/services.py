@@ -168,7 +168,10 @@ def delete_own_account(*, user, password):
 
 
 def _delete_account_failure_key(*, user_id):
-    digest = salted_hmac("accounts.delete-account-rate-limit", str(user_id)).hexdigest()
+    digest = salted_hmac(
+        "accounts.delete-account-rate-limit",
+        str(user_id),
+    ).hexdigest()
     return f"delete-account-failures:{digest}"
 
 

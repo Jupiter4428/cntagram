@@ -126,7 +126,12 @@ def logout(request):
 def delete_account(request):
     """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
     if services.is_delete_account_rate_limited(user_id=request.user.pk):
-        response = render(request, "accounts/delete_account.html", {"form": DeleteAccountForm(), "rate_limited": True}, status=429)
+        response = render(
+            request,
+            "accounts/delete_account.html",
+            {"form": DeleteAccountForm(), "rate_limited": True},
+            status=429,
+        )
         response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
         return response
 
@@ -138,7 +143,12 @@ def delete_account(request):
             if hasattr(exc, "message_dict") and "password" in exc.message_dict:
                 services.record_delete_account_failure(user_id=request.user.pk)
                 if services.is_delete_account_rate_limited(user_id=request.user.pk):
-                    response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
+                    response = render(
+                        request,
+                        "accounts/delete_account.html",
+                        {"form": form, "rate_limited": True},
+                        status=429,
+                    )
                     response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
                     return response
             form.add_error(None, exc)

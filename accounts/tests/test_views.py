@@ -400,7 +400,7 @@ class DeleteAccountRateLimitViewTests(TestCase):
 
     def test_repeated_wrong_passwords_trigger_429_and_block_correct_password(self):
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            response = self.client.post(self.url, {"password": "wrong-password"})
+            self.client.post(self.url, {"password": "wrong-password"})
             self.user.refresh_from_db()
             self.assertTrue(self.user.is_active)
 
