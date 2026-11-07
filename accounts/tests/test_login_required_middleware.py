@@ -22,7 +22,8 @@ class LoginRequiredMiddlewareTests(TestCase):
         public = {
             route
             for route, view in _patterns(get_resolver().url_patterns)
-            if not route.startswith("admin/") and not getattr(view, "login_required", True)
+            if not route.startswith("admin/")
+            and not getattr(view, "login_required", True)
         }
         self.assertEqual(public, {"", "login/", "logout/", "register/"})
 
@@ -76,7 +77,9 @@ class LoginRequiredMiddlewareTests(TestCase):
 
     def test_admin_index_redirects_guest_to_admin_login(self):
         url = reverse("admin:index")
-        self.assertRedirects(self.client.get(url), f"{reverse('admin:login')}?next={url}")
+        self.assertRedirects(
+            self.client.get(url), f"{reverse('admin:login')}?next={url}"
+        )
 
     def test_admin_login_remains_accessible(self):
         self.assertEqual(self.client.get(reverse("admin:login")).status_code, 200)
@@ -88,7 +91,10 @@ class LoginRequiredMiddlewareTests(TestCase):
         module = ModuleType("issue45_test_urls")
         module.urlpatterns = [
             path("private/", private_view),
-            path("", include((accounts_urls.urlpatterns, "accounts"), namespace="accounts")),
+            path(
+                "",
+                include((accounts_urls.urlpatterns, "accounts"), namespace="accounts"),
+            ),
         ]
         with override_settings(ROOT_URLCONF=module):
             response = self.client.get("/private/")

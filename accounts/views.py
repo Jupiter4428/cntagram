@@ -17,7 +17,15 @@ from .models import Role, UserRole
 
 
 def _client_ip(request):
-    """Return the direct peer address without trusting spoofable proxy headers."""
+    """Return the direct peer address without trusting spoofable proxy headers.
+
+    Security Note (Refs #42 / #47):
+    Do NOT read raw X-Forwarded-For headers from the client directly because
+    clients can easily spoof them. When deploying behind a reverse proxy
+    (e.g. Nginx, Cloudflare), configure the proxy to rewrite REMOTE_ADDR with
+    the verified client IP (e.g. Nginx set_real_ip_from / real_ip_header,
+    or trusted ProxyFix middleware).
+    """
     return request.META.get("REMOTE_ADDR", "")
 
 
@@ -142,10 +150,7 @@ def logout(request):
 @require_http_methods(["GET", "POST"])
 def delete_account(request):
     """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
-    client_ip = _client_ip(request)
-    if services.is_delete_account_rate_limited(
-        user_id=request.user.pk, client_ip=client_ip
-    ):
+    if services.is_delete_account_rate_limited(user_id=request.user.pk):
         response = render(
             request,
             "accounts/delete_account.html",
@@ -163,12 +168,8 @@ def delete_account(request):
             )
         except ValidationError as exc:
             if hasattr(exc, "message_dict") and "password" in exc.message_dict:
-                services.record_delete_account_failure(
-                    user_id=request.user.pk, client_ip=client_ip
-                )
-                if services.is_delete_account_rate_limited(
-                    user_id=request.user.pk, client_ip=client_ip
-                ):
+                services.record_delete_account_failure(user_id=request.user.pk)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk):
                     response = render(
                         request,
                         "accounts/delete_account.html",
@@ -181,9 +182,7 @@ def delete_account(request):
                     return response
             form.add_error(None, exc)
         else:
-            services.clear_delete_account_failures(
-                user_id=request.user.pk, client_ip=client_ip
-            )
+            services.clear_delete_account_failures(user_id=request.user.pk)
             auth_logout(request)
             messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
             return redirect("accounts:home")

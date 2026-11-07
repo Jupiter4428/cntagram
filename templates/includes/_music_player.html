@@ -1,19 +1,48 @@
-<details class="retro-widget music-widget compact-disclosure">
+{% load static %}
+<details class="retro-widget music-widget compact-disclosure" open>
     <summary class="retro-widget__header retro-widget__titlebar retro-widget__titlebar--pink">
         <span aria-hidden="true">♫</span>
         <strong id="music-player-title">BGM Player</strong>
         <span class="compact-disclosure__state" aria-hidden="true"></span>
     </summary>
     <div class="retro-widget__body compact-disclosure__body" aria-labelledby="music-player-title">
+        <audio id="bgm-audio" preload="metadata"></audio>
+        <ol id="bgm-playlist" hidden>
+            <li data-src="{% static 'audio/singular_bao_bao.mp3' %}" data-artist="Singular">เบาเบา</li>
+            <li data-src="{% static 'audio/singular_long.mp3' %}" data-artist="Singular">ลอง</li>
+            <li data-src="{% static 'audio/hai_chan_doolae_ter.mp3' %}" data-artist="แหนม รณเดช">ให้ฉันดูแลเธอ</li>
+            <li data-src="{% static 'audio/saban_dai_loei.mp3' %}" data-artist="ฮันเตอร์">สาบานได้เลย</li>
+            <li data-src="{% static 'audio/wicha_marn.mp3' %}" data-artist="เท่ห์ อุเทน พรหมมินทร์">วิชามาร</li>
+            <li data-src="{% static 'audio/tse_cyber_campus.wav' %}" data-artist="CNTAGRAM BGM">TSE Cyber Campus (8-Bit)</li>
+            <li data-src="{% static 'audio/midnight_study_lofi.wav' %}" data-artist="Lofi Engineer">Midnight Study (Lofi)</li>
+            <li data-src="{% static 'audio/final_exam_rush.wav' %}" data-artist="Retro Chiptune">Final Exam Rush (Chiptune)</li>
+        </ol>
+
         <div class="music-widget__display">
-            <span class="music-widget__disc" aria-hidden="true"></span>
+            <span class="music-widget__disc" id="bgm-disc" aria-hidden="true"></span>
             <div>
-                <span>PLAYBACK STATUS</span>
-                <strong>COMING SOON</strong>
-                <small>sleep deprived certified mix</small>
+                <span id="bgm-track-status">PAUSED · Singular</span>
+                <strong id="bgm-track-title">[01] เบาเบา</strong>
+                <small id="bgm-time-display">00:00 / 00:00</small>
             </div>
         </div>
-        <div class="music-widget__progress" aria-hidden="true"><span></span></div>
-        <p class="music-widget__note">Decorative UI only · ไม่มีเสียง ไม่มีปุ่มเล่น และไม่ autoplay</p>
+
+        <div class="music-widget__seekbar-wrap">
+            <input type="range" id="bgm-seekbar" class="music-widget__seekbar" min="0" max="100" value="0" step="0.1" aria-label="แถบกรอเพลง">
+        </div>
+
+        <div class="music-widget__controls">
+            <button type="button" id="bgm-prev" title="Previous (ย้อนกลับ)" aria-label="ย้อนกลับ">⏮</button>
+            <button type="button" id="bgm-play-pause" title="Play (เล่นเพลง)" aria-label="เล่นเพลง">▶</button>
+            <button type="button" id="bgm-next" title="Next (เพลงถัดไป)" aria-label="เพลงถัดไป">⏭</button>
+            <button type="button" id="bgm-toggle-list" title="Playlist (แสดง/ซ่อน รายการเพลง)" aria-label="แสดง/ซ่อน รายการเพลง" aria-expanded="false">☰</button>
+
+            <button type="button" id="bgm-mute" title="Mute (ปิดเสียง)" aria-label="ปิดเสียง">🔊</button>
+            <input type="range" id="bgm-volume" class="music-widget__volume" min="0" max="1" step="0.05" value="0.7" aria-label="ระดับเสียง">
+        </div>
+
+        <div id="bgm-tracklist" class="music-widget__tracklist" style="display: none;" role="list" aria-label="รายการเพลง">
+            <!-- Populated by bgm_player.js -->
+        </div>
     </div>
 </details>

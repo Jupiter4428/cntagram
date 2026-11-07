@@ -78,7 +78,7 @@ class ModeratorServiceTests(ModeratorTestCase):
         ur1 = services.assign_moderator(
             user=self.user_momo, department=self.dept_cn, granted_by=self.admin
         )
-        ur2 = services.assign_moderator(
+        services.assign_moderator(
             user=self.user_momo, department=self.dept_ce, granted_by=self.admin
         )
 
@@ -131,20 +131,23 @@ class LoginServiceTests(ThrottleTestCase):
 
     def test_record_login_failure_increments_attempts(self):
         ip = "192.0.2.1"
-
-        counts = [
+        for _ in range(3):
             services.record_login_failure(identifier=self.user.email, client_ip=ip)
-            for _ in range(3)
-        ]
 
-        self.assertEqual(counts, [1, 2, 3])
+        id_key, ip_key = services._login_failure_keys(
+            identifier=self.user.email, client_ip=ip
+        )
+        self.assertEqual(cache.get(id_key), 3)
+        self.assertEqual(cache.get(ip_key), 3)
 
     def test_record_login_failure_resets_window_when_key_expired(self):
         ip = "192.0.2.1"
         services.record_login_failure(identifier=self.user.email, client_ip=ip)
-        cache.delete(
-            services._login_failure_key(identifier=self.user.email, client_ip=ip)
+        id_key, ip_key = services._login_failure_keys(
+            identifier=self.user.email, client_ip=ip
         )
+        cache.delete(id_key)
+        cache.delete(ip_key)
         services.record_login_failure(identifier=self.user.email, client_ip=ip)
         self.assertFalse(
             services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
@@ -267,33 +270,19 @@ class DeleteAccountRateLimitServiceTests(TestCase):
     def test_key_generation_has_no_pii(self):
         from accounts.services import _delete_account_failure_key
 
-        key = _delete_account_failure_key(user_id=123, client_ip="192.168.1.1")
+        key = _delete_account_failure_key(user_id=9876543210)
         self.assertTrue(key.startswith("delete-account-failures:"))
-        self.assertNotIn("123", key)
-        self.assertNotIn("192.168.1.1", key)
+        self.assertNotIn("9876543210", key)
 
     def test_rate_limit_flow(self):
         from accounts import services
 
         user_id = 999
-        client_ip = "10.0.0.1"
 
-        self.assertFalse(
-            services.is_delete_account_rate_limited(
-                user_id=user_id, client_ip=client_ip
-            )
-        )
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id))
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            services.record_delete_account_failure(user_id=user_id, client_ip=client_ip)
+            services.record_delete_account_failure(user_id=user_id)
 
-        self.assertTrue(
-            services.is_delete_account_rate_limited(
-                user_id=user_id, client_ip=client_ip
-            )
-        )
-        services.clear_delete_account_failures(user_id=user_id, client_ip=client_ip)
-        self.assertFalse(
-            services.is_delete_account_rate_limited(
-                user_id=user_id, client_ip=client_ip
-            )
-        )
+        self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id))
+        services.clear_delete_account_failures(user_id=user_id)
+        self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id))

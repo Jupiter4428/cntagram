@@ -1,4 +1,4 @@
-"""เทสต์ของ US-9: กฎอนุมัติจาก doc_type_required_role, ข้อสอบต้องอนุมัติสองฝ่าย และกฎข้อสอบรุ่นเก่า"""
+"""เทสต์ของ US-9: กฎอนุมัติจาก doc_type_required_role, ข้อสอบต้องอนุมัติสองฝ่าย และกฎข้อสอบรุ่นเก่า"""  # noqa: E501
 
 from importlib import import_module
 from io import StringIO
@@ -270,7 +270,7 @@ class ExamDualApprovalServiceTests(ApprovalBaseTestCase):
         self.assertEqual(doc.status, Document.Status.PENDING)
 
     def test_django_superuser_without_role_row_cannot_review(self):
-        # super admin นับจากแถว user_role เท่านั้น เหมือน portal.permissions.is_super_admin
+        # super admin นับจากแถว user_role เท่านั้น เหมือน portal.permissions.is_super_admin  # noqa: E501
         superuser = User.objects.create_superuser(
             email="6610000007@student.tu.ac.th",
             password="password123",

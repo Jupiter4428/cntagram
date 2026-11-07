@@ -178,7 +178,10 @@ class ModeratorAssignmentForm(forms.Form):
 
 
 class DeleteAccountForm(forms.Form):
-    """ยืนยันรหัสผ่านก่อนลบบัญชี (US-13) การตรวจรหัสผ่านอยู่ใน services.delete_own_account"""
+    """ยืนยันรหัสผ่านก่อนลบบัญชี (US-13)
+
+    การตรวจรหัสผ่านอยู่ใน services.delete_own_account
+    """
 
     password = forms.CharField(
         label="รหัสผ่านปัจจุบัน",
