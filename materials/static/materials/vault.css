@@ -1,62 +1,69 @@
-/* US-7 / Issue #86: FE-1 document-specific rules only.
-   Theme colors are inherited from static/css/retro.css. */
+/* US-7 / Issue #86: document vault pages. Theme tokens come from static/css/retro.css. */
+.document-vault { display: flex; flex-direction: column; gap: 12px; }
+.document-vault > * { margin-bottom: 0 !important; }
+
 .document-vault .dv-hero {
-  background: var(--soft-indigo);
-  border: 2px solid var(--chrome-silver);
-  border-top: 4px solid var(--tse-red);
-  border-radius: 8px;
-  color: var(--soft-white);
-  padding: clamp(1rem, 3vw, 2rem);
-  box-shadow: var(--surface-shadow);
+  padding: 10px 14px;
+  color: #fff;
+  background: var(--bar-gradient);
+  border: 1px solid #23558f;
+  border-radius: 4px 4px 0 0;
 }
-.document-vault .dv-hero h1 { color: var(--soft-white); }
-.document-vault .dv-hero .dv-eyebrow { color: var(--plastic-white); }
-.document-vault .dv-hero .dv-subtitle { color: var(--chrome-silver); }
+.document-vault .dv-hero h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.25rem;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 30%);
+}
+.document-vault .dv-hero .dv-eyebrow { display: none; }
+.document-vault .dv-hero .dv-subtitle { color: #e8f3ff; font-size: 0.82rem; }
+.document-vault .dv-hero .dv-panel { color: var(--ink); text-shadow: none; }
+
 .document-vault .dv-panel {
-  background: var(--soft-indigo);
-  border: 1px solid var(--line-soft);
-  color: var(--soft-white);
-  border-radius: 8px;
-  overflow: hidden;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 0;
 }
-.document-vault .dv-panel .card-body { padding: clamp(1rem, 2.5vw, 1.5rem); }
-.document-vault .dv-panel-title {
-  background: var(--holo-gradient);
-  color: var(--cyber-black);
-  padding: .8rem 1rem;
-  font-weight: 700;
+.document-vault .dv-panel .card-body { padding: 12px 14px; }
+.document-vault .dv-panel h2 {
+  margin: -12px -14px 10px;
+  padding: 4px 10px;
+  color: #1f4f8a;
+  font-size: 0.88rem;
+  background: linear-gradient(180deg, #f3f9ff 0%, #d7e8f8 100%);
+  border-bottom: 1px solid var(--line);
 }
-.document-vault .dv-panel-title h2 { color: inherit; margin: 0; }
+
 .document-vault .dv-action {
-  background: var(--tse-red);
-  border: 1px solid var(--tse-red);
-  color: var(--plastic-white);
-  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, #ffb35c 0%, var(--orange) 50%, #f27a00 51%, #ff9a33 100%);
+  border: 1px solid var(--orange-deep);
 }
 .document-vault .dv-action:hover,
 .document-vault .dv-action:focus-visible {
-  background: var(--tse-charcoal);
-  border-color: var(--chrome-silver);
-  color: var(--plastic-white);
+  color: #fff;
+  background: linear-gradient(180deg, #ffc47f 0%, #ff9b3d 50%, #ff8a1c 51%, #ffae5a 100%);
 }
-.document-vault .dv-result { transition: box-shadow .15s ease; }
-.document-vault .dv-result:hover { box-shadow: 0 0 0 2px var(--iridescent-purple); }
+
+/* results read like forum threads */
+.document-vault .dv-result { border-left: 4px solid var(--bar-top); }
+.document-vault .dv-result:hover { background: var(--row-hover); }
+.document-vault .dv-result h3 { margin: -12px -14px 8px; padding: 6px 12px; font-size: 0.95rem; background: var(--row-alt); border-bottom: 1px dotted var(--line); }
 .document-vault .dv-result a,
 .document-vault .dv-meta { overflow-wrap: anywhere; }
+.document-vault .dv-meta { font-size: 0.82rem; }
+
 .document-vault .dv-preview {
+  display: block;
   width: 100%;
   height: 70vh;
   min-height: 360px;
-  border: 0;
-  display: block;
-  background: var(--plastic-white);
+  background: #fff;
+  border: 1px solid var(--line);
 }
+
 @media (max-width: 575.98px) {
-  .document-vault .dv-hero { padding: 1.1rem; }
-  .document-vault .dv-hero h1 { font-size: 1.8rem; }
+  .document-vault .dv-hero h1 { font-size: 1.1rem; }
   .document-vault .dv-preview { height: 65vh; min-height: 320px; }
-  .document-vault .dv-panel .card-body { padding: 1rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .document-vault .dv-result { transition: none; }
 }
