@@ -1,8 +1,10 @@
-"""seed ข้อมูลตั้งต้นที่ฟอร์มอัปโหลดชีท (US-5) ต้องใช้: ประเภทเอกสาร ช่วงสอบ และค่าตั้งระบบ
+"""seed ข้อมูลตั้งต้นที่ฟอร์มอัปโหลดชีท (US-5) ต้องใช้:
+ประเภทเอกสาร ช่วงสอบ และค่าตั้งระบบ
 พร้อมกฎอนุมัติของทุกประเภท (seed_approval_rules, US-9) ไม่งั้นไม่มีใครอนุมัติได้
 
 รันซ้ำได้ ไม่สร้างซ้ำ และไม่เขียนทับค่าที่แอดมินแก้ไปแล้ว
 """
+
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction

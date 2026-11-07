@@ -54,11 +54,21 @@ class RegisterFormTests(RegistrationTestCase):
     def test_rejects_reserved_nickname(self):
         for nickname in ("admin", "Ad-Min", "MODERATOR", "แอดมิน"):
             with self.subTest(nickname=nickname):
-                form = self.assertFieldError(self.payload(nickname=nickname), "nickname")
-                self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0])
+                form = self.assertFieldError(
+                    self.payload(nickname=nickname), "nickname"
+                )
+                self.assertIn(
+                    "ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0]
+                )
 
     def test_blank_required_fields_show_thai_error(self):
-        for field in ("email", "nickname", "department", "password", "password_confirm"):
+        for field in (
+            "email",
+            "nickname",
+            "department",
+            "password",
+            "password_confirm",
+        ):
             with self.subTest(field=field):
                 form = self.assertFieldError(self.payload(**{field: ""}), field)
                 self.assertEqual(form.errors[field], ["กรุณากรอกข้อมูลช่องนี้"])
@@ -87,7 +97,10 @@ class RegisterFormTests(RegistrationTestCase):
             "password",
         )
         self.assertTrue(
-            any("คล้าย" in err or "similar" in err.lower() for err in form.errors["password"])
+            any(
+                "คล้าย" in err or "similar" in err.lower()
+                for err in form.errors["password"]
+            )
         )
 
     def test_department_choices_only_include_active_departments(self):

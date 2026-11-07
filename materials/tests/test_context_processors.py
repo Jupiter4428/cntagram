@@ -57,17 +57,19 @@ class ApprovalPermissionsContextProcessorTests(ApprovalBaseTestCase):
         self.assertTrue(bool(context["can_review_materials"]))
 
     def test_template_rendering_includes_can_review_materials_from_settings(self):
-        """การประเมิน template สามารถอ่านและประเมินค่า can_review_materials ได้อย่างถูกต้อง"""
+        """การประเมิน template สามารถอ่านและประเมินค่า can_review_materials ได้อย่างถูกต้อง"""  # noqa: E501
         request = self.factory.get("/")
         request.user = self.mod_cn
 
-        template = Template("{% if can_review_materials %}REVIEW_ALLOWED{% else %}FORBIDDEN{% endif %}")
+        template = Template(
+            "{% if can_review_materials %}REVIEW_ALLOWED{% else %}FORBIDDEN{% endif %}"
+        )
         rendered = template.render(RequestContext(request))
 
         self.assertIn("REVIEW_ALLOWED", rendered)
 
     def test_unused_flag_runs_no_query(self):
-        """หน้าที่ไม่ได้เรียกใช้ can_review_materials จะไม่รัน query ใดๆ (SimpleLazyObject)"""
+        """หน้าที่ไม่ได้เรียกใช้ can_review_materials จะไม่รัน query ใดๆ (SimpleLazyObject)"""  # noqa: E501
         request = self.factory.get("/")
         request.user = self.mod_cn
 

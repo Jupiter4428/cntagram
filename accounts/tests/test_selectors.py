@@ -17,14 +17,22 @@ User = get_user_model()
 class AdminDashboardSelectorTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.cn = Department.objects.create(code="CN", name_th="คอมพิวเตอร์", name_en="Computer")
-        Department.objects.create(code="OLD", name_th="ภาคเก่า", name_en="Old", is_active=False)
+        cls.cn = Department.objects.create(
+            code="CN", name_th="คอมพิวเตอร์", name_en="Computer"
+        )
+        Department.objects.create(
+            code="OLD", name_th="ภาคเก่า", name_en="Old", is_active=False
+        )
         Batch.objects.create(department=cls.cn, number=21)
         Batch.objects.create(department=cls.cn, number=22)
         for code in ("CN101", "CN102", "SC135"):
             Course.objects.create(code=code, name_en=code)
-        student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
-        admin, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
+        student, _ = Role.objects.get_or_create(
+            code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
+        )
+        admin, _ = Role.objects.get_or_create(
+            code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"}
+        )
         cls.users = []
         for i, role in enumerate((student, student, admin)):
             user = User.objects.create_user(
@@ -51,20 +59,40 @@ class AdminDashboardSelectorTests(TestCase):
         self.assertEqual(
             dashboard["roles"],
             [
-                {"label": "นักศึกษา", "count": 2, "percent": 67, "offset": 0, "end": 67},
-                {"label": "ผู้ดูแลระบบ", "count": 1, "percent": 33, "offset": 67, "end": 100},
+                {
+                    "label": "นักศึกษา",
+                    "count": 2,
+                    "percent": 67,
+                    "offset": 0,
+                    "end": 67,
+                },
+                {
+                    "label": "ผู้ดูแลระบบ",
+                    "count": 1,
+                    "percent": 33,
+                    "offset": 67,
+                    "end": 100,
+                },
             ],
         )
 
     def test_role_counts_count_a_moderator_of_two_departments_once(self):
-        moderator, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"})
-        me = Department.objects.create(code="ME", name_th="เครื่องกล", name_en="Mechanical")
+        moderator, _ = Role.objects.get_or_create(
+            code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"}
+        )
+        me = Department.objects.create(
+            code="ME", name_th="เครื่องกล", name_en="Mechanical"
+        )
         for department in (self.cn, me):
-            UserRole.objects.create(user=self.users[0], role=moderator, department=department)
+            UserRole.objects.create(
+                user=self.users[0], role=moderator, department=department
+            )
 
         roles = admin_dashboard()["roles"]
 
-        self.assertEqual([r["count"] for r in roles if r["label"] == moderator.name_th], [1])
+        self.assertEqual(
+            [r["count"] for r in roles if r["label"] == moderator.name_th], [1]
+        )
 
     def test_new_user_counts_by_today_week_month_year_and_all(self):
         def joined(user, *date_parts):
@@ -86,17 +114,25 @@ class AdminDashboardSelectorTests(TestCase):
         )
 
     def test_new_user_counts_cut_off_at_midnight_bangkok_time(self):
-        # User created at 18:00 UTC on 2026-10-23 is 01:00 Bangkok on 2026-10-24 -> counts as "today" on 2026-10-24
+        # User created at 18:00 UTC on 2026-10-23 is 01:00 Bangkok on 2026-10-24
+        # -> counts as "today" on 2026-10-24
         User.objects.filter(pk=self.users[0].pk).update(
-            created_at=datetime.datetime(2026, 10, 23, 18, 0, tzinfo=datetime.timezone.utc)
+            created_at=datetime.datetime(
+                2026, 10, 23, 18, 0, tzinfo=datetime.timezone.utc
+            )
         )
-        # User created at 16:59 UTC on 2026-10-23 is 23:59 Bangkok on 2026-10-23 -> does NOT count as "today" on 2026-10-24
+        # User created at 16:59 UTC on 2026-10-23 is 23:59 Bangkok on 2026-10-23
+        # -> does NOT count as "today" on 2026-10-24
         User.objects.filter(pk=self.users[1].pk).update(
-            created_at=datetime.datetime(2026, 10, 23, 16, 59, tzinfo=datetime.timezone.utc)
+            created_at=datetime.datetime(
+                2026, 10, 23, 16, 59, tzinfo=datetime.timezone.utc
+            )
         )
         # Clear third user from today
         User.objects.filter(pk=self.users[2].pk).update(
-            created_at=datetime.datetime(2026, 10, 20, 12, 0, tzinfo=datetime.timezone.utc)
+            created_at=datetime.datetime(
+                2026, 10, 20, 12, 0, tzinfo=datetime.timezone.utc
+            )
         )
 
         dashboard = admin_dashboard(today=datetime.date(2026, 10, 24))
@@ -135,10 +171,18 @@ class AdminDashboardSelectorTests(TestCase):
 
         self.assertEqual(
             [
-                (user.nickname, [r.role.name_th for r in user.user_roles.all()], user.upload_count)
+                (
+                    user.nickname,
+                    [r.role.name_th for r in user.user_roles.all()],
+                    user.upload_count,
+                )
                 for user in dashboard["users_page"]
             ],
-            [("User2", ["ผู้ดูแลระบบ"], 0), ("User1", ["นักศึกษา"], 0), ("User0", ["นักศึกษา"], 0)],
+            [
+                ("User2", ["ผู้ดูแลระบบ"], 0),
+                ("User1", ["นักศึกษา"], 0),
+                ("User0", ["นักศึกษา"], 0),
+            ],
         )
 
     def test_users_are_split_into_pages_of_seven(self):
@@ -166,7 +210,9 @@ class AdminDashboardSelectorTests(TestCase):
             ["1", "2", "3", "4", "5", "6", "…", "13"],
         )
 
-    def test_department_overview_lists_active_departments_with_user_and_batch_counts(self):
+    def test_department_overview_lists_active_departments_with_user_and_batch_counts(
+        self,
+    ):
         dashboard = admin_dashboard()
 
         self.assertEqual(
@@ -191,19 +237,21 @@ class ModeratorSelectorTests(ModeratorTestCase):
         )
 
         moderators = selectors.moderator_list().filter(department=self.dept_cn)
-        self.assertEqual(
-            {m.user for m in moderators}, {self.user_momo, self.user_nana}
-        )
+        self.assertEqual({m.user for m in moderators}, {self.user_momo, self.user_nana})
 
     def test_is_moderator_of_department_is_scoped_to_assigned_department(self):
         services.assign_moderator(
             user=self.user_momo, department=self.dept_cn, granted_by=self.admin
         )
         self.assertTrue(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_cn)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_cn
+            )
         )
         self.assertFalse(
-            selectors.is_moderator_of_department(user=self.user_momo, department=self.dept_me)
+            selectors.is_moderator_of_department(
+                user=self.user_momo, department=self.dept_me
+            )
         )
 
     def test_moderator_list_queries_prevent_n_plus_one(self):

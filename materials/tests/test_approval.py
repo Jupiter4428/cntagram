@@ -72,7 +72,9 @@ class ReviewFormTests(TestCase):
         self.assertIsNone(form.cleaned_data["reason"])
 
     def test_reject_requires_reason(self):
-        form = ReviewForm(data={"decision": Approval.Decision.REJECTED, "reason": "   "})
+        form = ReviewForm(
+            data={"decision": Approval.Decision.REJECTED, "reason": "   "}
+        )
         self.assertFalse(form.is_valid())
         self.assertIn("reason", form.errors)
         self.assertIn("กรุณาระบุเหตุผล", form.errors["reason"][0])
@@ -87,11 +89,17 @@ class ReviewFormTests(TestCase):
 
 class ApprovalSelectorTests(ApprovalBaseTestCase):
     def test_moderator_sees_only_pending_documents_of_their_department(self):
-        doc_cn_pending = self.create_document(batch_course=self.bc_cn, title="CN Pending")
-        doc_cn_published = self.create_document(
-            batch_course=self.bc_cn, status=Document.Status.PUBLISHED, title="CN Published"
+        doc_cn_pending = self.create_document(
+            batch_course=self.bc_cn, title="CN Pending"
         )
-        doc_me_pending = self.create_document(batch_course=self.bc_me, title="ME Pending")
+        doc_cn_published = self.create_document(
+            batch_course=self.bc_cn,
+            status=Document.Status.PUBLISHED,
+            title="CN Published",
+        )
+        doc_me_pending = self.create_document(
+            batch_course=self.bc_me, title="ME Pending"
+        )
 
         cn_docs = pending_documents_for_moderator(user=self.mod_cn)
         self.assertIn(doc_cn_pending, cn_docs)
@@ -155,10 +163,12 @@ class ApprovalSelectorTests(ApprovalBaseTestCase):
         self.assertEqual(fetched.pk, doc_cn.pk)
 
         # Super Admin can access
-        fetched_sa = get_document_for_review(document_id=doc_cn.pk, user=self.super_admin)
+        fetched_sa = get_document_for_review(
+            document_id=doc_cn.pk, user=self.super_admin
+        )
         self.assertEqual(fetched_sa.pk, doc_cn.pk)
 
-        # Mod ME gets Document.DoesNotExist for CN doc (cannot distinguish from non-existent doc)
+        # Mod ME gets Document.DoesNotExist for CN doc (cannot distinguish from non-existent doc)  # noqa: E501
         with self.assertRaises(Document.DoesNotExist):
             get_document_for_review(document_id=doc_cn.pk, user=self.mod_me)
 
@@ -225,10 +235,14 @@ class ApprovalServiceTests(ApprovalBaseTestCase):
         self.assertEqual(doc.status, Document.Status.PUBLISHED)
         self.assertEqual(approval.decision, Approval.Decision.APPROVED)
         self.assertEqual(approval.approver_role, self.role_moderator)
-        self.assertTrue(Approval.objects.filter(document=doc, approver=self.mod_cn).exists())
+        self.assertTrue(
+            Approval.objects.filter(document=doc, approver=self.mod_cn).exists()
+        )
 
     def test_super_admin_approve_changes_status_to_published(self):
-        doc = self.create_document(batch_course=self.bc_cn, doc_type=self.doc_type_summary)
+        doc = self.create_document(
+            batch_course=self.bc_cn, doc_type=self.doc_type_summary
+        )
 
         approval = review_document(
             document=doc,
@@ -240,7 +254,9 @@ class ApprovalServiceTests(ApprovalBaseTestCase):
         self.assertEqual(doc.status, Document.Status.PUBLISHED)
         self.assertEqual(approval.decision, Approval.Decision.APPROVED)
         self.assertEqual(approval.approver_role, self.role_super_admin)
-        self.assertTrue(Approval.objects.filter(document=doc, approver=self.super_admin).exists())
+        self.assertTrue(
+            Approval.objects.filter(document=doc, approver=self.super_admin).exists()
+        )
 
     def test_reject_changes_status_to_rejected(self):
         doc = self.create_document(doc_type=self.doc_type_summary)
@@ -258,7 +274,9 @@ class ApprovalServiceTests(ApprovalBaseTestCase):
         self.assertEqual(approval.reason, "ชีทเนื้อหาไม่ครบถ้วน")
 
     def test_review_already_reviewed_document_raises_validation_error(self):
-        doc = self.create_document(doc_type=self.doc_type_summary, status=Document.Status.PUBLISHED)
+        doc = self.create_document(
+            doc_type=self.doc_type_summary, status=Document.Status.PUBLISHED
+        )
 
         with self.assertRaises(ValidationError) as ctx:
             review_document(
@@ -270,7 +288,9 @@ class ApprovalServiceTests(ApprovalBaseTestCase):
         self.assertIn("เอกสารนี้ถูกพิจารณาไปแล้ว", str(ctx.exception))
 
     def test_duplicate_approval_by_same_approver_raises_validation_error(self):
-        doc = self.create_document(doc_type=self.doc_type_exam, status=Document.Status.PENDING)
+        doc = self.create_document(
+            doc_type=self.doc_type_exam, status=Document.Status.PENDING
+        )
 
         review_document(
             document=doc,
@@ -319,12 +339,16 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         response = self.client.get(self.queue_url)
         self.assertEqual(response.status_code, 403)
         self.assertTemplateUsed(response, "403.html")
-        self.assertContains(response, "เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้", status_code=403)
+        self.assertContains(
+            response, "เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้", status_code=403
+        )
         self.assertContains(response, reverse("accounts:home"), status_code=403)
         self.assertContains(response, reverse("materials:vault"), status_code=403)
 
         # Review page forbidden
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.get(review_url)
         self.assertEqual(response.status_code, 403)
         self.assertTemplateUsed(response, "403.html")
@@ -333,7 +357,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         doc_cn = self.create_document(batch_course=self.bc_cn)
         self.client.force_login(self.mod_me)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc_cn.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc_cn.pk}
+        )
         response = self.client.get(review_url)
         # Cannot distinguish other dept from non-existent document
         self.assertEqual(response.status_code, 404)
@@ -350,13 +376,15 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         )
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc_cn.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc_cn.pk}
+        )
         response = self.client.get(review_url)
         self.assertEqual(response.status_code, 404)
 
     def test_approval_queue_displays_department_documents(self):
-        doc_cn = self.create_document(batch_course=self.bc_cn, title="CN Unique Title")
-        doc_me = self.create_document(batch_course=self.bc_me, title="ME Unique Title")
+        self.create_document(batch_course=self.bc_cn, title="CN Unique Title")
+        self.create_document(batch_course=self.bc_me, title="ME Unique Title")
 
         self.client.force_login(self.mod_cn)
         response = self.client.get(self.queue_url)
@@ -383,7 +411,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         doc = self.create_document(batch_course=self.bc_cn, title="Math Summary")
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.get(review_url)
 
         self.assertEqual(response.status_code, 200)
@@ -398,7 +428,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         Document.objects.filter(pk=doc.pk).update(created_at=utc_time)
 
         self.client.force_login(self.mod_cn)
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.get(review_url)
 
         self.assertEqual(response.status_code, 200)
@@ -427,7 +459,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         )
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc_published.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc_published.pk}
+        )
         response = self.client.get(review_url)
         self.assertEqual(response.status_code, 404)
 
@@ -444,7 +478,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         doc = self.create_document(batch_course=self.bc_cn)
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.post(
             review_url,
             {"decision": Approval.Decision.APPROVED, "reason": ""},
@@ -455,13 +491,17 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         self.assertContains(response, "บันทึกผลการพิจารณา")
         doc.refresh_from_db()
         self.assertEqual(doc.status, Document.Status.PUBLISHED)
-        self.assertTrue(Approval.objects.filter(document=doc, approver=self.mod_cn).exists())
+        self.assertTrue(
+            Approval.objects.filter(document=doc, approver=self.mod_cn).exists()
+        )
 
     def test_approval_review_post_super_admin_approve_successful(self):
         doc = self.create_document(batch_course=self.bc_cn)
         self.client.force_login(self.super_admin)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.post(
             review_url,
             {"decision": Approval.Decision.APPROVED, "reason": ""},
@@ -478,7 +518,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         doc = self.create_document(batch_course=self.bc_cn)
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.post(
             review_url,
             {"decision": Approval.Decision.REJECTED, "reason": ""},
@@ -495,10 +537,15 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         doc = self.create_document(batch_course=self.bc_cn)
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.post(
             review_url,
-            {"decision": Approval.Decision.REJECTED, "reason": "ลายมืออ่านยาก กรุณาแก้ไข"},
+            {
+                "decision": Approval.Decision.REJECTED,
+                "reason": "ลายมืออ่านยาก กรุณาแก้ไข",
+            },
             follow=True,
         )
 
@@ -517,7 +564,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         )
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
 
         # First review is successful
         res1 = self.client.post(
@@ -526,12 +575,14 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
             follow=True,
         )
         self.assertRedirects(res1, self.queue_url)
-        self.assertEqual(Approval.objects.filter(document=doc, approver=self.mod_cn).count(), 1)
+        self.assertEqual(
+            Approval.objects.filter(document=doc, approver=self.mod_cn).count(), 1
+        )
 
         # Second review attempt (e.g. resubmitting the form or if URL was reopened)
-        # Note: selectors.get_document_for_review excludes already reviewed documents -> 404,
+        # Note: selectors.get_document_for_review excludes already reviewed documents -> 404,  # noqa: E501
         # but if review_document service is invoked directly or concurrency occurs,
-        # view catches ValidationError and adds error to form, returning 200 rather than 500.
+        # view catches ValidationError and adds error to form, returning 200 rather than 500.  # noqa: E501
         # Let's test the view handling of ValidationError:
         doc.status = Document.Status.PENDING
         doc.save()
@@ -542,7 +593,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         )
         # Since mod_cn already approved, get_document_for_review raises 404!
         self.assertEqual(res2.status_code, 404)
-        self.assertEqual(Approval.objects.filter(document=doc, approver=self.mod_cn).count(), 1)
+        self.assertEqual(
+            Approval.objects.filter(document=doc, approver=self.mod_cn).count(), 1
+        )
 
     def test_approval_review_exam_approval_remains_pending_and_removed_from_queue(self):
         doc = self.create_document(
@@ -552,7 +605,9 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         )
         self.client.force_login(self.mod_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.post(
             review_url,
             {"decision": Approval.Decision.APPROVED, "reason": ""},
@@ -575,13 +630,15 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
         doc = self.create_document(uploader=self.uploader_cn)
         self.client.force_login(self.uploader_cn)
 
-        review_url = reverse("materials:approval_review", kwargs={"document_id": doc.pk})
+        review_url = reverse(
+            "materials:approval_review", kwargs={"document_id": doc.pk}
+        )
         response = self.client.post(
             review_url,
             {"decision": Approval.Decision.APPROVED},
         )
 
-        # Since queue excludes own uploaded files, get_document_for_review raises DoesNotExist -> 404
+        # Since queue excludes own uploaded files, get_document_for_review raises DoesNotExist -> 404  # noqa: E501
         self.assertEqual(response.status_code, 404)
         doc.refresh_from_db()
         self.assertEqual(doc.status, Document.Status.PENDING)
@@ -611,7 +668,7 @@ class ApprovalViewsTests(ApprovalBaseTestCase):
             response = self.client.get(self.queue_url)
             self.assertEqual(response.status_code, 200)
 
-        # Add 5 more documents (total 10) to strictly prove query count does not grow with N
+        # Add 5 more documents (total 10) to strictly prove query count does not grow with N  # noqa: E501
         for i in range(5, 10):
             self.create_document(
                 batch_course=self.bc_cn,
@@ -637,9 +694,11 @@ class ApprovalPreviewViewTests(ApprovalBaseTestCase):
         super().tearDownClass()
 
     def create_document_with_file(self, **kwargs):
-        """เอกสารที่มีไฟล์ PDF อยู่ใน storage จริง (create_document เฉยๆ จะชี้ path ที่ไม่มีไฟล์)"""
+        """เอกสารที่มีไฟล์ PDF อยู่ใน storage จริง (create_document เฉยๆ จะชี้ path ที่ไม่มีไฟล์)"""  # noqa: E501
         doc = self.create_document(**kwargs)
-        path = default_storage.save(f"vault/test/{doc.pk}_preview.pdf", ContentFile(PDF_BYTES))
+        path = default_storage.save(
+            f"vault/test/{doc.pk}_preview.pdf", ContentFile(PDF_BYTES)
+        )
         doc.versions.update(storage_path=path)
         return doc
 
@@ -681,14 +740,20 @@ class ApprovalPreviewViewTests(ApprovalBaseTestCase):
         self.assertEqual(self.preview(doc).status_code, 404)
 
     def test_uploader_gets_404_even_when_they_are_a_moderator(self):
-        doc = self.create_document_with_file(batch_course=self.bc_cn, uploader=self.mod_cn)
+        doc = self.create_document_with_file(
+            batch_course=self.bc_cn, uploader=self.mod_cn
+        )
         self.client.force_login(self.mod_cn)
 
         self.assertEqual(self.preview(doc).status_code, 404)
 
     def test_document_that_is_not_pending_gets_404(self):
         self.client.force_login(self.mod_cn)
-        for status in (Document.Status.PUBLISHED, Document.Status.REJECTED, Document.Status.HIDDEN):
+        for status in (
+            Document.Status.PUBLISHED,
+            Document.Status.REJECTED,
+            Document.Status.HIDDEN,
+        ):
             with self.subTest(status=status):
                 doc = self.create_document_with_file(status=status)
 
@@ -707,7 +772,9 @@ class ApprovalPreviewViewTests(ApprovalBaseTestCase):
         self.assertEqual(self.preview(doc).status_code, 404)
 
     def test_file_missing_from_storage_gets_404(self):
-        doc = self.create_document(batch_course=self.bc_cn)  # path ชี้ไฟล์ที่ไม่เคยถูกบันทึก
+        doc = self.create_document(
+            batch_course=self.bc_cn
+        )  # path ชี้ไฟล์ที่ไม่เคยถูกบันทึก
         self.client.force_login(self.mod_cn)
 
         self.assertEqual(self.preview(doc).status_code, 404)
