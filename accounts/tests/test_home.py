@@ -4,7 +4,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from catalog.models import Department
+from catalog.models import Batch, BatchCourse, Course, Department
+from materials.models import DocType, Document
 
 
 from ..models import Role, UserRole
@@ -33,7 +34,9 @@ class HomeViewTests(TestCase):
         )
 
     def create_super_admin(self):
-        role, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
+        role, _ = Role.objects.get_or_create(
+            code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"}
+        )
         admin = User.objects.create_user(
             email="6610000001@student.tu.ac.th",
             password=None,
@@ -81,8 +84,12 @@ class HomeViewTests(TestCase):
         self.assertContains(response, "Decorative UI only")
         self.assertContains(response, "ไม่ใช่ยอดผู้เข้าชมจริง")
         self.assertContains(response, "88×31-inspired decorative badges · DEMO")
-        self.assertContains(response, 'class="retro-widget music-widget compact-disclosure"')
-        self.assertContains(response, 'class="retro-widget counter-widget compact-disclosure"')
+        self.assertContains(
+            response, 'class="retro-widget music-widget compact-disclosure"'
+        )
+        self.assertContains(
+            response, 'class="retro-widget counter-widget compact-disclosure"'
+        )
         self.assertContains(response, "Web Badge Collection")
         self.assertNotContains(response, "<script")
         self.assertNotContains(response, "<audio")
@@ -142,7 +149,9 @@ class HomeViewTests(TestCase):
                 response = self.client.get(reverse(url_name))
                 self.assertTemplateUsed(response, "auth_base.html")
                 self.assertTemplateUsed(response, "includes/_auth_help.html")
-                self.assertContains(response, 'class="site-layout container-xl site-layout--auth"')
+                self.assertContains(
+                    response, 'class="site-layout container-xl site-layout--auth"'
+                )
                 self.assertContains(response, "Member Help")
                 self.assertContains(response, "กลับหน้าแรก")
                 self.assertNotContains(response, "Community Archive")
@@ -174,13 +183,19 @@ class HomeViewTests(TestCase):
         self.assertTemplateUsed(response, "accounts/index.html")
         self.assertTemplateNotUsed(response, "accounts/index_admin.html")
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
-        for url_name in ("catalog:department_list", "catalog:batch_list", "catalog:course_list"):
+        for url_name in (
+            "catalog:department_list",
+            "catalog:batch_list",
+            "catalog:course_list",
+        ):
             with self.subTest(url_name=url_name):
                 self.assertNotContains(response, reverse(url_name))
         self.assertContains(response, self.hero)
 
     def test_moderator_home_does_not_show_the_dashboard_or_other_users_details(self):
-        role, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"})
+        role, _ = Role.objects.get_or_create(
+            code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"}
+        )
         moderator = User.objects.create_user(
             email="6610000002@student.tu.ac.th",
             password=None,
@@ -188,7 +203,9 @@ class HomeViewTests(TestCase):
             department=self.user.department,
             pdpa_consent_at=timezone.now(),
         )
-        UserRole.objects.create(user=moderator, role=role, department=self.user.department)
+        UserRole.objects.create(
+            user=moderator, role=role, department=self.user.department
+        )
         self.client.force_login(moderator)
 
         response = self.client.get(reverse("accounts:home"))
@@ -247,3 +264,31 @@ class HomeViewTests(TestCase):
     def test_guest_home_runs_no_document_queries(self):
         with self.assertNumQueries(0):
             self.client.get(reverse("accounts:home"))
+
+    def test_admin_home_warns_when_pending_documents_lack_approval_rules(self):
+        admin = self.create_super_admin()
+        self.client.force_login(admin)
+
+        # Baseline: No pending documents without rules
+        res_baseline = self.client.get(reverse("accounts:home"))
+        self.assertNotContains(res_baseline, "ไม่มีกฎการอนุมัติ")
+
+        # Create doc_type without rules and a pending document
+        no_rule_type = DocType.objects.create(
+            code="cheatsheet", name_th="สูตรลัด", vault=DocType.Vault.LECTURE
+        )
+        batch = Batch.objects.create(department=self.user.department, number=24)
+        course = Course.objects.create(code="CN199", name_en="Special Topics")
+        bc = BatchCourse.objects.create(batch=batch, course=course)
+        Document.objects.create(
+            batch_course=bc,
+            doc_type=no_rule_type,
+            uploader=self.user,
+            title="Cheat Sheet Document",
+            status=Document.Status.PENDING,
+        )
+
+        res_with_warning = self.client.get(reverse("accounts:home"))
+        self.assertContains(res_with_warning, "ไม่มีกฎการอนุมัติ")
+        self.assertContains(res_with_warning, "สูตรลัด")
+        self.assertContains(res_with_warning, "<strong>1</strong> ฉบับ")
