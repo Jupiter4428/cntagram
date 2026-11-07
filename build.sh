@@ -20,7 +20,12 @@ python manage.py seed_materials
 if [ -n "$DJANGO_SUPERUSER_PASSWORD" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ]; then
   export DJANGO_SUPERUSER_NICKNAME="${DJANGO_SUPERUSER_NICKNAME:-CNtagramStaff}"
   export DJANGO_SUPERUSER_DEPARTMENT="${DJANGO_SUPERUSER_DEPARTMENT:-CN}"
-  python manage.py createsuperuser --noinput || echo "createsuperuser skipped (มีบัญชีแล้ว?)"
+  # Existing admin is normal on repeat deploys; other errors must fail the build.
+  if python manage.py shell -c 'import os, sys; from django.contrib.auth import get_user_model; sys.exit(0 if get_user_model().objects.filter(email=os.environ["DJANGO_SUPERUSER_EMAIL"]).exists() else 1)'; then
+    echo "Superuser email already exists; skipping creation."
+  else
+    python manage.py createsuperuser --noinput
+  fi
 fi
 python manage.py seed_roles
 
