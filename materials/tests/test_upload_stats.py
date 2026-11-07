@@ -19,7 +19,9 @@ class UploadStatsTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        dept = Department.objects.create(code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering")
+        dept = Department.objects.create(
+            code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
+        )
         cls.uploader = User.objects.create_user(
             email="6810610003@student.tu.ac.th",
             password=None,
@@ -30,7 +32,9 @@ class UploadStatsTests(TestCase):
         batch = Batch.objects.create(department=dept, number=21)
         course = Course.objects.create(code="CN200", name_en="Discrete Mathematics")
         cls.batch_course = BatchCourse.objects.create(batch=batch, course=course)
-        cls.doc_type = DocType.objects.create(code="summary", name_th="สรุป", vault=DocType.Vault.LECTURE)
+        cls.doc_type = DocType.objects.create(
+            code="summary", name_th="สรุป", vault=DocType.Vault.LECTURE
+        )
 
     def upload(self, *, versions=1):
         document = Document.objects.create(
@@ -94,7 +98,9 @@ class UploadStatsTests(TestCase):
         )
 
     def test_monthly_uploads_tag_gives_six_months(self):
-        template = Template("{% load materials_stats %}{% monthly_uploads as rows %}{{ rows|length }}")
+        template = Template(
+            "{% load materials_stats %}{% monthly_uploads as rows %}{{ rows|length }}"
+        )
 
         rendered = template.render(Context())
 
@@ -105,4 +111,6 @@ class UploadStatsTests(TestCase):
 
         users_page = admin_dashboard()["users_page"]
 
-        self.assertEqual([(user.nickname, user.upload_count) for user in users_page], [("Ton", 1)])
+        self.assertEqual(
+            [(user.nickname, user.upload_count) for user in users_page], [("Ton", 1)]
+        )

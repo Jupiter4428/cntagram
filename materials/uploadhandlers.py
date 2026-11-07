@@ -1,4 +1,8 @@
-"""upload handler ที่ตัดไฟล์เกินขนาดตั้งแต่ตอนรับ (ตั้งไว้หน้าสุดใน FILE_UPLOAD_HANDLERS)"""
+"""upload handler ที่ตัดไฟล์เกินขนาดตั้งแต่ตอนรับ
+
+(ตั้งไว้หน้าสุดใน FILE_UPLOAD_HANDLERS)
+"""
+
 from django.core.files.uploadhandler import FileUploadHandler, SkipFile
 
 from .models import max_upload_bytes

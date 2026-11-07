@@ -30,7 +30,5 @@ class BgmStaticAudioTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="bgm-playlist"')
-        self.assertContains(
-            response, 'data-src="/static/audio/singular_bao_bao.mp3"'
-        )
+        self.assertContains(response, 'data-src="/static/audio/singular_bao_bao.mp3"')
         self.assertNotContains(response, '"/audio/')

@@ -60,21 +60,27 @@ class UploadDocumentServiceTests(UploadTestCase):
         with self.assertRaises(ValidationError) as ctx:
             self.upload(file=docx)
 
-        self.assertEqual(ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"])
+        self.assertEqual(
+            ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"]
+        )
         self.assertFalse(Document.objects.exists())
 
     def test_exe_renamed_to_pdf_is_rejected_by_magic_bytes(self):
         with self.assertRaises(ValidationError) as ctx:
             self.upload(file=pdf_file(b"MZ\x90\x00 fake exe", name="sheet.pdf"))
 
-        self.assertEqual(ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"])
+        self.assertEqual(
+            ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"]
+        )
         self.assertFalse(Document.objects.exists())
 
     def test_pdf_bytes_with_non_pdf_mime_type_is_rejected(self):
         with self.assertRaises(ValidationError) as ctx:
             self.upload(file=pdf_file(content_type="text/plain"))
 
-        self.assertEqual(ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"])
+        self.assertEqual(
+            ctx.exception.message_dict["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"]
+        )
         self.assertFalse(Document.objects.exists())
 
     def test_file_larger_than_max_upload_setting_is_rejected(self):
@@ -85,7 +91,9 @@ class UploadDocumentServiceTests(UploadTestCase):
         with self.assertRaises(ValidationError) as ctx:
             self.upload(file=pdf_file(too_big))
 
-        self.assertEqual(ctx.exception.message_dict["file"], ["ไฟล์ต้องมีขนาดไม่เกิน 1 MB"])
+        self.assertEqual(
+            ctx.exception.message_dict["file"], ["ไฟล์ต้องมีขนาดไม่เกิน 1 MB"]
+        )
         self.assertFalse(Document.objects.exists())
         self.assertEqual(stored_file_count(), files_before)
 
@@ -107,7 +115,9 @@ class UploadDocumentServiceTests(UploadTestCase):
         with self.assertRaises(ValidationError) as ctx:
             self.upload(doc_type=self.exam)
 
-        self.assertEqual(set(ctx.exception.message_dict), {"exam_period", "exam_year_be"})
+        self.assertEqual(
+            set(ctx.exception.message_dict), {"exam_period", "exam_year_be"}
+        )
         self.assertFalse(Document.objects.exists())
 
     def test_exam_upload_records_exam_period_and_year(self):
@@ -119,7 +129,7 @@ class UploadDocumentServiceTests(UploadTestCase):
         self.assertEqual(document.exam_detail.exam_year_be, 2568)
 
     def test_stored_file_is_removed_when_database_write_fails(self):
-        """ปี พ.ศ. นอกช่วงทำให้ ExamDetail.full_clean() ล้มหลังเก็บไฟล์และสร้าง Document แล้ว"""
+        """ปี พ.ศ. นอกช่วงทำให้ ExamDetail.full_clean() ล้มหลังเก็บไฟล์และสร้าง Document แล้ว"""  # noqa: E501
         files_before = stored_file_count()
 
         with self.assertRaises(ValidationError):
@@ -132,8 +142,9 @@ class UploadDocumentServiceTests(UploadTestCase):
         with mock.patch.object(
             default_storage, "delete", side_effect=OSError("storage unavailable")
         ):
-            with self.assertRaises(ValidationError) as ctx, self.assertLogs(
-                "materials.services", "ERROR"
+            with (
+                self.assertRaises(ValidationError) as ctx,
+                self.assertLogs("materials.services", "ERROR"),
             ):
                 self.upload(
                     doc_type=self.exam, exam_period=self.midterm, exam_year_be=1999
