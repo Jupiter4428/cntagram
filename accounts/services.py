@@ -166,7 +166,7 @@ def delete_own_account(*, user, password):
         raise ValidationError(
             {
                 "password": "รหัสผ่านไม่ถูกต้อง"
-            }  # nosec B105 - ชื่อ field ของฟอร์ม ไม่ใช่รหัสผ่าน
+            }  # nosec B105: ชื่อฟิลด์ของฟอร์ม ไม่ใช่รหัสผ่าน
         )
     # ล็อกแถว Super Admin กันสองคนสุดท้ายลบพร้อมกันจนไม่เหลือใคร
     super_admin_ids = list(
