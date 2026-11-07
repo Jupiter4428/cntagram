@@ -398,3 +398,30 @@ class UserCounter(models.Model):
 
     def __str__(self):
         return str(self.total)
+
+
+class PollVote(models.Model):
+    """One durable poll vote per account."""
+
+    user = models.OneToOneField(
+        "accounts.User", on_delete=models.CASCADE, related_name="poll_vote"
+    )
+    choice = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "poll_vote"
+
+
+class ShoutboxMessage(models.Model):
+    """Durable community message."""
+
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="shoutbox_messages"
+    )
+    text = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "shoutbox_message"
+        ordering = ("created_at", "pk")
