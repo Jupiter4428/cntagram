@@ -9,7 +9,7 @@
 <div class="row mb-4 align-items-center approval-hero">
     <div class="col">
         <h1 class="h2 mb-1 fw-bold">คิวรออนุมัติเอกสาร</h1>
-        <p class="text-muted mb-0">รายการชีทสรุปและเอกสารการเรียนที่รอการตรวจสอบโดยผู้ดูแลประจำภาควิชา (US-6)</p>
+        <p class="approval-muted mb-0">รายการชีทสรุปและเอกสารการเรียนที่รอการตรวจสอบโดยผู้ดูแลประจำภาควิชา (US-6)</p>
     </div>
     <div class="col-auto">
         <span class="badge approval-action fs-6 px-3 py-2 rounded-pill">
@@ -38,7 +38,7 @@
                     <tr>
                         <td class="ps-3">
                             <div class="fw-semibold text-dark">{{ doc.title }}</div>
-                            <small class="text-muted text-truncate d-inline-block approval-truncate">
+                            <small class="approval-muted text-truncate d-inline-block approval-truncate">
                                 {{ doc.description|truncatechars:60 }}
                             </small>
                         </td>
@@ -46,13 +46,13 @@
                             <span class="approval-badge">
                                 {{ doc.batch_course.course.code }}
                             </span>
-                            <div class="small text-muted">{{ doc.batch_course.course.display_name }}</div>
+                            <div class="small approval-muted">{{ doc.batch_course.course.display_name }}</div>
                         </td>
                         <td>
                             <span class="approval-badge">
                                 {{ doc.batch_course.batch.department.code }}
                             </span>
-                            <small class="text-muted">รุ่น {{ doc.batch_course.batch.number }}</small>
+                            <small class="approval-muted">รุ่น {{ doc.batch_course.batch.number }}</small>
                         </td>
                         <td>
                             <span class="approval-badge">
@@ -63,7 +63,7 @@
                             <span class="text-secondary">{{ doc.uploader.nickname }}</span>
                         </td>
                         <td>
-                            <small class="text-muted">{{ doc.created_at|date:"d M Y, H:i" }}</small>
+                            <small class="approval-muted">{{ doc.created_at|date:"d M Y, H:i" }}</small>
                         </td>
                         <td>
                             {% if doc.approval_ui %}
@@ -82,10 +82,10 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center p-5 bg-light">
-                            <div class="display-6 text-muted mb-3" aria-hidden="true">▣</div>
+                        <td colspan="8" class="text-center p-5 approval-surface">
+                            <div class="display-6 approval-muted mb-3" aria-hidden="true">▣</div>
                             <h3 class="h4 fw-bold text-dark">ไม่มีเอกสารรอการอนุมัติในขณะนี้</h3>
-                            <p class="text-muted mx-auto mb-3 approval-empty">
+                            <p class="approval-muted mx-auto mb-3 approval-empty">
                                 เอกสารทั้งหมดของภาควิชาที่คุณดูแลได้รับการพิจารณาเรียบร้อยแล้ว หรือยังไม่มีการส่งเอกสารใหม่เข้ามา
                             </p>
                             <a href="{% url 'materials:vault' %}" class="btn approval-secondary px-4">

@@ -27,3 +27,8 @@
 .approval-page .approval-action:focus-visible, .approval-page .approval-secondary:focus-visible, .approval-page .approval-radio:focus-visible { outline: 2px solid var(--orange-deep); outline-offset: 2px; }
 @media (max-width: 767px) { .approval-page .approval-sticky { position: static !important; } }
 @media (max-width: 575.98px) { .approval-page .approval-action, .approval-page .approval-secondary, .approval-page .approval-radio { min-height: 40px; } }
+
+/* Semantic document metadata and themed surface for Approval UI. */
+.approval-page .approval-surface { background: var(--cream, #fff); color: var(--ink, #242424); }
+.approval-page dl { margin-bottom: 0; }
+.approval-page dd { margin-bottom: .5rem; }
