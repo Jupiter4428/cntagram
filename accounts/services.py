@@ -50,13 +50,26 @@ class LoginAttempt:
 LOGIN_RATE_LIMIT_SALT = "accounts.login-rate-limit"
 
 
+def _login_window_index():
+    """Return the fixed login throttle window number."""
+    return int(time.time()) // settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+
+
 def _login_failure_keys(*, identifier, client_ip):
-    """Build non-PII cache keys for login identity bucket and client IP bucket."""
+    """Build non-PII cache keys for login identity bucket and client IP bucket.
+
+    The window number is part of the key so each bucket is a fixed window:
+    DatabaseCache.incr() resets the key's expiry, which would otherwise
+    make the window slide with every failure.
+    """
     ident = (identifier or "").strip().casefold()
     ip = (client_ip or "unknown").strip()
+    window = _login_window_index()
+    id_hash = salted_hmac(LOGIN_RATE_LIMIT_SALT, ident).hexdigest()
+    ip_hash = salted_hmac(LOGIN_RATE_LIMIT_SALT, ip).hexdigest()
     return (
-        "login-failures:id:" + salted_hmac(LOGIN_RATE_LIMIT_SALT, ident).hexdigest(),
-        "login-failures:ip:" + salted_hmac(LOGIN_RATE_LIMIT_SALT, ip).hexdigest(),
+        f"login-failures:id:{id_hash}:{window}",
+        f"login-failures:ip:{ip_hash}:{window}",
     )
 
 
