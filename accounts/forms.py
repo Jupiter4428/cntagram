@@ -11,6 +11,16 @@ User = get_user_model()
 
 REQUIRED_ERROR = {"required": "กรุณากรอกข้อมูลช่องนี้"}
 
+# ข้อความแจ้งเตือนของ validator ไม่ใช่รหัสผ่าน จึงใส่ nosec B105
+THAI_PASSWORD_VALIDATION_ERRORS = {
+    "password_too_short": (  # nosec B105
+        "รหัสผ่านสั้นเกินไป ต้องมีความยาวอย่างน้อย %(min_length)d ตัวอักษร"
+    ),
+    "password_too_common": "รหัสผ่านนี้ใช้บ่อยเกินไป",  # nosec B105
+    "password_too_similar": "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",  # nosec B105
+    "password_entirely_numeric": "รหัสผ่านต้องไม่เป็นตัวเลขล้วน",  # nosec B105
+}
+
 
 class LoginForm(AuthenticationForm):
     """Authenticate against the custom email-based user model."""
@@ -114,7 +124,10 @@ class RegisterForm(forms.ModelForm):
                 **REQUIRED_ERROR,
                 "invalid": "รูปแบบอีเมลไม่ถูกต้อง",
             },
-            "nickname": REQUIRED_ERROR,
+            "nickname": {
+                **REQUIRED_ERROR,
+                "max_length": "ชื่อเล่นต้องมีความยาวไม่เกิน %(limit_value)d ตัวอักษร",
+            },
             "department": {
                 **REQUIRED_ERROR,
                 "invalid_choice": "กรุณาเลือกภาควิชาจากรายการ",
@@ -148,7 +161,13 @@ class RegisterForm(forms.ModelForm):
             try:
                 validate_password(password, user=candidate)
             except ValidationError as exc:
-                self.add_error("password", exc)
+                for err in exc.error_list:
+                    template = THAI_PASSWORD_VALIDATION_ERRORS.get(err.code)
+                    if template:
+                        err = ValidationError(
+                            template, code=err.code, params=err.params
+                        )
+                    self.add_error("password", err)
         return cleaned_data
 
     def full_clean(self):
