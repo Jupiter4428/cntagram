@@ -358,6 +358,7 @@ class HomeViewTests(TestCase):
         self.assertEqual(dsa_c["percent"], 50)
 
     def test_poll_vote_view_post_records_vote_and_redirects(self):
+        self.client.force_login(self.user)
         response = self.client.post(reverse("accounts:poll_vote"), {"choice": "math"})
         self.assertRedirects(response, reverse("accounts:home"))
 
@@ -367,18 +368,17 @@ class HomeViewTests(TestCase):
         self.assertContains(home_resp, "Engineering Math / Calculus")
         self.assertContains(home_resp, "100%")
 
-        # Verify ?poll_view=form allows viewing choices with back link
+        # Query parameters must not let users vote a second time.
         form_resp = self.client.get(reverse("accounts:home") + "?poll_view=form")
-        self.assertContains(form_resp, "กลับไปดูผลโหวต")
-        self.assertContains(form_resp, 'name="choice"')
+        self.assertNotContains(form_resp, 'name="choice"')
 
     def test_shoutbox_services_add_and_retrieve_messages(self):
         initial = services.get_shoutbox_messages()
         self.assertTrue(len(initial) > 0)
 
-        services.add_shoutbox_message(author="Tester", text="สวัสดีชาววิศวะ!")
+        services.add_shoutbox_message(user=self.user, text="สวัสดีชาววิศวะ!")
         updated = services.get_shoutbox_messages()
-        self.assertEqual(updated[-1]["author"], "Tester")
+        self.assertEqual(updated[-1]["author"], "[CN] Tester")
         self.assertEqual(updated[-1]["text"], "สวัสดีชาววิศวะ!")
 
     def test_shoutbox_post_view_requires_authentication(self):
@@ -400,6 +400,7 @@ class HomeViewTests(TestCase):
         self.assertContains(home_resp, "ยินดีที่ได้รู้จักครับ")
 
     def test_poll_vote_ajax_returns_json_and_records_vote(self):
+        self.client.force_login(self.user)
         response = self.client.post(
             reverse("accounts:poll_vote"),
             {"choice": "circuit"},
@@ -425,3 +426,37 @@ class HomeViewTests(TestCase):
         self.assertTrue(data["ok"])
         self.assertEqual(data["messages"][-1]["text"], "ข้อความ AJAX ไม่รีเฟรช")
         self.assertIn(self.user.nickname, data["messages"][-1]["author"])
+
+    def test_poll_requires_login_and_rejects_invalid_choice(self):
+        url = reverse("accounts:poll_vote")
+        anonymous = self.client.post(url, {"choice": "math"})
+        self.assertEqual(anonymous.status_code, 302)
+        self.assertIn(reverse("accounts:login"), anonymous.url)
+        self.client.force_login(self.user)
+        invalid = self.client.post(
+            url, {"choice": "invalid"}, headers={"x-requested-with": "XMLHttpRequest"}
+        )
+        self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(services.get_weekly_poll()["total"], 0)
+
+    def test_poll_repeated_vote_and_query_parameter_cannot_add_vote(self):
+        self.client.force_login(self.user)
+        url = reverse("accounts:poll_vote")
+        self.client.post(url, {"choice": "math"})
+        self.client.get(reverse("accounts:home") + "?poll_view=form")
+        repeated = self.client.post(
+            url, {"choice": "dsa"}, headers={"x-requested-with": "XMLHttpRequest"}
+        )
+        self.assertEqual(repeated.status_code, 400)
+        self.assertEqual(services.get_weekly_poll()["total"], 1)
+
+    def test_shoutbox_rejects_message_longer_than_200(self):
+        self.client.force_login(self.user)
+        before = len(services.get_shoutbox_messages())
+        response = self.client.post(
+            reverse("accounts:shoutbox_post"),
+            {"message": "a" * 201},
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(services.get_shoutbox_messages()), before)

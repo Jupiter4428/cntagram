@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -59,7 +60,7 @@ def _login_failure_keys(*, identifier, client_ip):
 
 
 def is_login_rate_limited(*, identifier, client_ip):
-    """Return whether either identity or network IP bucket is exhausted."""
+    """Return whether either the identity bucket or the network IP bucket is full."""
     id_key, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     return (
         cache.get(id_key, 0) >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
@@ -88,7 +89,7 @@ def record_login_failure(*, identifier, client_ip):
 
 
 def clear_login_failures(*, identifier, client_ip):
-    """Clear identity failures on login success (preserves IP failures)."""
+    """Clear identity failures after a successful login (keeps IP failures)."""
     id_key, _ = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     cache.delete(id_key)
 
@@ -110,11 +111,16 @@ def attempt_login(*, form, client_ip):
     return LoginAttempt()
 
 
+def _register_window_index():
+    return int(time.time()) // settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS
+
+
 def _register_attempt_key(client_ip):
     digest = salted_hmac(
         "accounts.register-throttle", client_ip or "unknown"
     ).hexdigest()
-    return f"register-attempts:{digest}"
+    bucket = _register_window_index()
+    return f"register-attempts:{digest}:{bucket}"
 
 
 def is_register_rate_limited(client_ip):
@@ -306,13 +312,14 @@ def get_shoutbox_messages():
     return messages
 
 
-def add_shoutbox_message(*, author, text):
+def add_shoutbox_message(*, user, text):
     """เพิ่มข้อความทักทายใหม่เข้าแคช (จำกัดสูงสุด 30 ข้อความล่าสุด)"""
     clean_text = (text or "").strip()
     if not clean_text:
         return get_shoutbox_messages()
 
-    clean_author = (author or "สมาชิก").strip()
+    dept_code = user.department.code if user.department else "Member"
+    clean_author = f"[{dept_code}] {user.nickname}"
     messages = get_shoutbox_messages()
     messages.append(
         {

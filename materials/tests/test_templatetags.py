@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -10,6 +10,7 @@ from materials.models import Approval, DocType, DocTypeRequiredRole, Document
 User = get_user_model()
 
 
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
 class UserDashboardTemplateTagsTests(TestCase):
     @classmethod
     def setUpTestData(cls):

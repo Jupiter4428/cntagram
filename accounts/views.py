@@ -13,7 +13,10 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
-from .forms import DeleteAccountForm, LoginForm, ModeratorAssignmentForm, RegisterForm
+from .forms import (
+    DeleteAccountForm, LoginForm, ModeratorAssignmentForm, PollVoteForm,
+    RegisterForm, ShoutboxForm,
+)
 from .models import Role, UserRole
 from .services import attempt_login
 
@@ -22,11 +25,10 @@ def _client_ip(request):
     """Return the direct peer address without trusting spoofable proxy headers.
 
     Security Note (Refs #42 / #47):
-    Do NOT read raw X-Forwarded-For headers from the client directly because
-    clients can easily spoof them. When deploying behind a reverse proxy
-    (e.g. Nginx, Cloudflare), configure the proxy to rewrite REMOTE_ADDR with
-    the verified client IP (e.g. Nginx set_real_ip_from / real_ip_header,
-    or trusted ProxyFix middleware).
+    Do NOT read raw X-Forwarded-For headers from the client directly because clients
+    can easily spoof them. When deploying behind a reverse proxy (e.g. Nginx,
+    Cloudflare), configure the proxy to rewrite REMOTE_ADDR with the verified client IP
+    (e.g. Nginx set_real_ip_from / real_ip_header, or trusted ProxyFix middleware).
     """
     return request.META.get("REMOTE_ADDR", "")
 
@@ -66,7 +68,7 @@ def home(request):
     has_voted = request.session.get("has_voted_poll", False)
     # Allows temporarily viewing options/form again via ?poll_view=form
     view_mode = request.GET.get("poll_view")
-    show_form = (view_mode == "form") or (not has_voted)
+    show_form = not has_voted  # A query parameter must never re-enable voting.
 
     return render(
         request,
@@ -81,22 +83,24 @@ def home(request):
     )
 
 
-@login_not_required
+@login_required
 @require_POST
 def poll_vote(request):
-    """Record vote for the weekly poll."""
-    choice = request.POST.get("choice")
-    if choice:
-        success, _ = services.record_poll_vote(choice_key=choice)
+    """Validate the choice and prevent repeated votes in one session."""
+    form = PollVoteForm(request.POST)
+    success = False
+    if form.is_valid() and not request.session.get("has_voted_poll", False):
+        success, _ = services.record_poll_vote(choice_key=form.cleaned_data["choice"])
         if success:
             request.session["has_voted_poll"] = True
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse(
             {
-                "ok": True,
+                "ok": success,
                 "poll": services.get_weekly_poll(),
                 "has_voted": request.session.get("has_voted_poll", False),
-            }
+            },
+            status=200 if success else 400,
         )
     return redirect("accounts:home")
 
@@ -104,19 +108,18 @@ def poll_vote(request):
 @login_required
 @require_POST
 def shoutbox_post(request):
-    """Post message to the community shoutbox."""
-    message = request.POST.get("message")
-    if message:
-        user = request.user
-        dept_code = user.department.code if user.department else "Member"
-        author = f"[{dept_code}] {user.nickname}"
-        services.add_shoutbox_message(author=author, text=message)
+    """Validate community shoutbox posts through a Django form."""
+    form = ShoutboxForm(request.POST)
+    success = form.is_valid()
+    if success:
+        services.add_shoutbox_message(user=request.user, text=form.cleaned_data["message"])
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse(
             {
-                "ok": True,
+                "ok": success,
                 "messages": services.get_shoutbox_messages(),
-            }
+            },
+            status=200 if success else 400,
         )
     return redirect("accounts:home")
 

@@ -1,4 +1,5 @@
 import time
+from unittest.mock import patch
 
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import override_settings
@@ -216,6 +217,30 @@ class RegisterThrottleTests(ThrottleTestCase):
     def setUp(self):
         super().setUp()
         self.url = reverse("accounts:register")
+
+    @override_settings(
+        REGISTER_RATE_LIMIT_ATTEMPTS=2, REGISTER_RATE_LIMIT_WINDOW_SECONDS=90
+    )
+    def test_register_quota_resets_at_fixed_window_boundary(self):
+        ip = "192.0.2.77"
+        with patch("accounts.services._register_window_index", return_value=100):
+            for _ in range(2):
+                self.assertEqual(
+                    self.client.post(self.url, {}, REMOTE_ADDR=ip).status_code, 200
+                )
+            self.assertEqual(
+                self.client.post(self.url, {}, REMOTE_ADDR=ip).status_code, 429
+            )
+        with patch("accounts.services._register_window_index", return_value=101):
+            self.assertEqual(
+                self.client.post(self.url, {}, REMOTE_ADDR=ip).status_code, 200
+            )
+            self.assertEqual(
+                self.client.post(self.url, {}, REMOTE_ADDR=ip).status_code, 200
+            )
+            self.assertEqual(
+                self.client.post(self.url, {}, REMOTE_ADDR=ip).status_code, 429
+            )
 
     @override_settings(
         REGISTER_RATE_LIMIT_ATTEMPTS=2, REGISTER_RATE_LIMIT_WINDOW_SECONDS=90
