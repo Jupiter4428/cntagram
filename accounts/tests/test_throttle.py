@@ -1,6 +1,6 @@
-import time
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import override_settings
 from django.urls import reverse
@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from catalog.models import Department
 
+from .. import services
 from ..services import is_login_rate_limited
 from .base import ThrottleTestCase
 
@@ -158,6 +159,35 @@ class LoginThrottleTests(ThrottleTestCase):
         blocked_res = self.post_login(self.password, REMOTE_ADDR=client_ip)
         self.assertEqual(blocked_res.status_code, 429)
 
+    def test_correct_password_still_logs_in_until_ip_bucket_is_full(self):
+        client_ip = "198.51.100.9"
+        for i in range(settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS - 1):
+            services.record_login_failure(
+                identifier=f"spray{i}@student.tu.ac.th", client_ip=client_ip
+            )
+        ok = self.post_login(self.password, REMOTE_ADDR=client_ip)
+        self.assertRedirects(ok, reverse("accounts:home"))
+
+    def test_ip_rate_limit_resets_across_fixed_windows(self):
+        client_ip = "198.51.100.10"
+        with patch("accounts.services._login_window_index", return_value=100):
+            for i in range(settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS):
+                services.record_login_failure(
+                    identifier=f"w1_{i}@student.tu.ac.th", client_ip=client_ip
+                )
+            self.assertTrue(
+                services.is_login_rate_limited(
+                    identifier="user@student.tu.ac.th", client_ip=client_ip
+                )
+            )
+
+        with patch("accounts.services._login_window_index", return_value=101):
+            self.assertFalse(
+                services.is_login_rate_limited(
+                    identifier="user@student.tu.ac.th", client_ip=client_ip
+                )
+            )
+
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3, LOGIN_RATE_LIMIT_IP_ATTEMPTS=20)
     def test_locked_account_does_not_block_other_accounts(self):
         other_user = User.objects.create_user(
@@ -203,19 +233,16 @@ class LoginThrottleTests(ThrottleTestCase):
             is_login_rate_limited(identifier=self.user.email, client_ip=client_ip)
         )
 
-    @override_settings(
-        LOGIN_RATE_LIMIT_ATTEMPTS=1,
-        LOGIN_RATE_LIMIT_WINDOW_SECONDS=1,
-    )
+    @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=1)
     def test_rate_limit_expires_after_temporary_window(self):
         client_ip = "192.0.2.1"
-        self.post_login(self.wrong_password, REMOTE_ADDR=client_ip)
-        blocked_response = self.post_login(REMOTE_ADDR=client_ip)
-        self.assertEqual(blocked_response.status_code, 429)
+        with patch("accounts.services._login_window_index", return_value=100):
+            self.post_login(self.wrong_password, REMOTE_ADDR=client_ip)
+            blocked_response = self.post_login(REMOTE_ADDR=client_ip)
+            self.assertEqual(blocked_response.status_code, 429)
 
-        time.sleep(1.1)
-        response = self.post_login(REMOTE_ADDR=client_ip)
-
+        with patch("accounts.services._login_window_index", return_value=101):
+            response = self.post_login(REMOTE_ADDR=client_ip)
         self.assertRedirects(response, reverse("accounts:home"))
 
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=1)
