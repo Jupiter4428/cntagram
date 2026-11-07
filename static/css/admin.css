@@ -419,6 +419,7 @@ a.admin-stat:hover { color: var(--panel-ink); transform: translateY(-2px); }
 }
 
 .admin-alert--error { background: #fbe6e7; border-color: var(--tse-red); }
+.admin-alert--warning { background: #fff8e6; border-color: #d99b26; }
 
 /* ฟอร์มบนแผงสีอ่อน: .form-control ของ retro.css ทำไว้สำหรับพื้นมืดหน้า login */
 .admin-form { display: grid; gap: 0.8rem; max-width: 520px; }
