@@ -456,15 +456,28 @@ class DeleteAccountRateLimitViewTests(TestCase):
         self.assertTrue(self.user.is_active)
         self.assertEqual(self.user.email, "6610619999@student.tu.ac.th")
 
+    def test_switching_ip_does_not_reset_rate_limit(self):
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            self.client.post(
+                self.url, {"password": "wrong-password"}, REMOTE_ADDR="10.0.0.1"
+            )
+
+        # session เดิมแต่เปลี่ยน IP ยังติด Rate Limit แม้ใส่รหัสผ่านถูก
+        response = self.client.post(
+            self.url, {"password": "correct-password"}, REMOTE_ADDR="10.0.0.2"
+        )
+        self.assertEqual(response.status_code, 429)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertEqual(self.user.email, "6610619999@student.tu.ac.th")
+
     def test_get_request_when_rate_limited_returns_429(self):
         from accounts import services
 
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            services.record_delete_account_failure(
-                user_id=self.user.pk, client_ip="127.0.0.1"
-            )
+            services.record_delete_account_failure(user_id=self.user.pk)
 
-        response = self.client.get(self.url, REMOTE_ADDR="127.0.0.1")
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 429)
 
     def test_can_retry_after_window_expires(self):
@@ -481,9 +494,7 @@ class DeleteAccountRateLimitViewTests(TestCase):
         )
 
         # จำลองการพ้นช่วงเวลา Window (เคลียร์แคช)
-        services.clear_delete_account_failures(
-            user_id=self.user.pk, client_ip="127.0.0.1"
-        )
+        services.clear_delete_account_failures(user_id=self.user.pk)
 
         # พ้นช่วงเวลาแล้ว ใส่รหัสผ่านถูกต้อง ต้องลบบัญชีและออกจากระบบได้สำเร็จ
         success_res = self.client.post(
