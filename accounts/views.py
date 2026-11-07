@@ -51,11 +51,36 @@ def home(request):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
 
+    poll = services.get_weekly_poll()
+    has_voted = request.session.get("has_voted_poll", False)
+    # Allows temporarily viewing options/form again via ?poll_view=form
+    view_mode = request.GET.get("poll_view")
+    show_form = (view_mode == "form") or (not has_voted)
+
     return render(
         request,
         "accounts/index.html",
-        {"visitor_digits": services.record_home_visit()},
+        {
+            "visitor_digits": services.record_home_visit(),
+            "poll": poll,
+            "has_voted_poll": has_voted,
+            "show_poll_form": show_form,
+        },
     )
+
+
+@login_not_required
+@require_POST
+def poll_vote(request):
+    """Record vote for the weekly poll."""
+    choice = request.POST.get("choice")
+    if choice:
+        success, _ = services.record_poll_vote(choice_key=choice)
+        if success:
+            request.session["has_voted_poll"] = True
+    return redirect("accounts:home")
+
+
 
 
 @login_not_required

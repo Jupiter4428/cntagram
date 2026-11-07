@@ -211,3 +211,53 @@ def record_home_visit():
     else:
         total = cache.incr(VISITOR_COUNTER_KEY)
     return f"{total:06d}"
+
+
+POLL_QUESTION = "วิชาไหนโหดสุดเทอมนี้"
+POLL_CHOICES = (
+    ("math", "Engineering Math / Calculus"),
+    ("dsa", "Data Structures & Algorithms"),
+    ("circuit", "Circuit Analysis / Physics"),
+)
+POLL_CACHE_PREFIX = "poll:weekly:v1:"
+
+
+def get_weekly_poll():
+    """ดึงข้อมูลโพลประจำสัปดาห์ พร้อมจำนวนคะแนนโหวตและเปอร์เซ็นต์"""
+    vote_counts = {}
+    total_votes = 0
+    for key, _ in POLL_CHOICES:
+        count = cache.get(f"{POLL_CACHE_PREFIX}{key}", 0)
+        vote_counts[key] = count
+        total_votes += count
+
+    choices = []
+    for key, label in POLL_CHOICES:
+        votes = vote_counts[key]
+        percent = round((votes * 100) / total_votes) if total_votes > 0 else 0
+        choices.append({
+            "key": key,
+            "label": label,
+            "votes": votes,
+            "percent": percent,
+        })
+
+    return {
+        "question": POLL_QUESTION,
+        "total": total_votes,
+        "choices": choices,
+    }
+
+
+def record_poll_vote(*, choice_key):
+    """บันทึกคะแนนโหวตโพลแบบ atomic และคืนค่าความสำเร็จพร้อมผลโพลล่าสุด"""
+    valid_keys = {k for k, _ in POLL_CHOICES}
+    if choice_key not in valid_keys:
+        return False, get_weekly_poll()
+
+    cache_key = f"{POLL_CACHE_PREFIX}{choice_key}"
+    if not cache.add(cache_key, 1, timeout=None):
+        cache.incr(cache_key)
+    return True, get_weekly_poll()
+
+

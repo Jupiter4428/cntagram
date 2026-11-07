@@ -294,3 +294,43 @@ class HomeViewTests(TestCase):
             "<span>0</span><span>0</span><span>0</span><span>0</span><span>4</span><span>0</span>",
         )
 
+    def test_poll_services_record_vote_and_calculate_percentages(self):
+        initial = services.get_weekly_poll()
+        self.assertEqual(initial["total"], 0)
+        self.assertEqual(len(initial["choices"]), 3)
+
+        success, updated = services.record_poll_vote(choice_key="math")
+        self.assertTrue(success)
+        self.assertEqual(updated["total"], 1)
+        math_choice = next(c for c in updated["choices"] if c["key"] == "math")
+        self.assertEqual(math_choice["votes"], 1)
+        self.assertEqual(math_choice["percent"], 100)
+
+        # Invalid choice rejected
+        invalid_success, _ = services.record_poll_vote(choice_key="nonexistent")
+        self.assertFalse(invalid_success)
+
+        services.record_poll_vote(choice_key="dsa")
+        poll = services.get_weekly_poll()
+        self.assertEqual(poll["total"], 2)
+        math_c = next(c for c in poll["choices"] if c["key"] == "math")
+        dsa_c = next(c for c in poll["choices"] if c["key"] == "dsa")
+        self.assertEqual(math_c["percent"], 50)
+        self.assertEqual(dsa_c["percent"], 50)
+
+    def test_poll_vote_view_post_records_vote_and_redirects(self):
+        response = self.client.post(reverse("accounts:poll_vote"), {"choice": "math"})
+        self.assertRedirects(response, reverse("accounts:home"))
+
+        # Verify home page renders results when voted
+        home_resp = self.client.get(reverse("accounts:home"))
+        self.assertContains(home_resp, "ผลโหวตทั้งหมด 1 เสียง")
+        self.assertContains(home_resp, "Engineering Math / Calculus")
+        self.assertContains(home_resp, "100%")
+
+        # Verify ?poll_view=form allows viewing choices with back link
+        form_resp = self.client.get(reverse("accounts:home") + "?poll_view=form")
+        self.assertContains(form_resp, "กลับไปดูผลโหวต")
+        self.assertContains(form_resp, 'name="choice"')
+
+

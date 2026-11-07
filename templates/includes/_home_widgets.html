@@ -29,17 +29,50 @@
     <div class="retro-widget__header retro-widget__titlebar retro-widget__titlebar--pink">
         <span aria-hidden="true">📊</span>
         <strong id="poll-title">โพลประจำสัปดาห์</strong>
-        <small>DEMO</small>
+        {% if has_voted_poll %}
+            <small>โหวตแล้ว</small>
+        {% else %}
+            <small>เปิดโหวต</small>
+        {% endif %}
     </div>
     <div class="retro-widget__body module-body">
-        <p class="mb-1"><strong>วิชาไหนโหดสุดเทอมนี้</strong></p>
-        <div class="poll-options" role="radiogroup" aria-labelledby="poll-title">
-            <label><input type="radio" name="demo_poll" checked disabled> Engineering Math / Calculus</label>
-            <label><input type="radio" name="demo_poll" disabled> Data Structures &amp; Algorithms</label>
-            <label><input type="radio" name="demo_poll" disabled> Circuit Analysis / Physics</label>
-        </div>
-        <button type="button" class="chrome-button chrome-button--quiet w-100" disabled>โหวต</button>
-        <p class="demo-note mb-0">โพลตัวอย่าง · ผลโหวต [จำนวน] (DEMO)</p>
+        <p class="mb-1"><strong>{{ poll.question|default:"วิชาไหนโหดสุดเทอมนี้" }}</strong></p>
+
+        {% if not show_poll_form %}
+            <div class="poll-results" aria-label="ผลโหวตล่าสุด">
+                {% for choice in poll.choices %}
+                    <div class="poll-result-row">
+                        <div class="poll-result-label">
+                            <span>{{ choice.label }}</span>
+                            <b>{{ choice.percent }}% ({{ choice.votes }})</b>
+                        </div>
+                        <div class="poll-bar-wrap">
+                            <div class="poll-bar-fill" style="width: {{ choice.percent }}%;"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <p class="demo-note mb-1 text-center">ผลโหวตทั้งหมด {{ poll.total }} เสียง</p>
+            <a href="?poll_view=form" class="chrome-button chrome-button--quiet w-100 text-center d-block">ดูตัวเลือก / โหวตใหม่</a>
+        {% else %}
+            <form method="post" action="{% url 'accounts:poll_vote' %}" class="poll-form">
+                {% csrf_token %}
+                <div class="poll-options" role="radiogroup" aria-labelledby="poll-title">
+                    {% for choice in poll.choices %}
+                        <label>
+                            <input type="radio" name="choice" value="{{ choice.key }}" {% if forloop.first %}checked{% endif %}>
+                            {{ choice.label }}
+                        </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="chrome-button chrome-button--brand w-100">โหวต</button>
+            </form>
+            {% if has_voted_poll %}
+                <a href="{% url 'accounts:home' %}" class="chrome-button chrome-button--quiet w-100 text-center d-block mt-1">กลับไปดูผลโหวต</a>
+            {% else %}
+                <p class="demo-note mb-0 text-center">ผลโหวตทั้งหมด {{ poll.total }} เสียง</p>
+            {% endif %}
+        {% endif %}
     </div>
 </section>
 
