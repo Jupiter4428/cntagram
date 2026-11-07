@@ -1,5 +1,3 @@
-from django.shortcuts import render
-
 # Create your views here.
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -28,7 +26,11 @@ def department_create(request):
             return redirect("catalog:department_list")
     else:
         form = DepartmentForm()
-    return render(request, "catalog/department_form.html", {"form": form, "title": "เพิ่มภาควิชา"})
+    return render(
+        request,
+        "catalog/department_form.html",
+        {"form": form, "title": "เพิ่มภาควิชา"},
+    )
 
 
 @super_admin_required
@@ -42,7 +44,11 @@ def department_update(request, pk):
             return redirect("catalog:department_list")
     else:
         form = DepartmentForm(instance=dept)
-    return render(request, "catalog/department_form.html", {"form": form, "title": "แก้ไขภาควิชา", "dept": dept})
+    return render(
+        request,
+        "catalog/department_form.html",
+        {"form": form, "title": "แก้ไขภาควิชา", "dept": dept},
+    )
 
 
 @super_admin_required
@@ -105,7 +111,11 @@ def batch_course_manage(request, pk):
         form = BatchCourseForm(request.POST, batch=batch)
         if form.is_valid():
             batch_course = form.save()
-            messages.success(request, f"เพิ่มวิชา {batch_course.course.code} เข้ารุ่น {batch.code} สำเร็จแล้ว")
+            msg = (
+                f"เพิ่มวิชา {batch_course.course.code} "
+                f"เข้ารุ่น {batch.code} สำเร็จแล้ว"
+            )
+            messages.success(request, msg)
             return redirect("catalog:batch_course_manage", pk=batch.pk)
     else:
         form = BatchCourseForm(batch=batch)

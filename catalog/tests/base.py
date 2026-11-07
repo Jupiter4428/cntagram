@@ -16,8 +16,12 @@ class CatalogTestCase(TestCase):
         self.now = timezone.now()
 
         # สร้าง Role พื้นฐานโดยใช้ Role constants
-        self.role_student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
-        self.role_super_admin, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
+        self.role_student, _ = Role.objects.get_or_create(
+            code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
+        )
+        self.role_super_admin, _ = Role.objects.get_or_create(
+            code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"}
+        )
 
         # สร้างภาควิชาตั้งต้น
         self.dept_cn = Department.objects.create(

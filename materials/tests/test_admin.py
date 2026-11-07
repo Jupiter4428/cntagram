@@ -62,7 +62,9 @@ class MaterialsAdminTests(TestCase):
     def test_changelist_opens_for_every_materials_model(self):
         for model in ("doctype", "examperiod", "document"):
             with self.subTest(model=model):
-                response = self.client.get(reverse(f"admin:materials_{model}_changelist"))
+                response = self.client.get(
+                    reverse(f"admin:materials_{model}_changelist")
+                )
                 self.assertEqual(response.status_code, 200)
 
     def test_document_change_page_has_exam_detail_and_version_inlines(self):
@@ -124,7 +126,9 @@ class MaterialsAdminTests(TestCase):
 
         self.assertRedirects(response, reverse("admin:materials_document_changelist"))
         self.assertTrue(
-            ExamDetail.objects.filter(document__title="New document", exam_year_be=2568).exists()
+            ExamDetail.objects.filter(
+                document__title="New document", exam_year_be=2568
+            ).exists()
         )
 
     def test_admin_shows_form_error_when_doc_type_is_missing(self):
@@ -151,7 +155,9 @@ class MaterialsAdminTests(TestCase):
 
         self.assertRedirects(response, reverse("admin:materials_doctype_changelist"))
         self.assertTrue(
-            DocTypeRequiredRole.objects.filter(doc_type=self.doc_type, role=moderator).exists()
+            DocTypeRequiredRole.objects.filter(
+                doc_type=self.doc_type, role=moderator
+            ).exists()
         )
 
     def _approve(self, document):
@@ -192,7 +198,8 @@ class MaterialsAdminTests(TestCase):
         approval = self._approve(self.document)
 
         response = self.client.post(
-            reverse("admin:materials_approval_delete", args=[approval.pk]), {"post": "yes"}
+            reverse("admin:materials_approval_delete", args=[approval.pk]),
+            {"post": "yes"},
         )
 
         self.assertEqual(response.status_code, 403)

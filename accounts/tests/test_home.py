@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.staticfiles import finders
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -39,7 +39,9 @@ class HomeViewTests(TestCase):
         self.addCleanup(cache.clear)
 
     def create_super_admin(self):
-        role, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
+        role, _ = Role.objects.get_or_create(
+            code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"}
+        )
         admin = User.objects.create_user(
             email="6610000001@student.tu.ac.th",
             password=None,
@@ -89,13 +91,17 @@ class HomeViewTests(TestCase):
         self.assertNotContains(response, "ไม่ใช่ยอดผู้เข้าชมจริง")
         self.assertContains(response, "88×31-inspired retro badges · TSE Community")
         self.assertNotContains(response, "badges · DEMO")
-        self.assertContains(response, 'class="retro-widget counter-widget compact-disclosure"')
+        self.assertContains(
+            response, 'class="retro-widget counter-widget compact-disclosure"'
+        )
         self.assertContains(response, "Web Badge Collection")
 
     def test_bgm_player_renders_controls_audio_and_script(self):
         response = self.client.get(reverse("accounts:home"))
 
-        self.assertContains(response, 'class="retro-widget music-widget compact-disclosure"')
+        self.assertContains(
+            response, 'class="retro-widget music-widget compact-disclosure"'
+        )
         self.assertContains(response, '<audio id="bgm-audio"')
         self.assertContains(response, 'id="bgm-seekbar"')
         self.assertContains(response, 'id="bgm-play-pause"')
@@ -104,7 +110,9 @@ class HomeViewTests(TestCase):
         self.assertContains(response, 'id="bgm-toggle-list"')
         self.assertContains(response, 'id="bgm-tracklist"')
         self.assertContains(response, 'src="/static/js/bgm_player.js"')
-        self.assertContains(response, '<audio id="bgm-audio" preload="metadata"></audio>')
+        self.assertContains(
+            response, '<audio id="bgm-audio" preload="metadata"></audio>'
+        )
 
     def test_bgm_player_static_assets_are_discoverable(self):
         self.assertIsNotNone(finders.find("js/bgm_player.js"))
@@ -129,7 +137,9 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, self.user.nickname)
         self.assertContains(response, f'href="{reverse("materials:vault")}"')
-        self.assertContains(response, f'href="{reverse("materials:vault")}?query=CN101"')
+        self.assertContains(
+            response, f'href="{reverse("materials:vault")}?query=CN101"'
+        )
         self.assertContains(response, f'href="{reverse("materials:upload")}"')
         self.assertContains(response, "เมนูชุมชน")
         self.assertContains(response, "อัปโหลดชีทใหม่")
@@ -173,7 +183,9 @@ class HomeViewTests(TestCase):
                 response = self.client.get(reverse(url_name))
                 self.assertTemplateUsed(response, "auth_base.html")
                 self.assertTemplateUsed(response, "includes/_auth_help.html")
-                self.assertContains(response, 'class="site-layout container-xl site-layout--auth"')
+                self.assertContains(
+                    response, 'class="site-layout container-xl site-layout--auth"'
+                )
                 self.assertContains(response, "Member Help")
                 self.assertContains(response, "กลับหน้าแรก")
                 self.assertNotContains(response, "Community Archive")
@@ -207,13 +219,19 @@ class HomeViewTests(TestCase):
         self.assertTemplateUsed(response, "accounts/index.html")
         self.assertTemplateNotUsed(response, "accounts/index_admin.html")
         self.assertTemplateNotUsed(response, "includes/_admin_sidebar.html")
-        for url_name in ("catalog:department_list", "catalog:batch_list", "catalog:course_list"):
+        for url_name in (
+            "catalog:department_list",
+            "catalog:batch_list",
+            "catalog:course_list",
+        ):
             with self.subTest(url_name=url_name):
                 self.assertNotContains(response, reverse(url_name))
         self.assertContains(response, self.hero)
 
     def test_moderator_home_does_not_show_the_dashboard_or_other_users_details(self):
-        role, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"})
+        role, _ = Role.objects.get_or_create(
+            code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลภาค"}
+        )
         moderator = User.objects.create_user(
             email="6610000002@student.tu.ac.th",
             password=None,
@@ -221,7 +239,9 @@ class HomeViewTests(TestCase):
             department=self.user.department,
             pdpa_consent_at=timezone.now(),
         )
-        UserRole.objects.create(user=moderator, role=role, department=self.user.department)
+        UserRole.objects.create(
+            user=moderator, role=role, department=self.user.department
+        )
         self.client.force_login(moderator)
 
         response = self.client.get(reverse("accounts:home"))
@@ -249,7 +269,10 @@ class HomeViewTests(TestCase):
         self.assertNotContains(response, self.hero)
         self.assertContains(
             response,
-            f'<a class="retro-widget glass-module admin-stat admin-stat--amber" href="{reverse("materials:vault")}">',
+            (
+                '<a class="retro-widget glass-module admin-stat admin-stat--amber" '
+                f'href="{reverse("materials:vault")}">'
+            ),
         )
         self.assertContains(response, "ไฟล์ที่อัปโหลดทั้งหมด")
         self.assertContains(response, "ไฟล์ที่อัปโหลดรายเดือน")
@@ -277,6 +300,9 @@ class HomeViewTests(TestCase):
         self.assertContains(response, 'popovertarget="user-%d"' % self.user.pk)
         self.assertContains(response, self.user.email)
 
+    @override_settings(
+        CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    )
     def test_guest_home_runs_no_document_queries(self):
         with self.assertNumQueries(0):
             self.client.get(reverse("accounts:home"))
@@ -296,14 +322,16 @@ class HomeViewTests(TestCase):
             first_response,
             '<details class="retro-widget counter-widget compact-disclosure" open>',
         )
-        self.assertContains(
-            first_response,
-            "<span>0</span><span>0</span><span>0</span><span>0</span><span>3</span><span>9</span>",
+        digits_39 = (
+            "<span>0</span><span>0</span><span>0</span><span>0</span>"
+            "<span>3</span><span>9</span>"
         )
-        self.assertContains(
-            second_response,
-            "<span>0</span><span>0</span><span>0</span><span>0</span><span>4</span><span>0</span>",
+        self.assertContains(first_response, digits_39)
+        digits_40 = (
+            "<span>0</span><span>0</span><span>0</span><span>0</span>"
+            "<span>4</span><span>0</span>"
         )
+        self.assertContains(second_response, digits_40)
 
     def test_poll_services_record_vote_and_calculate_percentages(self):
         initial = services.get_weekly_poll()
@@ -354,13 +382,17 @@ class HomeViewTests(TestCase):
         self.assertEqual(updated[-1]["text"], "สวัสดีชาววิศวะ!")
 
     def test_shoutbox_post_view_requires_authentication(self):
-        response = self.client.post(reverse("accounts:shoutbox_post"), {"message": "ลองพิมพ์"})
+        response = self.client.post(
+            reverse("accounts:shoutbox_post"), {"message": "ลองพิมพ์"}
+        )
         # Anonymous user redirected to login
         self.assertEqual(response.status_code, 302)
         self.assertTrue(reverse("accounts:login") in response.url)
 
         self.client.force_login(self.user)
-        auth_response = self.client.post(reverse("accounts:shoutbox_post"), {"message": "ยินดีที่ได้รู้จักครับ"})
+        auth_response = self.client.post(
+            reverse("accounts:shoutbox_post"), {"message": "ยินดีที่ได้รู้จักครับ"}
+        )
         self.assertRedirects(auth_response, reverse("accounts:home"))
 
         home_resp = self.client.get(reverse("accounts:home"))
@@ -393,7 +425,3 @@ class HomeViewTests(TestCase):
         self.assertTrue(data["ok"])
         self.assertEqual(data["messages"][-1]["text"], "ข้อความ AJAX ไม่รีเฟรช")
         self.assertIn(self.user.nickname, data["messages"][-1]["author"])
-
-
-
-

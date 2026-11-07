@@ -24,8 +24,12 @@ from .services import (
 def vault(request):
     """หน้าค้นหาเอกสารด้วยรหัสวิชา รวมผลจากทุกรุ่นในหน้าเดียว (US-7)"""
     form = SearchForm(request.GET or None)
-    documents = selectors.search_documents(**form.cleaned_data) if form.is_valid() else None
-    return render(request, "materials/vault.html", {"form": form, "documents": documents})
+    documents = (
+        selectors.search_documents(**form.cleaned_data) if form.is_valid() else None
+    )
+    return render(
+        request, "materials/vault.html", {"form": form, "documents": documents}
+    )
 
 
 def document_detail(request, document_id):
@@ -34,11 +38,19 @@ def document_detail(request, document_id):
         selectors.published_document_with_download_count(),
         pk=document_id,
     )
-    return render(request, "materials/document_detail.html", {
-        "document": document,
-        "download_count": document.download_count,
-        "download_url": reverse("materials:document_download", args=[document.pk]) if document.current_version else None,
-    })
+    return render(
+        request,
+        "materials/document_detail.html",
+        {
+            "document": document,
+            "download_count": document.download_count,
+            "download_url": (
+                reverse("materials:document_download", args=[document.pk])
+                if document.current_version
+                else None
+            ),
+        },
+    )
 
 
 def open_document_pdf(document):
@@ -55,7 +67,10 @@ def open_document_pdf(document):
 
 
 def _inline_pdf_response(document):
-    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL) ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว"""
+    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL)
+
+    ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว
+    """
     file, version = open_document_pdf(document)
     return FileResponse(
         file, content_type="application/pdf", filename=version.original_name
@@ -64,28 +79,38 @@ def _inline_pdf_response(document):
 
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
 def document_preview(request, document_id):
-    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสาร published แบบ inline ผ่าน view ที่ตรวจสิทธิ์"""
+    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสาร published แบบ inline
+
+    ผ่าน view ที่ตรวจสิทธิ์
+    """
     document = get_object_or_404(selectors.published_documents(), pk=document_id)
     return _inline_pdf_response(document)
 
 
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าพิจารณาของเว็บเราเองแสดงได้
 def approval_document_preview(request, document_id):
-    """ส่งไฟล์ PDF ของเอกสารที่รอพิจารณา (pending) ให้ผู้ตรวจที่มีสิทธิ์เท่านั้น (US-6, #100)
+    """ส่งไฟล์ PDF ของเอกสารที่รอพิจารณา (pending)
+    ให้ผู้ตรวจที่มีสิทธิ์เท่านั้น (US-6, #100)
 
-    สิทธิ์และสถานะตัดสินที่ selectors.get_document_for_review: ผู้ใช้ทั่วไป, Moderator ภาคอื่น,
+    สิทธิ์และสถานะตัดสินที่ selectors.get_document_for_review:
+    ผู้ใช้ทั่วไป, Moderator ภาคอื่น,
     ผู้อัปโหลดเอง, เอกสารที่ไม่ใช่ pending หรือที่ตนพิจารณาไปแล้ว ตอบ 404 เหมือนกันหมด
-    จึงไม่เปิดเผยว่ามีเอกสารนั้นอยู่ (ใช้ document_preview ไม่ได้ เพราะรับเฉพาะ published)
+    จึงไม่เปิดเผยว่ามีเอกสารนั้นอยู่
+    (ใช้ document_preview ไม่ได้ เพราะรับเฉพาะ published)
     """
     try:
-        document = selectors.get_document_for_review(document_id=document_id, user=request.user)
+        document = selectors.get_document_for_review(
+            document_id=document_id, user=request.user
+        )
     except Document.DoesNotExist:
         raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
     return _inline_pdf_response(document)
 
 
 def _add_service_errors(form, exc):
-    """error ของ service ที่ key ไม่ตรงช่องในฟอร์ม (เช่น size_bytes จาก model) แสดงเป็น non-field"""
+    """error ของ service ที่ key ไม่ตรงช่องในฟอร์ม
+    (เช่น size_bytes จาก model) แสดงเป็น non-field
+    """
     if not hasattr(exc, "error_dict"):
         form.add_error(None, exc)
         return
@@ -113,7 +138,9 @@ def upload(request):
     แม้ช่องอื่นจะผิดด้วย (cleaned_data มีช่องที่ผ่านแล้วแม้ฟอร์มรวมไม่ผ่าน)
     """
     form = UploadForm(request.POST or None, request.FILES or None)
-    if getattr(request, "upload_too_large", False):  # MaxSizeUploadHandler ข้ามไฟล์ไปแล้ว
+    if getattr(
+        request, "upload_too_large", False
+    ):  # MaxSizeUploadHandler ข้ามไฟล์ไปแล้ว
         form.fields["file"].error_messages["required"] = file_too_large_message()
     is_valid = request.method == "POST" and form.is_valid()
     batch_course = form.cleaned_data.get("batch_course") if form.is_bound else None
@@ -148,7 +175,9 @@ def upload_done(request):
 
 @require_GET
 def upload_course_options(request, batch_id):
-    """JSON วิชาในรุ่น ให้ dropdown ต่อเนื่องของฟอร์มอัปโหลด (เฉพาะรุ่นในภาคของตัวเอง)"""
+    """JSON วิชาในรุ่น ให้ dropdown ต่อเนื่องของฟอร์มอัปโหลด
+    (เฉพาะรุ่นในภาคของตัวเอง)
+    """
     batch = get_object_or_404(Batch, pk=batch_id)
     ensure_can_upload_to(user=request.user, batch=batch)
     courses = [
@@ -165,7 +194,9 @@ def approval_review(request, document_id):
         raise PermissionDenied("เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้")
 
     try:
-        document = selectors.get_document_for_review(document_id=document_id, user=request.user)
+        document = selectors.get_document_for_review(
+            document_id=document_id, user=request.user
+        )
     except Document.DoesNotExist:
         raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
 
@@ -183,11 +214,14 @@ def approval_review(request, document_id):
         except ValidationError as err:
             form.add_error(None, err)
         except PermissionDenied as err:
-            # บอกเหตุผลบนฟอร์ม (เช่น ข้อสอบรุ่นเก่าให้ Super Admin เท่านั้น) แต่ยังตอบ 403
+            # บอกเหตุผลบนฟอร์ม (เช่น ข้อสอบรุ่นเก่าให้ Super Admin เท่านั้น)
+            # แต่ยังตอบ 403
             form.add_error(None, str(err))
             status = 403
         else:
-            messages.success(request, f"บันทึกผลการพิจารณาเอกสาร '{document.title}' เรียบร้อยแล้ว")
+            messages.success(
+                request, f"บันทึกผลการพิจารณาเอกสาร '{document.title}' เรียบร้อยแล้ว"
+            )
             return redirect("materials:approval_queue")
 
     return render(
