@@ -133,8 +133,45 @@ class LoginThrottleTests(ThrottleTestCase):
             username="other@student.tu.ac.th",
             REMOTE_ADDR=client_ip,
         )
-        blocked_res = self.post_login(self.password, REMOTE_ADDR=client_ip)
+        # ลองผิดอีกครั้งจาก IP ที่เต็มเพดาน ต้องได้ 429
+        blocked_res = self.post_login(
+            self.wrong_password,
+            username="third@student.tu.ac.th",
+            REMOTE_ADDR=client_ip,
+        )
         self.assertEqual(blocked_res.status_code, 429)
+
+        # แต่ผู้ใช้ที่ใส่รหัสถูกต้องยังสามารถ login สำเร็จได้ (Issue #172)
+        success_res = self.post_login(self.password, REMOTE_ADDR=client_ip)
+        self.assertRedirects(success_res, reverse("accounts:home"))
+
+    @override_settings(
+        LOGIN_RATE_LIMIT_ATTEMPTS=5,
+        LOGIN_RATE_LIMIT_IP_ATTEMPTS=3,
+        LOGIN_RATE_LIMIT_WINDOW_SECONDS=120,
+    )
+    def test_valid_login_succeeds_when_ip_rate_limit_bucket_exhausted(self):
+        client_ip = "192.0.2.77"
+        for i in range(3):
+            self.post_login(
+                self.wrong_password,
+                username=f"target{i}@student.tu.ac.th",
+                REMOTE_ADDR=client_ip,
+            )
+
+        blocked_res = self.post_login(
+            self.wrong_password,
+            username="target99@student.tu.ac.th",
+            REMOTE_ADDR=client_ip,
+        )
+        self.assertEqual(blocked_res.status_code, 429)
+
+        success_res = self.post_login(
+            self.password,
+            username=self.user.email,
+            REMOTE_ADDR=client_ip,
+        )
+        self.assertRedirects(success_res, reverse("accounts:home"))
 
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3, LOGIN_RATE_LIMIT_IP_ATTEMPTS=20)
     def test_locked_account_does_not_block_other_accounts(self):
