@@ -1745,7 +1745,6 @@ textarea:focus-visible,
 }
 
 .counter-widget__body p,
-.music-widget__note,
 .badge-rack > p {
     margin: 0;
     color: rgb(221 227 238 / 53%);
@@ -1804,21 +1803,6 @@ textarea:focus-visible,
     border: 2px outset var(--chrome-silver);
     border-radius: 50%;
     box-shadow: 0 0 9px rgb(169 216 255 / 28%);
-}
-
-.music-widget__progress {
-    height: 8px;
-    margin: 0 0.55rem;
-    background: #080b0d;
-    border: 2px inset #5f6878;
-}
-
-.music-widget__progress span {
-    display: block;
-    width: 8%;
-    height: 100%;
-    background: var(--acid-lime);
-    opacity: 0.35;
 }
 
 .music-widget__controls {
@@ -1927,10 +1911,6 @@ textarea:focus-visible,
 
 .music-widget__track-item:last-child {
     border-bottom: none;
-}
-
-.music-widget__note {
-    padding: 0 0.55rem 0.55rem;
 }
 
 .badge-rack {
@@ -3147,7 +3127,6 @@ h4,
 .compact-copy p,
 .demo-note,
 .counter-widget__body p,
-.music-widget__note,
 .badge-rack > p {
     color: #505872;
 }
@@ -3368,14 +3347,6 @@ h4,
 .music-widget__display {
     margin: 0;
     border-width: 2px;
-}
-
-.music-widget__progress {
-    margin: 0.5rem 0 0;
-}
-
-.music-widget__note {
-    padding: 0.45rem 0 0;
 }
 
 .badge-rack {
@@ -4654,7 +4625,6 @@ summary:focus-visible {
 .post-entry__meta,
 .archive-widget__intro,
 .archive-widget li,
-.music-widget__note,
 .counter-widget__body p,
 .demo-note {
     font-size: max(0.78rem, 12px);
