@@ -43,13 +43,14 @@ class BgmStaticAudioTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = b"".join(response.streaming_content).decode("utf-8")
-        # Ensure track title is appended safely without innerHTML
-        self.assertNotIn('innerHTML = `<span aria-hidden="true">', content)
+        # Ensure template literal string interpolation is not assigned to innerHTML
+        self.assertNotRegex(content, r"innerHTML\s*=\s*`[^`]*\$\{")
         self.assertIn("btn.append(", content)
         # Ensure play and pause event listeners exist for external controls
         self.assertIn('audio.addEventListener("play"', content)
         self.assertIn('audio.addEventListener("pause"', content)
-        # Ensure 2-digit padding with padStart
-        self.assertIn('padStart(2, "0")', content)
+        # Ensure track numbering pads correctly without `[0${...}]`
+        self.assertIn('(currentTrackIndex + 1).toString().padStart(2, "0")', content)
+        self.assertNotIn("`[0${", content)
         # Ensure updateMuteButton sets aria-label
         self.assertIn('muteBtn.setAttribute("aria-label"', content)

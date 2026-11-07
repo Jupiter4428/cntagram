@@ -105,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (audio.paused) {
                 audio.play().catch((err) => {
                     console.warn("Playback error:", err);
+                    updatePlayState(false);
                 });
             } else {
                 audio.pause();
