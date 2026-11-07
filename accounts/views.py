@@ -22,11 +22,10 @@ def _client_ip(request):
     """Return the direct peer address without trusting spoofable proxy headers.
 
     Security Note (Refs #42 / #47):
-    Do NOT read raw X-Forwarded-For headers from the client directly because
-    clients can easily spoof them. When deploying behind a reverse proxy
-    (e.g. Nginx, Cloudflare), configure the proxy to rewrite REMOTE_ADDR with
-    the verified client IP (e.g. Nginx set_real_ip_from / real_ip_header,
-    or trusted ProxyFix middleware).
+    Do NOT read raw X-Forwarded-For headers from the client directly because clients
+    can easily spoof them. When deploying behind a reverse proxy (e.g. Nginx,
+    Cloudflare), configure the proxy to rewrite REMOTE_ADDR with the verified client IP
+    (e.g. Nginx set_real_ip_from / real_ip_header, or trusted ProxyFix middleware).
     """
     return request.META.get("REMOTE_ADDR", "")
 
