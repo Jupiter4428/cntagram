@@ -23,12 +23,12 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 ### 3.1.3 เกณฑ์คุณภาพ (ตารางที่ 3.4)
 
 - **Definition of Ready:** User Story ครบ 3 ส่วน, ผ่าน INVEST และไม่เกิน 8 แต้ม, AC 3–5 ข้อ, ประเมินแต้มร่วมกันแล้ว, มี mockup หรือรายการฟิลด์, dependency พร้อม
-- **Definition of Done:** ผ่าน AC ครบ, มี automated test ผ่านทั้งหมด, PR ได้ approve ≥ 1 คน, merge เข้า `develop` ไม่พัง migration, view บาง/logic อยู่ใน service, ไม่มี N+1 query และ circular import, ผ่าน security พื้นฐาน, PEP 8 + docstring, รันบนเครื่องอื่นได้, อัปเดตเอกสารที่เกี่ยวข้อง
+- **Definition of Done:** ผ่าน AC ครบ, มี automated test ผ่านทั้งหมด, PR ได้ approve ≥ 1 คน, merge เข้า `main` ไม่พัง migration, view บาง/logic อยู่ใน service, ไม่มี N+1 query และ circular import, ผ่าน security พื้นฐาน, PEP 8 + docstring, รันบนเครื่องอื่นได้, อัปเดตเอกสารที่เกี่ยวข้อง
 - งานที่เสร็จ 99% นับเป็น 0 Story Points
 
 ### 3.1.4 การจัดการ Source Code และ Workflow
 
-- Git branch strategy: `main` (production) / `develop` (integration, default branch) / feature branch แตกจาก `develop`
+- Git branch strategy: `main` (default branch, integration + production) / feature branch แตกจาก `main`
 - Pull Request + Peer Code Review ทุกงาน ใช้ PR template และ Issue template (Feature Story, Bug Report, Tech Debt) ใน `.github/`
 - Commit message ตาม Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:` ฯลฯ)
 - GitHub Projects เป็น Scrum board พร้อม custom fields (Story Points, Sprint, Track)
