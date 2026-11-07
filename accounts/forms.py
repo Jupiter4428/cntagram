@@ -223,7 +223,6 @@ class DeleteAccountForm(forms.Form):
     )
 
 
-
 class PollVoteForm(forms.Form):
     """Validate the weekly poll option before any vote is recorded."""
 

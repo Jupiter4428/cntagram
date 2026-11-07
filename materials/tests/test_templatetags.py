@@ -10,7 +10,9 @@ from materials.models import Approval, DocType, DocTypeRequiredRole, Document
 User = get_user_model()
 
 
-@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+)
 class UserDashboardTemplateTagsTests(TestCase):
     @classmethod
     def setUpTestData(cls):

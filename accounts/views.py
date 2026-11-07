@@ -14,8 +14,12 @@ from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
 from .forms import (
-    DeleteAccountForm, LoginForm, ModeratorAssignmentForm, PollVoteForm,
-    RegisterForm, ShoutboxForm,
+    DeleteAccountForm,
+    LoginForm,
+    ModeratorAssignmentForm,
+    PollVoteForm,
+    RegisterForm,
+    ShoutboxForm,
 )
 from .models import Role, UserRole
 from .services import attempt_login
@@ -112,7 +116,9 @@ def shoutbox_post(request):
     form = ShoutboxForm(request.POST)
     success = form.is_valid()
     if success:
-        services.add_shoutbox_message(user=request.user, text=form.cleaned_data["message"])
+        services.add_shoutbox_message(
+            user=request.user, text=form.cleaned_data["message"]
+        )
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse(
             {
