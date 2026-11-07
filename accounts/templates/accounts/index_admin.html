@@ -34,6 +34,13 @@
     </div>
 </section>
 
+{% pending_documents_without_rules as missing_rules %}
+{% if missing_rules.count > 0 %}
+<div class="admin-alert admin-alert--warning mb-3" role="alert" aria-label="แจ้งเตือนเอกสารรออนุมัติค้าง">
+    ⚠️ <strong>แจ้งเตือน:</strong> มีเอกสารสถานะรอพิจารณา <strong>{{ missing_rules.count }}</strong> ฉบับที่ไม่แสดงในคิวอนุมัติ เนื่องจากประเภทเอกสารยังไม่มีกฎการอนุมัติ ({{ missing_rules.doc_types|join:", " }}) กรุณากำหนดกฎการอนุมัติในระบบ
+</div>
+{% endif %}
+
 <section class="admin-stats" aria-label="ตัวเลขสรุป">
     <div class="retro-widget glass-module admin-stat admin-stat--blue">
         <span class="admin-stat__icon" aria-hidden="true">☺</span>

@@ -89,8 +89,13 @@ def moderator_pending_summary(*, user) -> dict | None:
 
 
 def search_documents(
-    *, course_code, department=None, batch=None, doc_type=None,
-    exam_period=None, exam_year_be=None
+    *,
+    course_code,
+    department=None,
+    batch=None,
+    doc_type=None,
+    exam_period=None,
+    exam_year_be=None
 ):
     """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น กรองเพิ่มด้วย ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. ได้
 
@@ -183,6 +188,31 @@ def pending_documents_for_moderator(*, user):
 def get_document_for_review(*, document_id, user):
     """ดึงข้อมูลเอกสารสำหรับพิจารณา (เฉพาะ pending และผู้ใช้มีสิทธิ์ตรวจ) ไม่พบโยน Document.DoesNotExist"""
     return pending_documents_for_moderator(user=user).get(pk=document_id)
+
+
+def pending_documents_without_rules():
+    """ดึง QuerySet ของเอกสาร pending ที่ประเภทเอกสาร (doc_type) ยังไม่มีกฎการอนุมัติ"""
+    doc_types_with_rules = DocTypeRequiredRole.objects.values_list(
+        "doc_type_id", flat=True
+    ).distinct()
+    return (
+        Document.objects.filter(status=Document.Status.PENDING)
+        .exclude(doc_type_id__in=doc_types_with_rules)
+        .select_related("doc_type", "uploader", "batch_course__course")
+    )
+
+
+def pending_documents_without_rules_summary():
+    """สรุปจำนวนและประเภทเอกสาร pending ที่ซ่อนอยู่เพราะยังไม่มีกฎการอนุมัติ"""
+    qs = pending_documents_without_rules()
+    count = qs.count()
+    if not count:
+        return {"count": 0, "doc_types": []}
+    doc_types = sorted(qs.values_list("doc_type__name_th", flat=True).distinct())
+    return {
+        "count": count,
+        "doc_types": doc_types,
+    }
 
 
 def uploaded_file_count() -> int:
