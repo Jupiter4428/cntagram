@@ -8,6 +8,13 @@
 {% endblock %}
 
 {% block content %}
+<div class="webboard-banner-wrap">
+    <div class="webboard-banner" role="note" aria-label="แบนเนอร์ประชาสัมพันธ์">
+        <strong>★ ฝากชีทวันนี้ ช่วยรุ่นน้องผ่านมิดเทอม ★</strong>
+        <span>CNTAGRAM · คลังชีทสรุปและข้อสอบเก่าของชาววิศวะ มธ. (แบนเนอร์ตัวอย่าง 468×60)</span>
+    </div>
+</div>
+
 <section class="cyber-hero welcome-board" aria-labelledby="hero-title">
     <div class="welcome-board__bar">
         <span aria-hidden="true">✿</span> ยินดีต้อนรับ
@@ -41,7 +48,7 @@
     {% moderator_pending request.user as moderator_pending %}
     {% my_documents request.user as my_documents %}
     {% if moderator_pending %}
-    <div class="transmission-note mb-4" role="status" aria-label="แจ้งเตือนการอนุมัติเอกสาร">
+    <div class="transmission-note mb-2" role="status" aria-label="แจ้งเตือนการอนุมัติเอกสาร">
         <span class="transmission-note__icon" aria-hidden="true">!</span>
         <span class="tech-label">MODERATOR QUEUE</span>
         <p>
@@ -53,13 +60,13 @@
     </div>
     {% endif %}
 
-    <section class="retro-widget my-documents-widget mb-4" aria-labelledby="my-documents-title">
+    <section class="retro-widget my-documents-widget mb-2" aria-labelledby="my-documents-title">
         <div class="retro-widget__header module-heading">
             <span class="pixel-folder" aria-hidden="true">▤</span>
             <span id="my-documents-title">ไฟล์ของฉัน</span>
             <span class="tech-index">{{ my_documents|length }} รายการ</span>
         </div>
-        <div class="retro-widget__body p-3">
+        <div class="retro-widget__body p-2">
             {% if my_documents %}
                 <div class="table-responsive">
                     <table class="table board-table table-hover align-middle mb-0">
@@ -111,8 +118,8 @@
                     </table>
                 </div>
             {% else %}
-                <div class="text-center py-4">
-                    <p class="text-muted mb-3">คุณยังไม่มีประวัติการอัปโหลดเอกสารในระบบ</p>
+                <div class="text-center py-3">
+                    <p class="text-muted mb-2">คุณยังไม่มีประวัติการอัปโหลดเอกสารในระบบ</p>
                     <a href="{% url 'materials:upload' %}" class="chrome-button chrome-button--brand">
                         อัปโหลดชีทแรก
                     </a>
@@ -132,38 +139,55 @@
         <table class="board-index">
             <thead>
                 <tr>
-                    <th scope="col" class="board-index__icon"><span class="visually-hidden">ไอคอน</span></th>
+                    <th scope="col" class="board-index__icon">ไอคอน</th>
                     <th scope="col">หมวด</th>
-                    <th scope="col" class="board-index__state">สถานะ</th>
+                    <th scope="col" class="board-index__count">กระทู้</th>
+                    <th scope="col" class="board-index__last">ตอบล่าสุด</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td class="board-index__icon"><span class="category-icon category-icon--notes" aria-hidden="true">N</span></td>
+                    <td class="board-index__icon">
+                        <img src="{% static 'img/icons/note.png' %}" width="16" height="16" class="pixel-icon" alt="" aria-hidden="true">
+                    </td>
                     <td>
                         <strong class="board-index__name">Lecture Notes</strong> <b class="new-sticker">NEW!</b>
                         <p>ชีทสรุป บันทึกในห้องเรียน และสไลด์ประกอบการเรียน อ่านแล้วอาจเข้าใจ (มั้ง)</p>
                     </td>
-                    <td class="board-index__state"><span class="cyber-badge">ตัวอย่าง</span></td>
+                    <td class="board-index__count">—</td>
+                    <td class="board-index__last">— <span class="cyber-badge">ตัวอย่าง</span></td>
                 </tr>
                 <tr>
-                    <td class="board-index__icon"><span class="category-icon category-icon--sheet" aria-hidden="true">Σ</span></td>
+                    <td class="board-index__icon">
+                        <img src="{% static 'img/icons/lightning.png' %}" width="16" height="16" class="pixel-icon" alt="" aria-hidden="true">
+                    </td>
                     <td>
                         <strong class="board-index__name">Cheat Sheets</strong> <b class="hot-sticker">HOT!</b>
                         <p>สูตรสำคัญและสรุปแบบอ่านเร็ว เปิดตำราแล้ว แต่สมองยัง loading...</p>
                     </td>
-                    <td class="board-index__state"><span class="cyber-badge">ตัวอย่าง</span></td>
+                    <td class="board-index__count">—</td>
+                    <td class="board-index__last">— <span class="cyber-badge">ตัวอย่าง</span></td>
                 </tr>
                 <tr>
-                    <td class="board-index__icon"><span class="category-icon category-icon--archive" aria-hidden="true">A+</span></td>
+                    <td class="board-index__icon">
+                        <img src="{% static 'img/icons/award_star_gold.png' %}" width="16" height="16" class="pixel-icon" alt="" aria-hidden="true">
+                    </td>
                     <td>
                         <strong class="board-index__name">Exam Archive</strong>
                         <p>หมวดข้อสอบเก่า แสดงโครงหน้าตาเท่านั้น ยังไม่มีเอกสารจริง</p>
                     </td>
-                    <td class="board-index__state"><span class="cyber-badge">ตัวอย่าง</span></td>
+                    <td class="board-index__count">—</td>
+                    <td class="board-index__last">— <span class="cyber-badge">ตัวอย่าง</span></td>
                 </tr>
             </tbody>
         </table>
+    </div>
+    <div class="board-pager" aria-label="เลขหน้าตัวอย่าง">
+        <span>หน้า</span>
+        <span class="board-pager__current">[1]</span>
+        <span class="board-pager__page">2</span>
+        <span class="board-pager__page">3</span>
+        <span class="board-pager__page">» ถัดไป</span>
     </div>
 </section>
 
@@ -176,10 +200,10 @@
     <div class="retro-widget__body community-feed__body">
         <article class="post-entry" aria-labelledby="welcome-post-title">
             <header class="post-entry__header">
-                <time class="post-date" datetime="2026-10-14"><b>14</b><span>ต.ค. 2026</span></time>
+                <time class="post-date" datetime="2026-10-14T21:35"><b>14</b><span>ต.ค. 69</span></time>
                 <div>
                     <h2 id="welcome-post-title">ยินดีต้อนรับสู่ CNTAGRAM เว็บบอร์ดเด็กวิศวะ</h2>
-                    <span class="post-entry__kicker">วันพุธ · ประกาศชุมชน</span>
+                    <span class="post-entry__kicker">โพสต์เมื่อ : 14 ต.ค. 69 - 21:35 น. · หมวด: ประกาศชุมชน</span>
                 </div>
                 <span class="new-sticker">NEW!</span>
             </header>
@@ -187,6 +211,8 @@
                 <p>พื้นที่ทดลองสำหรับส่งต่อชีท โน้ต และเรื่องเล่าจากห้องเรียน รูปแบบนี้สาธิตบรรยากาศบล็อกและเว็บบอร์ดไทยยุค 2000s เท่านั้น ยังไม่มีโพสต์หรือยอดอ่านจริง</p>
                 <p class="post-entry__aside"><span aria-hidden="true">♥</span> รุ่นพี่ส่งต่อ รุ่นน้องไม่ต้องเริ่มจากศูนย์</p>
             </div>
+            <hr>
+            <p class="post-entry__sig">— ลายเซ็น: "ส่งต่อชีทดีๆ ให้เพื่อนร่วมรุ่นและรุ่นน้อง TSE" · <b>CNTAGRAM TEAM</b></p>
             <footer class="post-entry__meta">
                 <span>เขียนโดย <b>CNTAGRAM TEAM</b></span>
                 <span>หมวด: ประกาศชุมชน</span>
@@ -196,10 +222,10 @@
 
         <article class="post-entry" aria-labelledby="notes-post-title">
             <header class="post-entry__header">
-                <time class="post-date post-date--gold" datetime="2026-10-10"><b>10</b><span>ต.ค. 2026</span></time>
+                <time class="post-date post-date--gold" datetime="2026-10-10T19:10"><b>10</b><span>ต.ค. 69</span></time>
                 <div>
                     <h2 id="notes-post-title">เตรียมชีทให้พร้อม ก่อน Midterm จะมาถึง</h2>
-                    <span class="post-entry__kicker">วันเสาร์ · บันทึกการอ่านหนังสือ</span>
+                    <span class="post-entry__kicker">โพสต์เมื่อ : 10 ต.ค. 69 - 19:10 น. · บันทึกการอ่านหนังสือ</span>
                 </div>
             </header>
             <div class="post-entry__body">
@@ -209,6 +235,8 @@
                     <li>Engineering Math Cheat Sheet — รายการสาธิต ไม่มีไฟล์จริง</li>
                 </ul>
             </div>
+            <hr>
+            <p class="post-entry__sig">— ลายเซ็น: "อ่านชีทวันละนิด จิตแจ่มใส (ถ้าไม่ง่วงก่อน)" · <b>ชมรมคนรักชีทสรุป</b></p>
             <footer class="post-entry__meta">
                 <span>อารมณ์: <b>midterm survival mode</b></span>
                 <span class="post-entry__demo">ตัวอย่างเนื้อหา</span>
