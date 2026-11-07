@@ -2,12 +2,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 
-from accounts.models import Role, UserRole
+from accounts.models import Role
 from catalog.models import Batch, BatchCourse
 
-from ..models import Approval, Document
+from ..models import Approval, DocType, Document
 from ..selectors import (
     moderator_pending_summary,
+    pending_documents_without_rules,
+    pending_documents_without_rules_summary,
     search_documents,
     user_documents,
 )
@@ -83,8 +85,12 @@ class UserDocumentsTests(SearchTestCase):
         )
 
     def test_returns_only_documents_uploaded_by_given_user(self):
-        doc1 = self.make_document(self.cn200[21], title="My Doc 1", uploader=self.uploader)
-        doc2 = self.make_document(self.cn200[22], title="My Doc 2", uploader=self.uploader)
+        doc1 = self.make_document(
+            self.cn200[21], title="My Doc 1", uploader=self.uploader
+        )
+        doc2 = self.make_document(
+            self.cn200[22], title="My Doc 2", uploader=self.uploader
+        )
         self.make_document(self.cn200[21], title="Other Doc", uploader=self.other_user)
 
         docs = user_documents(user=self.uploader)
@@ -92,10 +98,18 @@ class UserDocumentsTests(SearchTestCase):
         self.assertEqual(list(docs), [doc2, doc1])  # Ordered by -created_at
 
     def test_returns_documents_of_all_statuses(self):
-        d_pending = self.make_document(self.cn200[21], title="Pending", status=Document.Status.PENDING)
-        d_published = self.make_document(self.cn200[21], title="Published", status=Document.Status.PUBLISHED)
-        d_rejected = self.make_document(self.cn200[21], title="Rejected", status=Document.Status.REJECTED)
-        d_hidden = self.make_document(self.cn200[21], title="Hidden", status=Document.Status.HIDDEN)
+        d_pending = self.make_document(
+            self.cn200[21], title="Pending", status=Document.Status.PENDING
+        )
+        d_published = self.make_document(
+            self.cn200[21], title="Published", status=Document.Status.PUBLISHED
+        )
+        d_rejected = self.make_document(
+            self.cn200[21], title="Rejected", status=Document.Status.REJECTED
+        )
+        d_hidden = self.make_document(
+            self.cn200[21], title="Hidden", status=Document.Status.HIDDEN
+        )
 
         docs = list(user_documents(user=self.uploader))
 
@@ -106,10 +120,16 @@ class UserDocumentsTests(SearchTestCase):
         self.assertIn(d_hidden, docs)
 
     def test_annotates_latest_rejection_reason_for_rejected_documents(self):
-        rejected_doc = self.make_document(self.cn200[21], title="Rejected Doc", status=Document.Status.REJECTED)
-        published_doc = self.make_document(self.cn200[22], title="Published Doc", status=Document.Status.PUBLISHED)
+        rejected_doc = self.make_document(
+            self.cn200[21], title="Rejected Doc", status=Document.Status.REJECTED
+        )
+        published_doc = self.make_document(
+            self.cn200[22], title="Published Doc", status=Document.Status.PUBLISHED
+        )
 
-        mod_role = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"})[0]
+        mod_role = Role.objects.get_or_create(
+            code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"}
+        )[0]
         Approval.objects.create(
             document=rejected_doc,
             approver=self.other_user,
@@ -120,7 +140,9 @@ class UserDocumentsTests(SearchTestCase):
 
         docs = {doc.pk: doc for doc in user_documents(user=self.uploader)}
 
-        self.assertEqual(docs[rejected_doc.pk].rejection_reason, "ไฟล์ผิดวิชาและเนื้อหาไม่ชัดเจน")
+        self.assertEqual(
+            docs[rejected_doc.pk].rejection_reason, "ไฟล์ผิดวิชาและเนื้อหาไม่ชัดเจน"
+        )
         self.assertIsNone(docs[published_doc.pk].rejection_reason)
 
     def test_returns_empty_queryset_for_anonymous_or_none(self):
@@ -189,3 +211,34 @@ class ModeratorPendingSummaryTests(ApprovalBaseTestCase):
         self.assertIsNotNone(summary)
         self.assertEqual(summary["count"], 1)  # Only doc_cn_pending
         self.assertEqual(summary["department_codes"], ["CN"])
+
+
+class PendingDocumentsWithoutRulesTests(ApprovalBaseTestCase):
+    def test_summary_returns_zero_when_no_pending_documents_lack_rules(self):
+        summary = pending_documents_without_rules_summary()
+        self.assertEqual(summary["count"], 0)
+        self.assertEqual(summary["doc_types"], [])
+
+    def test_summary_counts_pending_documents_whose_doc_type_has_no_rules(self):
+        custom_type = DocType.objects.create(
+            code="custom_note", name_th="โน้ตสรุปพิเศษ", vault=DocType.Vault.LECTURE
+        )
+        doc = Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=custom_type,
+            uploader=self.uploader_cn,
+            title="Custom Doc",
+            status=Document.Status.PENDING,
+        )
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=custom_type,
+            uploader=self.uploader_cn,
+            title="Published Custom Doc",
+            status=Document.Status.PUBLISHED,
+        )
+
+        summary = pending_documents_without_rules_summary()
+        self.assertEqual(summary["count"], 1)
+        self.assertEqual(summary["doc_types"], ["โน้ตสรุปพิเศษ"])
+        self.assertEqual(list(pending_documents_without_rules()), [doc])
