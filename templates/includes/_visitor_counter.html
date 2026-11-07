@@ -7,10 +7,10 @@
     <div class="retro-widget__body counter-widget__body compact-disclosure__body" aria-labelledby="visitor-counter-title">
         <span class="counter-widget__label">คุณคือผู้เข้าชมคนที่</span>
         {% with digits=visitor_digits|default:"000038" %}
-        <output class="retro-counter pixel-counter" aria-label="หมายเลขผู้เข้าชมตัวอย่าง {{ digits }}">
+        <output class="retro-counter pixel-counter" aria-label="หมายเลขผู้เข้าชม {{ digits }}">
             {% for digit in digits %}<span>{{ digit }}</span>{% endfor %}
         </output>
         {% endwith %}
-        <p>Decorative only · ไม่ใช่ยอดผู้เข้าชมจริง</p>
+        <p>สถิติยอดผู้เข้าชมสะสมแบบเรียลไทม์</p>
     </div>
 </details>
