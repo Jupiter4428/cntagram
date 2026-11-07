@@ -65,6 +65,7 @@ def home(request):
             "poll": poll,
             "has_voted_poll": has_voted,
             "show_poll_form": show_form,
+            "shoutbox_messages": services.get_shoutbox_messages(),
         },
     )
 
@@ -79,6 +80,20 @@ def poll_vote(request):
         if success:
             request.session["has_voted_poll"] = True
     return redirect("accounts:home")
+
+
+@login_required
+@require_POST
+def shoutbox_post(request):
+    """Post message to the community shoutbox."""
+    message = request.POST.get("message")
+    if message:
+        user = request.user
+        dept_code = user.department.code if user.department else "Member"
+        author = f"[{dept_code}] {user.nickname}"
+        services.add_shoutbox_message(author=author, text=message)
+    return redirect("accounts:home")
+
 
 
 

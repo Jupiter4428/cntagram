@@ -261,3 +261,42 @@ def record_poll_vote(*, choice_key):
     return True, get_weekly_poll()
 
 
+SHOUTBOX_CACHE_KEY = "site:shoutbox:messages"
+SHOUTBOX_MAX_MESSAGES = 30
+DEFAULT_SHOUTBOX_MESSAGES = (
+    {"author": "[CN21] พี่บอย", "text": "น้องๆ อย่าลืมทวนวงจรไฟฟ้านะ"},
+    {"author": "[CN23] น้ำหวาน", "text": "ขอบคุณสำหรับชีทแคลคูลัสค่า!"},
+    {"author": "[ME22] ก้อง", "text": "ใครมีแนวข้อสอบ Thermo ฝากอัปหน่อย"},
+    {"author": "[CE24] เต้ย", "text": "สู้ๆ กับมิดเทอมทุกคนครับ"},
+)
+
+
+def get_shoutbox_messages():
+    """ดึงรายการข้อความทักทายล่าสุดจากแคช"""
+    messages = cache.get(SHOUTBOX_CACHE_KEY)
+    if messages is None:
+        messages = list(DEFAULT_SHOUTBOX_MESSAGES)
+        cache.set(SHOUTBOX_CACHE_KEY, messages, timeout=None)
+    return messages
+
+
+def add_shoutbox_message(*, author, text):
+    """เพิ่มข้อความทักทายใหม่เข้าแคช (จำกัดสูงสุด 30 ข้อความล่าสุด)"""
+    clean_text = (text or "").strip()
+    if not clean_text:
+        return get_shoutbox_messages()
+
+    clean_author = (author or "สมาชิก").strip()
+    messages = get_shoutbox_messages()
+    messages.append({
+        "author": clean_author,
+        "text": clean_text[:200],  # ตัดไม่เกิน 200 ตัวอักษร
+    })
+    if len(messages) > SHOUTBOX_MAX_MESSAGES:
+        messages = messages[-SHOUTBOX_MAX_MESSAGES:]
+
+    cache.set(SHOUTBOX_CACHE_KEY, messages, timeout=None)
+    return messages
+
+
+

@@ -333,4 +333,28 @@ class HomeViewTests(TestCase):
         self.assertContains(form_resp, "กลับไปดูผลโหวต")
         self.assertContains(form_resp, 'name="choice"')
 
+    def test_shoutbox_services_add_and_retrieve_messages(self):
+        initial = services.get_shoutbox_messages()
+        self.assertTrue(len(initial) > 0)
+
+        services.add_shoutbox_message(author="Tester", text="สวัสดีชาววิศวะ!")
+        updated = services.get_shoutbox_messages()
+        self.assertEqual(updated[-1]["author"], "Tester")
+        self.assertEqual(updated[-1]["text"], "สวัสดีชาววิศวะ!")
+
+    def test_shoutbox_post_view_requires_authentication(self):
+        response = self.client.post(reverse("accounts:shoutbox_post"), {"message": "ลองพิมพ์"})
+        # Anonymous user redirected to login
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(reverse("accounts:login") in response.url)
+
+        self.client.force_login(self.user)
+        auth_response = self.client.post(reverse("accounts:shoutbox_post"), {"message": "ยินดีที่ได้รู้จักครับ"})
+        self.assertRedirects(auth_response, reverse("accounts:home"))
+
+        home_resp = self.client.get(reverse("accounts:home"))
+        self.assertContains(home_resp, self.user.nickname)
+        self.assertContains(home_resp, "ยินดีที่ได้รู้จักครับ")
+
+
 

@@ -8,20 +8,28 @@
     <div class="retro-widget__header retro-widget__titlebar">
         <span aria-hidden="true">💬</span>
         <strong id="shoutbox-title">Shoutbox ทักทาย</strong>
-        <small>ตัวอย่าง</small>
+        <small>สด</small>
     </div>
     <div class="retro-widget__body module-body">
-        <div class="shoutbox-log" role="log" aria-label="ข้อความทักทายตัวอย่าง">
-            <p><b>[CN21] พี่บอย:</b> น้องๆ อย่าลืมทวนวงจรไฟฟ้านะ</p>
-            <p><b>[CN23] น้ำหวาน:</b> ขอบคุณสำหรับชีทแคลคูลัสค่า!</p>
-            <p><b>[ME22] ก้อง:</b> ใครมีแนวข้อสอบ Thermo ฝากอัปหน่อย</p>
-            <p><b>[CE24] เต้ย:</b> สู้ๆ กับมิดเทอมทุกคนครับ</p>
+        <div class="shoutbox-log" role="log" aria-label="ข้อความทักทาย">
+            {% for item in shoutbox_messages %}
+                <p><b>{{ item.author }}:</b> {{ item.text }}</p>
+            {% empty %}
+                <p class="text-muted">ยังไม่มีข้อความทักทาย</p>
+            {% endfor %}
         </div>
-        <div class="shoutbox-controls">
-            <input type="text" placeholder="พิมพ์ข้อความ (ตัวอย่าง)..." aria-label="ข้อความทักทายตัวอย่าง" disabled>
-            <button type="button" class="chrome-button chrome-button--quiet" disabled>ส่ง</button>
-        </div>
-        <p class="demo-note mb-0">กล่องข้อความสาธิต (DEMO) · ยังไม่เปิดรับข้อความจริง</p>
+
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'accounts:shoutbox_post' %}" class="shoutbox-controls">
+                {% csrf_token %}
+                <input type="text" name="message" placeholder="พิมพ์ข้อความ..." maxlength="200" required aria-label="พิมพ์ข้อความทักทาย">
+                <button type="submit" class="chrome-button chrome-button--quiet">ส่ง</button>
+            </form>
+        {% else %}
+            <div class="shoutbox-guest-note text-center">
+                <a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet w-100 d-block">เข้าสู่ระบบเพื่อพิมพ์ทักทาย</a>
+            </div>
+        {% endif %}
     </div>
 </section>
 
