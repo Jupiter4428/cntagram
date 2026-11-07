@@ -14,17 +14,17 @@ from portal.permissions import is_super_admin, super_admin_required
 from . import selectors, services
 from .forms import DeleteAccountForm, LoginForm, ModeratorAssignmentForm, RegisterForm
 from .models import Role, UserRole
-from .services import attempt_login
 
 
 def _client_ip(request):
     """Return the direct peer address without trusting spoofable proxy headers.
 
     Security Note (Refs #42 / #47):
-    Do NOT read raw X-Forwarded-For headers from the client directly because clients
-    can easily spoof them. When deploying behind a reverse proxy (e.g. Nginx, Cloudflare),
-    configure the proxy to rewrite REMOTE_ADDR with the verified client IP
-    (e.g. Nginx set_real_ip_from / real_ip_header, or trusted ProxyFix middleware).
+    Do NOT read raw X-Forwarded-For headers from the client directly because
+    clients can easily spoof them. When deploying behind a reverse proxy
+    (e.g. Nginx, Cloudflare), configure the proxy to rewrite REMOTE_ADDR with
+    the verified client IP (e.g. Nginx set_real_ip_from / real_ip_header,
+    or trusted ProxyFix middleware).
     """
     return request.META.get("REMOTE_ADDR", "")
 
@@ -39,17 +39,6 @@ def _safe_login_redirect(request, next_url=""):
     ):
         return redirect_to
     return resolve_url(settings.LOGIN_REDIRECT_URL)
-
-
-def _rate_limited_response(request, form):
-    """HTTP 429 login page with Retry-After, keeping the typed username."""
-    limited_form = LoginForm(
-        request=request, initial={"username": form.submitted_username}
-    )
-    context = {"form": limited_form, "next": form.next_url, "rate_limited": True}
-    response = render(request, "accounts/login.html", context, status=429)
-    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-    return response
 
 
 @login_not_required
@@ -106,26 +95,53 @@ def register(request):
     return render(request, "accounts/register.html", {"form": form})
 
 
+def _login_response(request, form, *, retry_after=None):
+    response = render(
+        request,
+        "accounts/login.html",
+        {"form": form},
+        status=429 if retry_after else 200,
+    )
+    if retry_after:
+        response["Retry-After"] = retry_after
+    return response
+
+
 @login_not_required
 @require_http_methods(["GET", "POST"])
 def login(request):
     """Authenticate a user while throttling repeated failures."""
-    is_post = request.method == "POST"
+    if request.user.is_authenticated:
+        return redirect(_safe_login_redirect(request))
+
     form = LoginForm(
-        request=request,
-        data=request.POST if is_post else None,
+        data=request.POST if request.method == "POST" else None,
         initial={"next": request.GET.get("next", "")},
     )
-    if request.user.is_authenticated:
-        return redirect(_safe_login_redirect(request, form.next_url))
-    if is_post:
-        attempt = attempt_login(form=form, client_ip=_client_ip(request))
+
+    # Throttle only counts submissions that pass form validation;
+    # invalid forms never reach authenticate().
+    if request.method == "POST" and form.is_valid():
+        attempt = services.attempt_login(
+            identifier=form.cleaned_data["username"],
+            password=form.cleaned_data["password"],
+            client_ip=_client_ip(request),
+        )
         if attempt.user:
             auth_login(request, attempt.user)
-            return redirect(_safe_login_redirect(request, form.next_url))
+            return redirect(
+                _safe_login_redirect(request, form.cleaned_data.get("next", ""))
+            )
         if attempt.rate_limited:
-            return _rate_limited_response(request, form)
-    return render(request, "accounts/login.html", {"form": form, "next": form.next_url})
+            form.add_error(
+                None, "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง"
+            )
+            return _login_response(
+                request, form, retry_after=str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+            )
+        form.add_error(None, form.get_invalid_login_error())
+
+    return _login_response(request, form)
 
 
 @login_not_required

@@ -33,16 +33,22 @@ class LoginThrottleTests(ThrottleTestCase):
             pdpa_consent_at=timezone.now(),
         )
 
-    def post_login(self, password=None, *, client=None, username=None, **extra):
-        data = {
-            "username": username or self.user.email,
+    def post_login(
+        self,
+        password=None,
+        *,
+        username=None,
+        data=None,
+        client=None,
+        **request_kwargs,
+    ):
+        payload = {
+            "username": self.user.email if username is None else username,
             "password": self.password if password is None else password,
+            **(data or {}),
         }
-        request_kwargs = {}
-        for key, value in extra.items():
-            (request_kwargs if key.isupper() else data)[key] = value
         return (client or self.client).post(
-            reverse("accounts:login"), data, **request_kwargs
+            reverse("accounts:login"), payload, **request_kwargs
         )
 
     @override_settings(
@@ -60,7 +66,7 @@ class LoginThrottleTests(ThrottleTestCase):
         self.assertEqual(response.headers["Retry-After"], "120")
         self.assertContains(
             response,
-            "Too many failed login attempts",
+            "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง",
             status_code=429,
         )
         self.assertNotIn(SESSION_KEY, self.client.session)
@@ -72,7 +78,8 @@ class LoginThrottleTests(ThrottleTestCase):
     )
     def test_password_spraying_from_single_ip_is_rate_limited(self):
         client_ip = "198.51.100.1"
-        # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
+        # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน
+        # (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
         for i in range(6):
             username = f"66100000{i:02d}@student.tu.ac.th"
             response = self.post_login(
@@ -209,6 +216,15 @@ class LoginThrottleTests(ThrottleTestCase):
         response = self.post_login(REMOTE_ADDR=client_ip)
 
         self.assertRedirects(response, reverse("accounts:home"))
+
+    @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=1)
+    def test_invalid_form_skips_throttle_check(self):
+        self.post_login("wrong-password")
+
+        response = self.post_login("")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Retry-After", response)
 
 
 class RegisterThrottleTests(ThrottleTestCase):

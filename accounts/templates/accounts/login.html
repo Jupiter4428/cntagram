@@ -12,12 +12,7 @@
             <p>ใช้บัญชีอีเมลนักศึกษาเพื่อเข้าสู่คลัง CNTAGRAM</p>
         </header>
         <div class="retro-widget__body auth-surface__body">
-            {% if rate_limited %}
-                <div class="alert alert-danger" role="alert">
-                    <strong>ลองเข้าสู่ระบบหลายครั้งเกินไป</strong>
-                    <p class="mb-0">กรุณารอสักครู่แล้วลองอีกครั้ง เพื่อความปลอดภัยของบัญชี</p><small>Too many failed login attempts. Please try again later.</small>
-                </div>
-            {% endif %}
+
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}" role="alert">
                     {{ message }}
@@ -25,8 +20,8 @@
             {% endfor %}
             <form method="post" action="{% url 'accounts:login' %}">
                 {% csrf_token %}
-                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-                {% if form.non_field_errors and not rate_limited %}
+                {{ form.next }}
+                {% if form.non_field_errors %}
                     <div class="alert alert-danger" role="alert">
                         <strong>เข้าสู่ระบบไม่สำเร็จ</strong>
                         {{ form.non_field_errors }}

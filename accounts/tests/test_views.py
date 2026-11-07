@@ -35,21 +35,22 @@ class LoginViewTests(TestCase):
             pdpa_consent_at=timezone.now(),
         )
 
-    def post_login(self, password=None, *, client=None, username=None, **extra):
-        """POST to the login view as self.user (correct password by default).
-
-        `extra` keys that are valid form data (e.g. `next`) go into the POST body;
-        anything uppercase (e.g. REMOTE_ADDR) is passed to the test client.
-        """
-        data = {
-            "username": username or self.user.email,
+    def post_login(
+        self,
+        password=None,
+        *,
+        username=None,
+        data=None,
+        client=None,
+        **request_kwargs,
+    ):
+        payload = {
+            "username": self.user.email if username is None else username,
             "password": self.password if password is None else password,
+            **(data or {}),
         }
-        request_kwargs = {}
-        for key, value in extra.items():
-            (request_kwargs if key.isupper() else data)[key] = value
         return (client or self.client).post(
-            reverse("accounts:login"), data, **request_kwargs
+            reverse("accounts:login"), payload, **request_kwargs
         )
 
     def test_guest_is_redirected_from_vault_to_login(self):
@@ -75,12 +76,12 @@ class LoginViewTests(TestCase):
         self.assertContains(response, "Please enter a correct")
 
     def test_login_honors_safe_internal_next_url(self):
-        response = self.post_login(next=reverse("materials:vault"))
+        response = self.post_login(data={"next": reverse("materials:vault")})
 
         self.assertRedirects(response, reverse("materials:vault"))
 
     def test_login_rejects_external_next_url(self):
-        response = self.post_login(next="https://attacker.example/phishing")
+        response = self.post_login(data={"next": "https://attacker.example/phishing"})
 
         self.assertRedirects(response, reverse("accounts:home"))
 

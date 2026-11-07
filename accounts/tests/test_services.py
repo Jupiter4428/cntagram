@@ -2,13 +2,19 @@ from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from .. import selectors, services
 from ..models import Role, UserRole
 from ..services import register_user
-from .base import ModeratorTestCase, RegistrationTestCase, VALID_PASSWORD
+from .base import (
+    ModeratorTestCase,
+    RegistrationTestCase,
+    ThrottleTestCase,
+    VALID_PASSWORD,
+    make_department,
+)
 
 User = get_user_model()
 
@@ -109,6 +115,93 @@ class ModeratorServiceTests(ModeratorTestCase):
             services.assign_moderator(
                 user=self.user_momo, department=self.dept_cn, granted_by=self.admin
             )
+
+
+class LoginServiceTests(ThrottleTestCase):
+    def setUp(self):
+        super().setUp()
+        self.department = make_department(code="CN")
+        self.user = User.objects.create_user(
+            email="6610000001@student.tu.ac.th",
+            password=VALID_PASSWORD,
+            nickname="LoginTester",
+            department=self.department,
+            pdpa_consent_at=timezone.now(),
+        )
+
+    def test_record_login_failure_increments_attempts(self):
+        ip = "192.0.2.1"
+        for _ in range(3):
+            services.record_login_failure(identifier=self.user.email, client_ip=ip)
+
+        id_key, ip_key = services._login_failure_keys(
+            identifier=self.user.email, client_ip=ip
+        )
+        self.assertEqual(cache.get(id_key), 3)
+        self.assertEqual(cache.get(ip_key), 3)
+
+    def test_record_login_failure_resets_window_when_key_expired(self):
+        ip = "192.0.2.1"
+        services.record_login_failure(identifier=self.user.email, client_ip=ip)
+        id_key, ip_key = services._login_failure_keys(
+            identifier=self.user.email, client_ip=ip
+        )
+        cache.delete(id_key)
+        cache.delete(ip_key)
+        services.record_login_failure(identifier=self.user.email, client_ip=ip)
+        self.assertFalse(
+            services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
+        )
+
+    def test_attempt_login_inactive_user_fails(self):
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+
+        attempt = services.attempt_login(
+            identifier=self.user.email, password=VALID_PASSWORD, client_ip="192.0.2.1"
+        )
+
+        self.assertIsNone(attempt.user)
+
+    def test_attempt_login_success(self):
+        ip = "192.0.2.1"
+        attempt = services.attempt_login(
+            identifier=self.user.email,
+            password=VALID_PASSWORD,
+            client_ip=ip,
+        )
+        self.assertEqual(attempt.user, self.user)
+        self.assertFalse(attempt.rate_limited)
+        self.assertFalse(
+            services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
+        )
+
+    @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=1)
+    def test_attempt_login_failure_records_attempt(self):
+        ip = "192.0.2.1"
+        attempt = services.attempt_login(
+            identifier=self.user.email,
+            password="wrong-password",
+            client_ip=ip,
+        )
+        self.assertIsNone(attempt.user)
+        self.assertFalse(attempt.rate_limited)
+        self.assertTrue(
+            services.is_login_rate_limited(identifier=self.user.email, client_ip=ip)
+        )
+
+    def test_attempt_login_rate_limited(self):
+        ip = "192.0.2.1"
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            services.record_login_failure(identifier=self.user.email, client_ip=ip)
+
+        attempt = services.attempt_login(
+            identifier=self.user.email,
+            password=VALID_PASSWORD,
+            client_ip=ip,
+        )
+        self.assertIsNone(attempt.user)
+        self.assertTrue(attempt.rate_limited)
 
 
 class DeleteOwnAccountServiceTests(ModeratorTestCase):
