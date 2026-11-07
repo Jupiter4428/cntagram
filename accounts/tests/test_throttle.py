@@ -72,7 +72,8 @@ class LoginThrottleTests(ThrottleTestCase):
     )
     def test_password_spraying_from_single_ip_is_rate_limited(self):
         client_ip = "198.51.100.1"
-        # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
+        # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน
+        # (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
         for i in range(6):
             username = f"66100000{i:02d}@student.tu.ac.th"
             response = self.post_login(
