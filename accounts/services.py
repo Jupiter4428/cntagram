@@ -59,7 +59,9 @@ def _login_failure_keys(*, identifier, client_ip):
 
 
 def is_login_rate_limited(*, identifier, client_ip):
-    """Return whether either the identity bucket or the network IP bucket is exhausted."""
+    """Return whether either the identity bucket or the network IP bucket is
+    exhausted.
+    """
     id_key, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     return (
         cache.get(id_key, 0) >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
@@ -88,7 +90,9 @@ def record_login_failure(*, identifier, client_ip):
 
 
 def clear_login_failures(*, identifier, client_ip):
-    """Clear identity failures after successful authentication (preserves IP failures)."""
+    """Clear identity failures after successful authentication
+    (preserves IP failures).
+    """
     id_key, _ = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     cache.delete(id_key)
 
@@ -96,7 +100,8 @@ def clear_login_failures(*, identifier, client_ip):
 def attempt_login(*, identifier, password, client_ip):
     """Authenticate credentials while checking and recording rate limits.
 
-    1. Checks if this identifier/IP pair is rate limited -> LoginAttempt(rate_limited=True).
+    1. Checks if this identifier/IP pair is rate limited -> LoginAttempt(
+       rate_limited=True).
     2. Authenticates credentials.
     3. If valid -> clears failure count and returns LoginAttempt(user=user).
     4. If invalid -> records failure and returns LoginAttempt().

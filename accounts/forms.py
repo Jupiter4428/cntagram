@@ -40,7 +40,9 @@ class LoginForm(AuthenticationForm):
         return self.cleaned_data["username"].strip().lower()
 
     def clean(self):
-        """Validate fields without authenticating here; service layer handles authentication."""
+        """Validate fields without authenticating here; service layer handles
+        authentication.
+        """
         return self.cleaned_data
 
 

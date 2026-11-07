@@ -97,7 +97,10 @@ def register(request):
 
 def _login_response(request, form, *, retry_after=None):
     response = render(
-        request, "accounts/login.html", {"form": form}, status=429 if retry_after else 200
+        request,
+        "accounts/login.html",
+        {"form": form},
+        status=429 if retry_after else 200,
     )
     if retry_after:
         response["Retry-After"] = retry_after
@@ -116,7 +119,8 @@ def login(request):
         initial={"next": request.GET.get("next", "")},
     )
 
-    # Throttle only counts submissions that pass form validation; invalid forms never reach authenticate().
+    # Throttle only counts submissions that pass form validation;
+    # invalid forms never reach authenticate().
     if request.method == "POST" and form.is_valid():
         attempt = services.attempt_login(
             identifier=form.cleaned_data["username"],
@@ -125,7 +129,9 @@ def login(request):
         )
         if attempt.user:
             auth_login(request, attempt.user)
-            return redirect(_safe_login_redirect(request, form.cleaned_data.get("next", "")))
+            return redirect(
+                _safe_login_redirect(request, form.cleaned_data.get("next", ""))
+            )
         if attempt.rate_limited:
             form.add_error(
                 None, "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง"
