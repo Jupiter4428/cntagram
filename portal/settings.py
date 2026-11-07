@@ -219,6 +219,9 @@ MAILERS = {
 
 
 # Production Security Hardening
+# ปิด warning W021 เพราะโดเมน *.onrender.com ส่งเข้า HSTS preload list ไม่ได้
+SILENCED_SYSTEM_CHECKS = ['security.W021']
+
 if not DEBUG and not TESTING:
     SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
