@@ -24,3 +24,8 @@
 .approval-page .approval-sticky { top: 1.5rem; }
 .approval-page .approval-action:focus-visible, .approval-page .approval-secondary:focus-visible, .approval-page .approval-radio:focus-visible { outline: 3px solid #155e9b; outline-offset: 2px; }
 @media (max-width: 767px) { .approval-page .approval-sticky { position: static !important; } }
+
+/* Themed surface and semantic document metadata. */
+.approval-page .approval-surface { background: var(--bs-body-bg, #fff); color: var(--text-primary, #242424); }
+.approval-page dl { margin-bottom: 0; }
+.approval-page dd { margin-bottom: .5rem; }
