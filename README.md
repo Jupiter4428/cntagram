@@ -250,7 +250,7 @@ cntagram/
 ```bash
 git clone https://github.com/Jupiter4428/cntagram.git
 cd cntagram
-git switch develop && git pull origin develop
+git switch main && git pull origin main
 
 python -m venv .venv
 # Windows: .venv\Scripts\activate

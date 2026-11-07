@@ -237,9 +237,9 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Title | Value |
 |---|---|---|
-| TD-1 | Chore: ตั้ง CI ด้วย GitHub Actions รัน `python manage.py test` ทุก PR ([#107](https://github.com/Jupiter4428/cntagram/issues/107)) — ทำใน **Sprint 3** | กันโค้ดที่เทสต์ไม่ผ่านเข้า `develop` และเป็นฐานของ coverage > 80% |
+| TD-1 | Chore: ตั้ง CI ด้วย GitHub Actions รัน `python manage.py test` ทุก PR ([#107](https://github.com/Jupiter4428/cntagram/issues/107)) — ทำใน **Sprint 3** | กันโค้ดที่เทสต์ไม่ผ่านเข้า `main` และเป็นฐานของ coverage > 80% |
 | TD-9 | Chore: ตั้ง coverage.py (`.coveragerc` + requirements) ตาม DoD ของ Sprint 2 ([#108](https://github.com/Jupiter4428/cntagram/issues/108)) | ทุกคนวัด coverage บนเครื่องได้ตัวเลขเดียวกัน และแนบผลใน PR ได้ |
-| TD-8 | Chore: เพิ่มด่าน Static Analysis ใน CI (`black --check`, `flake8` + `.flake8`, `bandit`) ตาม [lecture 07](./lecture-notes/07-ci-cd-and-static-analysis.md) — ทำใน **Sprint 3** | โค้ดใน `develop` มีรูปแบบเดียวกัน ไม่มี import/ตัวแปรที่ไม่ใช้ และไม่มี hardcoded secret ก่อน deploy ขึ้น Cloud |
+| TD-8 | Chore: เพิ่มด่าน Static Analysis ใน CI (`black --check`, `flake8` + `.flake8`, `bandit`) ตาม [lecture 07](./lecture-notes/07-ci-cd-and-static-analysis.md) — ทำใน **Sprint 3** | โค้ดใน `main` มีรูปแบบเดียวกัน ไม่มี import/ตัวแปรที่ไม่ใช้ และไม่มี hardcoded secret ก่อน deploy ขึ้น Cloud |
 | TD-4 | Docs: C4 Context/Container Diagram ให้ตรงกับระบบที่ deploy จริง | ทีมและผู้ประเมินเห็นสถาปัตยกรรมตรงกัน |
 | TD-5 | Refactor: ย้าย business logic ที่สะสมใน view ระหว่าง Sprint 1 เข้า `services.py` / `selectors.py` | View สั้น ทดสอบ logic ได้ตรงโดยไม่ผ่าน HTTP |
 | TD-7 | Refactor: แยก partial ข้อมูลเอกสารที่ซ้ำใน `vault.html` / `document_detail.html` ([#40](https://github.com/Jupiter4428/cntagram/issues/40)) | แก้ฟิลด์ที่แสดงของเอกสารที่เดียว มีผลทั้งหน้าค้นหาและหน้าเอกสาร |
