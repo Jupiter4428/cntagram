@@ -20,7 +20,7 @@
             {% endfor %}
             <form method="post" action="{% url 'accounts:login' %}">
                 {% csrf_token %}
-                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                {{ form.next }}
                 {% if form.non_field_errors %}
                     <div class="alert alert-danger" role="alert">
                         <strong>เข้าสู่ระบบไม่สำเร็จ</strong>

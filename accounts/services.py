@@ -90,7 +90,7 @@ def attempt_login(*, identifier, password, client_ip):
     3. If valid -> clears failure count and returns LoginAttempt(user=user).
     4. If invalid -> records failure and returns LoginAttempt().
     """
-    normalized_identifier = (identifier or "").strip().casefold()
+    normalized_identifier = (identifier or "").strip().lower()
     normalized_ip = (client_ip or "").strip()
 
     if is_login_rate_limited(identifier=normalized_identifier, client_ip=normalized_ip):

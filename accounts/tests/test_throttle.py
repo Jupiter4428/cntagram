@@ -107,6 +107,15 @@ class LoginThrottleTests(ThrottleTestCase):
 
         self.assertRedirects(response, reverse("accounts:home"))
 
+    @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=1)
+    def test_invalid_form_skips_throttle_check(self):
+        self.post_login("wrong-password")
+
+        response = self.post_login("")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Retry-After", response)
+
 
 class RegisterThrottleTests(ThrottleTestCase):
     def setUp(self):

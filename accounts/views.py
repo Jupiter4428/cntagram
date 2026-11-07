@@ -87,6 +87,15 @@ def register(request):
     return render(request, "accounts/register.html", {"form": form})
 
 
+def _login_response(request, form, *, retry_after=None):
+    response = render(
+        request, "accounts/login.html", {"form": form}, status=429 if retry_after else 200
+    )
+    if retry_after:
+        response["Retry-After"] = retry_after
+    return response
+
+
 @login_not_required
 @require_http_methods(["GET", "POST"])
 def login(request):
@@ -94,14 +103,12 @@ def login(request):
     if request.user.is_authenticated:
         return redirect(_safe_login_redirect(request))
 
-    next_url = request.POST.get("next") or request.GET.get("next", "")
     form = LoginForm(
         data=request.POST if request.method == "POST" else None,
-        initial={"next": next_url},
+        initial={"next": request.GET.get("next", "")},
     )
-    status = 200
-    retry_after = None
 
+    # Throttle only counts submissions that pass form validation; invalid forms never reach authenticate().
     if request.method == "POST" and form.is_valid():
         attempt = services.attempt_login(
             identifier=form.cleaned_data["username"],
@@ -110,25 +117,17 @@ def login(request):
         )
         if attempt.user:
             auth_login(request, attempt.user)
-            return redirect(_safe_login_redirect(request, next_url))
+            return redirect(_safe_login_redirect(request, form.cleaned_data.get("next", "")))
         if attempt.rate_limited:
             form.add_error(
                 None, "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง"
             )
-            status = 429
-            retry_after = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-        else:
-            form.add_error(None, form.get_invalid_login_error())
+            return _login_response(
+                request, form, retry_after=str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+            )
+        form.add_error(None, form.get_invalid_login_error())
 
-    response = render(
-        request,
-        "accounts/login.html",
-        {"form": form, "next": next_url},
-        status=status,
-    )
-    if retry_after:
-        response["Retry-After"] = retry_after
-    return response
+    return _login_response(request, form)
 
 
 @login_not_required

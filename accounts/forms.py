@@ -33,6 +33,7 @@ class LoginForm(AuthenticationForm):
             attrs={"autocomplete": "current-password", "class": "form-control"}
         ),
     )
+    next = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_username(self):
         """Match the normalization used when user accounts are created."""
