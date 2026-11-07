@@ -6,9 +6,10 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Count
 from django.utils.crypto import salted_hmac
 
-from accounts.models import Role, UserRole
+from accounts.models import PollVote, Role, ShoutboxMessage, UserRole
 
 User = get_user_model()
 
@@ -234,7 +235,7 @@ VISITOR_COUNTER_BASE = 38
 
 
 def record_home_visit():
-    """เพิ่มจำนวนผู้เข้าชมหน้าแรกแบบ atomic ทีละ 1 และคืนค่าเป็นตัวเลข 6 หลัก"""
+    """เพิ่มตัวนับการเปิดหน้า (cache ไม่รับประกัน atomic) และคืนเลข 6 หลัก"""
     first_visit = VISITOR_COUNTER_BASE + 1
     if cache.add(VISITOR_COUNTER_KEY, first_visit, timeout=None):
         total = first_visit
@@ -249,51 +250,42 @@ POLL_CHOICES = (
     ("dsa", "Data Structures & Algorithms"),
     ("circuit", "Circuit Analysis / Physics"),
 )
-POLL_CACHE_PREFIX = "poll:weekly:v1:"
 
 
 def get_weekly_poll():
-    """ดึงข้อมูลโพลประจำสัปดาห์ พร้อมจำนวนคะแนนโหวตและเปอร์เซ็นต์"""
-    vote_counts = {}
-    total_votes = 0
-    for key, _ in POLL_CHOICES:
-        count = cache.get(f"{POLL_CACHE_PREFIX}{key}", 0)
-        vote_counts[key] = count
-        total_votes += count
-
+    """Return durable poll totals and percentages."""
+    vote_counts = dict(
+        PollVote.objects.values("choice")
+        .annotate(n=Count("pk"))
+        .values_list("choice", "n")
+    )
+    total_votes = sum(vote_counts.values())
     choices = []
     for key, label in POLL_CHOICES:
-        votes = vote_counts[key]
-        percent = round((votes * 100) / total_votes) if total_votes > 0 else 0
+        votes = vote_counts.get(key, 0)
         choices.append(
             {
                 "key": key,
                 "label": label,
                 "votes": votes,
-                "percent": percent,
+                "percent": round(votes * 100 / total_votes) if total_votes else 0,
             }
         )
-
-    return {
-        "question": POLL_QUESTION,
-        "total": total_votes,
-        "choices": choices,
-    }
+    return {"question": POLL_QUESTION, "total": total_votes, "choices": choices}
 
 
-def record_poll_vote(*, choice_key):
-    """บันทึกคะแนนโหวตโพลแบบ atomic และคืนค่าความสำเร็จพร้อมผลโพลล่าสุด"""
-    valid_keys = {k for k, _ in POLL_CHOICES}
-    if choice_key not in valid_keys:
+def record_poll_vote(*, user, choice_key):
+    """Persist one vote per user; the database enforces uniqueness."""
+    if choice_key not in dict(POLL_CHOICES):
+        raise ValidationError("Invalid poll choice")
+    try:
+        with transaction.atomic():
+            PollVote.objects.create(user=user, choice=choice_key)
+    except IntegrityError:
         return False, get_weekly_poll()
-
-    cache_key = f"{POLL_CACHE_PREFIX}{choice_key}"
-    if not cache.add(cache_key, 1, timeout=None):
-        cache.incr(cache_key)
     return True, get_weekly_poll()
 
 
-SHOUTBOX_CACHE_KEY = "site:shoutbox:messages"
 SHOUTBOX_MAX_MESSAGES = 30
 DEFAULT_SHOUTBOX_MESSAGES = (
     {"author": "[CN21] พี่บอย", "text": "น้องๆ อย่าลืมทวนวงจรไฟฟ้านะ"},
@@ -304,31 +296,31 @@ DEFAULT_SHOUTBOX_MESSAGES = (
 
 
 def get_shoutbox_messages():
-    """ดึงรายการข้อความทักทายล่าสุดจากแคช"""
-    messages = cache.get(SHOUTBOX_CACHE_KEY)
-    if messages is None:
-        messages = list(DEFAULT_SHOUTBOX_MESSAGES)
-        cache.set(SHOUTBOX_CACHE_KEY, messages, timeout=None)
-    return messages
+    """Return the newest 30 persisted messages, or demo content when empty."""
+    messages = list(
+        ShoutboxMessage.objects.select_related("user__department").order_by(
+            "-created_at", "-pk"
+        )[:SHOUTBOX_MAX_MESSAGES]
+    )
+    if not messages:
+        return list(DEFAULT_SHOUTBOX_MESSAGES)
+    messages.reverse()
+    return [
+        {
+            "author": (
+                f"[{msg.user.department.code if msg.user.department else 'Member'}] "
+                f"{msg.user.nickname}"
+            ),
+            "text": msg.text,
+        }
+        for msg in messages
+    ]
 
 
 def add_shoutbox_message(*, user, text):
-    """เพิ่มข้อความทักทายใหม่เข้าแคช (จำกัดสูงสุด 30 ข้อความล่าสุด)"""
+    """Persist a validated message and return the newest 30."""
     clean_text = (text or "").strip()
-    if not clean_text:
-        return get_shoutbox_messages()
-
-    dept_code = user.department.code if user.department else "Member"
-    clean_author = f"[{dept_code}] {user.nickname}"
-    messages = get_shoutbox_messages()
-    messages.append(
-        {
-            "author": clean_author,
-            "text": clean_text[:200],  # ตัดไม่เกิน 200 ตัวอักษร
-        }
-    )
-    if len(messages) > SHOUTBOX_MAX_MESSAGES:
-        messages = messages[-SHOUTBOX_MAX_MESSAGES:]
-
-    cache.set(SHOUTBOX_CACHE_KEY, messages, timeout=None)
-    return messages
+    if not clean_text or len(clean_text) > 200:
+        raise ValidationError("Message must contain 1–200 characters")
+    ShoutboxMessage.objects.create(user=user, text=clean_text)
+    return get_shoutbox_messages()

@@ -21,7 +21,7 @@ from .forms import (
     RegisterForm,
     ShoutboxForm,
 )
-from .models import Role, UserRole
+from .models import PollVote, Role, UserRole
 from .services import attempt_login
 
 
@@ -69,7 +69,10 @@ def home(request):
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
 
     poll = services.get_weekly_poll()
-    has_voted = request.session.get("has_voted_poll", False)
+    has_voted = (
+        request.user.is_authenticated
+        and PollVote.objects.filter(user=request.user).exists()
+    )
     show_form = not has_voted  # A query parameter must never re-enable voting.
 
     return render(
@@ -88,19 +91,21 @@ def home(request):
 @login_required
 @require_POST
 def poll_vote(request):
-    """Validate the choice and prevent repeated votes in one session."""
+    """Validate the choice and enforce one durable vote per account."""
     form = PollVoteForm(request.POST)
     success = False
-    if form.is_valid() and not request.session.get("has_voted_poll", False):
-        success, _ = services.record_poll_vote(choice_key=form.cleaned_data["choice"])
-        if success:
-            request.session["has_voted_poll"] = True
+    if form.is_valid():
+        success, poll = services.record_poll_vote(
+            user=request.user, choice_key=form.cleaned_data["choice"]
+        )
+    else:
+        poll = services.get_weekly_poll()
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse(
             {
                 "ok": success,
-                "poll": services.get_weekly_poll(),
-                "has_voted": request.session.get("has_voted_poll", False),
+                "poll": poll,
+                "has_voted": PollVote.objects.filter(user=request.user).exists(),
             },
             status=200 if success else 400,
         )

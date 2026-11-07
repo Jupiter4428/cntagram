@@ -8,7 +8,7 @@ from django.utils import timezone
 from catalog.models import Department
 
 from .. import services
-from ..models import Role, UserRole
+from ..models import PollVote, Role, ShoutboxMessage, UserRole
 
 User = get_user_model()
 
@@ -303,8 +303,9 @@ class HomeViewTests(TestCase):
     @override_settings(
         CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
     )
-    def test_guest_home_runs_no_document_queries(self):
-        with self.assertNumQueries(0):
+    def test_guest_home_uses_two_fixed_widget_queries(self):
+        # One aggregate for poll votes and one bounded query for shoutbox.
+        with self.assertNumQueries(2):
             self.client.get(reverse("accounts:home"))
 
     def test_record_home_visit_increments_and_zero_pads_counter(self):
@@ -338,7 +339,7 @@ class HomeViewTests(TestCase):
         self.assertEqual(initial["total"], 0)
         self.assertEqual(len(initial["choices"]), 3)
 
-        success, updated = services.record_poll_vote(choice_key="math")
+        success, updated = services.record_poll_vote(user=self.user, choice_key="math")
         self.assertTrue(success)
         self.assertEqual(updated["total"], 1)
         math_choice = next(c for c in updated["choices"] if c["key"] == "math")
@@ -346,10 +347,13 @@ class HomeViewTests(TestCase):
         self.assertEqual(math_choice["percent"], 100)
 
         # Invalid choice rejected
-        invalid_success, _ = services.record_poll_vote(choice_key="nonexistent")
-        self.assertFalse(invalid_success)
+        from django.core.exceptions import ValidationError
 
-        services.record_poll_vote(choice_key="dsa")
+        with self.assertRaises(ValidationError):
+            services.record_poll_vote(user=self.user, choice_key="nonexistent")
+
+        other = self.create_super_admin()
+        services.record_poll_vote(user=other, choice_key="dsa")
         poll = services.get_weekly_poll()
         self.assertEqual(poll["total"], 2)
         math_c = next(c for c in poll["choices"] if c["key"] == "math")
@@ -460,3 +464,25 @@ class HomeViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(len(services.get_shoutbox_messages()), before)
+
+    def test_poll_vote_survives_logout_and_new_session(self):
+        self.client.force_login(self.user)
+        url = reverse("accounts:poll_vote")
+        self.client.post(url, {"choice": "math"})
+        self.client.logout()
+        self.client.force_login(self.user)
+        repeated = self.client.post(
+            url, {"choice": "dsa"}, headers={"x-requested-with": "XMLHttpRequest"}
+        )
+        self.assertEqual(repeated.status_code, 400)
+        self.assertEqual(PollVote.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(services.get_weekly_poll()["total"], 1)
+
+    def test_shoutbox_retains_only_30_latest_messages(self):
+        for i in range(35):
+            services.add_shoutbox_message(user=self.user, text=f"Message {i}")
+        messages = services.get_shoutbox_messages()
+        self.assertEqual(len(messages), 30)
+        self.assertEqual(messages[0]["text"], "Message 5")
+        self.assertEqual(messages[-1]["text"], "Message 34")
+        self.assertEqual(ShoutboxMessage.objects.count(), 35)
