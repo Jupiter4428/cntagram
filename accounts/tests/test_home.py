@@ -75,7 +75,7 @@ class HomeViewTests(TestCase):
         self.assertContains(response, "Community Archive")
         self.assertContains(response, "ปีการศึกษา 2569")
         self.assertContains(response, "ภาคเรียนที่ 1")
-        self.assertContains(response, "รายการนี้ใช้สาธิต navigation เท่านั้น")
+        self.assertContains(response, "คลิกที่รายวิชาเพื่อค้นหาชีทและข้อสอบเก่าในคลัง")
         self.assertNotContains(response, 'href="#"')
 
     def test_old_web_demo_widgets_are_accessible_and_safe(self):
@@ -86,7 +86,8 @@ class HomeViewTests(TestCase):
         self.assertContains(response, 'aria-hidden="true">WELCOME TO CNTAGRAM!')
         self.assertContains(response, "สถิติยอดผู้เข้าชมสะสมแบบเรียลไทม์")
         self.assertNotContains(response, "ไม่ใช่ยอดผู้เข้าชมจริง")
-        self.assertContains(response, "88×31-inspired decorative badges · DEMO")
+        self.assertContains(response, "88×31-inspired retro badges · TSE Community")
+        self.assertNotContains(response, "badges · DEMO")
         self.assertContains(response, 'class="retro-widget counter-widget compact-disclosure"')
         self.assertContains(response, "Web Badge Collection")
 
@@ -127,6 +128,7 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, self.user.nickname)
         self.assertContains(response, f'href="{reverse("materials:vault")}"')
+        self.assertContains(response, f'href="{reverse("materials:vault")}?query=CN101"')
         self.assertContains(response, f'href="{reverse("materials:upload")}"')
         self.assertContains(response, "เมนูชุมชน")
         self.assertContains(response, "อัปโหลดชีทใหม่")
