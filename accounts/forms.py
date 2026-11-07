@@ -212,3 +212,21 @@ class DeleteAccountForm(forms.Form):
         ),
         error_messages=REQUIRED_ERROR,
     )
+
+
+class PollVoteForm(forms.Form):
+    """Validate the weekly poll option before any vote is recorded."""
+
+    choice = forms.ChoiceField(
+        choices=(
+            ("math", "Engineering Math / Calculus"),
+            ("dsa", "Data Structures & Algorithms"),
+            ("circuit", "Circuit Analysis / Physics"),
+        )
+    )
+
+
+class ShoutboxForm(forms.Form):
+    """Validate a shoutbox post without silently truncating messages."""
+
+    message = forms.CharField(max_length=200, strip=True)
