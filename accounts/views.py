@@ -70,8 +70,6 @@ def home(request):
 
     poll = services.get_weekly_poll()
     has_voted = request.session.get("has_voted_poll", False)
-    # Allows temporarily viewing options/form again via ?poll_view=form
-    view_mode = request.GET.get("poll_view")
     show_form = not has_voted  # A query parameter must never re-enable voting.
 
     return render(
