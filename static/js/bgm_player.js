@@ -42,7 +42,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const btn = document.createElement("button");
             btn.type = "button";
             btn.className = `music-widget__track-item ${index === currentTrackIndex ? "is-active" : ""}`;
-            btn.innerHTML = `<span aria-hidden="true">${index === currentTrackIndex ? "▶" : "♫"}</span> ${index + 1}. ${track.title}`;
+
+            const iconSpan = document.createElement("span");
+            iconSpan.setAttribute("aria-hidden", "true");
+            iconSpan.textContent = index === currentTrackIndex ? "▶" : "♫";
+
+            btn.appendChild(iconSpan);
+            btn.append(` ${index + 1}. ${track.title}`);
             btn.setAttribute("aria-label", `เล่นเพลง ${track.title}`);
             btn.addEventListener("click", () => {
                 selectTrack(index, true);
@@ -55,14 +61,13 @@ document.addEventListener("DOMContentLoaded", () => {
         currentTrackIndex = (index + playlist.length) % playlist.length;
         const track = playlist[currentTrackIndex];
         audio.src = track.src;
-        if (titleDisplay) titleDisplay.textContent = `[0${currentTrackIndex + 1}] ${track.title}`;
+        const trackNum = (currentTrackIndex + 1).toString().padStart(2, "0");
+        if (titleDisplay) titleDisplay.textContent = `[${trackNum}] ${track.title}`;
         if (statusDisplay) statusDisplay.textContent = track.artist;
         renderTracklist();
 
         if (playImmediately) {
-            audio.play().then(() => {
-                updatePlayState(true);
-            }).catch(() => {
+            audio.play().catch(() => {
                 updatePlayState(false);
             });
         } else {
@@ -90,18 +95,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Keep play/pause button and spinning disc in sync with actual audio playback state
+    audio.addEventListener("play", () => updatePlayState(true));
+    audio.addEventListener("pause", () => updatePlayState(false));
+
     // Play / Pause toggle
     if (playPauseBtn) {
         playPauseBtn.addEventListener("click", () => {
             if (audio.paused) {
-                audio.play().then(() => {
-                    updatePlayState(true);
-                }).catch((err) => {
+                audio.play().catch((err) => {
                     console.warn("Playback error:", err);
+                    updatePlayState(false);
                 });
             } else {
                 audio.pause();
-                updatePlayState(false);
             }
         });
     }
@@ -211,9 +218,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (audio.muted || audio.volume === 0) {
             muteBtn.innerHTML = "🔇";
             muteBtn.title = "Unmute (เปิดเสียง)";
+            muteBtn.setAttribute("aria-label", "เปิดเสียง");
         } else {
             muteBtn.innerHTML = "🔊";
             muteBtn.title = "Mute (ปิดเสียง)";
+            muteBtn.setAttribute("aria-label", "ปิดเสียง");
         }
     }
 
