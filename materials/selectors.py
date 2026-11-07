@@ -275,7 +275,8 @@ def approved_role_ids(*, document):
 def missing_roles(*, rule, approved_ids):
     """role ในกฎที่ยังขาด ([] = ครบตามกฎแล้ว ถ้ากฎมี role)
 
-    กฎที่ไม่มี role ก็ได้ [] เหมือนกัน แต่ไม่มีใครผ่านการตรวจสิทธิ์ใน service จึงไม่มีทาง published  # noqa: E501
+    กฎที่ไม่มี role ก็ได้ [] เหมือนกัน แต่ไม่มีใครผ่านการตรวจสิทธิ์ใน service
+    จึงไม่มีทาง published
     """
     if rule.require_all:
         return [r for r in rule.roles if r.pk not in approved_ids]
