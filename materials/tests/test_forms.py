@@ -17,7 +17,9 @@ class SearchFormTests(SearchTestCase):
     def test_course_code_too_long_shows_thai_error_message(self):
         form = SearchForm({"course_code": "X" * 11})
         self.assertFalse(form.is_valid())
-        self.assertEqual(form.errors["course_code"], ["รหัสวิชาต้องไม่เกิน 10 ตัวอักษร"])
+        self.assertEqual(
+            form.errors["course_code"], ["รหัสวิชาต้องไม่เกิน 10 ตัวอักษร"]
+        )
 
     def test_unknown_filter_choices_show_thai_error_messages(self):
         form = SearchForm(
@@ -98,12 +100,16 @@ class UploadFormTests(UploadTestCase):
         self.assertEqual(form.errors.get("doc_type"), ["กรุณาเลือกประเภทเอกสาร"])
         self.assertEqual(form.errors.get("title"), ["กรุณาระบุชื่อเอกสาร"])
         self.assertEqual(form.errors.get("file"), ["กรุณาแนบไฟล์ PDF"])
-        self.assertEqual(form.errors.get("disclaimer"), ["กรุณายืนยันว่าไฟล์นี้ไม่ละเมิดลิขสิทธิ์"])
+        self.assertEqual(
+            form.errors.get("disclaimer"), ["กรุณายืนยันว่าไฟล์นี้ไม่ละเมิดลิขสิทธิ์"]
+        )
 
     def test_title_too_long_shows_thai_error_message(self):
         form = UploadForm(data={"title": "ก" * 201})
         self.assertFalse(form.is_valid())
-        self.assertEqual(form.errors.get("title"), ["ชื่อเอกสารต้องมีความยาวไม่เกิน 200 ตัวอักษร"])
+        self.assertEqual(
+            form.errors.get("title"), ["ชื่อเอกสารต้องมีความยาวไม่เกิน 200 ตัวอักษร"]
+        )
 
     def test_exam_year_be_validation_shows_thai_error_messages(self):
         for value, message in (

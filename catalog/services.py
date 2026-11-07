@@ -24,7 +24,9 @@ def delete_batch(*, batch):
     try:
         batch.delete()
     except ProtectedError as e:
-        raise ValidationError(f"ลบรุ่น {batch.code} ไม่ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้") from e
+        raise ValidationError(
+            f"ลบรุ่น {batch.code} ไม่ได้ เพราะยังมีรายวิชาอยู่ในรุ่นนี้"
+        ) from e
 
 
 @transaction.atomic
@@ -34,5 +36,5 @@ def remove_course_from_batch(*, batch_course):
         batch_course.delete()
     except ProtectedError as e:
         raise ValidationError(
-            f"ถอดวิชา {batch_course.course.code} ไม่ได้ เพราะมีเอกสารอัปโหลดอยู่ในวิชานี้แล้ว"
+            f"ถอดวิชา {batch_course.course.code} ไม่ได้ เพราะมีเอกสารอัปโหลดอยู่ในวิชานี้แล้ว"  # noqa: E501
         ) from e

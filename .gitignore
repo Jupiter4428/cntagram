@@ -61,6 +61,8 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
+staticfiles/
+backups/
 
 # Flask stuff:
 instance/
@@ -150,6 +152,7 @@ activemq-data/
 
 # Environments
 .env
+.env.render
 .envrc
 .venv
 env/
