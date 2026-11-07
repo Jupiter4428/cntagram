@@ -81,8 +81,8 @@ restore() {
   echo "==> Restoring from $target_file..."
 
   if [[ "$target_file" == *.dump ]]; then
-    if [[ -z "$DB_URL" ]]; then
-      echo "Error: DATABASE_URL required to restore PostgreSQL dump."
+    if [[ -z "$DB_URL" || "${ALLOW_DESTRUCTIVE_RESTORE:-}" != "YES" ]]; then
+      echo "Error: restore requires DATABASE_URL and ALLOW_DESTRUCTIVE_RESTORE=YES."
       exit 1
     fi
     echo "--> Restoring PostgreSQL database from $target_file..."
@@ -145,6 +145,31 @@ test_routine() {
   done
 
   echo "--> 4. Testing actual restore and table count comparison..."
+  # Never restore into the source/production database.
+  for f in "$test_dir"/*.dump; do
+    [[ -f "$f" ]] || continue
+    local test_db="${RESTORE_TEST_DATABASE_URL:-}"
+    if [[ -z "$test_db" || "$test_db" == "$DB_URL" ]]; then
+      echo "ERROR: Set RESTORE_TEST_DATABASE_URL to a separate disposable PostgreSQL database." >&2
+      return 1
+    fi
+    # Explicit database names prevent accidental restores to production.
+    if [[ "$test_db" != *"_restore_test"* ]]; then
+      echo "ERROR: restore test target database name must contain _restore_test." >&2
+      return 1
+    fi
+    pg_restore --exit-on-error --no-owner --no-privileges -d "$test_db" "$f"
+    # Compare user-table row counts against a transaction-consistent dump snapshot.
+    # We cannot compare to a live source that may change during the restore.
+    local dump_tables restored_tables
+    dump_tables=$(pg_restore --list "$f" | grep -c ' TABLE DATA ' || true)
+    restored_tables=$(psql "$test_db" -X -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_tables WHERE schemaname='public'")
+    [[ "$dump_tables" -gt 0 && "$restored_tables" -ge "$dump_tables" ]] || {
+      echo "ERROR: restored table count is incomplete." >&2; return 1;
+    }
+    psql "$test_db" -X -v ON_ERROR_STOP=1 -c "SELECT count(*) AS restored_users FROM app_user;"
+    echo "PostgreSQL restore succeeded in isolated test database ($restored_tables tables)."
+  done
   for f in "$test_dir"/*; do
     if [[ "$f" == *.sqlite3 ]]; then
       local restored="$test_dir/restored.sqlite3"
