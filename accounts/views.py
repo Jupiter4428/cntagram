@@ -36,7 +36,9 @@ def _safe_login_redirect(request, next_url=""):
 
 def _rate_limited_response(request, form):
     """HTTP 429 login page with Retry-After, keeping the typed username."""
-    limited_form = LoginForm(request=request, initial={"username": form.submitted_username})
+    limited_form = LoginForm(
+        request=request, initial={"username": form.submitted_username}
+    )
     context = {"form": limited_form, "next": form.next_url, "rate_limited": True}
     response = render(request, "accounts/login.html", context, status=429)
     response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
@@ -64,9 +66,15 @@ def register(request):
     if request.method == "POST":
         client_ip = _client_ip(request)
         if services.is_register_rate_limited(client_ip):
-            response = render(request, "accounts/register.html", {
-                "form": RegisterForm(), "rate_limited": True,
-            }, status=429)
+            response = render(
+                request,
+                "accounts/register.html",
+                {
+                    "form": RegisterForm(),
+                    "rate_limited": True,
+                },
+                status=429,
+            )
             response["Retry-After"] = str(settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
             return response
         services.record_register_attempt(client_ip)
@@ -138,7 +146,9 @@ def delete_account(request):
     form = DeleteAccountForm(request.POST or None)
     if form.is_bound and form.is_valid():
         try:
-            services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
+            services.delete_own_account(
+                user=request.user, password=form.cleaned_data["password"]
+            )
         except ValidationError as exc:
             if hasattr(exc, "message_dict") and "password" in exc.message_dict:
                 services.record_delete_account_failure(user_id=request.user.pk)
@@ -149,7 +159,9 @@ def delete_account(request):
                         {"form": form, "rate_limited": True},
                         status=429,
                     )
-                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+                    response["Retry-After"] = str(
+                        settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+                    )
                     return response
             form.add_error(None, exc)
         else:
@@ -168,12 +180,17 @@ def moderator_manage(request):
     if request.method == "POST" and form.is_valid():
         user, dept = form.cleaned_data["user"], form.cleaned_data["department"]
         try:
-            services.assign_moderator(user=user, department=dept, granted_by=request.user)
+            services.assign_moderator(
+                user=user, department=dept, granted_by=request.user
+            )
         except ValidationError as e:
             for msg in e.messages:
                 messages.error(request, msg)
         else:
-            messages.success(request, f"แต่งตั้ง {user.email} เป็น Moderator ภาควิชา {dept.code} สำเร็จแล้ว")
+            messages.success(
+                request,
+                f"แต่งตั้ง {user.email} เป็น Moderator ภาควิชา {dept.code} สำเร็จแล้ว",
+            )
             return redirect("accounts:moderator_manage")
     context = {"form": form, "moderators": selectors.moderator_list()}
     return render(request, "accounts/moderator_manage.html", context)
@@ -187,5 +204,8 @@ def moderator_remove(request, pk):
     user_email = user_role.user.email
     dept_code = user_role.department.code
     services.remove_moderator(user_role=user_role)
-    messages.success(request, f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว")
+    messages.success(
+        request,
+        f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว",
+    )
     return redirect("accounts:moderator_manage")

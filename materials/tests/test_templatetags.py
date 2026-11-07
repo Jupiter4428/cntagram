@@ -26,13 +26,19 @@ class UserDashboardTemplateTagsTests(TestCase):
         cls.bc_cn = BatchCourse.objects.create(batch=cls.batch_cn, course=cls.course)
         cls.bc_me = BatchCourse.objects.create(batch=cls.batch_me, course=cls.course)
 
-        cls.role_student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
-        cls.role_moderator, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"})
+        cls.role_student, _ = Role.objects.get_or_create(
+            code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
+        )
+        cls.role_moderator, _ = Role.objects.get_or_create(
+            code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"}
+        )
 
         cls.doc_type_summary = DocType.objects.create(
             code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE
         )
-        DocTypeRequiredRole.objects.create(doc_type=cls.doc_type_summary, role=cls.role_moderator)
+        DocTypeRequiredRole.objects.create(
+            doc_type=cls.doc_type_summary, role=cls.role_moderator
+        )
 
         cls.student = User.objects.create_user(
             email="6610000010@student.tu.ac.th",
@@ -58,9 +64,13 @@ class UserDashboardTemplateTagsTests(TestCase):
             department=cls.dept_cn,
             pdpa_consent_at=cls.now,
         )
-        UserRole.objects.create(user=cls.moderator, role=cls.role_moderator, department=cls.dept_cn)
+        UserRole.objects.create(
+            user=cls.moderator, role=cls.role_moderator, department=cls.dept_cn
+        )
 
-    def test_student_home_shows_only_own_documents_with_statuses_and_rejection_reason(self):
+    def test_student_home_shows_only_own_documents_with_statuses_and_rejection_reason(
+        self,
+    ):
         # Student's documents (pending, published, rejected, hidden)
         Document.objects.create(
             batch_course=self.bc_cn,
@@ -113,14 +123,26 @@ class UserDashboardTemplateTagsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ไฟล์ของฉัน")
         self.assertContains(response, "CN101 Midterm Summary")
-        self.assertContains(response, '<span class="badge bg-warning text-dark">รออนุมัติ</span>', html=True)
+        self.assertContains(
+            response,
+            '<span class="badge bg-warning text-dark">รออนุมัติ</span>',
+            html=True,
+        )
         self.assertContains(response, "CN101 Final Summary")
-        self.assertContains(response, '<span class="badge bg-success">เผยแพร่แล้ว</span>', html=True)
+        self.assertContains(
+            response, '<span class="badge bg-success">เผยแพร่แล้ว</span>', html=True
+        )
         self.assertContains(response, "CN101 Lecture Slides")
-        self.assertContains(response, '<span class="badge bg-danger">ถูกปฏิเสธ</span>', html=True)
-        self.assertContains(response, "เหตุผลที่ถูกปฏิเสธ:</strong> ผิดวิชาและเนื้อหาไม่ตรงตามหลักสูตร")
+        self.assertContains(
+            response, '<span class="badge bg-danger">ถูกปฏิเสธ</span>', html=True
+        )
+        self.assertContains(
+            response, "เหตุผลที่ถูกปฏิเสธ:</strong> ผิดวิชาและเนื้อหาไม่ตรงตามหลักสูตร"
+        )
         self.assertContains(response, "CN101 Hidden Notes")
-        self.assertContains(response, '<span class="badge bg-secondary">ซ่อนอยู่</span>', html=True)
+        self.assertContains(
+            response, '<span class="badge bg-secondary">ซ่อนอยู่</span>', html=True
+        )
         self.assertNotContains(response, "Secret Friend Document")
         self.assertNotContains(response, "MODERATOR QUEUE")
 

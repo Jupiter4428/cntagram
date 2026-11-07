@@ -1,0 +1,4 @@
+# Format codebase with black and resolve flake8 line lengths (#141)
+b192cf6f8d24e420e1869fd761027243eed44919
+# Format code merged from develop (#141)
+76a361053b01759f420887dad67450c1075d2dec

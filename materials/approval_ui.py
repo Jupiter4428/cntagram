@@ -4,6 +4,7 @@ Call attach_approval_ui(documents, user) in the approval queue view, and
 attach_approval_ui([document], user) in the review view.
 The server-side review_document service remains the authority for permissions.
 """
+
 from types import SimpleNamespace
 
 
@@ -23,15 +24,14 @@ def attach_approval_ui(documents, user):
     # Moderator roles are department-scoped. Never grant UI permission
     # based on a role held for a different department.
     user_role_pairs = set(
-        UserRole.objects.filter(user=user).values_list(
-            "role__code", "department_id"
-        )
+        UserRole.objects.filter(user=user).values_list("role__code", "department_id")
     )
 
     super_admin = is_super_admin(user)
     already_reviewed = set(
-        Approval.objects.filter(document__in=documents, approver=user)
-        .values_list("document_id", flat=True)
+        Approval.objects.filter(document__in=documents, approver=user).values_list(
+            "document_id", flat=True
+        )
     )
     for document in documents:
         progress = progress_by_id[document.pk]

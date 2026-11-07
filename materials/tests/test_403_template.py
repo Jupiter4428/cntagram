@@ -21,7 +21,9 @@ class ForbiddenTemplateTests(SimpleTestCase):
         """กรณีส่งข้อความ exception กำหนดเอง จะนำมาแสดงผลในหน้าเว็บ"""
         request = self.factory.get("/materials/approvals/")
         template = loader.get_template("403.html")
-        rendered = template.render({"exception": "เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้"}, request=request)
+        rendered = template.render(
+            {"exception": "เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้"}, request=request
+        )
 
         self.assertIn("เฉพาะผู้ดูแลเท่านั้นที่สามารถเข้าถึงได้", rendered)
 
