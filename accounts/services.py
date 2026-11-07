@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -110,11 +111,16 @@ def attempt_login(*, form, client_ip):
     return LoginAttempt()
 
 
+def _register_window_index():
+    return int(time.time()) // settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS
+
+
 def _register_attempt_key(client_ip):
     digest = salted_hmac(
         "accounts.register-throttle", client_ip or "unknown"
     ).hexdigest()
-    return f"register-attempts:{digest}"
+    bucket = _register_window_index()
+    return f"register-attempts:{digest}:{bucket}"
 
 
 def is_register_rate_limited(client_ip):
