@@ -102,10 +102,20 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "accounts:home"
 LOGOUT_REDIRECT_URL = "accounts:home"
 
-# Login throttling is deliberately cache-backed so authentication does not need
-# another database table. Production deployments with multiple workers should
-# configure a shared cache backend (for example Redis).
+# Login throttling uses a shared cache backend to aggregate failure counters
+# across multiple WSGI/ASGI workers and processes.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "cache_table",
+        "OPTIONS": {
+            "MAX_ENTRIES": 10000,
+        },
+    }
+}
+
 LOGIN_RATE_LIMIT_ATTEMPTS = 5
+LOGIN_RATE_LIMIT_IP_ATTEMPTS = 20
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300
 
 REGISTER_RATE_LIMIT_ATTEMPTS = 5

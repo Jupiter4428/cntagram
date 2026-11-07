@@ -52,6 +52,12 @@ if not DEBUG:
 - [ ] เทมเพลตไม่ใส่ `|safe` / `mark_safe()` กับข้อความจากผู้ใช้
 - [ ] ฟอร์ม POST มี `{% csrf_token %}` — อย่าใส่ `@csrf_exempt` โดยไม่จำเป็น
 
+### 1.3 Reverse Proxy และ Client IP (สำหรับ Rate Limit)
+
+- rate limit ของ login นับตาม `REMOTE_ADDR` ถ้า deploy หลัง Reverse Proxy (เช่น Nginx) ต้องให้ proxy เขียน IP จริงลงไป ไม่อย่างนั้นทุกคนจะถูกนับเป็น IP เดียวกัน
+- nginx: `set_real_ip_from <IP ของ proxy>;` + `real_ip_header X-Forwarded-For;`
+- ห้ามอ่าน `X-Forwarded-For` ตรง ๆ ในโค้ดโดยไม่ผ่าน trusted proxy เพราะ client ปลอม header เองได้
+
 ---
 
 ## 2. แพ็กเกจและ dependency

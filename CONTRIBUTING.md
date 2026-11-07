@@ -1053,6 +1053,7 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 - `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
+  python manage.py createcachetable
   ```
 - ถ้าเครื่องคุณเคย `migrate` ก่อนมี `AUTH_USER_MODEL` จะเจอ `InconsistentMigrationHistory` กรณีนี้เท่านั้นที่ให้ลบ `db.sqlite3` (ไฟล์ในเครื่องคุณ ไม่อยู่ใน Git) แล้ว `migrate` ใหม่ได้ (ต้อง seed ใหม่ด้วย) ส่วนโฟลเดอร์ `migrations/` **ยังห้ามลบ** ตามกฎด้านบน
 
@@ -1131,7 +1132,9 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 #### 5. Migrate ฐานข้อมูล
 ```bash
 python manage.py migrate
+python manage.py createcachetable
 ```
+> **หมายเหตุ:** `createcachetable` ใช้สร้างตาราง cache ในฐานข้อมูลสำหรับเก็บข้อมูล rate limit (ทำงานร่วมกับ `DatabaseCache` เพื่อแชร์สถานะข้าม worker)
 
 > ⚠️ **Custom User Model:** โปรเจคใช้ `accounts.User` และตั้ง `AUTH_USER_MODEL = 'accounts.User'` ไว้แล้ว **ห้ามแก้หรือลบบรรทัดนี้** การเปลี่ยนย้อนหลังทำให้ฐานข้อมูลพัง (`InconsistentMigrationHistory`) ดูรายละเอียดที่ [Database และ Models](#database-และ-models)
 
