@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.staticfiles import finders
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from catalog.models import Department
 
-
+from .. import services
 from ..models import Role, UserRole
 
 User = get_user_model()
@@ -31,6 +32,11 @@ class HomeViewTests(TestCase):
             department=department,
             pdpa_consent_at=timezone.now(),
         )
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        self.addCleanup(cache.clear)
 
     def create_super_admin(self):
         role, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
@@ -263,3 +269,28 @@ class HomeViewTests(TestCase):
     def test_guest_home_runs_no_document_queries(self):
         with self.assertNumQueries(0):
             self.client.get(reverse("accounts:home"))
+
+    def test_record_home_visit_increments_and_zero_pads_counter(self):
+        first = services.record_home_visit()
+        second = services.record_home_visit()
+
+        self.assertEqual(first, "000039")
+        self.assertEqual(second, "000040")
+
+    def test_home_visitor_counter_is_open_and_increments_on_each_visit(self):
+        first_response = self.client.get(reverse("accounts:home"))
+        second_response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(
+            first_response,
+            '<details class="retro-widget counter-widget compact-disclosure" open>',
+        )
+        self.assertContains(
+            first_response,
+            "<span>0</span><span>0</span><span>0</span><span>0</span><span>3</span><span>9</span>",
+        )
+        self.assertContains(
+            second_response,
+            "<span>0</span><span>0</span><span>0</span><span>0</span><span>4</span><span>0</span>",
+        )
+

@@ -197,3 +197,17 @@ def record_delete_account_failure(*, user_id, client_ip):
 def clear_delete_account_failures(*, user_id, client_ip):
     key = _delete_account_failure_key(user_id=user_id, client_ip=client_ip)
     cache.delete(key)
+
+
+VISITOR_COUNTER_KEY = "site:visitor_count"
+VISITOR_COUNTER_BASE = 38
+
+
+def record_home_visit():
+    """เพิ่มจำนวนผู้เข้าชมหน้าแรกแบบ atomic ทีละ 1 และคืนค่าเป็นตัวเลข 6 หลัก"""
+    first_visit = VISITOR_COUNTER_BASE + 1
+    if cache.add(VISITOR_COUNTER_KEY, first_visit, timeout=None):
+        total = first_visit
+    else:
+        total = cache.incr(VISITOR_COUNTER_KEY)
+    return f"{total:06d}"

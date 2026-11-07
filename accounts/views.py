@@ -51,7 +51,11 @@ def home(request):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
 
-    return render(request, "accounts/index.html")
+    return render(
+        request,
+        "accounts/index.html",
+        {"visitor_digits": services.record_home_visit()},
+    )
 
 
 @login_not_required
