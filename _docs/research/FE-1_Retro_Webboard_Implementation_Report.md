@@ -49,6 +49,14 @@ This issue covers **base layout, theme, reusable UI modules, and demonstrative p
 - Kept POST-only logout with CSRF, login CSRF, safe redirects, guest protection, session behavior, and rate limiting unchanged.
 - Register remains a placeholder inherited from the US-2 scope.
 
+### 2.5 Promotion of Retro Widgets to Live Functional Features (PR #180 / Refs #89, #161)
+
+Following the initial layout foundation, four primary retro widgets were promoted from illustrative/DEMO shells into fully functional, live features:
+- **Interactive BGM Player (US-39, Issue #161)**: Added an audio playback engine (`static/js/bgm_player.js`) supporting play/pause, seekbar tracking, volume/mute adjustment, track switching, and a playlist of nostalgic 2000s and 8-bit tracks.
+- **Interactive Community Shoutbox (US-36, Issue #89)**: Implemented server-side cache rolling history (up to 30 messages), authenticated user author attribution `[<Dept>] <Nickname>`, and seamless AJAX submission without full-page reloads (`static/js/home_widgets.js`).
+- **Live Weekly Community Poll (US-37, Issue #89)**: Added atomic cache-backed voting, dynamic percentage calculations, session-based vote tracking, view toggling, and instant non-refresh AJAX updates.
+- **Real-time Retro Visitor Counter (US-38, Issue #89)**: Promoted the 6-digit LCD counter from a mock placeholder to real-time atomic visit counting incrementing on each homepage visit, removing decorative disclaimers.
+
 ## 3. Files Changed
 
 **Modified (7):**

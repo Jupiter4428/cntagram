@@ -1,31 +1,107 @@
 {% include "includes/_archive.html" %}
 
-{% include "includes/_music_player.html" %}
-
 {% include "includes/_visitor_counter.html" %}
 
-<section class="retro-widget glass-module side-module retro-directory" aria-labelledby="directory-title">
-    <div class="retro-widget__header module-heading">
-        <span class="pixel-folder" aria-hidden="true">▤</span>
-        <span><small>MINI DIRECTORY</small><span id="directory-title">Community Menu</span></span>
-        <span class="tech-index">03</span>
+{% include "includes/_music_player.html" %}
+
+<section class="retro-widget side-module shoutbox-widget" aria-labelledby="shoutbox-title">
+    <div class="retro-widget__header retro-widget__titlebar">
+        <span aria-hidden="true">💬</span>
+        <strong id="shoutbox-title">Shoutbox ทักทาย</strong>
+        <small>สด</small>
     </div>
     <div class="retro-widget__body module-body">
-        <ul class="directory-list">
-            <li><span aria-hidden="true">›</span> หมวดชีทและโน้ต <b>DEMO</b></li>
-            <li><span aria-hidden="true">›</span> ข่าวจากชุมชน <b>DEMO</b></li>
-            <li><span aria-hidden="true">›</span> สมาชิกออนไลน์ <b>DEMO</b></li>
-        </ul>
+        <div class="shoutbox-log" role="log" aria-label="ข้อความทักทาย">
+            {% for item in shoutbox_messages %}
+                <p><b>{{ item.author }}:</b> {{ item.text }}</p>
+            {% empty %}
+                <p class="text-muted">ยังไม่มีข้อความทักทาย</p>
+            {% endfor %}
+        </div>
+
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'accounts:shoutbox_post' %}" class="shoutbox-controls">
+                {% csrf_token %}
+                <input type="text" name="message" placeholder="พิมพ์ข้อความ..." maxlength="200" required aria-label="พิมพ์ข้อความทักทาย">
+                <button type="submit" class="chrome-button chrome-button--quiet">ส่ง</button>
+            </form>
+        {% else %}
+            <div class="shoutbox-guest-note text-center">
+                <a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet w-100 d-block">เข้าสู่ระบบเพื่อพิมพ์ทักทาย</a>
+            </div>
+        {% endif %}
     </div>
 </section>
 
-<section class="signal-card" aria-label="ข้อมูลธีม">
-    <div class="signal-card__rings" aria-hidden="true"></div>
-    <div>
-        <span class="tech-label">VISUAL SYSTEM</span>
-        <strong>HI5 / Y2K WEB</strong>
+<section class="retro-widget side-module poll-widget" aria-labelledby="poll-title">
+    <div class="retro-widget__header retro-widget__titlebar retro-widget__titlebar--pink">
+        <span aria-hidden="true">📊</span>
+        <strong id="poll-title">โพลประจำสัปดาห์</strong>
+        {% if has_voted_poll %}
+            <small>โหวตแล้ว</small>
+        {% else %}
+            <small>เปิดโหวต</small>
+        {% endif %}
     </div>
-    <span class="signal-card__state">● DEMO</span>
+    <div class="retro-widget__body module-body">
+        <p class="mb-1"><strong>{{ poll.question|default:"วิชาไหนโหดสุดเทอมนี้" }}</strong></p>
+
+        {% if not show_poll_form %}
+            <div class="poll-results" aria-label="ผลโหวตล่าสุด">
+                {% for choice in poll.choices %}
+                    <div class="poll-result-row">
+                        <div class="poll-result-label">
+                            <span>{{ choice.label }}</span>
+                            <b>{{ choice.percent }}% ({{ choice.votes }})</b>
+                        </div>
+                        <div class="poll-bar-wrap">
+                            <div class="poll-bar-fill" style="width: {{ choice.percent }}%;"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <p class="demo-note mb-1 text-center">ผลโหวตทั้งหมด {{ poll.total }} เสียง</p>
+            <a href="?poll_view=form" class="chrome-button chrome-button--quiet w-100 text-center d-block">ดูตัวเลือก / โหวตใหม่</a>
+        {% else %}
+            <form method="post" action="{% url 'accounts:poll_vote' %}" class="poll-form">
+                {% csrf_token %}
+                <div class="poll-options" role="radiogroup" aria-labelledby="poll-title">
+                    {% for choice in poll.choices %}
+                        <label>
+                            <input type="radio" name="choice" value="{{ choice.key }}" {% if forloop.first %}checked{% endif %}>
+                            {{ choice.label }}
+                        </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="chrome-button chrome-button--brand w-100">โหวต</button>
+            </form>
+            {% if has_voted_poll %}
+                <a href="{% url 'accounts:home' %}" class="chrome-button chrome-button--quiet w-100 text-center d-block mt-1">กลับไปดูผลโหวต</a>
+            {% else %}
+                <p class="demo-note mb-0 text-center">ผลโหวตทั้งหมด {{ poll.total }} เสียง</p>
+            {% endif %}
+        {% endif %}
+    </div>
+</section>
+
+<section class="retro-widget side-module retro-directory" aria-labelledby="directory-title">
+    <div class="retro-widget__header retro-widget__titlebar">
+        <span aria-hidden="true">»</span>
+        <strong id="directory-title">เมนูชุมชน</strong>
+        <small>นำทาง</small>
+    </div>
+    <div class="retro-widget__body module-body">
+        <ul class="directory-list">
+            {% if user.is_authenticated %}
+                <li><a href="{% url 'materials:vault' %}">คลังชีทและข้อสอบ</a> <b>เปิดอ่าน</b></li>
+                <li><a href="{% url 'materials:upload' %}">อัปโหลดชีทใหม่</a> <b>ส่งไฟล์</b></li>
+            {% else %}
+                <li><a href="{% url 'accounts:login' %}">คลังชีทและข้อสอบ</a> <b>ต้องล็อกอิน</b></li>
+                <li><a href="{% url 'accounts:login' %}">เข้าสู่ระบบนักศึกษา</a> <b>ล็อกอิน</b></li>
+            {% endif %}
+            <li><a href="{% url 'accounts:register' %}">สมัครสมาชิกใหม่</a> <b>ฟรี</b></li>
+        </ul>
+    </div>
 </section>
 
 {% include "includes/_badges.html" %}

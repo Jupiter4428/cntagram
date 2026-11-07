@@ -4,6 +4,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -12,8 +13,15 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
-from .forms import DeleteAccountForm, LoginForm, ModeratorAssignmentForm, RegisterForm
-from .models import Role, UserRole
+from .forms import (
+    DeleteAccountForm,
+    LoginForm,
+    ModeratorAssignmentForm,
+    PollVoteForm,
+    RegisterForm,
+    ShoutboxForm,
+)
+from .models import PollVote, Role, UserRole
 from .services import attempt_login
 
 
@@ -60,7 +68,69 @@ def home(request):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
 
-    return render(request, "accounts/index.html")
+    poll = services.get_weekly_poll()
+    has_voted = (
+        request.user.is_authenticated
+        and PollVote.objects.filter(user=request.user).exists()
+    )
+    show_form = not has_voted  # A query parameter must never re-enable voting.
+
+    return render(
+        request,
+        "accounts/index.html",
+        {
+            "visitor_digits": services.record_home_visit(),
+            "poll": poll,
+            "has_voted_poll": has_voted,
+            "show_poll_form": show_form,
+            "shoutbox_messages": services.get_shoutbox_messages(),
+        },
+    )
+
+
+@login_required
+@require_POST
+def poll_vote(request):
+    """Validate the choice and enforce one durable vote per account."""
+    form = PollVoteForm(request.POST)
+    success = False
+    if form.is_valid():
+        success, poll = services.record_poll_vote(
+            user=request.user, choice_key=form.cleaned_data["choice"]
+        )
+    else:
+        poll = services.get_weekly_poll()
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "ok": success,
+                "poll": poll,
+                "has_voted": PollVote.objects.filter(user=request.user).exists(),
+            },
+            status=200 if success else 400,
+        )
+    return redirect("accounts:home")
+
+
+@login_required
+@require_POST
+def shoutbox_post(request):
+    """Validate community shoutbox posts through a Django form."""
+    form = ShoutboxForm(request.POST)
+    success = form.is_valid()
+    if success:
+        services.add_shoutbox_message(
+            user=request.user, text=form.cleaned_data["message"]
+        )
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "ok": success,
+                "messages": services.get_shoutbox_messages(),
+            },
+            status=200 if success else 400,
+        )
+    return redirect("accounts:home")
 
 
 @login_not_required
