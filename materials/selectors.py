@@ -191,14 +191,9 @@ def get_document_for_review(*, document_id, user):
 
 
 def pending_documents_without_rules():
-    """ดึง QuerySet ของเอกสาร pending ที่ประเภทเอกสาร (doc_type) ยังไม่มีกฎการอนุมัติ"""
-    doc_types_with_rules = DocTypeRequiredRole.objects.values_list(
-        "doc_type_id", flat=True
-    ).distinct()
-    return (
-        Document.objects.filter(status=Document.Status.PENDING)
-        .exclude(doc_type_id__in=doc_types_with_rules)
-        .select_related("doc_type", "uploader", "batch_course__course")
+    """เอกสาร pending ที่ไม่แสดงในคิวพิจารณา เพราะ doc_type ยังไม่มีกฎอนุมัติ (คู่กับ pending_documents_for_moderator)"""
+    return Document.objects.filter(
+        status=Document.Status.PENDING, doc_type__required_roles__isnull=True
     )
 
 

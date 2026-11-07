@@ -242,3 +242,14 @@ class PendingDocumentsWithoutRulesTests(ApprovalBaseTestCase):
         self.assertEqual(summary["count"], 1)
         self.assertEqual(summary["doc_types"], ["โน้ตสรุปพิเศษ"])
         self.assertEqual(list(pending_documents_without_rules()), [doc])
+
+    def test_summary_ignores_pending_documents_whose_doc_type_has_rules(self):
+        # doc_type_summary in ApprovalBaseTestCase already has approval rules
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.uploader_cn,
+            title="Ruled Doc",
+            status=Document.Status.PENDING,
+        )
+        self.assertEqual(pending_documents_without_rules_summary()["count"], 0)

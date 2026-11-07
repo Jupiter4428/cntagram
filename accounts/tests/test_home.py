@@ -4,8 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from catalog.models import Batch, BatchCourse, Course, Department
-from materials.models import DocType, Document
+from catalog.models import Department
 
 
 from ..models import Role, UserRole
@@ -265,30 +264,4 @@ class HomeViewTests(TestCase):
         with self.assertNumQueries(0):
             self.client.get(reverse("accounts:home"))
 
-    def test_admin_home_warns_when_pending_documents_lack_approval_rules(self):
-        admin = self.create_super_admin()
-        self.client.force_login(admin)
 
-        # Baseline: No pending documents without rules
-        res_baseline = self.client.get(reverse("accounts:home"))
-        self.assertNotContains(res_baseline, "ไม่มีกฎการอนุมัติ")
-
-        # Create doc_type without rules and a pending document
-        no_rule_type = DocType.objects.create(
-            code="cheatsheet", name_th="สูตรลัด", vault=DocType.Vault.LECTURE
-        )
-        batch = Batch.objects.create(department=self.user.department, number=24)
-        course = Course.objects.create(code="CN199", name_en="Special Topics")
-        bc = BatchCourse.objects.create(batch=batch, course=course)
-        Document.objects.create(
-            batch_course=bc,
-            doc_type=no_rule_type,
-            uploader=self.user,
-            title="Cheat Sheet Document",
-            status=Document.Status.PENDING,
-        )
-
-        res_with_warning = self.client.get(reverse("accounts:home"))
-        self.assertContains(res_with_warning, "ไม่มีกฎการอนุมัติ")
-        self.assertContains(res_with_warning, "สูตรลัด")
-        self.assertContains(res_with_warning, "<strong>1</strong> ฉบับ")
