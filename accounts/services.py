@@ -57,13 +57,23 @@ def _login_failure_keys(*, identifier, client_ip):
     )
 
 
+def is_identity_rate_limited(*, identifier, client_ip):
+    """Return whether the identity bucket is exhausted."""
+    id_key, _ = _login_failure_keys(identifier=identifier, client_ip=client_ip)
+    return cache.get(id_key, 0) >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
+
+
+def is_ip_rate_limited(*, identifier, client_ip):
+    """Return whether the network IP bucket is exhausted."""
+    _, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
+    return cache.get(ip_key, 0) >= settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS
+
+
 def is_login_rate_limited(*, identifier, client_ip):
-    """Return whether either the identity bucket or the network IP bucket is exhausted."""
-    id_key, ip_key = _login_failure_keys(identifier=identifier, client_ip=client_ip)
-    return (
-        cache.get(id_key, 0) >= settings.LOGIN_RATE_LIMIT_ATTEMPTS
-        or cache.get(ip_key, 0) >= settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS
-    )
+    """Return whether either identity or network IP bucket is exhausted."""
+    return is_identity_rate_limited(
+        identifier=identifier, client_ip=client_ip
+    ) or is_ip_rate_limited(identifier=identifier, client_ip=client_ip)
 
 
 def _increment_failure_key(key, timeout):
@@ -87,7 +97,10 @@ def record_login_failure(*, identifier, client_ip):
 
 
 def clear_login_failures(*, identifier, client_ip):
-    """Clear identity failures after successful authentication (preserves IP failures)."""
+    """Clear identity failures after successful authentication.
+
+    Preserves IP failures for the network window.
+    """
     id_key, _ = _login_failure_keys(identifier=identifier, client_ip=client_ip)
     cache.delete(id_key)
 
@@ -95,17 +108,28 @@ def clear_login_failures(*, identifier, client_ip):
 def attempt_login(*, form, client_ip):
     """Process a bound LoginForm: throttle first, then validate and record.
 
-    The throttle check runs before validation so a blocked identity never
-    reaches authenticate(), even with the correct password.
+    The identity throttle check runs before validation so a blocked identity
+    never reaches authenticate(), even with the correct password.
+    When only the IP bucket is exhausted, legitimate users with correct
+    credentials can still authenticate, while failed attempts from that IP
+    are throttled (rate_limited=True).
     """
     identifier = form.submitted_username
-    if is_login_rate_limited(identifier=identifier, client_ip=client_ip):
+    if is_identity_rate_limited(identifier=identifier, client_ip=client_ip):
         return LoginAttempt(rate_limited=True)
+
+    ip_exhausted = is_ip_rate_limited(identifier=identifier, client_ip=client_ip)
+
     if form.is_valid():
         clear_login_failures(identifier=identifier, client_ip=client_ip)
         return LoginAttempt(user=form.get_user())
+
     if form.has_credentials:
         record_login_failure(identifier=identifier, client_ip=client_ip)
+
+    if ip_exhausted:
+        return LoginAttempt(rate_limited=True)
+
     return LoginAttempt()
 
 
