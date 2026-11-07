@@ -1,0 +1,34 @@
+name: Daily offsite backup
+on:
+  schedule:
+    - cron: "17 19 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.BACKUP_AWS_REGION }}
+      BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require offsite backup credentials
+        run: |
+          for name in DATABASE_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION BACKUP_S3_BUCKET; do
+            if [ -z "${!name}" ]; then echo "::error::Missing backup secret: $name"; exit 1; fi
+          done
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Backup database and upload offsite
+        run: |
+          bash scripts/backup_restore.sh backup backups
+          test -n "$(find backups -name '*.dump' -print -quit)"
+          aws s3 cp backups/ "s3://$BACKUP_S3_BUCKET/cntagram/" --recursive --exclude "*" --include "*.dump" --sse AES256 --no-progress
+      - name: Confirm backup present in offsite bucket
+        run: |
+          aws s3 ls "s3://$BACKUP_S3_BUCKET/cntagram/" --recursive | grep -q 'db_.*\.dump'
