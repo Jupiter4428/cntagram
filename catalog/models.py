@@ -1,4 +1,4 @@
-#..\catalog\models.py
+# ..\catalog\models.py
 # Create your models here.
 from django.core.validators import RegexValidator
 from django.db import models
@@ -90,7 +90,8 @@ class Batch(models.Model):
 class Course(models.Model):
     """ข้อมูลวิชา (ไม่ผูกกับรุ่น) เช่น CN101, SC135"""
 
-    # อักษรภาค + เลขวิชาไม่เกิน 3 หลัก (CN201) และอยู่ใน path ไฟล์ เหมือน Department.code
+    # อักษรภาค + เลขวิชาไม่เกิน 3 หลัก (CN201) และอยู่ใน path ไฟล์
+    # เหมือน Department.code
     code = models.CharField(
         "Course code",
         max_length=10,
@@ -98,7 +99,7 @@ class Course(models.Model):
         validators=[
             RegexValidator(
                 r"^[A-Z]+[0-9]{1,3}\Z",
-                "รหัสวิชาต้องเป็นตัวอักษรภาษาอังกฤษ A-Z ตามด้วยตัวเลข 1-3 หลัก เช่น CN201",
+                "รหัสวิชาต้องเป็นตัวอักษรภาษาอังกฤษ A-Z ตามด้วยตัวเลข 1-3 หลัก เช่น CN201",  # noqa: E501
             )
         ],
     )

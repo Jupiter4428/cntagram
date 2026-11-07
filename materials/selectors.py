@@ -1,4 +1,4 @@
-"""การอ่านข้อมูลของ materials (ค้นหา / เปิดอ่านเอกสาร / อัปโหลด / ตรวจสอบสิทธิ์และการอนุมัติ / สถิติอัปโหลด) ตาม ADR 0002"""
+"""การอ่านข้อมูลของ materials (ค้นหา / เปิดอ่านเอกสาร / อัปโหลด / ตรวจสอบสิทธิ์และการอนุมัติ / สถิติอัปโหลด) ตาม ADR 0002"""  # noqa: E501
 
 import datetime
 from collections import defaultdict
@@ -26,7 +26,7 @@ def file_in_vault(*, sha256) -> bool:
 
 
 def published_documents():
-    """เอกสารที่ผู้ใช้ทั่วไปเห็นได้ (เฉพาะ published) พร้อมข้อมูลที่หน้าเว็บต้องใช้ กัน N+1"""
+    """เอกสารที่ผู้ใช้ทั่วไปเห็นได้ (เฉพาะ published) พร้อมข้อมูลที่หน้าเว็บต้องใช้ กัน N+1"""  # noqa: E501
     return Document.objects.filter(status=Document.Status.PUBLISHED).select_related(
         "batch_course__batch__department",
         "batch_course__course",
@@ -71,7 +71,7 @@ def user_documents(*, user) -> QuerySet[Document]:
 
 
 def moderator_pending_summary(*, user) -> dict | None:
-    """จำนวนไฟล์รออนุมัติและรหัสภาคที่ Moderator ดูแล คืน None ถ้าไม่ได้เป็น Moderator"""
+    """จำนวนไฟล์รออนุมัติและรหัสภาคที่ Moderator ดูแล คืน None ถ้าไม่ได้เป็น Moderator"""  # noqa: E501
     if not user or not user.is_authenticated:
         return None
 
@@ -95,11 +95,13 @@ def search_documents(
     batch=None,
     doc_type=None,
     exam_period=None,
-    exam_year_be=None
+    exam_year_be=None,
 ):
-    """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น กรองเพิ่มด้วย ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. ได้
+    """เอกสาร published ของรหัสวิชานี้จากทุกรุ่น
+    กรองเพิ่มด้วย ภาค/รุ่น/ประเภท/ช่วงสอบ/ปี พ.ศ. ได้
 
-    เทียบรหัสแบบตรงตัว (Course.code เก็บเป็นตัวพิมพ์ใหญ่) จึงใช้ UQ index ของ course.code ได้
+    เทียบรหัสแบบตรงตัว (Course.code เก็บเป็นตัวพิมพ์ใหญ่)
+    จึงใช้ UQ index ของ course.code ได้
     รหัสรุ่นไม่ได้เก็บใน DB จึงกรองรุ่นผ่าน batch_course__batch
     """
     conditions = Q(batch_course__course__code=course_code.strip().upper())
@@ -148,7 +150,8 @@ def can_review_any(*, user):
 
 
 def pending_documents_for_moderator(*, user):
-    """ดึงรายการเอกสารรออนุมัติ (pending) ของภาควิชาที่ผู้ใช้ดูแล (หรือทุกภาคถ้าเป็น Super Admin)
+    """ดึงรายการเอกสารรออนุมัติ (pending) ของภาควิชาที่ผู้ใช้ดูแล
+    (หรือทุกภาคถ้าเป็น Super Admin)
 
     ไม่รวมไฟล์ที่ตนเองเป็นผู้อัปโหลด และไม่รวมไฟล์ที่ตนเองพิจารณาไปแล้ว
     """
@@ -186,19 +189,22 @@ def pending_documents_for_moderator(*, user):
 
 
 def get_document_for_review(*, document_id, user):
-    """ดึงข้อมูลเอกสารสำหรับพิจารณา (เฉพาะ pending และผู้ใช้มีสิทธิ์ตรวจ) ไม่พบโยน Document.DoesNotExist"""
+    """ดึงข้อมูลเอกสารสำหรับพิจารณา (เฉพาะ pending และผู้ใช้มีสิทธิ์ตรวจ) ไม่พบโยน Document.DoesNotExist"""  # noqa: E501
     return pending_documents_for_moderator(user=user).get(pk=document_id)
 
 
 def pending_documents_without_rules():
-    """เอกสาร pending ที่ไม่แสดงในคิวพิจารณา เพราะ doc_type ยังไม่มีกฎอนุมัติ (คู่กับ pending_documents_for_moderator)"""
+    """เอกสาร pending ที่ไม่แสดงในคิวพิจารณาเพราะ doc_type ไม่มีกฎอนุมัติ.
+
+    ทำงานคู่กับ pending_documents_for_moderator
+    """
     return Document.objects.filter(
         status=Document.Status.PENDING, doc_type__required_roles__isnull=True
     )
 
 
 def pending_documents_without_rules_summary():
-    """สรุปจำนวนและประเภทเอกสาร pending ที่ซ่อนอยู่เพราะยังไม่มีกฎการอนุมัติ"""
+    """สรุปจำนวนและประเภทเอกสาร pending ที่ซ่อนอยู่เพราะยังไม่มีกฎการอนุมัติ."""
     qs = pending_documents_without_rules()
     count = qs.count()
     if not count:
@@ -211,12 +217,13 @@ def pending_documents_without_rules_summary():
 
 
 def uploaded_file_count() -> int:
-    """จำนวนไฟล์ที่อัปโหลดเข้าระบบทั้งหมด นับทุกเวอร์ชัน (ใช้ในหน้า Dashboard ของ Super Admin)"""
+    """จำนวนไฟล์ที่อัปโหลดเข้าระบบทั้งหมด นับทุกเวอร์ชัน (ใช้ในหน้า Dashboard ของ Super Admin)"""  # noqa: E501
     return DocumentVersion.objects.count()
 
 
 def monthly_uploads(*, today=None, months=6) -> list[dict]:
-    """ไฟล์ที่อัปโหลดต่อเดือน (นับทุกเวอร์ชัน) ย้อนหลัง `months` เดือนรวมเดือนนี้ เดือนที่ไม่มีเป็น 0
+    """ไฟล์ที่อัปโหลดต่อเดือน (นับทุกเวอร์ชัน) ย้อนหลัง `months` เดือน
+    รวมเดือนนี้ เดือนที่ไม่มีเป็น 0
 
     `percent` เทียบกับเดือนที่มากที่สุด ใช้เป็นความสูงแท่งกราฟ
     """
@@ -254,7 +261,7 @@ class ApprovalProgress(NamedTuple):
     approved_roles: list
     missing_roles: list  # require_all=False: ขาดอีก 1 คนจาก role ใดก็ได้ในรายการ
     require_all: bool
-    approvable: bool  # False = ไม่ใช่ pending หรือกฎไม่มี role ที่อนุมัติได้ (ค้างจนกว่าจะแก้กฎ)
+    approvable: bool  # False = ไม่ใช่ pending หรือกฎไม่มี role ที่อนุมัติได้ (ค้างจนกว่าจะแก้กฎ)  # noqa: E501
 
 
 def approval_rule(*, document):
@@ -291,7 +298,8 @@ def approved_role_ids(*, document):
 def missing_roles(*, rule, approved_ids):
     """role ในกฎที่ยังขาด ([] = ครบตามกฎแล้ว ถ้ากฎมี role)
 
-    กฎที่ไม่มี role ก็ได้ [] เหมือนกัน แต่ไม่มีใครผ่านการตรวจสิทธิ์ใน service จึงไม่มีทาง published
+    กฎที่ไม่มี role ก็ได้ [] เหมือนกัน แต่ไม่มีใครผ่านการตรวจสิทธิ์ใน service
+    จึงไม่มีทาง published
     """
     if rule.require_all:
         return [r for r in rule.roles if r.pk not in approved_ids]
@@ -301,14 +309,15 @@ def missing_roles(*, rule, approved_ids):
 
 
 def approval_progress(*, document):
-    """role ที่อนุมัติแล้วและ role ที่ยังรอ ของเอกสาร 1 ชิ้น ให้หน้าพิจารณาแสดงสถานะ (US-9)"""
+    """role ที่อนุมัติแล้วและ role ที่ยังรอ ของเอกสาร 1 ชิ้น ให้หน้าพิจารณาแสดงสถานะ (US-9)"""  # noqa: E501
     return approval_progress_for(documents=[document])[document.pk]
 
 
 def approval_progress_for(*, documents):
     """สถานะอนุมัติของหลายเอกสาร (หน้าคิว) คืน {document.pk: ApprovalProgress}
 
-    ไม่เกิน 3 query ไม่ว่ากี่เอกสาร เอกสารควร select_related "doc_type", "batch_course__batch" มาแล้ว
+    ไม่เกิน 3 query ไม่ว่ากี่เอกสาร
+    เอกสารควร select_related "doc_type", "batch_course__batch" มาแล้ว
     เอกสารที่ไม่ใช่ pending จะได้ missing_roles = []
     """
     documents = list(documents)

@@ -189,15 +189,24 @@ class RegisterViewTests(RegistrationTestCase):
         self.assertContains(response, "is-invalid")
 
     def test_rejects_reserved_nickname(self):
-        response = self.assertRegistrationRejected(self.payload(nickname="Admin"), "nickname")
-        self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", response.context["form"].errors["nickname"][0])
+        response = self.assertRegistrationRejected(
+            self.payload(nickname="Admin"), "nickname"
+        )
+        self.assertIn(
+            "ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น",
+            response.context["form"].errors["nickname"][0],
+        )
 
     def test_rejects_duplicate_email(self):
         self.register(nickname="First")
-        response = self.client.post(self.url, self.payload(email="6610612345@student.tu.ac.th"))
+        response = self.client.post(
+            self.url, self.payload(email="6610612345@student.tu.ac.th")
+        )
         self.assertEqual(response.status_code, 200)
         self.assertIn("email", response.context["form"].errors)
-        self.assertIn("อีเมลนี้ถูกใช้สมัครแล้ว", response.context["form"].errors["email"])
+        self.assertIn(
+            "อีเมลนี้ถูกใช้สมัครแล้ว", response.context["form"].errors["email"]
+        )
 
     def test_rejects_missing_pdpa_consent(self):
         self.assertRegistrationRejected(self.payload(pdpa_consent=None), "pdpa_consent")
@@ -218,7 +227,9 @@ class RegisterViewTests(RegistrationTestCase):
     def test_authenticated_user_post_is_redirected_home(self):
         self.client.force_login(self.register())
 
-        response = self.client.post(self.url, self.payload(email="6610600000@student.tu.ac.th"))
+        response = self.client.post(
+            self.url, self.payload(email="6610600000@student.tu.ac.th")
+        )
 
         self.assertRedirects(response, reverse("accounts:home"))
         self.assertEqual(User.objects.count(), 1)
@@ -297,20 +308,30 @@ class ModeratorViewTests(ModeratorTestCase):
         admin_role = UserRole.objects.get(user=self.admin, role=self.role_super_admin)
         self.client.force_login(self.admin)
 
-        response = self.client.post(reverse("accounts:moderator_remove", args=[admin_role.pk]))
+        response = self.client.post(
+            reverse("accounts:moderator_remove", args=[admin_role.pk])
+        )
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(UserRole.objects.filter(pk=admin_role.pk).exists())
 
     def test_non_super_admin_cannot_open_or_post_manage_page(self):
-        services.assign_moderator(user=self.user_momo, department=self.dept_cn, granted_by=self.admin)
+        services.assign_moderator(
+            user=self.user_momo, department=self.dept_cn, granted_by=self.admin
+        )
         self.client.force_login(self.user_momo)
         url = reverse("accounts:moderator_manage")
 
         self.assertEqual(self.client.get(url).status_code, 403)
-        response = self.client.post(url, {"user": self.user_nana.pk, "department": self.dept_ce.pk})
+        response = self.client.post(
+            url, {"user": self.user_nana.pk, "department": self.dept_ce.pk}
+        )
         self.assertEqual(response.status_code, 403)
-        self.assertFalse(UserRole.objects.filter(user=self.user_nana, role=self.role_moderator).exists())
+        self.assertFalse(
+            UserRole.objects.filter(
+                user=self.user_nana, role=self.role_moderator
+            ).exists()
+        )
 
     def test_anonymous_user_redirected_to_login(self):
         response = self.client.get(reverse("accounts:moderator_manage"))
@@ -328,9 +349,10 @@ class ModeratorViewTests(ModeratorTestCase):
 
         manage_res = self.client.get(reverse("accounts:moderator_manage"))
         self.assertEqual(manage_res.status_code, 200)
+        expected_link = reverse("accounts:moderator_manage")
         self.assertContains(
             manage_res,
-            f'class="admin-menu__link is-active" href="{reverse("accounts:moderator_manage")}"',
+            f'class="admin-menu__link is-active" href="{expected_link}"',
         )
 
 
@@ -394,12 +416,13 @@ class DeleteAccountViewTests(ModeratorTestCase):
         self.assertTrue(self.admin.is_active)
 
 
-
 class DeleteAccountRateLimitViewTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
-        dept = Department.objects.create(code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering")
+        dept = Department.objects.create(
+            code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
+        )
         cls.user = User.objects.create_user(
             email="6610619999@student.tu.ac.th",
             password="correct-password",
@@ -417,7 +440,7 @@ class DeleteAccountRateLimitViewTests(TestCase):
 
     def test_repeated_wrong_passwords_trigger_429_and_block_correct_password(self):
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            response = self.client.post(self.url, {"password": "wrong-password"})
+            self.client.post(self.url, {"password": "wrong-password"})
             self.user.refresh_from_db()
             self.assertTrue(self.user.is_active)
 
@@ -433,29 +456,50 @@ class DeleteAccountRateLimitViewTests(TestCase):
         self.assertTrue(self.user.is_active)
         self.assertEqual(self.user.email, "6610619999@student.tu.ac.th")
 
+    def test_switching_ip_does_not_reset_rate_limit(self):
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            self.client.post(
+                self.url, {"password": "wrong-password"}, REMOTE_ADDR="10.0.0.1"
+            )
+
+        # session เดิมแต่เปลี่ยน IP ยังติด Rate Limit แม้ใส่รหัสผ่านถูก
+        response = self.client.post(
+            self.url, {"password": "correct-password"}, REMOTE_ADDR="10.0.0.2"
+        )
+        self.assertEqual(response.status_code, 429)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertEqual(self.user.email, "6610619999@student.tu.ac.th")
+
     def test_get_request_when_rate_limited_returns_429(self):
         from accounts import services
-        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
-            services.record_delete_account_failure(user_id=self.user.pk, client_ip="127.0.0.1")
 
-        response = self.client.get(self.url, REMOTE_ADDR="127.0.0.1")
+        for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
+            services.record_delete_account_failure(user_id=self.user.pk)
+
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 429)
 
     def test_can_retry_after_window_expires(self):
         from accounts import services
+
         for _ in range(settings.LOGIN_RATE_LIMIT_ATTEMPTS):
             self.client.post(self.url, {"password": "wrong-password"})
 
         # ยืนยันว่าติด Rate Limit (429)
         blocked_res = self.client.post(self.url, {"password": "wrong-password"})
         self.assertEqual(blocked_res.status_code, 429)
-        self.assertContains(blocked_res, "คุณใส่รหัสผ่านผิดเกินจำนวนครั้งที่กำหนด", status_code=429)
+        self.assertContains(
+            blocked_res, "คุณใส่รหัสผ่านผิดเกินจำนวนครั้งที่กำหนด", status_code=429
+        )
 
         # จำลองการพ้นช่วงเวลา Window (เคลียร์แคช)
-        services.clear_delete_account_failures(user_id=self.user.pk, client_ip="127.0.0.1")
+        services.clear_delete_account_failures(user_id=self.user.pk)
 
         # พ้นช่วงเวลาแล้ว ใส่รหัสผ่านถูกต้อง ต้องลบบัญชีและออกจากระบบได้สำเร็จ
-        success_res = self.client.post(self.url, {"password": "correct-password"}, follow=True)
+        success_res = self.client.post(
+            self.url, {"password": "correct-password"}, follow=True
+        )
         self.assertEqual(success_res.status_code, 200)
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)

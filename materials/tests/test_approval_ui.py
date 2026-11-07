@@ -10,13 +10,17 @@ from .base import ApprovalBaseTestCase
 class ApprovalStatusUITests(ApprovalBaseTestCase):
     def test_queue_shows_moderator_approval_and_admin_still_needed(self):
         document = self.create_document(doc_type=self.doc_type_exam)
-        review_document(document=document, approver=self.mod_cn, decision=Approval.Decision.APPROVED)
+        review_document(
+            document=document, approver=self.mod_cn, decision=Approval.Decision.APPROVED
+        )
         self.client.force_login(self.super_admin)
 
         response = self.client.get(reverse("materials:approval_queue"))
 
         self.assertEqual(response.status_code, 200)
-        shown = next(doc for doc in response.context["documents"] if doc.pk == document.pk)
+        shown = next(
+            doc for doc in response.context["documents"] if doc.pk == document.pk
+        )
         self.assertEqual(shown.approval_ui.approved_roles, [self.role_moderator])
         self.assertEqual(shown.approval_ui.missing_roles, [self.role_super_admin])
         self.assertTrue(shown.approval_ui.can_review)
@@ -25,7 +29,9 @@ class ApprovalStatusUITests(ApprovalBaseTestCase):
         document = self.create_document(doc_type=self.doc_type_exam)
         self.client.force_login(self.mod_cn)
 
-        response = self.client.get(reverse("materials:approval_review", args=[document.pk]))
+        response = self.client.get(
+            reverse("materials:approval_review", args=[document.pk])
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["document"].approval_ui.can_review)
@@ -38,7 +44,9 @@ class ApprovalStatusUITests(ApprovalBaseTestCase):
         document = self.create_exam_of_batch(22)
         self.client.force_login(self.mod_cn)
 
-        response = self.client.get(reverse("materials:approval_review", args=[document.pk]))
+        response = self.client.get(
+            reverse("materials:approval_review", args=[document.pk])
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["document"].approval_ui.can_review)

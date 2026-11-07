@@ -54,11 +54,21 @@ class RegisterFormTests(RegistrationTestCase):
     def test_rejects_reserved_nickname(self):
         for nickname in ("admin", "Ad-Min", "MODERATOR", "แอดมิน"):
             with self.subTest(nickname=nickname):
-                form = self.assertFieldError(self.payload(nickname=nickname), "nickname")
-                self.assertIn("ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0])
+                form = self.assertFieldError(
+                    self.payload(nickname=nickname), "nickname"
+                )
+                self.assertIn(
+                    "ชื่อเล่นนี้ถูกสงวนไว้ กรุณาใช้ชื่ออื่น", form.errors["nickname"][0]
+                )
 
     def test_blank_required_fields_show_thai_error(self):
-        for field in ("email", "nickname", "department", "password", "password_confirm"):
+        for field in (
+            "email",
+            "nickname",
+            "department",
+            "password",
+            "password_confirm",
+        ):
             with self.subTest(field=field):
                 form = self.assertFieldError(self.payload(**{field: ""}), field)
                 self.assertEqual(form.errors[field], ["กรุณากรอกข้อมูลช่องนี้"])
@@ -72,9 +82,28 @@ class RegisterFormTests(RegistrationTestCase):
             self.payload(password_confirm="Something-Else-123"), "password_confirm"
         )
 
-    def test_rejects_weak_password(self):
-        self.assertFieldError(
-            self.payload(password="12345678", password_confirm="12345678"), "password"
+    def test_rejects_common_password(self):
+        form = self.assertFieldError(
+            self.payload(password="password", password_confirm="password"),
+            "password",
+        )
+        self.assertIn("รหัสผ่านนี้ใช้บ่อยเกินไป", form.errors["password"])
+
+    def test_rejects_entirely_numeric_password(self):
+        form = self.assertFieldError(
+            self.payload(password="83920174", password_confirm="83920174"),
+            "password",
+        )
+        self.assertIn("รหัสผ่านต้องไม่เป็นตัวเลขล้วน", form.errors["password"])
+
+    def test_rejects_short_password(self):
+        form = self.assertFieldError(
+            self.payload(password="short", password_confirm="short"),
+            "password",
+        )
+        self.assertIn(
+            "รหัสผ่านสั้นเกินไป ต้องมีความยาวอย่างน้อย 8 ตัวอักษร",
+            form.errors["password"],
         )
 
     def test_rejects_password_too_similar_to_nickname(self):
@@ -86,8 +115,30 @@ class RegisterFormTests(RegistrationTestCase):
             ),
             "password",
         )
-        self.assertTrue(
-            any("คล้าย" in err or "similar" in err.lower() for err in form.errors["password"])
+        self.assertIn(
+            "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",
+            form.errors["password"],
+        )
+
+    def test_rejects_password_too_similar_to_email(self):
+        form = self.assertFieldError(
+            self.payload(
+                email="6610000001@student.tu.ac.th",
+                password="6610000001Pass!",
+                password_confirm="6610000001Pass!",
+            ),
+            "password",
+        )
+        self.assertIn(
+            "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",
+            form.errors["password"],
+        )
+
+    def test_rejects_nickname_exceeding_max_length(self):
+        form = self.assertFieldError(self.payload(nickname="A" * 51), "nickname")
+        self.assertIn(
+            "ชื่อเล่นต้องมีความยาวไม่เกิน 50 ตัวอักษร",
+            form.errors["nickname"],
         )
 
     def test_department_choices_only_include_active_departments(self):

@@ -74,24 +74,42 @@ class HomeViewTests(TestCase):
         self.assertContains(response, "รายการนี้ใช้สาธิต navigation เท่านั้น")
         self.assertNotContains(response, 'href="#"')
 
-    def test_old_web_demo_widgets_are_accessible_and_non_functional(self):
+    def test_old_web_demo_widgets_are_accessible_and_safe(self):
         response = self.client.get(reverse("accounts:home"))
 
         self.assertContains(response, 'class="retro-marquee"')
         self.assertContains(response, 'tabindex="0"')
         self.assertContains(response, 'aria-hidden="true">WELCOME TO CNTAGRAM!')
-        self.assertContains(response, "Decorative UI only")
         self.assertContains(response, "ไม่ใช่ยอดผู้เข้าชมจริง")
         self.assertContains(response, "88×31-inspired decorative badges · DEMO")
-        self.assertContains(
-            response, 'class="retro-widget music-widget compact-disclosure"'
-        )
         self.assertContains(
             response, 'class="retro-widget counter-widget compact-disclosure"'
         )
         self.assertContains(response, "Web Badge Collection")
-        self.assertNotContains(response, "<script")
-        self.assertNotContains(response, "<audio")
+
+    def test_bgm_player_renders_controls_audio_and_script(self):
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertContains(
+            response, 'class="retro-widget music-widget compact-disclosure"'
+        )
+        self.assertContains(response, '<audio id="bgm-audio"')
+        self.assertContains(response, 'id="bgm-seekbar"')
+        self.assertContains(response, 'id="bgm-play-pause"')
+        self.assertContains(response, 'id="bgm-prev"')
+        self.assertContains(response, 'id="bgm-next"')
+        self.assertContains(response, 'id="bgm-toggle-list"')
+        self.assertContains(response, 'id="bgm-tracklist"')
+        self.assertContains(response, 'src="/static/js/bgm_player.js"')
+        self.assertContains(
+            response, '<audio id="bgm-audio" preload="metadata"></audio>'
+        )
+
+    def test_bgm_player_static_assets_are_discoverable(self):
+        self.assertIsNotNone(finders.find("js/bgm_player.js"))
+        self.assertIsNotNone(finders.find("audio/tse_cyber_campus.wav"))
+        self.assertIsNotNone(finders.find("audio/midnight_study_lofi.wav"))
+        self.assertIsNotNone(finders.find("audio/final_exam_rush.wav"))
 
     def test_guest_navigation_only_shows_public_account_actions(self):
         response = self.client.get(reverse("accounts:home"))
@@ -232,7 +250,10 @@ class HomeViewTests(TestCase):
         self.assertNotContains(response, self.hero)
         self.assertContains(
             response,
-            f'<a class="retro-widget glass-module admin-stat admin-stat--amber" href="{reverse("materials:vault")}">',
+            (
+                '<a class="retro-widget glass-module admin-stat admin-stat--amber" '
+                f'href="{reverse("materials:vault")}">'
+            ),
         )
         self.assertContains(response, "ไฟล์ที่อัปโหลดทั้งหมด")
         self.assertContains(response, "ไฟล์ที่อัปโหลดรายเดือน")
@@ -263,5 +284,3 @@ class HomeViewTests(TestCase):
     def test_guest_home_runs_no_document_queries(self):
         with self.assertNumQueries(0):
             self.client.get(reverse("accounts:home"))
-
-
