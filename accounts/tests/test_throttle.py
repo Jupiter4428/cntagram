@@ -150,6 +150,11 @@ class LoginThrottleTests(ThrottleTestCase):
         blocked_res = self.post_login(self.password, REMOTE_ADDR=client_ip)
         self.assertEqual(blocked_res.status_code, 429)
 
+    def test_default_ip_rate_limit_setting_is_one_hundred(self):
+        from django.conf import settings
+
+        self.assertEqual(settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS, 100)
+
     @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=3, LOGIN_RATE_LIMIT_IP_ATTEMPTS=20)
     def test_locked_account_does_not_block_other_accounts(self):
         other_user = User.objects.create_user(
