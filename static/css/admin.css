@@ -437,6 +437,7 @@ a.admin-stat:hover { color: var(--ink); background: var(--cream); text-decoratio
 }
 
 .admin-alert--error { color: var(--danger); background: #fff; border-color: var(--danger); }
+.admin-alert--warning { background: #fff8e6; border-color: #d99b26; }
 
 .admin-form { display: grid; gap: 8px; max-width: 500px; }
 .admin-form__field { display: grid; gap: 3px; }

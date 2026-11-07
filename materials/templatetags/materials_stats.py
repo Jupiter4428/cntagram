@@ -1,4 +1,7 @@
-"""template tag ให้ app อื่นแสดงตัวเลขของ materials ได้โดยไม่ต้อง import materials (ADR 0001)"""  # noqa: E501
+"""Template tag ให้ app อื่นแสดงตัวเลขของ materials.
+
+แสดงผลได้โดยไม่ต้อง import materials (ADR 0001)
+"""
 
 from django import template
 
@@ -27,5 +30,14 @@ def my_documents(user):
 
 @register.simple_tag
 def moderator_pending(user):
-    """จำนวนไฟล์รออนุมัติของภาคที่ Moderator ดูแล ใช้กับ `{% moderator_pending request.user as pending %}`"""  # noqa: E501
+    """จำนวนไฟล์รออนุมัติของภาคที่ Moderator ดูแล.
+
+    ใช้กับ `{% moderator_pending request.user as pending %}`
+    """
     return selectors.moderator_pending_summary(user=user)
+
+
+@register.simple_tag
+def pending_documents_without_rules():
+    """สรุปเอกสาร pending ที่ไม่มีกฎอนุมัติ ใช้เตือน Super Admin บน Dashboard."""
+    return selectors.pending_documents_without_rules_summary()

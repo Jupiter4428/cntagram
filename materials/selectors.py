@@ -193,6 +193,29 @@ def get_document_for_review(*, document_id, user):
     return pending_documents_for_moderator(user=user).get(pk=document_id)
 
 
+def pending_documents_without_rules():
+    """เอกสาร pending ที่ไม่แสดงในคิวพิจารณาเพราะ doc_type ไม่มีกฎอนุมัติ.
+
+    ทำงานคู่กับ pending_documents_for_moderator
+    """
+    return Document.objects.filter(
+        status=Document.Status.PENDING, doc_type__required_roles__isnull=True
+    )
+
+
+def pending_documents_without_rules_summary():
+    """สรุปจำนวนและประเภทเอกสาร pending ที่ซ่อนอยู่เพราะยังไม่มีกฎการอนุมัติ."""
+    qs = pending_documents_without_rules()
+    count = qs.count()
+    if not count:
+        return {"count": 0, "doc_types": []}
+    doc_types = sorted(qs.values_list("doc_type__name_th", flat=True).distinct())
+    return {
+        "count": count,
+        "doc_types": doc_types,
+    }
+
+
 def uploaded_file_count() -> int:
     """จำนวนไฟล์ที่อัปโหลดเข้าระบบทั้งหมด นับทุกเวอร์ชัน (ใช้ในหน้า Dashboard ของ Super Admin)"""  # noqa: E501
     return DocumentVersion.objects.count()

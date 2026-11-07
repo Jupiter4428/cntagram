@@ -5,9 +5,11 @@ from django.utils import timezone
 from accounts.models import Role
 from catalog.models import Batch, BatchCourse
 
-from ..models import Approval, Document
+from ..models import Approval, DocType, Document
 from ..selectors import (
     moderator_pending_summary,
+    pending_documents_without_rules,
+    pending_documents_without_rules_summary,
     search_documents,
     user_documents,
 )
@@ -209,3 +211,45 @@ class ModeratorPendingSummaryTests(ApprovalBaseTestCase):
         self.assertIsNotNone(summary)
         self.assertEqual(summary["count"], 1)  # Only doc_cn_pending
         self.assertEqual(summary["department_codes"], ["CN"])
+
+
+class PendingDocumentsWithoutRulesTests(ApprovalBaseTestCase):
+    def test_summary_returns_zero_when_no_pending_documents_lack_rules(self):
+        summary = pending_documents_without_rules_summary()
+        self.assertEqual(summary["count"], 0)
+        self.assertEqual(summary["doc_types"], [])
+
+    def test_summary_counts_pending_documents_whose_doc_type_has_no_rules(self):
+        custom_type = DocType.objects.create(
+            code="custom_note", name_th="โน้ตสรุปพิเศษ", vault=DocType.Vault.LECTURE
+        )
+        doc = Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=custom_type,
+            uploader=self.uploader_cn,
+            title="Custom Doc",
+            status=Document.Status.PENDING,
+        )
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=custom_type,
+            uploader=self.uploader_cn,
+            title="Published Custom Doc",
+            status=Document.Status.PUBLISHED,
+        )
+
+        summary = pending_documents_without_rules_summary()
+        self.assertEqual(summary["count"], 1)
+        self.assertEqual(summary["doc_types"], ["โน้ตสรุปพิเศษ"])
+        self.assertEqual(list(pending_documents_without_rules()), [doc])
+
+    def test_summary_ignores_pending_documents_whose_doc_type_has_rules(self):
+        # doc_type_summary in ApprovalBaseTestCase already has approval rules
+        Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.uploader_cn,
+            title="Ruled Doc",
+            status=Document.Status.PENDING,
+        )
+        self.assertEqual(pending_documents_without_rules_summary()["count"], 0)
