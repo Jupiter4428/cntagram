@@ -32,7 +32,7 @@ class ExamPeriodAdmin(admin.ModelAdmin):
 class ExamDetailFormSet(BaseInlineFormSet):
     def clean(self):
         super().clean()
-        # หน้าเพิ่ม document ยังไม่มี pk ExamDetail.clean() จึงเช็กคลังไม่ได้ ต้องเช็กที่นี่
+        # หน้าเพิ่ม document ยังไม่มี pk ExamDetail.clean() จึงเช็กคลังไม่ได้ ต้องเช็กที่นี่  # noqa: E501
         doc_type = self.instance.doc_type if self.instance.doc_type_id else None
         has_detail = any(
             form.cleaned_data and not form.cleaned_data.get("DELETE")
@@ -70,7 +70,14 @@ class DocumentVersionInline(admin.TabularInline):
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ["title", "batch_course", "doc_type", "uploader", "status", "created_at"]
+    list_display = [
+        "title",
+        "batch_course",
+        "doc_type",
+        "uploader",
+        "status",
+        "created_at",
+    ]
     list_filter = ["status", "doc_type"]
     list_select_related = [
         "batch_course__batch__department",

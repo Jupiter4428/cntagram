@@ -18,7 +18,8 @@ class SeedCommandTests(CatalogTestCase):
         self.assertEqual(Department.objects.count(), 4)
         # รุ่นตัวอย่าง CN21-CN25 ใช้วิชาชุดเดียวกัน 4 วิชา (ไม่สร้างวิชาซ้ำต่อรุ่น)
         self.assertEqual(
-            [b.code for b in Batch.objects.all()], ["CN21", "CN22", "CN23", "CN24", "CN25"]
+            [b.code for b in Batch.objects.all()],
+            ["CN21", "CN22", "CN23", "CN24", "CN25"],
         )
         self.assertEqual(Course.objects.count(), 4)
         self.assertEqual(BatchCourse.objects.count(), 5 * 4)
