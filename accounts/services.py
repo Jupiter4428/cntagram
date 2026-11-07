@@ -49,6 +49,11 @@ class LoginAttempt:
 LOGIN_RATE_LIMIT_SALT = "accounts.login-rate-limit"
 
 
+def _login_window_index():
+    """Return the fixed login throttle window number."""
+    return int(time.time()) // settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+
+
 def _login_failure_keys(*, identifier, client_ip):
     """Build non-PII cache keys for login identity bucket and client IP bucket.
 
@@ -58,7 +63,7 @@ def _login_failure_keys(*, identifier, client_ip):
     """
     ident = (identifier or "").strip().casefold()
     ip = (client_ip or "unknown").strip()
-    window = int(time.time()) // settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+    window = _login_window_index()
     id_hash = salted_hmac(LOGIN_RATE_LIMIT_SALT, ident).hexdigest()
     ip_hash = salted_hmac(LOGIN_RATE_LIMIT_SALT, ip).hexdigest()
     return (

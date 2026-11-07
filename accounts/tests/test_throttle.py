@@ -1,5 +1,3 @@
-import time
-from unittest import mock
 from unittest.mock import patch
 
 from django.conf import settings
@@ -166,8 +164,7 @@ class LoginThrottleTests(ThrottleTestCase):
 
     def test_ip_rate_limit_resets_across_fixed_windows(self):
         client_ip = "198.51.100.10"
-        base_time = time.time()
-        with mock.patch("accounts.services.time.time", return_value=base_time):
+        with patch("accounts.services._login_window_index", return_value=100):
             for i in range(settings.LOGIN_RATE_LIMIT_IP_ATTEMPTS):
                 services.record_login_failure(
                     identifier=f"w1_{i}@student.tu.ac.th", client_ip=client_ip
@@ -178,10 +175,7 @@ class LoginThrottleTests(ThrottleTestCase):
                 )
             )
 
-        with mock.patch(
-            "accounts.services.time.time",
-            return_value=base_time + settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS + 1,
-        ):
+        with patch("accounts.services._login_window_index", return_value=101):
             self.assertFalse(
                 services.is_login_rate_limited(
                     identifier="user@student.tu.ac.th", client_ip=client_ip
@@ -233,19 +227,16 @@ class LoginThrottleTests(ThrottleTestCase):
             is_login_rate_limited(identifier=self.user.email, client_ip=client_ip)
         )
 
-    @override_settings(
-        LOGIN_RATE_LIMIT_ATTEMPTS=1,
-        LOGIN_RATE_LIMIT_WINDOW_SECONDS=1,
-    )
+    @override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=1)
     def test_rate_limit_expires_after_temporary_window(self):
         client_ip = "192.0.2.1"
-        self.post_login(self.wrong_password, REMOTE_ADDR=client_ip)
-        blocked_response = self.post_login(REMOTE_ADDR=client_ip)
-        self.assertEqual(blocked_response.status_code, 429)
+        with patch("accounts.services._login_window_index", return_value=100):
+            self.post_login(self.wrong_password, REMOTE_ADDR=client_ip)
+            blocked_response = self.post_login(REMOTE_ADDR=client_ip)
+            self.assertEqual(blocked_response.status_code, 429)
 
-        time.sleep(1.1)
-        response = self.post_login(REMOTE_ADDR=client_ip)
-
+        with patch("accounts.services._login_window_index", return_value=101):
+            response = self.post_login(REMOTE_ADDR=client_ip)
         self.assertRedirects(response, reverse("accounts:home"))
 
 
