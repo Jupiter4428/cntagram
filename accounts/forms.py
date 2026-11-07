@@ -11,13 +11,14 @@ User = get_user_model()
 
 REQUIRED_ERROR = {"required": "กรุณากรอกข้อมูลช่องนี้"}
 
+# ข้อความแจ้งเตือนของ validator ไม่ใช่รหัสผ่าน จึงใส่ nosec B105
 THAI_PASSWORD_VALIDATION_ERRORS = {
-    "password_too_short": (
+    "password_too_short": (  # nosec B105
         "รหัสผ่านสั้นเกินไป ต้องมีความยาวอย่างน้อย %(min_length)d ตัวอักษร"
     ),
-    "password_too_common": "รหัสผ่านนี้ใช้บ่อยเกินไป",
-    "password_too_similar": "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",
-    "password_entirely_numeric": "รหัสผ่านต้องไม่เป็นตัวเลขล้วน",
+    "password_too_common": "รหัสผ่านนี้ใช้บ่อยเกินไป",  # nosec B105
+    "password_too_similar": "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",  # nosec B105
+    "password_entirely_numeric": "รหัสผ่านต้องไม่เป็นตัวเลขล้วน",  # nosec B105
 }
 
 
