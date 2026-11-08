@@ -199,3 +199,28 @@ def review_document(*, document, approver, decision, reason=None):
         locked_doc.save(update_fields=["status", "updated_at"])
 
     return approval
+
+
+def report_document(*, document, reporter, reason_type, reason):
+    from django.core.exceptions import ValidationError
+    from django.db import IntegrityError, transaction
+    from .models import Document, Report
+
+    if not reporter.is_authenticated:
+        raise ValidationError("กรุณาเข้าสู่ระบบ")
+    if not reason.strip() or reason_type not in Report.Reason.values:
+        raise ValidationError("กรุณาเลือกประเภทและระบุเหตุผล")
+    try:
+        with transaction.atomic():
+            if not Document.objects.filter(
+                pk=document.pk, status=Document.Status.PUBLISHED
+            ).exists():
+                raise ValidationError("ไม่สามารถรายงานเอกสารนี้ได้")
+            return Report.objects.create(
+                document=document,
+                reporter=reporter,
+                reason_type=reason_type,
+                reason=reason.strip(),
+            )
+    except IntegrityError as exc:
+        raise ValidationError("คุณมีรายงานที่รอดำเนินการสำหรับเอกสารนี้แล้ว") from exc

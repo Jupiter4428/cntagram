@@ -38,6 +38,7 @@
       <p class="small text-secondary mt-3 mb-0" id="download-unavailable">การดาวน์โหลดจะเปิดใช้งานเมื่อระบบตรวจสอบสิทธิ์และไฟล์พร้อมให้ดาวน์โหลด</p>
     {% endif %}
   </section>
+  {% if request.user.is_authenticated %}<p><a href="{% url 'materials:report_document' document.pk %}">รายงานเอกสารนี้</a></p>{% endif %}
   <section aria-labelledby="preview-heading">
     <h2 class="h5" id="preview-heading">ตัวอย่างเอกสาร PDF</h2>
     {% url 'materials:document_preview' document.pk as preview_url %}

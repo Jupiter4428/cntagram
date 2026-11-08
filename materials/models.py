@@ -400,3 +400,40 @@ class Approval(models.Model):
 
     def __str__(self):
         return f"{self.document_id} - {self.approver_id} ({self.decision})"
+
+
+class Report(models.Model):
+    class Reason(models.TextChoices):
+        COPYRIGHT = "copyright", "ละเมิดลิขสิทธิ์"
+        PROHIBITED = "prohibited", "ข้อสอบห้ามเผยแพร่"
+        INCORRECT = "incorrect", "เนื้อหาผิด"
+        OTHER = "other", "อื่น ๆ"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "รอดำเนินการ"
+        RESOLVED = "resolved", "ดำเนินการแล้ว"
+
+    document = models.ForeignKey(
+        Document, on_delete=models.PROTECT, related_name="reports"
+    )
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="document_reports",
+    )
+    reason_type = models.CharField(max_length=20, choices=Reason.choices)
+    reason = models.TextField()
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.OPEN
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "report"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document", "reporter"],
+                condition=models.Q(status="open"),
+                name="unique_open_report_per_user_document",
+            ),
+        ]

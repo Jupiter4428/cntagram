@@ -212,3 +212,13 @@ class ReviewForm(forms.Form):
 
         cleaned_data["reason"] = reason or None
         return cleaned_data
+
+
+class ReportForm(forms.Form):
+    reason_type = forms.ChoiceField(
+        label="ประเภทรายงาน",
+        choices=__import__(
+            "materials.models", fromlist=["Report"]
+        ).Report.Reason.choices,
+    )
+    reason = forms.CharField(label="เหตุผล", max_length=2000, widget=forms.Textarea)

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}รายงานที่รอดำเนินการ{% endblock %}
+{% block content %}
+<h1>รายงานที่รอดำเนินการ</h1>
+{% for report in reports %}
+<article><h2>{{ report.document.title }}</h2>
+<p>{{ report.get_reason_type_display }} — {{ report.reason }}</p>
+<p>ส่งเมื่อ {{ report.created_at }}</p></article>
+{% empty %}<p>ไม่มีรายงานที่รอดำเนินการ</p>{% endfor %}
+{% endblock %}

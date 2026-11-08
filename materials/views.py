@@ -230,3 +230,40 @@ def approval_review(request, document_id):
         {"document": document, "form": form},
         status=status,
     )
+
+
+@require_http_methods(["GET", "POST"])
+def report_document_view(request, document_id):
+    from .forms import ReportForm
+    from .services import report_document
+
+    if not request.user.is_authenticated:
+        raise PermissionDenied
+    document = get_object_or_404(selectors.published_documents(), pk=document_id)
+    form = ReportForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            report_document(
+                document=document, reporter=request.user, **form.cleaned_data
+            )
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            messages.success(request, "ส่งรายงานเรียบร้อยแล้ว")
+            return redirect("materials:document_detail", document_id=document.pk)
+    return render(
+        request, "materials/report_document.html", {"form": form, "document": document}
+    )
+
+
+@require_GET
+def open_reports(request):
+    from portal.permissions import can_moderate_content
+
+    if not can_moderate_content(request.user):
+        raise PermissionDenied
+    return render(
+        request,
+        "materials/open_reports.html",
+        {"reports": selectors.open_reports_for_reviewer(user=request.user)},
+    )
