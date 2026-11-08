@@ -199,3 +199,31 @@ def review_document(*, document, approver, decision, reason=None):
         locked_doc.save(update_fields=["status", "updated_at"])
 
     return approval
+
+
+@transaction.atomic
+def hide_document(*, document, user, reason):
+    """ซ่อนไฟล์ที่เผยแพร่แล้วแต่มีปัญหา (US-15)
+
+    Moderator (เฉพาะภาคของตน) และ Super Admin (ทุกภาค)
+    สามารถสั่งซ่อนเอกสารที่เป็น published พร้อมบันทึกเหตุผล
+    """
+    cleaned_reason = (reason or "").strip()
+    if not cleaned_reason:
+        raise ValidationError({"reason": "กรุณาระบุเหตุผลในการซ่อนเอกสาร"})
+
+    locked_doc = (
+        Document.objects.select_for_update()
+        .select_related("batch_course__batch")
+        .get(pk=document.pk)
+    )
+
+    if not selectors.can_hide_document(document=locked_doc, user=user):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ซ่อนเอกสารนี้")
+
+    if locked_doc.status != Document.Status.PUBLISHED:
+        raise ValidationError("สามารถซ่อนได้เฉพาะเอกสารที่เผยแพร่แล้วเท่านั้น")
+
+    locked_doc.status = Document.Status.HIDDEN
+    locked_doc.save(update_fields=["status", "updated_at"])
+    return locked_doc

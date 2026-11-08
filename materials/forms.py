@@ -212,3 +212,26 @@ class ReviewForm(forms.Form):
 
         cleaned_data["reason"] = reason or None
         return cleaned_data
+
+
+class HideDocumentForm(forms.Form):
+    """ฟอร์มสำหรับ Moderator / Super Admin ซ่อนไฟล์ที่เผยแพร่แล้ว (US-15)"""
+
+    reason = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "ระบุเหตุผลในการซ่อนเอกสาร (จำเป็นต้องกรอก)",
+            }
+        ),
+        required=True,
+        label="เหตุผลในการซ่อน",
+        error_messages={"required": "กรุณาระบุเหตุผลในการซ่อนเอกสาร"},
+    )
+
+    def clean_reason(self):
+        reason = (self.cleaned_data.get("reason") or "").strip()
+        if not reason:
+            raise forms.ValidationError("กรุณาระบุเหตุผลในการซ่อนเอกสาร")
+        return reason

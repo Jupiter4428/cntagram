@@ -2,6 +2,7 @@ import shutil
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -17,6 +18,7 @@ from ..forms import SearchForm, UploadForm
 from ..models import Document, DocType
 from .base import (
     TEST_MEDIA_ROOT,
+    ApprovalBaseTestCase,
     SearchTestCase,
     UploadTestCase,
     pdf_file,
@@ -536,3 +538,148 @@ class BatchCourseWithDocumentsTests(TestCase):
         self.assertContains(
             response, "ถอดวิชา CN200 ไม่ได้ เพราะมีเอกสารอัปโหลดอยู่ในวิชานี้แล้ว"
         )
+
+
+class DocumentHideViewTests(ApprovalBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.doc_cn = self.create_document(
+            batch_course=self.bc_cn,
+            status=Document.Status.PUBLISHED,
+        )
+        self.doc_me = self.create_document(
+            batch_course=self.bc_me,
+            status=Document.Status.PUBLISHED,
+        )
+        self.hide_url_cn = reverse(
+            "materials:document_hide", kwargs={"document_id": self.doc_cn.pk}
+        )
+        self.hide_url_me = reverse(
+            "materials:document_hide", kwargs={"document_id": self.doc_me.pk}
+        )
+
+    def test_guest_is_redirected_to_login(self):
+        response = self.client.post(self.hide_url_cn, data={"reason": "ลิขสิทธิ์"})
+        self.assertRedirects(
+            response, f"{reverse('accounts:login')}?next={self.hide_url_cn}"
+        )
+
+    def test_get_method_not_allowed(self):
+        self.client.force_login(self.super_admin)
+        response = self.client.get(self.hide_url_cn)
+        self.assertEqual(response.status_code, 405)
+
+    def test_super_admin_can_hide_any_department_document(self):
+        self.client.force_login(self.super_admin)
+        response = self.client.post(
+            self.hide_url_cn,
+            data={"reason": "ละเมิดลิขสิทธิ์เนื้อหา"},
+            follow=True,
+        )
+        self.assertRedirects(response, reverse("materials:vault"))
+        self.doc_cn.refresh_from_db()
+        self.assertEqual(self.doc_cn.status, Document.Status.HIDDEN)
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn(f"ซ่อนเอกสาร '{self.doc_cn.title}' เรียบร้อยแล้ว", messages)
+
+    def test_moderator_can_hide_own_department_document(self):
+        self.client.force_login(self.mod_cn)
+        response = self.client.post(
+            self.hide_url_cn,
+            data={"reason": "ข้อสอบหลุด"},
+            follow=True,
+        )
+        self.assertRedirects(response, reverse("materials:vault"))
+        self.doc_cn.refresh_from_db()
+        self.assertEqual(self.doc_cn.status, Document.Status.HIDDEN)
+
+    def test_moderator_cannot_hide_other_department_document(self):
+        self.client.force_login(self.mod_cn)
+        response = self.client.post(
+            self.hide_url_me,
+            data={"reason": "ข้ามภาค"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.doc_me.refresh_from_db()
+        self.assertEqual(self.doc_me.status, Document.Status.PUBLISHED)
+
+    def test_normal_student_cannot_hide_document(self):
+        self.client.force_login(self.normal_student)
+        response = self.client.post(
+            self.hide_url_cn,
+            data={"reason": "นักศึกษาทั่วไปกดซ่อน"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.doc_cn.refresh_from_db()
+        self.assertEqual(self.doc_cn.status, Document.Status.PUBLISHED)
+
+    def test_hide_without_reason_redirects_with_error_message(self):
+        self.client.force_login(self.super_admin)
+        detail_url = reverse(
+            "materials:document_detail", kwargs={"document_id": self.doc_cn.pk}
+        )
+        response = self.client.post(
+            self.hide_url_cn,
+            data={"reason": "   "},
+            follow=True,
+        )
+        self.assertRedirects(response, detail_url)
+        self.doc_cn.refresh_from_db()
+        self.assertEqual(self.doc_cn.status, Document.Status.PUBLISHED)
+        self.assertContains(response, "กรุณาระบุเหตุผลในการซ่อนเอกสาร")
+
+    def test_document_detail_shows_hide_form_for_authorized_users(self):
+        detail_url_cn = reverse(
+            "materials:document_detail", kwargs={"document_id": self.doc_cn.pk}
+        )
+        # Super admin sees hide form
+        self.client.force_login(self.super_admin)
+        res = self.client.get(detail_url_cn)
+        self.assertContains(res, "ยืนยันการซ่อนเอกสาร")
+
+        # Mod CN sees hide form for CN doc
+        self.client.force_login(self.mod_cn)
+        res = self.client.get(detail_url_cn)
+        self.assertContains(res, "ยืนยันการซ่อนเอกสาร")
+
+        # Mod ME does NOT see hide form for CN doc
+        self.client.force_login(self.mod_me)
+        res = self.client.get(detail_url_cn)
+        self.assertNotContains(res, "ยืนยันการซ่อนเอกสาร")
+
+        # Normal student does NOT see hide form
+        self.client.force_login(self.normal_student)
+        res = self.client.get(detail_url_cn)
+        self.assertNotContains(res, "ยืนยันการซ่อนเอกสาร")
+
+    def test_hidden_document_returns_404_and_absent_from_vault(self):
+        self.doc_cn.status = Document.Status.HIDDEN
+        self.doc_cn.save()
+
+        self.client.force_login(self.normal_student)
+
+        # 1. Detail returns 404
+        detail_url = reverse(
+            "materials:document_detail", kwargs={"document_id": self.doc_cn.pk}
+        )
+        res_detail = self.client.get(detail_url)
+        self.assertEqual(res_detail.status_code, 404)
+
+        # 2. Preview returns 404
+        preview_url = reverse(
+            "materials:document_preview", kwargs={"document_id": self.doc_cn.pk}
+        )
+        res_preview = self.client.get(preview_url)
+        self.assertEqual(res_preview.status_code, 404)
+
+        # 3. Download returns 404
+        download_url = reverse(
+            "materials:document_download", kwargs={"document_id": self.doc_cn.pk}
+        )
+        res_download = self.client.get(download_url)
+        self.assertEqual(res_download.status_code, 404)
+
+        # 4. Vault search does not contain hidden doc
+        vault_url = reverse("materials:vault")
+        res_vault = self.client.get(vault_url, {"course_code": self.course_cn.code})
+        self.assertNotContains(res_vault, self.doc_cn.title)
