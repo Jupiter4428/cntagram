@@ -1,0 +1,143 @@
+name: FE-1 screenshot evidence
+
+on:
+  push:
+    branches:
+      - feat/frontend-retro-customizer
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DEBUG: "True"
+      SECRET_KEY: "ci-fe1-screenshot-evidence-only-not-production"
+      ALLOWED_HOSTS: "127.0.0.1,localhost"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies and Chromium
+        run: |
+          pip install -r requirements.txt
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prepare demo database
+        run: |
+          python manage.py migrate
+          python manage.py seed_catalog
+          python manage.py seed_materials
+          python manage.py seed_roles
+          python manage.py shell <<'PY'
+          from django.contrib.auth import get_user_model
+          from django.utils import timezone
+          from accounts.models import Role, UserRole
+          from catalog.models import Department
+
+          User = get_user_model()
+          dept = Department.objects.filter(code="CN").first()
+          if dept is None:
+              dept = Department.objects.create(
+                  code="CN",
+                  name_th="วิศวกรรมคอมพิวเตอร์",
+                  name_en="Computer Engineering",
+              )
+          user, _ = User.objects.get_or_create(
+              email="fe1.evidence@student.tu.ac.th",
+              defaults={
+                  "nickname": "FE1Evidence",
+                  "department": dept,
+                  "pdpa_consent_at": timezone.now(),
+              },
+          )
+          user.nickname = "FE1Evidence"
+          user.department = dept
+          user.pdpa_consent_at = user.pdpa_consent_at or timezone.now()
+          user.set_password("Evidence-Only-123!")
+          user.save()
+          role = Role.objects.get(code=Role.SUPER_ADMIN)
+          UserRole.objects.get_or_create(user=user, role=role, department=None)
+          PY
+
+      - name: Start Django server
+        run: |
+          python manage.py runserver 127.0.0.1:8000 --noreload > /tmp/fe1-server.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/login/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/fe1-server.log
+          exit 1
+
+      - name: Capture desktop and mobile evidence
+        run: |
+          mkdir -p screenshot-evidence
+          python <<'PY'
+          from playwright.sync_api import sync_playwright
+
+          sizes = {
+              "desktop": {"width": 1440, "height": 1100},
+              "mobile": {"width": 390, "height": 844},
+          }
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              for label, viewport in sizes.items():
+                  page = browser.new_page(viewport=viewport)
+
+                  page.goto("http://127.0.0.1:8000/", wait_until="networkidle")
+                  page.screenshot(
+                      path=f"screenshot-evidence/home-{label}.png",
+                      full_page=True,
+                  )
+
+                  page.goto("http://127.0.0.1:8000/login/", wait_until="networkidle")
+                  page.screenshot(
+                      path=f"screenshot-evidence/login-{label}.png",
+                      full_page=True,
+                  )
+
+                  page.locator('input[name="username"]').fill(
+                      "fe1.evidence@student.tu.ac.th"
+                  )
+                  page.locator('input[name="password"]').fill("Evidence-Only-123!")
+                  page.locator('button[type="submit"]').click()
+                  page.wait_for_load_state("networkidle")
+
+                  page.goto(
+                      "http://127.0.0.1:8000/materials/vault/",
+                      wait_until="networkidle",
+                  )
+                  page.screenshot(
+                      path=f"screenshot-evidence/vault-{label}.png",
+                      full_page=True,
+                  )
+
+                  page.goto(
+                      "http://127.0.0.1:8000/catalog/courses/",
+                      wait_until="networkidle",
+                  )
+                  page.screenshot(
+                      path=f"screenshot-evidence/catalog-{label}.png",
+                      full_page=True,
+                  )
+                  page.close()
+              browser.close()
+          PY
+
+      - name: Upload FE-1 screenshot evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: fe1-screenshot-evidence
+          path: screenshot-evidence/*.png
+          if-no-files-found: error
+          retention-days: 30
