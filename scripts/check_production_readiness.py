@@ -1,4 +1,4 @@
-﻿"""Read-only deployment readiness checks; never prints secret values.
+"""Read-only deployment readiness checks; never prints secret values.
 
 Run with: python scripts/check_production_readiness.py
 Supply the actual Render environment variables to the process.
