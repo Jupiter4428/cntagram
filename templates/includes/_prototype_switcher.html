@@ -1,0 +1,29 @@
+<!-- Floating Prototype Switcher (as specified in .claude/skills/prototype/UI.md) -->
+<nav class="prototype-switcher-bar" aria-label="สลับตัวเลือกการตกแต่งเรโทร">
+    <a href="?variant={{ prev_variant }}" id="proto-prev-btn" title="ดูรูปแบบก่อนหน้า (กดปุ่มลูกศรซ้าย ← ได้)" aria-label="ก่อนหน้า">←</a>
+    <span class="prototype-switcher-label">
+        สไตล์: <strong>{{ current_variant_label }}</strong>
+    </span>
+    <a href="?variant={{ next_variant }}" id="proto-next-btn" title="ดูรูปแบบถัดไป (กดปุ่มลูกศรขวา → ได้)" aria-label="ถัดไป">→</a>
+    <span class="prototype-switcher-hint">กด [←] / [→] เพื่อสลับได้ทันที</span>
+</nav>
+
+<script>
+(function() {
+    // Keyboard navigation: Left and Right arrows switch variants (UI.md rule)
+    document.addEventListener('keydown', function(e) {
+        // Do not intercept when typing in form inputs
+        var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement.isContentEditable) {
+            return;
+        }
+        if (e.key === 'ArrowLeft') {
+            var prevBtn = document.getElementById('proto-prev-btn');
+            if (prevBtn) prevBtn.click();
+        } else if (e.key === 'ArrowRight') {
+            var nextBtn = document.getElementById('proto-next-btn');
+            if (nextBtn) nextBtn.click();
+        }
+    });
+})();
+</script>

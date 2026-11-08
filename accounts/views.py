@@ -70,6 +70,21 @@ def home(request):
     )
     show_form = not has_voted  # A query parameter must never re-enable voting.
 
+    # UI Prototype variants (Refs .claude/skills/prototype/UI.md)
+    variant = request.GET.get("variant", "A").upper()
+    variant_labels = {
+        "A": "A (Pantip Classic Board 2002-2005)",
+        "B": "B (Pramool & RO Gamer 2004)",
+        "C": "C (Hi5 & Cyber-Y2K Diary 2006)",
+    }
+    if variant not in variant_labels:
+        variant = "A"
+
+    variants_order = ["A", "B", "C"]
+    curr_idx = variants_order.index(variant)
+    prev_variant = variants_order[(curr_idx - 1) % len(variants_order)]
+    next_variant = variants_order[(curr_idx + 1) % len(variants_order)]
+
     response = render(
         request,
         "accounts/index.html",
@@ -79,6 +94,10 @@ def home(request):
             "has_voted_poll": has_voted,
             "show_poll_form": show_form,
             "shoutbox_messages": selectors.get_shoutbox_messages(),
+            "variant": variant,
+            "current_variant_label": variant_labels[variant],
+            "prev_variant": prev_variant,
+            "next_variant": next_variant,
         },
     )
     if not has_visited:

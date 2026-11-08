@@ -34,23 +34,28 @@
             {% include "includes/_marquee.html" %}
         </header>
 
-        <div class="site-layout container-xl {% block layout_class %}{% endblock %}">
-            <main id="main-content" class="site-content" tabindex="-1">
-                {% block messages %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
-                        {% endfor %}
-                    {% endif %}
+        <div class="site-layout container-fluid {% block layout_class %}{% endblock %}">
+            <div class="row g-2">
+                <main id="main-content"
+                      class="site-content {% block content_column_class %}col-12 col-md-9 order-1 order-md-2{% endblock %}"
+                      tabindex="-1">
+                    {% block messages %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endblock %}
+                    {% block content %}{% endblock %}
+                </main>
+                {% block sidebar %}
+                    <aside class="site-sidebar {% block sidebar_column_class %}col-12 col-md-3 order-2 order-md-1{% endblock %}"
+                           aria-label="เมนูเสริม">
+                        {% include "includes/_sidebar.html" %}
+                        {% block sidebar_extra %}{% endblock %}
+                    </aside>
                 {% endblock %}
-                {% block content %}{% endblock %}
-            </main>
-            {% block sidebar %}
-                <aside class="site-sidebar" aria-label="เมนูเสริม">
-                    {% include "includes/_sidebar.html" %}
-                    {% block sidebar_extra %}{% endblock %}
-                </aside>
-            {% endblock %}
+            </div>
         </div>
 
         {% include "includes/_footer.html" %}
