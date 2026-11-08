@@ -21,7 +21,11 @@
 
 ## 1. สถาปัตยกรรมและกำหนดการสำรองข้อมูล (Backup Strategy & Schedule)
 
-ระบบ CNtagram กำหนดให้มีการสำรองข้อมูลวันละ 1 ครั้งโดยอัตโนมัติ แต่ต้องแยกตามที่เก็บข้อมูลจริง:\n\n- **PostgreSQL Database Dump**: สำรองจาก GitHub Actions ไป S3 ได้โดยตรง\n- **Protected Media Vault บน Render persistent disk**: GitHub-hosted runner และ Render Cron Job ไม่สามารถเข้าถึง disk ของ Web Service ได้ จึงห้ามนับ `tar media/` บน runner ว่าเป็น production media backup\n- Media Vault จะถือว่าผ่าน AC เมื่อสำรองจาก service ที่ถือ disk จริง หรือย้าย primary media storage ไป private object storage แล้วตั้ง replication/versioning/offsite copy
+ระบบ CNtagram กำหนดให้มีการสำรองข้อมูลวันละ 1 ครั้งโดยอัตโนมัติ แต่ต้องแยกตามที่เก็บข้อมูลจริง:
+
+- **PostgreSQL Database Dump**: สำรองจาก GitHub Actions ไป S3 ได้โดยตรง
+- **Protected Media Vault บน Render persistent disk**: GitHub-hosted runner และ Render Cron Job ไม่สามารถเข้าถึง disk ของ Web Service ได้ จึงห้ามนับ `tar media/` บน runner ว่าเป็น production media backup
+- Media Vault จะถือว่าผ่าน AC เมื่อสำรองจาก service ที่ถือ disk จริง หรือย้าย primary media storage ไป private object storage แล้วตั้ง replication/versioning/offsite copy
 
 | รายการ | รายละเอียด |
 |---|---|
@@ -62,25 +66,9 @@
       "Effect": "Allow",
       "Action": [
         "s3:PutObject",
-        "s3:PutObjectAcl",
         "s3:GetObject"
       ],
       "Resource": "arn:aws:s3:::cntagram-production-backups/cntagram/*"
-    },
-    {
-      "Sid": "AllowBucketListing",
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket"
-      ],
-      "Resource": "arn:aws:s3:::cntagram-production-backups",
-      "Condition": {
-        "StringLike": {
-          "s3:prefix": [
-            "cntagram/*"
-          ]
-        }
-      }
     }
   ]
 }
@@ -114,7 +102,17 @@ aws s3api put-bucket-lifecycle-configuration \
 
 ---
 
-## 3.3 ข้อจำกัดของ Render Persistent Disk และ Media Backup\n\nRender persistent disk เข้าถึงได้เฉพาะ service instance ที่ผูก disk อยู่เท่านั้น ดังนั้น workflow บน GitHub Actions จะสำรองได้เฉพาะฐานข้อมูลที่เชื่อมผ่าน network และไฟล์ที่มีอยู่บน runner เท่านั้น\n\n**ผลต่อ Issue #192:** การสำรอง Media Vault จะยังไม่ถือว่าผ่านจนกว่าจะมีหนึ่งในสองแนวทางต่อไปนี้:\n1. ย้าย media ไป private object storage แล้วตั้ง offsite copy/versioning/lifecycle ที่ตรวจสอบได้ หรือ\n2. เพิ่มกลไก backup ที่รันจาก Web Service/runtime ที่ถือ persistent disk และ upload archive ออกไป S3 โดยไม่เปิดไฟล์ media เป็น public URL\n\nห้ามแนบหลักฐานจาก `media/` ใน GitHub checkout แล้วอ้างว่าเป็น production media backup\n\n## 4. การทดสอบและซักซ้อมการกู้คืน (Disaster Recovery Rehearsal)
+## 3.3 ข้อจำกัดของ Render Persistent Disk และ Media Backup
+
+Render persistent disk เข้าถึงได้เฉพาะ service instance ที่ผูก disk อยู่เท่านั้น ดังนั้น workflow บน GitHub Actions จะสำรองได้เฉพาะฐานข้อมูลที่เชื่อมผ่าน network และไฟล์ที่มีอยู่บน runner เท่านั้น
+
+**ผลต่อ Issue #192:** การสำรอง Media Vault จะยังไม่ถือว่าผ่านจนกว่าจะมีหนึ่งในสองแนวทางต่อไปนี้:
+1. ย้าย media ไป private object storage แล้วตั้ง offsite copy/versioning/lifecycle ที่ตรวจสอบได้ หรือ
+2. เพิ่มกลไก backup ที่รันจาก Web Service/runtime ที่ถือ persistent disk และ upload archive ออกไป S3 โดยไม่เปิดไฟล์ media เป็น public URL
+
+ห้ามแนบหลักฐานจาก `media/` ใน GitHub checkout แล้วอ้างว่าเป็น production media backup
+
+## 4. การทดสอบและซักซ้อมการกู้คืน (Disaster Recovery Rehearsal)
 
 คำสั่ง `bash scripts/backup_restore.sh test` ใช้สำหรับทดสอบความสมบูรณ์ของกระบวนการ Backup และ Restore จริง:
 
