@@ -285,6 +285,16 @@ class HomeViewTests(TestCase):
         self.assertContains(response, reverse("catalog:batch_list"))
         self.assertContains(response, reverse("catalog:course_list"))
 
+    def test_super_admin_menu_links_to_the_approval_queue(self):
+        self.client.force_login(self.create_super_admin())
+
+        response = self.client.get(reverse("accounts:home"))
+
+        queue_url = reverse("materials:approval_queue")
+        self.assertContains(
+            response, f'<a class="admin-menu__link" href="{queue_url}">'
+        )
+
     def test_admin_home_pages_users_and_shows_each_user_in_a_popup(self):
         admin = self.create_super_admin()
         for i in range(7):
