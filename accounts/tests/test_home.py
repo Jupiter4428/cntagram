@@ -317,7 +317,12 @@ class HomeViewTests(TestCase):
         self.assertEqual(first, "000039")
         self.assertEqual(second, "000040")
 
-    def test_home_visitor_counter_is_open_and_increments_on_each_visit(self):
+    def test_get_home_visit_count_returns_current_value_without_increment(self):
+        self.assertEqual(services.get_home_visit_count(), "000038")
+        services.record_home_visit()
+        self.assertEqual(services.get_home_visit_count(), "000039")
+
+    def test_home_visitor_counter_is_open_and_increments_once_per_session(self):
         first_response = self.client.get(reverse("accounts:home"))
         second_response = self.client.get(reverse("accounts:home"))
 
@@ -330,11 +335,15 @@ class HomeViewTests(TestCase):
             "<span>3</span><span>9</span>"
         )
         self.assertContains(first_response, digits_39)
+        self.assertContains(second_response, digits_39)
+
+        new_client = self.client_class()
+        third_response = new_client.get(reverse("accounts:home"))
         digits_40 = (
             "<span>0</span><span>0</span><span>0</span><span>0</span>"
             "<span>4</span><span>0</span>"
         )
-        self.assertContains(second_response, digits_40)
+        self.assertContains(third_response, digits_40)
 
     def test_poll_services_record_vote_and_calculate_percentages(self):
         initial = services.get_weekly_poll()
@@ -416,6 +425,8 @@ class HomeViewTests(TestCase):
         data = response.json()
         self.assertTrue(data["ok"])
         self.assertTrue(data["has_voted"])
+        self.assertIn("html", data)
+        self.assertIn("poll-results", data["html"])
         self.assertEqual(data["poll"]["total"], 1)
         circuit = next(c for c in data["poll"]["choices"] if c["key"] == "circuit")
         self.assertEqual(circuit["votes"], 1)
