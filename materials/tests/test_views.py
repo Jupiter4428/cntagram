@@ -341,6 +341,8 @@ class UploadViewTests(UploadTestCase):
         for name in UploadForm.base_fields:
             self.assertContains(response, f'name="{name}"')
         self.assertNotContains(response, "<select><select")
+        self.assertContains(response, 'id="id_course_search"')
+        self.assertContains(response, 'id="id_batch_course_menu"')
 
     def test_successful_upload_saves_pending_document_and_redirects(self):
         response = self.post()

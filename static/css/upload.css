@@ -174,6 +174,116 @@
     display: none;
 }
 
+/* Combobox (retro windows style) */
+.upload-combobox-field {
+    position: relative;
+}
+
+.retro-combobox {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.retro-combobox__input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    padding-right: 28px !important;
+}
+
+.retro-combobox__toggle {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    bottom: 1px;
+    width: 22px;
+    padding: 0;
+    font-size: 11px;
+    line-height: 1;
+    color: #000000;
+    background: #d4d0c8;
+    border: none;
+    border-left: 1px solid var(--blue);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+}
+
+.retro-combobox__toggle:disabled {
+    cursor: not-allowed;
+    color: var(--muted);
+    background: #e4e0d8;
+    border-left-color: #a0a0a0;
+}
+
+.retro-combobox__toggle:active:not(:disabled) {
+    background: #b4b0a8;
+}
+
+.retro-combobox__menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    max-height: 200px;
+    margin: 1px 0 0;
+    padding: 0;
+    list-style: none;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid var(--blue);
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.retro-combobox__menu[hidden] {
+    display: none;
+}
+
+.retro-combobox__item {
+    padding: 4px 8px;
+    font-size: 13px;
+    color: #000000;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.retro-combobox__item:hover,
+.retro-combobox__item.is-active {
+    background: #707070;
+    color: #ffffff;
+}
+
+.retro-combobox__item.is-selected {
+    background: #2E6DB4;
+    color: #ffffff;
+}
+
+.retro-combobox__item.is-selected:hover,
+.retro-combobox__item.is-selected.is-active {
+    background: #1b497a;
+    color: #ffffff;
+}
+
+.retro-combobox__item--empty {
+    color: var(--muted);
+    cursor: default;
+    font-style: italic;
+    background: #f8f8f8;
+}
+
+.retro-combobox__item--empty:hover {
+    background: #f8f8f8;
+    color: var(--muted);
+}
+
 /* error */
 .upload-field__errors,
 .errorlist.upload-field__errors {
