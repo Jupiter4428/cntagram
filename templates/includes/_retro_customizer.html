@@ -290,6 +290,31 @@
         'wallpaper-y2k-grid', 'wallpaper-xp-bliss', 'wallpaper-vintage-paper'
     ];
 
+    var allowedHtmlStamps = new Set(
+        Array.prototype.map.call(stickerBtns, function(btn) {
+            return btn.getAttribute('data-stamp-type') === 'html'
+                ? btn.getAttribute('data-html')
+                : null;
+        }).filter(Boolean)
+    );
+
+    function normalizeImageUrl(rawUrl, allowStaticRelative) {
+        var value = (rawUrl || '').trim();
+        if (!value) return null;
+
+        if (allowStaticRelative && value.indexOf('/static/') === 0) {
+            return value;
+        }
+
+        try {
+            var parsed = new URL(value);
+            if (parsed.protocol !== 'https:') return null;
+            return parsed.href;
+        } catch (e) {
+            return null;
+        }
+    }
+
     function showToast(msg) {
         if (!toast) return;
         toast.textContent = msg || '✅ บันทึกสำเร็จ!';
@@ -330,12 +355,17 @@
         });
 
         if (customUrl) {
-            document.body.style.backgroundImage = 'url("' + customUrl + '")';
+            var safeWallpaperUrl = normalizeImageUrl(customUrl, false);
+            if (!safeWallpaperUrl) {
+                showToast('⚠️ อนุญาตเฉพาะลิงก์ภาพ HTTPS สำหรับพื้นหลัง');
+                return false;
+            }
+            document.body.style.backgroundImage = 'url("' + safeWallpaperUrl + '")';
             document.body.style.backgroundRepeat = 'repeat';
             document.body.style.backgroundSize = 'auto';
             activeWallpaperClass = '';
-            activeCustomWallpaperUrl = customUrl;
-            if (customWallpaperInput) customWallpaperInput.value = customUrl;
+            activeCustomWallpaperUrl = safeWallpaperUrl;
+            if (customWallpaperInput) customWallpaperInput.value = safeWallpaperUrl;
         } else {
             document.body.style.backgroundImage = '';
             document.body.style.backgroundRepeat = '';
@@ -354,6 +384,7 @@
                 btn.classList.remove('active');
             }
         });
+        return true;
     }
 
     wallpaperBtns.forEach(function(btn) {
@@ -366,8 +397,7 @@
     if (applyCustomWallpaperBtn && customWallpaperInput) {
         applyCustomWallpaperBtn.addEventListener('click', function() {
             var url = customWallpaperInput.value.trim();
-            if (url) {
-                applyWallpaper('', url);
+            if (url && applyWallpaper('', url)) {
                 showToast('🎨 ปรับใช้ภาพพื้นหลังเรียบร้อย!');
             }
         });
@@ -437,6 +467,16 @@
     });
 
     function createStamp(spec) {
+        if (!spec || (spec.type !== 'img' && spec.type !== 'html')) return null;
+
+        var safeImageUrl = null;
+        if (spec.type === 'img') {
+            safeImageUrl = normalizeImageUrl(spec.src, true);
+            if (!safeImageUrl) return null;
+        } else if (!allowedHtmlStamps.has(spec.html)) {
+            return null;
+        }
+
         var stamp = document.createElement('div');
         stamp.className = 'draggable-stamp';
         stamp.setAttribute('data-stamp-type', spec.type);
@@ -463,10 +503,10 @@
         stamp.appendChild(closeBtn);
 
         if (spec.type === 'img') {
-            stamp.setAttribute('data-src', spec.src);
+            stamp.setAttribute('data-src', safeImageUrl);
             stamp.setAttribute('data-alt', spec.alt || 'Sticker');
             var img = document.createElement('img');
-            img.src = spec.src;
+            img.src = safeImageUrl;
             img.alt = spec.alt || 'Sticker';
             img.style.maxHeight = '64px';
             img.style.imageRendering = 'pixelated';
@@ -503,16 +543,18 @@
 
     if (stampCustomGifBtn && customGifInput) {
         stampCustomGifBtn.addEventListener('click', function() {
-            var url = customGifInput.value.trim();
-            if (url) {
-                createStamp({
-                    type: 'img',
-                    src: url,
-                    alt: 'Custom User GIF'
-                });
-                showToast('👾 แปะ GIF ลงบนหน้าเว็บแล้ว! ใช้เมาส์ลากจัดตำแหน่งได้เลย');
-                customGifInput.value = '';
+            var url = normalizeImageUrl(customGifInput.value, false);
+            if (!url) {
+                showToast('⚠️ อนุญาตเฉพาะลิงก์ภาพ HTTPS สำหรับ GIF ภายนอก');
+                return;
             }
+            createStamp({
+                type: 'img',
+                src: url,
+                alt: 'Custom User GIF'
+            });
+            showToast('👾 แปะ GIF ลงบนหน้าเว็บแล้ว! ใช้เมาส์ลากจัดตำแหน่งได้เลย');
+            customGifInput.value = '';
         });
     }
 
@@ -567,7 +609,7 @@
         existing.forEach(function(s) { s.remove(); });
 
         if (Array.isArray(layout.stamps)) {
-            layout.stamps.forEach(function(spec) {
+            layout.stamps.slice(0, 100).forEach(function(spec) {
                 createStamp(spec);
             });
         }
