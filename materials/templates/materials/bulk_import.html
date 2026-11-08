@@ -1,0 +1,153 @@
+{% extends "admin_page.html" %}
+
+{% block title %}นำเข้าไฟล์เดิมจำนวนมาก (Bulk Import) | CNTAGRAM{% endblock %}
+
+{% block content %}
+{% include "includes/_admin_messages.html" %}
+
+<section class="retro-widget glass-module">
+    <div class="retro-widget__header module-heading">
+        <span class="module-heading__orb" aria-hidden="true"></span>
+        <span><small>SUPER ADMIN / DATA MIGRATION</small><h1 class="admin-title">นำเข้าไฟล์เดิมจำนวนมากด้วย CSV</h1></span>
+        <span class="tech-index">US-17</span>
+    </div>
+    <div class="retro-widget__body module-body">
+        <p class="admin-hint">
+            นำเข้าเอกสารเดิมของ CN21–CN25 จาก CSV และ ZIP ไฟล์เข้าสู่ระบบคลังเอกสาร<br>
+            <strong>คำแนะนำ:</strong> ควรเปิดโหมด <em>ทดลองรัน (Dry Run)</em> ก่อนเสมอเพื่อตรวจสอบข้อผิดพลาดโดยไม่บันทึกลงระบบจริง
+        </p>
+
+        <form method="post" enctype="multipart/form-data" class="admin-form mb-4">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label for="{{ form.csv_file.id_for_label }}" class="form-label">
+                    {{ form.csv_file.label }} <span class="text-danger">*</span>
+                </label>
+                {{ form.csv_file }}
+                {% if form.csv_file.errors %}
+                    <div class="text-danger small mt-1">{{ form.csv_file.errors|first }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.csv_file.help_text }}</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.zip_file.id_for_label }}" class="form-label">
+                    {{ form.zip_file.label }} <span class="text-danger">*</span>
+                </label>
+                {{ form.zip_file }}
+                {% if form.zip_file.errors %}
+                    <div class="text-danger small mt-1">{{ form.zip_file.errors|first }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.zip_file.help_text }}</div>
+            </div>
+
+            <div class="form-check mb-4">
+                {{ form.dry_run }}
+                <label class="form-check-label" for="{{ form.dry_run.id_for_label }}">
+                    <strong>{{ form.dry_run.label }}</strong>
+                </label>
+                <div class="form-text">{{ form.dry_run.help_text }}</div>
+            </div>
+
+            <button type="submit" class="admin-button admin-button--primary">
+                เริ่มประมวลผลนำเข้า
+            </button>
+        </form>
+
+        {% if has_run and summary %}
+            <hr class="my-4">
+            <div class="import-summary-report">
+                <h3>
+                    ผลการประมวลผล 
+                    {% if dry_run %}
+                        <span class="badge bg-warning text-dark">โหมดทดลองรัน (Dry Run - ไม่มีการบันทึกจริง)</span>
+                    {% else %}
+                        <span class="badge bg-success">โหมดนำเข้าจริง (บันทึกสำเร็จ)</span>
+                    {% endif %}
+                </h3>
+
+                <div class="row g-2 my-3">
+                    <div class="col-sm-3">
+                        <div class="p-2 border rounded text-center">
+                            <div class="text-muted small">ทั้งหมด</div>
+                            <div class="fs-4 fw-bold">{{ summary.total_rows }} แถว</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="p-2 border rounded text-center text-success">
+                            <div class="small">{% if dry_run %}ผ่านการตรวจ{% else %}นำเข้าสำเร็จ{% endif %}</div>
+                            <div class="fs-4 fw-bold">{{ summary.imported_count }} แถว</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="p-2 border rounded text-center text-warning">
+                            <div class="small">ข้าม (ไฟล์ซ้ำ)</div>
+                            <div class="fs-4 fw-bold">{{ summary.skipped_count }} แถว</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="p-2 border rounded text-center text-danger">
+                            <div class="small">ผิดพลาด</div>
+                            <div class="fs-4 fw-bold">{{ summary.failed_count }} แถว</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-table-wrap mt-3">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 80px;">แถว</th>
+                                <th scope="col" style="width: 100px;">สถานะ</th>
+                                <th scope="col">ชื่อเอกสาร / พาธไฟล์</th>
+                                <th scope="col">รายละเอียด</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in summary.results %}
+                                <tr>
+                                    <td>{{ item.row_num }}</td>
+                                    <td>
+                                        {% if item.status == "imported" %}
+                                            <span class="badge bg-success">PASS</span>
+                                        {% elif item.status == "skipped" %}
+                                            <span class="badge bg-warning text-dark">SKIP</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">FAIL</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ item.title|default:"-" }}</strong><br>
+                                        <small class="text-muted">{{ item.file_path }}</small>
+                                    </td>
+                                    <td>
+                                        {{ item.message }}
+                                        {% if item.document_id %}
+                                            <a href="{% url 'materials:document_detail' item.document_id %}" target="_blank" class="ms-2 small">
+                                                [ดูเอกสาร]
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">ไม่พบข้อมูลแถวใน CSV</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -42,4 +42,5 @@ urlpatterns = [
         views.approval_document_download,
         name="approval_download",
     ),
+    path("bulk-import/", views.bulk_import, name="bulk_import"),
 ]
