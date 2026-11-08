@@ -560,4 +560,3 @@ def bulk_import_documents_from_csv(
             )
 
     return summary
-
