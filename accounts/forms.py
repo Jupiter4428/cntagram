@@ -11,9 +11,19 @@ User = get_user_model()
 
 REQUIRED_ERROR = {"required": "กรุณากรอกข้อมูลช่องนี้"}
 
+# ข้อความแจ้งเตือนของ validator ไม่ใช่รหัสผ่าน จึงใส่ nosec B105
+THAI_PASSWORD_VALIDATION_ERRORS = {
+    "password_too_short": (  # nosec B105
+        "รหัสผ่านสั้นเกินไป ต้องมีความยาวอย่างน้อย %(min_length)d ตัวอักษร"
+    ),
+    "password_too_common": "รหัสผ่านนี้ใช้บ่อยเกินไป",  # nosec B105
+    "password_too_similar": "รหัสผ่านคล้ายกับอีเมลหรือชื่อเล่นมากเกินไป",  # nosec B105
+    "password_entirely_numeric": "รหัสผ่านต้องไม่เป็นตัวเลขล้วน",  # nosec B105
+}
+
 
 class LoginForm(AuthenticationForm):
-    """Authenticate against the custom email-based user model."""
+    """Validate login fields; authentication happens in services.attempt_login."""
 
     username = forms.EmailField(
         label="Student email",
@@ -33,26 +43,17 @@ class LoginForm(AuthenticationForm):
             attrs={"autocomplete": "current-password", "class": "form-control"}
         ),
     )
+    next = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_username(self):
         """Match the normalization used when user accounts are created."""
         return self.cleaned_data["username"].strip().lower()
 
-    @property
-    def submitted_username(self):
-        """Raw username as submitted (usable before validation, e.g. throttling)."""
-        return self.data.get("username", "") if self.is_bound else ""
-
-    @property
-    def has_credentials(self):
-        """Whether both username and password were actually submitted."""
-        return bool(self.submitted_username and self.data.get("password"))
-
-    @property
-    def next_url(self):
-        """Untrusted `next` target: submitted value when bound, else initial."""
-        source = self.data if self.is_bound else self.initial
-        return source.get("next", "")
+    def clean(self):
+        """Validate fields without authenticating here; service layer handles
+        authentication.
+        """
+        return self.cleaned_data
 
 
 class RegisterForm(forms.ModelForm):
@@ -123,7 +124,10 @@ class RegisterForm(forms.ModelForm):
                 **REQUIRED_ERROR,
                 "invalid": "รูปแบบอีเมลไม่ถูกต้อง",
             },
-            "nickname": REQUIRED_ERROR,
+            "nickname": {
+                **REQUIRED_ERROR,
+                "max_length": "ชื่อเล่นต้องมีความยาวไม่เกิน %(limit_value)d ตัวอักษร",
+            },
             "department": {
                 **REQUIRED_ERROR,
                 "invalid_choice": "กรุณาเลือกภาควิชาจากรายการ",
@@ -157,7 +161,13 @@ class RegisterForm(forms.ModelForm):
             try:
                 validate_password(password, user=candidate)
             except ValidationError as exc:
-                self.add_error("password", exc)
+                for err in exc.error_list:
+                    template = THAI_PASSWORD_VALIDATION_ERRORS.get(err.code)
+                    if template:
+                        err = ValidationError(
+                            template, code=err.code, params=err.params
+                        )
+                    self.add_error("password", err)
         return cleaned_data
 
     def full_clean(self):
@@ -189,7 +199,10 @@ class ModeratorAssignmentForm(forms.Form):
 
 
 class DeleteAccountForm(forms.Form):
-    """ยืนยันรหัสผ่านก่อนลบบัญชี (US-13) การตรวจรหัสผ่านอยู่ใน services.delete_own_account"""
+    """ยืนยันรหัสผ่านก่อนลบบัญชี (US-13)
+
+    การตรวจรหัสผ่านอยู่ใน services.delete_own_account
+    """
 
     password = forms.CharField(
         label="รหัสผ่านปัจจุบัน",
@@ -199,3 +212,21 @@ class DeleteAccountForm(forms.Form):
         ),
         error_messages=REQUIRED_ERROR,
     )
+
+
+class PollVoteForm(forms.Form):
+    """Validate the weekly poll option before any vote is recorded."""
+
+    choice = forms.ChoiceField(
+        choices=(
+            ("math", "Engineering Math / Calculus"),
+            ("dsa", "Data Structures & Algorithms"),
+            ("circuit", "Circuit Analysis / Physics"),
+        )
+    )
+
+
+class ShoutboxForm(forms.Form):
+    """Validate a shoutbox post without silently truncating messages."""
+
+    message = forms.CharField(max_length=200, strip=True)

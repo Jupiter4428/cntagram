@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from catalog.models import Batch, Course, Department
 
-from .models import Role, User, UserCounter, UserRole
+from .models import PollVote, Role, ShoutboxMessage, User, UserCounter, UserRole
 
 
 def moderator_list():
@@ -45,7 +45,15 @@ def _role_counts():
     for role in roles:
         percent = round(role.count * 100 / total)
         end = offset + percent
-        rows.append({"label": role.name_th, "count": role.count, "percent": percent, "offset": offset, "end": end})
+        rows.append(
+            {
+                "label": role.name_th,
+                "count": role.count,
+                "percent": percent,
+                "offset": offset,
+                "end": end,
+            }
+        )
         offset = end
     if rows:
         rows[-1]["end"] = 100
@@ -53,7 +61,8 @@ def _role_counts():
 
 
 def _new_user_counts(today):
-    """ผู้ใช้ใหม่วันนี้ / สัปดาห์นี้ (เริ่มจันทร์) / เดือนนี้ / ปีนี้ ใน aggregate เดียว และยอดสะสมทั้งหมด
+    """ผู้ใช้ใหม่วันนี้ / สัปดาห์นี้ (เริ่มจันทร์) / เดือนนี้ / ปีนี้
+    ใน aggregate เดียว และยอดสะสมทั้งหมด
 
     "ทั้งหมด" = ยอดสะสมผู้ใช้ที่เคยถูกสร้างจาก UserCounter ไม่ลดเมื่อลบหรือปิดใช้งาน
     """
@@ -68,9 +77,14 @@ def _new_user_counts(today):
         "year": today.replace(month=1, day=1),
     }
     counts = User.objects.aggregate(
-        **{key: Count("pk", filter=Q(created_at__gte=since(day))) for key, day in starts.items()},
+        **{
+            key: Count("pk", filter=Q(created_at__gte=since(day)))
+            for key, day in starts.items()
+        },
     )
-    counts["all"] = UserCounter.objects.get(pk=1).total  # แถว pk=1 สร้างใน migration 0004
+    counts["all"] = UserCounter.objects.get(
+        pk=1
+    ).total  # แถว pk=1 สร้างใน migration 0004
     return counts
 
 
@@ -80,7 +94,8 @@ USERS_PER_PAGE = 7
 def _users_page(page):
     """ผู้ใช้ใหม่สุดก่อน หน้าละ 7 คน พร้อม role และจำนวนเอกสารที่อัปโหลด
 
-    นับเอกสารผ่าน reverse relation `documents` (Document.uploader) จึงไม่ต้อง import materials (ADR 0001)
+    นับเอกสารผ่าน reverse relation `documents` (Document.uploader)
+    จึงไม่ต้อง import materials (ADR 0001)
     """
     users = (
         User.objects.select_related("department")
@@ -89,9 +104,12 @@ def _users_page(page):
         .order_by("-created_at", "-pk")
     )
     users_page = Paginator(users, USERS_PER_PAGE).get_page(page)
-    # template เรียกเมธอดที่มีอาร์กิวเมนต์ไม่ได้ จึงเตรียมเลขหน้า (1 2 3 4 5 6 … 20) ไว้ให้
+    # template เรียกเมธอดที่มีอาร์กิวเมนต์ไม่ได้
+    # จึงเตรียมเลขหน้า (1 2 3 4 5 6 … 20) ไว้ให้
     users_page.elided_range = list(
-        users_page.paginator.get_elided_page_range(users_page.number, on_each_side=5, on_ends=1)
+        users_page.paginator.get_elided_page_range(
+            users_page.number, on_each_side=5, on_ends=1
+        )
     )
     return users_page
 
@@ -101,7 +119,9 @@ def admin_dashboard(*, today=None, page=1):
     new_users = _new_user_counts(today or timezone.localdate())
     return {
         "totals": {
-            "users": new_users["all"],  # ยอดสะสมเดียวกับกล่องผู้ใช้ใหม่ ไม่ต้อง query ซ้ำ
+            "users": new_users[
+                "all"
+            ],  # ยอดสะสมเดียวกับกล่องผู้ใช้ใหม่ ไม่ต้อง query ซ้ำ
             "departments": Department.objects.filter(is_active=True).count(),
             "batches": Batch.objects.count(),
             "courses": Course.objects.count(),
@@ -116,3 +136,64 @@ def admin_dashboard(*, today=None, page=1):
             )
         ),
     }
+
+
+POLL_QUESTION = "วิชาไหนโหดสุดเทอมนี้"
+POLL_CHOICES = (
+    ("math", "Engineering Math / Calculus"),
+    ("dsa", "Data Structures & Algorithms"),
+    ("circuit", "Circuit Analysis / Physics"),
+)
+
+
+def get_weekly_poll():
+    """Return durable poll totals and percentages."""
+    vote_counts = dict(
+        PollVote.objects.values("choice")
+        .annotate(n=Count("pk"))
+        .values_list("choice", "n")
+    )
+    total_votes = sum(vote_counts.values())
+    choices = []
+    for key, label in POLL_CHOICES:
+        votes = vote_counts.get(key, 0)
+        choices.append(
+            {
+                "key": key,
+                "label": label,
+                "votes": votes,
+                "percent": round(votes * 100 / total_votes) if total_votes else 0,
+            }
+        )
+    return {"question": POLL_QUESTION, "total": total_votes, "choices": choices}
+
+
+SHOUTBOX_MAX_MESSAGES = 30
+DEFAULT_SHOUTBOX_MESSAGES = (
+    {"author": "[CN21] พี่บอย", "text": "น้องๆ อย่าลืมทวนวงจรไฟฟ้านะ"},
+    {"author": "[CN23] น้ำหวาน", "text": "ขอบคุณสำหรับชีทแคลคูลัสค่า!"},
+    {"author": "[ME22] ก้อง", "text": "ใครมีแนวข้อสอบ Thermo ฝากอัปหน่อย"},
+    {"author": "[CE24] เต้ย", "text": "สู้ๆ กับมิดเทอมทุกคนครับ"},
+)
+
+
+def get_shoutbox_messages():
+    """Return the newest 30 persisted messages, or demo content when empty."""
+    messages = list(
+        ShoutboxMessage.objects.select_related("user__department").order_by(
+            "-created_at", "-pk"
+        )[:SHOUTBOX_MAX_MESSAGES]
+    )
+    if not messages:
+        return list(DEFAULT_SHOUTBOX_MESSAGES)
+    messages.reverse()
+    return [
+        {
+            "author": (
+                f"[{msg.user.department.code if msg.user.department else 'Member'}] "
+                f"{msg.user.nickname}"
+            ),
+            "text": msg.text,
+        }
+        for msg in messages
+    ]

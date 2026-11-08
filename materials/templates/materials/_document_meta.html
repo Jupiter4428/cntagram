@@ -6,6 +6,10 @@
   <dt class="col-sm-3">ประเภท</dt><dd class="col-sm-9">{{ document.doc_type.name_th }}</dd>
   <dt class="col-sm-3">ผู้อัปโหลด</dt><dd class="col-sm-9">{{ document.uploader.nickname }}</dd>
 </dl>
+{% elif layout == "table_cells" %}
+<td><strong>{{ document.batch_course.course.code }}</strong> — {{ document.batch_course.course.display_name }} ({{ document.batch_course.batch.code }})</td>
+<td>{{ document.doc_type.name_th }}</td>
+<td>{{ document.uploader.nickname }}</td>
 {% else %}
 <ul class="list-unstyled small text-secondary mb-0 dv-meta">
   <li><strong>วิชา:</strong> {{ document.batch_course.course.code }} — {{ document.batch_course.course.display_name }}</li>

@@ -143,7 +143,7 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 - [ ] มี Automated Tests ประกอบโค้ดใหม่ทุกชิ้น (โดยเฉพาะ service และกฎสิทธิ์) และรันผ่าน **100%** (**No Tests, No Merge**)
 - [ ] ตั้งแต่ Sprint 2: coverage รวม**ไม่ต่ำกว่า 80%** (`coverage report -m --fail-under=80` ผ่าน)
 - [ ] เปิด PR ผ่าน Peer Code Review และได้ **Approve อย่างน้อย 1 คน** (ผู้ตรวจอ่านเทสต์ด้วย ไม่ใช่แค่โค้ด)
-- [ ] Merge เข้า `develop` แล้ว ไม่มี merge conflict และไม่ทำให้ migration พัง
+- [ ] Merge เข้า `main` แล้ว ไม่มี merge conflict และไม่ทำให้ migration พัง
 - [ ] **View บาง:** business logic อยู่ใน `services.py` การอ่านข้อมูลอยู่ใน `selectors.py` ไม่มี Fat View และไม่มี side-effect ภายนอกใน `Model.save()`
 - [ ] **ไม่มี N+1 query** และ**ไม่มี circular import** (ทิศทาง dependency ตาม [ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md))
 - [ ] ผ่าน security พื้นฐาน (CSRF, escape output, ตรวจสิทธิ์และความเป็นเจ้าของฝั่ง server)
@@ -185,7 +185,7 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 - [ ] ใส่ค่า **Story Points** และ **Track** ครบทุก issue บน Project
 - [ ] ปักหมุด Sprint Goal ไว้ใน README/คำอธิบายของ GitHub Project
 - [ ] มอบหมาย Assignee ของงานชิ้นแรกที่จะเริ่ม
-- [ ] ตรวจ Branch Protection ของ `main` และ `develop` ยังเปิดอยู่ (ดู [Branch Strategy](#branch-strategy))
+- [ ] ตรวจ Branch Protection ของ `main` ยังเปิดอยู่ (ดู [Branch Strategy](#branch-strategy))
 
 ---
 
@@ -231,8 +231,8 @@ Story จะถูกดึงเข้า Sprint ได้ต่อเมื่
 - เลือกการ์ดบนสุดในคอลัมน์ **Todo** ที่ช่วยให้ถึง Sprint Goal
 - Assign ตัวเอง แล้วย้ายเป็น **In Progress**
 
-### 2. สร้าง Branch จาก `develop`
-**ทุกคนสร้าง branch ใหม่ทุกครั้งที่เริ่มงาน ห้ามทำงานตรงบน `develop` หรือ `main` และห้ามใช้ branch ร่วมกับคนอื่น**
+### 2. สร้าง Branch จาก `main`
+**ทุกคนสร้าง branch ใหม่ทุกครั้งที่เริ่มงาน ห้ามทำงานตรงบน `main` และห้ามใช้ branch ร่วมกับคนอื่น**
 
 ตั้งชื่อตาม **เลข issue** เพื่อให้สืบย้อนกลับได้:
 ```
@@ -244,8 +244,8 @@ docs/issue-<เลข>-<ชื่อสั้น>        เช่น docs/issue
 hotfix/<ชื่อสั้น>                   เช่น hotfix/prod-crash (แตกจาก main)
 ```
 ```bash
-git switch develop
-git pull origin develop
+git switch main
+git pull origin main
 git switch -c feature/issue-29-upload-sheet
 ```
 > Branch ที่เปิดไปแล้วด้วยชื่อแบบเดิม (`feat/US-X-...`) ใช้ต่อจน merge ได้ ไม่ต้องเปลี่ยนชื่อ
@@ -253,20 +253,20 @@ git switch -c feature/issue-29-upload-sheet
 ### 3. พัฒนาและ Commit
 - Commit บ่อยๆ เป็นก้อนเล็กที่มีความหมาย (1 commit = 1 เรื่อง) ตาม [Commit Message Convention](#commit-message-convention)
 - ดู `git diff --staged` และรัน `python manage.py test` ก่อน commit ทุกครั้ง
-- Pull `develop` เข้า branch ตัวเองบ่อยๆ อย่ารอรวมโค้ดวันสุดท้าย
+- Pull `main` เข้า branch ตัวเองบ่อยๆ อย่ารอรวมโค้ดวันสุดท้าย
 
 ### 4. Push และเปิด Pull Request
 ```bash
 git push -u origin feature/issue-29-upload-sheet
 ```
-- เปิด PR เข้า `develop` (**base = develop, compare = branch ของเรา**) เขียนเนื้อหาตาม[หัวข้อที่ PR ต้องมี](#pull-request-และ-code-review) และเขียน **`Closes #29`** ทำผ่านหน้าเว็บ GitHub หรือ command line ก็ได้ (ดู[ขั้นตอน](#ขั้นตอนใน-github))
+- เปิด PR เข้า `main` (**base = main, compare = branch ของเรา**) เขียนเนื้อหาตาม[หัวข้อที่ PR ต้องมี](#pull-request-และ-code-review) และเขียน **`Closes #29`** ทำผ่านหน้าเว็บ GitHub หรือ command line ก็ได้ (ดู[ขั้นตอน](#ขั้นตอนใน-github))
 - ย้ายการ์ดเป็น **In Review**
 - PR เล็ก รีวิวง่าย (ถ้าเกิน ~400–500 บรรทัด ให้พิจารณาแตก story)
 
 #### Story ที่มีทั้งงาน Backend และ Frontend
 issue ส่วนใหญ่มีทั้งงาน Frontend และ Backend ถ้างานยังไม่เสร็จทั้งสองฝั่ง ให้แยกเปิด PR เป็นฝั่ง Frontend กับ Backend ไม่ต้องรอให้เสร็จพร้อมกัน ฝั่งไหนเสร็จก่อนเปิด PR ก่อนได้เลย เหตุผลคือ PR ของแต่ละฝั่งเล็กลงและรีวิวง่ายขึ้น เพราะผู้ตรวจดู logic ฝั่ง server กับหน้าตาฝั่ง UI แยกกันได้ และฝั่งที่เสร็จแล้วไม่ต้องค้าง branch ไว้รออีกฝั่ง
 - **Backend เปิด PR ก่อน** (เพราะเป็นตัวกำหนด view/URL ที่ฝั่ง Frontend ใช้) เขียน **`Refs #29`** ไม่ใช่ `Closes` เพื่อให้ issue ยังเปิดอยู่ template ที่ใส่มาเป็นแค่โครงพื้นฐานให้ view และ test ทำงานได้
-- **Frontend แตก branch ของตัวเองจาก `develop` หลัง PR ของ Backend merge แล้ว** (ไม่ push ต่อบน branch ของคนอื่น) แล้วเปิด PR แยกโดยเขียน **`Closes #29`**
+- **Frontend แตก branch ของตัวเองจาก `main` หลัง PR ของ Backend merge แล้ว** (ไม่ push ต่อบน branch ของคนอื่น) แล้วเปิด PR แยกโดยเขียน **`Closes #29`**
 - ใน issue ทำ checklist ของแต่ละฝั่งไว้ เช่น `- [ ] Backend #39` / `- [ ] Frontend #<เลข PR>` ทุกคนจะได้เห็นว่ายังเหลืออะไร
 - Story ยังไม่ **Done** จนกว่า PR ของทั้งสองฝั่งจะ merge ครบ (การ์ดอยู่ **In Review** / **In Progress** ไปก่อน)
 - ถ้า story เล็ก (เช่น เพิ่มฟิลด์เดียวแล้วแสดงบนหน้า) หรือคนเดียวทำทั้งสองฝั่งแล้วเสร็จในวันสองวัน รวมเป็น PR เดียวใส่ `Closes #29` ได้
@@ -277,12 +277,11 @@ issue ส่วนใหญ่มีทั้งงาน Frontend และ Bac
 
 ### 6. Merge
 - ใช้ **Squash and Merge** หรือ **Merge commit** ตามที่ทีมตกลง แล้วลบ branch
-- `Closes #N` จะปิด issue อัตโนมัติเพราะ default branch คือ `develop` ตรวจว่าการ์ดย้ายไป **Done** จริง
+- `Closes #N` จะปิด issue อัตโนมัติเพราะ default branch คือ `main` ตรวจว่าการ์ดย้ายไป **Done** จริง
 - ทุกคนรัน [Sync](#ทุกครั้งที่-pull-โค้ดใหม่-sync-ก่อนเริ่มงาน) หลังมีคน merge
 
 ### 7. ปิด Sprint
-- Demo จาก `develop` ที่ merge แล้วเท่านั้น (ไม่ demo จากเครื่องส่วนตัว)
-- หลัง Sprint Review เปิด PR `develop` → `main` เพื่อปล่อย Increment ของ Sprint นั้น
+- Demo จาก `main` ที่ merge แล้วเท่านั้น (ไม่ demo จากเครื่องส่วนตัว)
 
 ---
 
@@ -315,7 +314,7 @@ issue ส่วนใหญ่มีทั้งงาน Frontend และ Bac
 | **Sprint Retrospective** | **HOW** — ทำงานร่วมกันอย่างไร (Process & People) | ทีม Scrum เท่านั้น |
 
 ### Sprint Review
-- ✓ **Live Demo** บนเบราว์เซอร์ตามขั้นตอนของ User Story จากโค้ดที่ merge เข้า `develop` แล้ว
+- ✓ **Live Demo** บนเบราว์เซอร์ตามขั้นตอนของ User Story จากโค้ดที่ merge เข้า `main` แล้ว
 - ✓ ตรวจกับ PO ว่าแต่ละ story ผ่าน AC และ DoD ครบ
 - ✓ ปรับลำดับ Product Backlog ตามสิ่งที่เรียนรู้ (*Inspect & Adapt*) และอัปเดต [`_docs/requirements.md`](./_docs/requirements.md)
 - ✗ เปิดสไลด์อธิบายโค้ดแทนการใช้งานจริง / demo จากเครื่องตัวเองที่ยังไม่ merge / อ้างว่าเสร็จทั้งที่ไม่ผ่าน DoD
@@ -387,7 +386,7 @@ git rebase -i --autosquash <hash>~1   # editor เปิดขึ้นมา �
 ถ้าแก้ไฟล์เพิ่มหลัง `git add` ไฟล์นั้นจะอยู่ทั้งใน Staging (เวอร์ชันเก่า) และ Modified (เวอร์ชันใหม่) ต้อง `git add` ซ้ำก่อน commit ไม่งั้นส่วนที่แก้ทีหลังจะไม่ถูกรวม
 
 ### `fetch` vs `pull`
-- `git fetch` ดึงประวัติล่าสุดมาไว้ที่ `origin/develop` โดยไม่แตะไฟล์ของเรา (ใช้ `git diff develop origin/develop` ดูก่อน merge ได้)
+- `git fetch` ดึงประวัติล่าสุดมาไว้ที่ `origin/main` โดยไม่แตะไฟล์ของเรา (ใช้ `git diff main origin/main` ดูก่อน merge ได้)
 - `git pull` = `fetch` + `merge`
 
 ### แก้ Merge Conflict
@@ -497,7 +496,7 @@ Closes #N
 - ถ้าจำเป็นต้องใช้ลิงก์รูปจาก repository ให้ชี้ไปที่ commit SHA ที่มีรูปจริง ไม่ใช่ branch ที่อาจถูกลบหลัง Merge
 - แนบ screenshot ถ้าแก้ UI / แสดง Before–After ถ้าเป็น refactor
 - รัน automated tests ให้ผ่านทั้งหมด **ก่อน** ขอ review
-- merge/rebase `develop` ล่าสุดเข้า branch ตัวเองก่อนเปิด PR
+- merge/rebase `main` ล่าสุดเข้า branch ตัวเองก่อนเปิด PR
 - PR เล็ก รีวิวได้ในรอบเดียว
 
 ### หน้าที่ของผู้ตรวจ (Reviewer)
@@ -510,7 +509,7 @@ Closes #N
 ### ขั้นตอนใน GitHub
 **ผ่านหน้าเว็บ**
 
-**Author:** push branch → **Compare & pull request** → base = `develop` → เขียนเนื้อหาตามหัวข้อด้านบน → **Create pull request** → ย้ายการ์ดเป็น **In Review**
+**Author:** push branch → **Compare & pull request** → base = `main` → เขียนเนื้อหาตามหัวข้อด้านบน → **Create pull request** → ย้ายการ์ดเป็น **In Review**
 **Reviewer:** แท็บ **Files changed** อ่าน diff → **Submit review** → **Approve** หรือ **Request changes**
 เมื่อ approve ครบ กด **Merge pull request** แล้วลบ branch
 
@@ -519,14 +518,14 @@ Closes #N
 Author: เซฟเนื้อหา PR ตามหัวข้อด้านบนเป็นไฟล์ เช่น `pr-body.md` (ไฟล์ชั่วคราว ไม่ต้อง commit) แล้วรัน
 ```bash
 git push -u origin feature/issue-29-upload-sheet
-gh pr create --base develop --title "feat: upload sheet (US-5)" --body-file pr-body.md
+gh pr create --base main --title "feat: upload sheet (US-5)" --body-file pr-body.md
 gh pr view --web                 # เปิด PR ที่เพิ่งสร้างในเบราว์เซอร์ (ถ้าต้องการ)
 ```
 > ไม่ใส่ `--title` / `--body-file` ก็ได้ `gh pr create` จะถามทีละข้อและเปิด editor ให้เขียนเนื้อหา
 
 Reviewer:
 ```bash
-gh pr list --base develop         # ดู PR ที่รอ review
+gh pr list --base main         # ดู PR ที่รอ review
 gh pr checkout 42                 # ดึง branch ของ PR #42 มารันเทสในเครื่อง
 gh pr diff 42                     # อ่าน diff
 gh pr review 42 --approve
@@ -941,9 +940,9 @@ omit =
 pip install black flake8 bandit
 black .                                        # จัดรูปแบบโค้ดให้ (ใน CI ใช้ black --check --diff .)
 flake8 .                                       # PEP 8, import/ตัวแปรที่ไม่ใช้ (F401, F841), บรรทัดยาว (E501)
-bandit -r . -x "*/tests/*,*/migrations/*"      # hardcoded secret (B105), random กับ token (B311), eval/exec
+bandit -c bandit.yaml -r .                         # hardcoded secret (B105), random กับ token (B311), eval/exec
 ```
-ตั้งค่าใน `.flake8` ที่ root (เพิ่มพร้อม PR ของ TD-8)
+ตั้งค่าใน `pyproject.toml`, `.flake8` และ `bandit.yaml` ที่ root (เพิ่มพร้อม PR ของ TD-8 #141)
 ```ini
 [flake8]
 max-line-length = 88
@@ -952,7 +951,7 @@ exclude = .git, __pycache__, */migrations/*, venv, .venv
 ```
 - commit ที่จัด format อย่างเดียวใช้ type `style:` แยกจาก commit ที่แก้ logic
 - **ห้ามใช้ `# nosec`** ซ่อนสิ่งที่ Bandit เจอ ให้แก้ที่ต้นเหตุ: อ่าน secret จาก environment (`os.environ`), สร้าง token ด้วยโมดูล `secrets` ไม่ใช่ `random`
-- **CI (GitHub Actions)** อยู่ที่ `.github/workflows/ci.yml` รันทุก PR เข้า `develop`/`main` และทุก push เข้า `develop`: TD-1 รัน `manage.py check` + `makemigrations --check` + เทสต์ + coverage และ Sprint 3 เพิ่มด่าน static analysis (TD-8) เรียงตามด่าน `black --check` → `flake8` → `bandit` → `manage.py check` → `makemigrations --check --dry-run` → `coverage run manage.py test` + `coverage report -m --fail-under=80` ด่านไหนตก PR เป็นสีแดง ใช้ `actions/setup-python` กับ `cache: "pip"` เพื่อไม่ต้องดาวน์โหลด dependency ใหม่ทุกรอบ
+- **CI (GitHub Actions)** อยู่ที่ `.github/workflows/ci.yml` รันทุก PR และทุก push เข้า `main`: TD-1 รัน `manage.py check` + `makemigrations --check` + เทสต์ + coverage และ Sprint 3 เพิ่มด่าน static analysis (TD-8) เรียงตามด่าน `black --check` → `flake8` → `bandit` → `manage.py check` → `makemigrations --check --dry-run` → `coverage run manage.py test` + `coverage report -m --fail-under=80` ด่านไหนตก PR เป็นสีแดง ใช้ `actions/setup-python` กับ `cache: "pip"` เพื่อไม่ต้องดาวน์โหลด dependency ใหม่ทุกรอบ
 - **Secret ใน CI** เก็บใน Settings → Secrets and variables → Actions แล้วอ้างด้วย `${{ secrets.NAME }}` ห้ามใส่ค่าจริงใน `ci.yml` หรือไฟล์ใดใน repo
 
 ### การใช้ AI (Copilot, Cursor ฯลฯ)
@@ -977,7 +976,7 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 
 ## Checklist ก่อนเปิด PR
 
-- [ ] Pull โค้ดล่าสุดจาก `develop` และ merge/rebase เข้า branch ตัวเองแล้ว
+- [ ] Pull โค้ดล่าสุดจาก `main` และ merge/rebase เข้า branch ตัวเองแล้ว
 - [ ] รันโค้ดแล้วไม่มี error
 - [ ] เขียน automated test ประกอบ และรันผ่านทั้งหมด (`python manage.py test` แบบไม่ใส่ `--keepdb`)
 - [ ] ตั้งแต่ Sprint 2: `coverage report -m --fail-under=80` ผ่าน และแนบผลใน PR
@@ -1053,6 +1052,7 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 - `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
+  python manage.py createcachetable
   ```
 - ถ้าเครื่องคุณเคย `migrate` ก่อนมี `AUTH_USER_MODEL` จะเจอ `InconsistentMigrationHistory` กรณีนี้เท่านั้นที่ให้ลบ `db.sqlite3` (ไฟล์ในเครื่องคุณ ไม่อยู่ใน Git) แล้ว `migrate` ใหม่ได้ (ต้อง seed ใหม่ด้วย) ส่วนโฟลเดอร์ `migrations/` **ยังห้ามลบ** ตามกฎด้านบน
 
@@ -1094,10 +1094,10 @@ git clone https://github.com/Jupiter4428/cntagram.git
 cd cntagram
 ```
 
-**Repo นี้ default branch คือ `develop`** หลัง clone จะอยู่ที่ `develop` อยู่แล้ว ให้ pull ล่าสุดก่อนเริ่มงานทุกครั้ง (ห้ามทำงานหรือแตก branch จาก `main`):
+**Repo นี้ default branch คือ `main`** หลัง clone จะอยู่ที่ `main` อยู่แล้ว ให้ pull ล่าสุดก่อนเริ่มงานทุกครั้ง (ห้ามทำงานตรงบน `main` ให้แตก branch ใหม่เสมอ):
 ```bash
-git switch develop
-git pull origin develop
+git switch main
+git pull origin main
 ```
 
 #### 2. สร้างและเปิดใช้งาน Virtual Environment
@@ -1131,7 +1131,9 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 #### 5. Migrate ฐานข้อมูล
 ```bash
 python manage.py migrate
+python manage.py createcachetable
 ```
+> **หมายเหตุ:** `createcachetable` ใช้สร้างตาราง cache ในฐานข้อมูลสำหรับเก็บข้อมูล rate limit (ทำงานร่วมกับ `DatabaseCache` เพื่อแชร์สถานะข้าม worker)
 
 > ⚠️ **Custom User Model:** โปรเจคใช้ `accounts.User` และตั้ง `AUTH_USER_MODEL = 'accounts.User'` ไว้แล้ว **ห้ามแก้หรือลบบรรทัดนี้** การเปลี่ยนย้อนหลังทำให้ฐานข้อมูลพัง (`InconsistentMigrationHistory`) ดูรายละเอียดที่ [Database และ Models](#database-และ-models)
 
@@ -1165,12 +1167,12 @@ Django สร้างฐานข้อมูลทดสอบแยกให�
 ```bash
 git status
 git fetch origin
-git pull origin develop
+git pull origin main
 pip install -r requirements.txt
 python manage.py migrate
 ```
 
-หลังมีคน merge PR เข้า `develop` ทุกคนควรรันชุดนี้ใหม่ทันที เพื่อไม่ให้แก้ไฟล์บนโค้ดเก่าแล้วเกิด conflict ตอนท้าย
+หลังมีคน merge PR เข้า `main` ทุกคนควรรันชุดนี้ใหม่ทันที เพื่อไม่ให้แก้ไฟล์บนโค้ดเก่าแล้วเกิด conflict ตอนท้าย
 
 ### Project Structure
 ```
@@ -1217,15 +1219,13 @@ static/
 ### Branch Strategy
 | Branch | ใช้ทำอะไร | แตกจาก → merge เข้า |
 |---|---|---|
-| `main` | โค้ดที่ผ่าน Sprint Review แล้ว (production) | — |
-| `develop` | โค้ดล่าสุดของทีม (default branch) | — |
-| `feature/issue-<เลข>-<ชื่อ>` | User Story | `develop` → `develop` |
-| `refactor/issue-<เลข>-<ชื่อ>` | Tech Debt / Refactoring | `develop` → `develop` |
-| `bugfix/issue-<เลข>-<ชื่อ>` | แก้บั๊กที่ไม่เร่งด่วน | `develop` → `develop` |
-| `spike/issue-<เลข>-<ชื่อ>` | งานสำรวจ/ออกแบบ | `develop` → `develop` |
-| `docs/issue-<เลข>-<ชื่อ>` | แก้เอกสารอย่างเดียว | `develop` → `develop` |
-| `hotfix/<ชื่อ>` | แก้บั๊กด่วนบน production | `main` → `main` และ `develop` |
+| `main` | โค้ดล่าสุดของทีม (default branch, production) | — |
+| `feature/issue-<เลข>-<ชื่อ>` | User Story | `main` → `main` |
+| `refactor/issue-<เลข>-<ชื่อ>` | Tech Debt / Refactoring | `main` → `main` |
+| `bugfix/issue-<เลข>-<ชื่อ>` | แก้บั๊กที่ไม่เร่งด่วน | `main` → `main` |
+| `spike/issue-<เลข>-<ชื่อ>` | งานสำรวจ/ออกแบบ | `main` → `main` |
+| `docs/issue-<เลข>-<ชื่อ>` | แก้เอกสารอย่างเดียว | `main` → `main` |
+| `hotfix/<ชื่อ>` | แก้บั๊กด่วนบน production | `main` → `main` |
 
 - ทุก branch ตั้งชื่อตาม **เลข issue** และเปิด PR ที่มี `Closes #<เลข>`
-- จบ Sprint: หลัง Sprint Review เปิด PR `develop` → `main`
-- **Branch Protection** (Settings → Branches) เปิดทั้ง `main` และ `develop`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch, ใช้กับ admin ด้วย และเมื่อมี CI แล้วให้เปิด **Require status checks to pass**
+- **Branch Protection** (Settings → Branches) เปิดที่ `main`: ต้องผ่าน PR, ได้ Approve อย่างน้อย 1 คน, ห้าม force push และห้ามลบ branch, ใช้กับ admin ด้วย และเมื่อมี CI แล้วให้เปิด **Require status checks to pass**

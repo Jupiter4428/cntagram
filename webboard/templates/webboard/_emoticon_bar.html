@@ -1,0 +1,67 @@
+{% load webboard_tags %}
+{% get_msn_emoticons as emoticons %}
+
+<div class="msn-palette" role="toolbar" aria-label="แถบเครื่องมือสติ๊กเกอร์และอีโมติคอน MSN">
+    <span class="msn-palette__title">สติ๊กเกอร์ MSN:</span>
+    <div class="d-inline-flex flex-wrap gap-1">
+        {% for emo in emoticons %}
+            <button type="button"
+                    class="msn-palette-btn js-insert-emoticon"
+                    data-target="{{ target_id }}"
+                    data-code="{{ emo.code }}"
+                    title="{{ emo.label }} {{ emo.code }}">
+                {{ emo.svg|safe }}
+            </button>
+        {% endfor %}
+    </div>
+    <div class="ms-auto d-inline-flex align-items-center gap-1 mt-1 mt-sm-0">
+        <button type="button"
+                class="chrome-button chrome-button--quiet js-insert-gif-link"
+                data-target="{{ target_id }}"
+                title="แทรกรูปภาพหรือไฟล์ GIF จาก URL ภายนอก">
+            🖼️ แทรก GIF ภายนอก
+        </button>
+    </div>
+</div>
+
+<script>
+(function() {
+    function insertAtCursor(textarea, textToInsert) {
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        textarea.value = value.substring(0, start) + ' ' + textToInsert + ' ' + value.substring(end);
+        textarea.focus();
+        const nextPos = start + textToInsert.length + 2;
+        textarea.setSelectionRange(nextPos, nextPos);
+    }
+
+    document.querySelectorAll('.js-insert-emoticon').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-target');
+            const code = this.getAttribute('data-code');
+            const textarea = document.getElementById(targetId);
+            insertAtCursor(textarea, code);
+        });
+    });
+
+    document.querySelectorAll('.js-insert-gif-link').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-target');
+            const textarea = document.getElementById(targetId);
+            const url = window.prompt("กรุณาวางลิงก์รูปภาพหรือ GIF (เช่น https://example.com/image.gif):");
+            if (url && url.trim()) {
+                const cleanUrl = url.trim();
+                if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
+                    insertAtCursor(textarea, "[img]" + cleanUrl + "[/img]");
+                } else {
+                    alert("ลิงก์ต้องขึ้นต้นด้วย https:// หรือ http://");
+                }
+            }
+        });
+    });
+})();
+</script>

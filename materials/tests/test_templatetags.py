@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -10,6 +10,9 @@ from materials.models import Approval, DocType, DocTypeRequiredRole, Document
 User = get_user_model()
 
 
+@override_settings(
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+)
 class UserDashboardTemplateTagsTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -26,13 +29,19 @@ class UserDashboardTemplateTagsTests(TestCase):
         cls.bc_cn = BatchCourse.objects.create(batch=cls.batch_cn, course=cls.course)
         cls.bc_me = BatchCourse.objects.create(batch=cls.batch_me, course=cls.course)
 
-        cls.role_student, _ = Role.objects.get_or_create(code=Role.STUDENT, defaults={"name_th": "นักศึกษา"})
-        cls.role_moderator, _ = Role.objects.get_or_create(code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"})
+        cls.role_student, _ = Role.objects.get_or_create(
+            code=Role.STUDENT, defaults={"name_th": "นักศึกษา"}
+        )
+        cls.role_moderator, _ = Role.objects.get_or_create(
+            code=Role.MODERATOR, defaults={"name_th": "ผู้ดูแลเนื้อหา"}
+        )
 
         cls.doc_type_summary = DocType.objects.create(
             code="summary", name_th="ชีทสรุป", vault=DocType.Vault.LECTURE
         )
-        DocTypeRequiredRole.objects.create(doc_type=cls.doc_type_summary, role=cls.role_moderator)
+        DocTypeRequiredRole.objects.create(
+            doc_type=cls.doc_type_summary, role=cls.role_moderator
+        )
 
         cls.student = User.objects.create_user(
             email="6610000010@student.tu.ac.th",
@@ -58,9 +67,13 @@ class UserDashboardTemplateTagsTests(TestCase):
             department=cls.dept_cn,
             pdpa_consent_at=cls.now,
         )
-        UserRole.objects.create(user=cls.moderator, role=cls.role_moderator, department=cls.dept_cn)
+        UserRole.objects.create(
+            user=cls.moderator, role=cls.role_moderator, department=cls.dept_cn
+        )
 
-    def test_student_home_shows_only_own_documents_with_statuses_and_rejection_reason(self):
+    def test_student_home_shows_only_own_documents_with_statuses_and_rejection_reason(
+        self,
+    ):
         # Student's documents (pending, published, rejected, hidden)
         Document.objects.create(
             batch_course=self.bc_cn,
@@ -113,14 +126,26 @@ class UserDashboardTemplateTagsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "ไฟล์ของฉัน")
         self.assertContains(response, "CN101 Midterm Summary")
-        self.assertContains(response, '<span class="badge bg-warning text-dark">รออนุมัติ</span>', html=True)
+        self.assertContains(
+            response,
+            '<span class="badge bg-warning text-dark">รออนุมัติ</span>',
+            html=True,
+        )
         self.assertContains(response, "CN101 Final Summary")
-        self.assertContains(response, '<span class="badge bg-success">เผยแพร่แล้ว</span>', html=True)
+        self.assertContains(
+            response, '<span class="badge bg-success">เผยแพร่แล้ว</span>', html=True
+        )
         self.assertContains(response, "CN101 Lecture Slides")
-        self.assertContains(response, '<span class="badge bg-danger">ถูกปฏิเสธ</span>', html=True)
-        self.assertContains(response, "เหตุผลที่ถูกปฏิเสธ:</strong> ผิดวิชาและเนื้อหาไม่ตรงตามหลักสูตร")
+        self.assertContains(
+            response, '<span class="badge bg-danger">ถูกปฏิเสธ</span>', html=True
+        )
+        self.assertContains(
+            response, "เหตุผลที่ถูกปฏิเสธ:</strong> ผิดวิชาและเนื้อหาไม่ตรงตามหลักสูตร"
+        )
         self.assertContains(response, "CN101 Hidden Notes")
-        self.assertContains(response, '<span class="badge bg-secondary">ซ่อนอยู่</span>', html=True)
+        self.assertContains(
+            response, '<span class="badge bg-secondary">ซ่อนอยู่</span>', html=True
+        )
         self.assertNotContains(response, "Secret Friend Document")
         self.assertNotContains(response, "MODERATOR QUEUE")
 
@@ -151,8 +176,8 @@ class UserDashboardTemplateTagsTests(TestCase):
         self.assertContains(response, "รออนุมัติ <strong>1</strong> ไฟล์ (ภาค CN)")
         self.assertContains(response, reverse("materials:approval_queue"))
 
-        # Check queries count with 1 pending: 8 queries
-        with self.assertNumQueries(8):
+        # Baseline dashboard 8 queries + 3 fixed poll/shoutbox + 1 vault snapshot = 12.
+        with self.assertNumQueries(12):
             self.client.get(reverse("accounts:home"))
 
         # Add 4 more pending documents in CN (total 5)
@@ -165,8 +190,8 @@ class UserDashboardTemplateTagsTests(TestCase):
                 status=Document.Status.PENDING,
             )
 
-        # Query count remains constant at 8 (no N+1)!
-        with self.assertNumQueries(8):
+        # Query count remains constant with 5 documents (no N+1).
+        with self.assertNumQueries(12):
             resp = self.client.get(reverse("accounts:home"))
         self.assertContains(resp, "รออนุมัติ <strong>5</strong> ไฟล์ (ภาค CN)")
 
@@ -189,8 +214,9 @@ class UserDashboardTemplateTagsTests(TestCase):
             title="Doc 0",
             status=Document.Status.PUBLISHED,
         )
-        # Session + User + super_admin check + moderator check + user_documents = 5
-        with self.assertNumQueries(5):
+        # Dashboard: 5 queries + poll aggregate, vote existence,
+        # shoutbox, vault snapshot = 9.
+        with self.assertNumQueries(9):
             self.client.get(reverse("accounts:home"))
 
         # Add 4 more documents (total 5)
@@ -203,6 +229,35 @@ class UserDashboardTemplateTagsTests(TestCase):
                 status=Document.Status.PUBLISHED,
             )
 
-        # Same 5 queries regardless of 1 or 5 documents (no N+1)!
-        with self.assertNumQueries(5):
+        # Same 9 queries regardless of document count (no N+1).
+        with self.assertNumQueries(9):
             self.client.get(reverse("accounts:home"))
+
+    def test_home_archive_and_board_index_reflect_published_documents(self):
+        doc = Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="Real Lecture Note",
+            status=Document.Status.PUBLISHED,
+        )
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CN101 · Real Lecture Note")
+        self.assertContains(response, f'{reverse("materials:vault")}?course_code=CN101')
+        self.assertContains(
+            response, reverse("materials:document_detail", args=[doc.pk])
+        )
+        self.assertContains(response, "1 ไฟล์")
+        self.assertNotContains(response, "ยังไม่มีเอกสารที่เผยแพร่ในคลังขณะนี้")
+
+        # Guest sees login links for the published items
+        self.client.logout()
+        guest_resp = self.client.get(reverse("accounts:home"))
+        self.assertContains(guest_resp, "CN101 · Real Lecture Note")
+        self.assertContains(guest_resp, "1 ไฟล์ · สมาชิก")
+        self.assertNotContains(
+            guest_resp, f'{reverse("materials:vault")}?course_code=CN101'
+        )

@@ -13,7 +13,13 @@ User = get_user_model()
 VALID_PASSWORD = "Cn331-Strong-Passw0rd"
 
 
-def make_department(code="CN", *, name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering", is_active=True):
+def make_department(
+    code="CN",
+    *,
+    name_th="วิศวกรรมคอมพิวเตอร์",
+    name_en="Computer Engineering",
+    is_active=True,
+):
     return Department.objects.create(
         code=code,
         name_th=name_th,

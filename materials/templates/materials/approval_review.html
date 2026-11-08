@@ -37,47 +37,47 @@
                         <h2 class="h5 fw-bold mb-0 text-dark">ข้อมูลเอกสาร</h2>
                     </div>
                     <div class="card-body p-4">
-                        <div class="mb-3">
-                            <label class="approval-meta-label small fw-semibold d-block">ชื่อเอกสาร</label>
-                            <div class="fs-5 fw-bold text-dark">{{ document.title }}</div>
-                        </div>
+                        <dl class="mb-3">
+                            <dt class="approval-meta-label small fw-semibold">ชื่อเอกสาร</dt>
+                            <dd class="fs-5 fw-bold text-dark">{{ document.title }}</dd>
+                        </dl>
 
-                        <div class="mb-3">
-                            <label class="approval-meta-label small fw-semibold d-block">คำอธิบาย</label>
-                            <div class="approval-description">{{ document.description|default:"(ไม่มีคำอธิบาย)" }}</div>
-                        </div>
+                        <dl class="mb-3">
+                            <dt class="approval-meta-label small fw-semibold">คำอธิบาย</dt>
+                            <dd class="approval-description">{{ document.description|default:"(ไม่มีคำอธิบาย)" }}</dd>
+                        </dl>
 
                         <div class="row g-3 pt-2">
-                            <div class="col-sm-6">
-                                <label class="approval-meta-label small fw-semibold d-block">รายวิชา</label>
-                                <div class="fw-semibold approval-link">
+                            <dl class="col-sm-6">
+                                <dt class="approval-meta-label small fw-semibold">รายวิชา</dt>
+                                <dd class="fw-semibold approval-link">
                                     {{ document.batch_course.course.code }} - {{ document.batch_course.course.display_name }}
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="approval-meta-label small fw-semibold d-block">ภาควิชา และ รุ่น</label>
-                                <div>
+                                </dd>
+                            </dl>
+                            <dl class="col-sm-6">
+                                <dt class="approval-meta-label small fw-semibold">ภาควิชา และ รุ่น</dt>
+                                <dd>
                                     <span class="approval-badge">
                                         {{ document.batch_course.batch.department.code }} ({{ document.batch_course.batch.department.name_th }})
                                     </span>
                                     <span class="ms-1 fw-semibold">รุ่น {{ document.batch_course.batch.number }}</span>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="approval-meta-label small fw-semibold d-block">ประเภทเอกสาร</label>
-                                <span class="approval-badge">
+                                </dd>
+                            </dl>
+                            <dl class="col-sm-6">
+                                <dt class="approval-meta-label small fw-semibold">ประเภทเอกสาร</dt>
+                                <dd><span class="approval-badge">
                                     {{ document.doc_type.name_th }} ({{ document.doc_type.code }})
-                                </span>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="approval-meta-label small fw-semibold d-block">ผู้อัปโหลด</label>
-                                <span class="fw-medium text-dark">{{ document.uploader.nickname }}</span>
-                                <small class="approval-muted">({{ document.uploader.department.code }})</small>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="approval-meta-label small fw-semibold d-block">วันที่ส่งเอกสาร</label>
-                                <span class="approval-muted">{{ document.created_at|date:"d F Y, H:i" }} น.</span>
-                            </div>
+                                </span></dd>
+                            </dl>
+                            <dl class="col-sm-6">
+                                <dt class="approval-meta-label small fw-semibold">ผู้อัปโหลด</dt>
+                                <dd><span class="fw-medium text-dark">{{ document.uploader.nickname }}</span>
+                                <small class="approval-muted">({{ document.uploader.department.code }})</small></dd>
+                            </dl>
+                            <dl class="col-sm-6">
+                                <dt class="approval-meta-label small fw-semibold">วันที่ส่งเอกสาร</dt>
+                                <dd class="approval-muted">{{ document.created_at|date:"d F Y, H:i" }} น.</dd>
+                            </dl>
                         </div>
                     </div>
                 </div>
@@ -89,16 +89,16 @@
                     </div>
                     <div class="card-body p-4">
                         {% if document.current_version %}
-                            <div class="d-flex align-items-center p-3 border rounded-3 bg-light">
+                            <div class="d-flex align-items-center p-3 border rounded-3 approval-surface">
                                 <div class="display-6 me-3" aria-hidden="true">▤</div>
                                 <div class="flex-grow-1">
                                     <div class="fw-bold text-dark text-break">{{ document.current_version.original_name }}</div>
-                                    <div class="small text-muted">
+                                    <div class="small approval-muted">
                                         เวอร์ชัน: v{{ document.current_version.version_no }} |
                                         ขนาด: {{ document.current_version.size_bytes|filesizeformat }} |
                                         อัปโหลด: {{ document.current_version.uploaded_at|date:"d M Y, H:i" }}
                                     </div>
-                                    <div class="small text-muted mt-1">
+                                    <div class="small approval-muted mt-1">
                                         SHA256: <code class="approval-muted">{{ document.current_version.sha256|truncatechars:24 }}</code>
                                     </div>
                                 </div>
@@ -178,7 +178,7 @@
                                         {% for error in form.reason.errors %}{{ error }}{% endfor %}
                                     </div>
                                 {% endif %}
-                                <div class="form-text mt-1 text-muted small">
+                                <div class="form-text mt-1 approval-muted small">
                                     กรณีปฏิเสธ ต้องระบุเหตุผลเพื่อแจ้งให้ผู้อัปโหลดทราบและแก้ไข
                                 </div>
                             </div>

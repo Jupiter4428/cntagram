@@ -71,5 +71,7 @@ class BatchCourseForm(forms.ModelForm):
     def __init__(self, *args, batch, **kwargs):
         super().__init__(*args, instance=BatchCourse(batch=batch), **kwargs)
         # ให้เลือกได้เฉพาะวิชาที่ยังไม่อยู่ในรุ่นนี้ กันผูกซ้ำ
-        self.fields["course"].queryset = Course.objects.exclude(batch_courses__batch=batch)
+        self.fields["course"].queryset = Course.objects.exclude(
+            batch_courses__batch=batch
+        )
         self.fields["course"].empty_label = "- เลือกวิชา -"

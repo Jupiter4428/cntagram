@@ -51,7 +51,9 @@ class VaultViewTests(SearchTestCase):
         self.assertNotContains(response, "ผลการค้นหา")
 
     def test_shows_published_results_from_every_batch_on_one_page(self):
-        expected = [self.make_document(self.cn200[n], title=f"ชีท CN{n}") for n in (21, 22, 23)]
+        expected = [
+            self.make_document(self.cn200[n], title=f"ชีท CN{n}") for n in (21, 22, 23)
+        ]
         self.make_document(self.cn200[21], title="ยังรออนุมัติ", status="pending")
         self.make_document(self.cn200[22], title="ถูกซ่อนไว้", status="hidden")
 
@@ -74,7 +76,9 @@ class VaultViewTests(SearchTestCase):
         self.assertContains(response, "ไม่พบเอกสาร")
 
     def test_filters_from_the_query_string_narrow_the_results(self):
-        cn22_exam = self.make_document(self.cn200[22], title="ข้อสอบ CN22", doc_type=self.exam)
+        cn22_exam = self.make_document(
+            self.cn200[22], title="ข้อสอบ CN22", doc_type=self.exam
+        )
         self.make_document(self.cn200[22], title="ชีทสรุป CN22")
         self.make_document(self.cn200[21], title="ข้อสอบ CN21", doc_type=self.exam)
 
@@ -124,7 +128,9 @@ class VaultViewTests(SearchTestCase):
 
         response = self.client.get(reverse("materials:vault"), {"course_code": "CN200"})
 
-        self.assertContains(response, reverse("materials:document_detail", args=[document.pk]))
+        self.assertContains(
+            response, reverse("materials:document_detail", args=[document.pk])
+        )
 
     def test_results_use_the_shared_document_meta_partial(self):
         self.make_document(self.cn200[21], title="ชีท CN21")
@@ -139,7 +145,9 @@ class DocumentDetailViewTests(SearchTestCase):
         document = self.make_document(self.cn200[22], title="ชีท CN22")
         self.client.force_login(self.uploader)
 
-        response = self.client.get(reverse("materials:document_detail", args=[document.pk]))
+        response = self.client.get(
+            reverse("materials:document_detail", args=[document.pk])
+        )
 
         self.assertTemplateUsed(response, "materials/_document_meta.html")
 
@@ -147,7 +155,9 @@ class DocumentDetailViewTests(SearchTestCase):
         document = self.make_document(self.cn200[22], title="ชีท CN22")
         self.client.force_login(self.uploader)
 
-        response = self.client.get(reverse("materials:document_detail", args=[document.pk]))
+        response = self.client.get(
+            reverse("materials:document_detail", args=[document.pk])
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "materials/document_detail.html")
@@ -159,7 +169,9 @@ class DocumentDetailViewTests(SearchTestCase):
         self.client.force_login(self.uploader)
         for status in ("pending", "rejected", "hidden"):
             with self.subTest(status=status):
-                document = self.make_document(self.cn200[21], title=status, status=status)
+                document = self.make_document(
+                    self.cn200[21], title=status, status=status
+                )
 
                 response = self.client.get(
                     reverse("materials:document_detail", args=[document.pk])
@@ -179,7 +191,9 @@ class DocumentDetailViewTests(SearchTestCase):
         )
         self.client.force_login(viewer)
 
-        response = self.client.get(reverse("materials:document_detail", args=[document.pk]))
+        response = self.client.get(
+            reverse("materials:document_detail", args=[document.pk])
+        )
 
         self.assertContains(response, "Deleted user")
         self.assertNotContains(response, "Uploader")
@@ -216,7 +230,9 @@ class DocumentPreviewViewTests(SearchTestCase):
         return document
 
     def preview(self, document):
-        return self.client.get(reverse("materials:document_preview", args=[document.pk]))
+        return self.client.get(
+            reverse("materials:document_preview", args=[document.pk])
+        )
 
     def test_streams_published_pdf_inline_and_allows_same_origin_iframe(self):
         document = self.make_document_with_file()
@@ -285,7 +301,9 @@ class UploadViewTests(UploadTestCase):
         self.post()
         response = self.post()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["form"].errors["file"], ["ไฟล์นี้มีอยู่ในคลังแล้ว"])
+        self.assertEqual(
+            response.context["form"].errors["file"], ["ไฟล์นี้มีอยู่ในคลังแล้ว"]
+        )
         self.assertEqual(Document.objects.count(), 1)
 
     def test_guest_is_redirected_to_login(self):
@@ -355,7 +373,9 @@ class UploadViewTests(UploadTestCase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(Document.objects.exists())
 
-    def test_tampered_request_into_another_department_is_403_even_with_other_errors(self):
+    def test_tampered_request_into_another_department_is_403_even_with_other_errors(
+        self,
+    ):
         response = self.post(batch_course=self.me21_cn200.pk, disclaimer="")
 
         self.assertEqual(response.status_code, 403)
@@ -369,13 +389,18 @@ class UploadViewTests(UploadTestCase):
         self.assertFalse(Document.objects.exists())
 
     def test_model_error_outside_form_fields_is_shown_not_500(self):
-        """รหัสภาคมี zero-width space (U+200B) ที่ระบบไฟล์รับ แต่ DocumentVersion ปฏิเสธ storage_path
+        """รหัสภาคมี zero-width space (U+200B) ที่ระบบไฟล์รับ
+        แต่ DocumentVersion ปฏิเสธ storage_path
 
         error key storage_path ไม่ใช่ช่องในฟอร์ม จึงต้องแสดงเป็น non-field error
         """
-        dept = Department.objects.create(code="C​N", name_th="ภาครหัสผิด", name_en="Bad code")
+        dept = Department.objects.create(
+            code="C​N", name_th="ภาครหัสผิด", name_en="Bad code"
+        )
         batch = Batch.objects.create(department=dept, number=21)
-        batch_course = BatchCourse.objects.create(batch=batch, course=self.cn21_cn200.course)
+        batch_course = BatchCourse.objects.create(
+            batch=batch, course=self.cn21_cn200.course
+        )
         self.student.department = dept
         self.student.save()
         files_before = stored_file_count()
@@ -383,7 +408,9 @@ class UploadViewTests(UploadTestCase):
         response = self.post(batch_course=batch_course.pk)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["form"].non_field_errors(), ["Unsafe storage_path."])
+        self.assertEqual(
+            response.context["form"].non_field_errors(), ["Unsafe storage_path."]
+        )
         self.assertFalse(Document.objects.exists())
         self.assertEqual(stored_file_count(), files_before)
 
@@ -394,7 +421,9 @@ class UploadViewTests(UploadTestCase):
             response = self.post()
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["form"].non_field_errors(), ["Storage rejected the file."])
+        self.assertEqual(
+            response.context["form"].non_field_errors(), ["Storage rejected the file."]
+        )
         self.assertFalse(Document.objects.exists())
 
     def test_form_page_query_count_does_not_grow_with_batches(self):
@@ -407,18 +436,22 @@ class UploadViewTests(UploadTestCase):
     def test_file_over_the_limit_shows_size_error(self):
         SystemSetting.objects.filter(pk="max_upload_mb").update(value="1")
 
-        # 3 MB เกิน FILE_UPLOAD_MAX_MEMORY_SIZE จึงผ่านเส้นทาง temp file เหมือน production
+        # 3 MB เกิน FILE_UPLOAD_MAX_MEMORY_SIZE จึงผ่านเส้นทาง temp file เหมือน production  # noqa: E501
         response = self.post(file=pdf_file(b"%PDF-" + b"0" * 3_145_728))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["form"].errors["file"], ["ไฟล์ต้องมีขนาดไม่เกิน 1 MB"])
+        self.assertEqual(
+            response.context["form"].errors["file"], ["ไฟล์ต้องมีขนาดไม่เกิน 1 MB"]
+        )
         self.assertFalse(Document.objects.exists())
 
     def test_non_pdf_shows_file_error(self):
         response = self.post(file=pdf_file(b"PK\x03\x04", name="sheet.docx"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["form"].errors["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"])
+        self.assertEqual(
+            response.context["form"].errors["file"], ["รับเฉพาะไฟล์ PDF เท่านั้น"]
+        )
 
 
 class UploadCourseOptionsViewTests(UploadTestCase):
@@ -465,7 +498,9 @@ class UploadCourseOptionsViewTests(UploadTestCase):
 class BatchCourseWithDocumentsTests(TestCase):
     def test_cannot_remove_course_that_has_documents(self):
         """ถอดวิชาออกจากรุ่นไม่ได้ ถ้ามีเอกสารอัปโหลดอยู่ในวิชานั้นแล้ว (US-4)"""
-        dept = Department.objects.create(code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering")
+        dept = Department.objects.create(
+            code="CN", name_th="วิศวกรรมคอมพิวเตอร์", name_en="Computer Engineering"
+        )
         admin = User.objects.create_user(
             email="6810610002@student.tu.ac.th",
             password="password123",
@@ -473,14 +508,22 @@ class BatchCourseWithDocumentsTests(TestCase):
             department=dept,
             pdpa_consent_at=timezone.now(),
         )
-        role, _ = Role.objects.get_or_create(code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"})
+        role, _ = Role.objects.get_or_create(
+            code=Role.SUPER_ADMIN, defaults={"name_th": "ผู้ดูแลระบบ"}
+        )
         UserRole.objects.create(user=admin, role=role)
         batch = Batch.objects.create(department=dept, number=21)
         course = Course.objects.create(code="CN200", name_en="Discrete Mathematics")
         batch_course = BatchCourse.objects.create(batch=batch, course=course)
-        doc_type = DocType.objects.create(code="summary", name_th="สรุป", vault=DocType.Vault.LECTURE)
+        doc_type = DocType.objects.create(
+            code="summary", name_th="สรุป", vault=DocType.Vault.LECTURE
+        )
         Document.objects.create(
-            batch_course=batch_course, doc_type=doc_type, uploader=admin, title="สรุปบทที่ 1", description="-"
+            batch_course=batch_course,
+            doc_type=doc_type,
+            uploader=admin,
+            title="สรุปบทที่ 1",
+            description="-",
         )
         self.client.force_login(admin)
 
@@ -490,4 +533,6 @@ class BatchCourseWithDocumentsTests(TestCase):
         )
 
         self.assertTrue(BatchCourse.objects.filter(pk=batch_course.pk).exists())
-        self.assertContains(response, "ถอดวิชา CN200 ไม่ได้ เพราะมีเอกสารอัปโหลดอยู่ในวิชานี้แล้ว")
+        self.assertContains(
+            response, "ถอดวิชา CN200 ไม่ได้ เพราะมีเอกสารอัปโหลดอยู่ในวิชานี้แล้ว"
+        )

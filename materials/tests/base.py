@@ -3,6 +3,7 @@
 SearchTestCase สำหรับค้นหา / เปิดอ่านเอกสาร (US-7), UploadTestCase สำหรับอัปโหลด (US-5)
 และ ApprovalBaseTestCase สำหรับการอนุมัติ (US-6, US-9)
 """
+
 import os
 import shutil
 import tempfile
@@ -50,12 +51,12 @@ class SearchTestCase(TestCase):
             n: BatchCourse.objects.create(batch=batch, course=cn200)
             for n, batch in cls.batches.items()
         }
-        cls.cn201_cn22 = BatchCourse.objects.create(
-            batch=cls.batches[22], course=cn201
-        )
+        cls.cn201_cn22 = BatchCourse.objects.create(batch=cls.batches[22], course=cn201)
 
     @classmethod
-    def make_document(cls, batch_course, *, title, doc_type=None, status="published", uploader=None):
+    def make_document(
+        cls, batch_course, *, title, doc_type=None, status="published", uploader=None
+    ):
         return Document.objects.create(
             batch_course=batch_course,
             doc_type=doc_type or cls.summary,
@@ -68,14 +69,19 @@ class SearchTestCase(TestCase):
     @classmethod
     def make_department(cls, code="CE", *, is_active=True):
         return Department.objects.create(
-            code=code, name_th="วิศวกรรมโยธา", name_en="Civil Engineering", is_active=is_active
+            code=code,
+            name_th="วิศวกรรมโยธา",
+            name_en="Civil Engineering",
+            is_active=is_active,
         )
 
 
 PDF_BYTES = b"%PDF-1.4\n% fake sheet\n%%EOF\n"
 
 
-def pdf_file(content=PDF_BYTES, *, name="cn200-midterm.pdf", content_type="application/pdf"):
+def pdf_file(
+    content=PDF_BYTES, *, name="cn200-midterm.pdf", content_type="application/pdf"
+):
     """ไฟล์อัปโหลดจำลอง ค่าเริ่มต้นเป็น PDF ที่ผ่านทั้งเช็ก MIME และ magic bytes"""
     return SimpleUploadedFile(name, content, content_type=content_type)
 
@@ -157,15 +163,20 @@ class ApprovalBaseTestCase(TestCase):
         cls.batch_cn = Batch.objects.create(department=cls.dept_cn, number=24)
         cls.batch_me = Batch.objects.create(department=cls.dept_me, number=24)
 
-        cls.course_cn = Course.objects.create(code="CN101", name_en="Computer Programming")
-        cls.course_me = Course.objects.create(code="ME101", name_en="Engineering Mechanics")
+        cls.course_cn = Course.objects.create(
+            code="CN101", name_en="Computer Programming"
+        )
+        cls.course_me = Course.objects.create(
+            code="ME101", name_en="Engineering Mechanics"
+        )
 
         cls.bc_cn = BatchCourse.objects.create(batch=cls.batch_cn, course=cls.course_cn)
         cls.bc_me = BatchCourse.objects.create(batch=cls.batch_me, course=cls.course_me)
 
         # Doc Types
         cls.doc_type_summary, _ = DocType.objects.get_or_create(
-            code="summary", defaults={"name_th": "ชีทสรุป", "vault": DocType.Vault.LECTURE}
+            code="summary",
+            defaults={"name_th": "ชีทสรุป", "vault": DocType.Vault.LECTURE},
         )
         cls.doc_type_exam, _ = DocType.objects.get_or_create(
             code="exam", defaults={"name_th": "ข้อสอบเก่า", "vault": DocType.Vault.EXAM}
@@ -174,7 +185,9 @@ class ApprovalBaseTestCase(TestCase):
         # Approval rules (US-9): sheets need either role, exams need both
         for role in (cls.role_moderator, cls.role_super_admin):
             DocTypeRequiredRole.objects.create(
-                doc_type=cls.doc_type_summary, role=role, mode=DocTypeRequiredRole.Mode.ANY
+                doc_type=cls.doc_type_summary,
+                role=role,
+                mode=DocTypeRequiredRole.Mode.ANY,
             )
             DocTypeRequiredRole.objects.create(
                 doc_type=cls.doc_type_exam, role=role, mode=DocTypeRequiredRole.Mode.ALL
@@ -262,4 +275,6 @@ class ApprovalBaseTestCase(TestCase):
     def create_exam_of_batch(self, number):
         batch = Batch.objects.create(department=self.dept_cn, number=number)
         batch_course = BatchCourse.objects.create(batch=batch, course=self.course_cn)
-        return self.create_document(batch_course=batch_course, doc_type=self.doc_type_exam)
+        return self.create_document(
+            batch_course=batch_course, doc_type=self.doc_type_exam
+        )

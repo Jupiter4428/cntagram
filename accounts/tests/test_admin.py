@@ -43,7 +43,9 @@ class AccountsAdminTests(TestCase):
     def test_changelist_opens_for_every_accounts_model(self):
         for model in ("user", "role", "userrole"):
             with self.subTest(model=model):
-                response = self.client.get(reverse(f"admin:accounts_{model}_changelist"))
+                response = self.client.get(
+                    reverse(f"admin:accounts_{model}_changelist")
+                )
                 self.assertEqual(response.status_code, 200)
 
     def test_user_change_page_hides_password_and_shows_student_id_read_only(self):
@@ -123,7 +125,9 @@ class AccountsAdminTests(TestCase):
 
     def test_user_change_page_query_count_is_fixed(self):
         with self.assertNumQueries(4):
-            self.client.get(reverse("admin:accounts_user_change", args=[self.student.pk]))
+            self.client.get(
+                reverse("admin:accounts_user_change", args=[self.student.pk])
+            )
 
     def test_user_cannot_be_deleted_through_admin(self):
         response = self.client.get(

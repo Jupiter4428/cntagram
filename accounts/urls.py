@@ -10,6 +10,10 @@ urlpatterns = [
     path("logout/", views.logout, name="logout"),
     path("register/", views.register, name="register"),
     path("account/delete/", views.delete_account, name="delete_account"),
+    path("poll/vote/", views.poll_vote, name="poll_vote"),
+    path("shoutbox/post/", views.shoutbox_post, name="shoutbox_post"),
     path("moderators/", views.moderator_manage, name="moderator_manage"),
-    path("moderators/<int:pk>/remove/", views.moderator_remove, name="moderator_remove"),
+    path(
+        "moderators/<int:pk>/remove/", views.moderator_remove, name="moderator_remove"
+    ),
 ]

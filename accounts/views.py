@@ -4,7 +4,9 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -12,13 +14,26 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
-from .forms import DeleteAccountForm, LoginForm, ModeratorAssignmentForm, RegisterForm
-from .models import Role, UserRole
-from .services import attempt_login
+from .forms import (
+    DeleteAccountForm,
+    LoginForm,
+    ModeratorAssignmentForm,
+    PollVoteForm,
+    RegisterForm,
+    ShoutboxForm,
+)
+from .models import PollVote, Role, UserRole
 
 
 def _client_ip(request):
-    """Return the direct peer address without trusting spoofable proxy headers."""
+    """Return the direct peer address without trusting spoofable proxy headers.
+
+    Security Note (Refs #42 / #47):
+    Do NOT read raw X-Forwarded-For headers from the client directly because clients
+    can easily spoof them. When deploying behind a reverse proxy (e.g. Nginx,
+    Cloudflare), configure the proxy to rewrite REMOTE_ADDR with the verified client IP
+    (e.g. Nginx set_real_ip_from / real_ip_header, or trusted ProxyFix middleware).
+    """
     return request.META.get("REMOTE_ADDR", "")
 
 
@@ -34,15 +49,6 @@ def _safe_login_redirect(request, next_url=""):
     return resolve_url(settings.LOGIN_REDIRECT_URL)
 
 
-def _rate_limited_response(request, form):
-    """HTTP 429 login page with Retry-After, keeping the typed username."""
-    limited_form = LoginForm(request=request, initial={"username": form.submitted_username})
-    context = {"form": limited_form, "next": form.next_url, "rate_limited": True}
-    response = render(request, "accounts/login.html", context, status=429)
-    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
-    return response
-
-
 @login_not_required
 @require_GET
 def home(request):
@@ -51,7 +57,101 @@ def home(request):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
 
-    return render(request, "accounts/index.html")
+    has_visited = bool(request.COOKIES.get("has_visited_home"))
+    if not has_visited:
+        visitor_digits = services.record_home_visit()
+    else:
+        visitor_digits = services.get_home_visit_count()
+
+    poll = selectors.get_weekly_poll()
+    has_voted = (
+        request.user.is_authenticated
+        and PollVote.objects.filter(user=request.user).exists()
+    )
+    show_form = not has_voted  # A query parameter must never re-enable voting.
+
+    # UI Prototype variants (Refs .claude/skills/prototype/UI.md)
+    variant = request.GET.get("variant", "A").upper()
+    variant_labels = {
+        "A": "A (Pantip Classic Board 2002-2005)",
+        "B": "B (Pramool & RO Gamer 2004)",
+        "C": "C (Hi5 & Cyber-Y2K Diary 2006)",
+    }
+    if variant not in variant_labels:
+        variant = "A"
+
+    variants_order = ["A", "B", "C"]
+    curr_idx = variants_order.index(variant)
+    prev_variant = variants_order[(curr_idx - 1) % len(variants_order)]
+    next_variant = variants_order[(curr_idx + 1) % len(variants_order)]
+
+    response = render(
+        request,
+        "accounts/index.html",
+        {
+            "visitor_digits": visitor_digits,
+            "poll": poll,
+            "has_voted_poll": has_voted,
+            "show_poll_form": show_form,
+            "shoutbox_messages": selectors.get_shoutbox_messages(),
+            "variant": variant,
+            "current_variant_label": variant_labels[variant],
+            "prev_variant": prev_variant,
+            "next_variant": next_variant,
+        },
+    )
+    if not has_visited:
+        response.set_cookie("has_visited_home", "1", httponly=True, samesite="Lax")
+    return response
+
+
+@login_required
+@require_POST
+def poll_vote(request):
+    """Validate the choice and enforce one durable vote per account."""
+    form = PollVoteForm(request.POST)
+    success = False
+    if form.is_valid():
+        success, poll = services.record_poll_vote(
+            user=request.user, choice_key=form.cleaned_data["choice"]
+        )
+    else:
+        poll = selectors.get_weekly_poll()
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string(
+            "includes/_poll_results.html", {"poll": poll}, request=request
+        )
+        return JsonResponse(
+            {
+                "ok": success,
+                "poll": poll,
+                "html": html,
+                "has_voted": PollVote.objects.filter(user=request.user).exists(),
+            },
+            status=200 if success else 400,
+        )
+    return redirect("accounts:home")
+
+
+@login_required
+@require_POST
+def shoutbox_post(request):
+    """Validate community shoutbox posts through a Django form."""
+    form = ShoutboxForm(request.POST)
+    success = form.is_valid()
+    if success:
+        services.add_shoutbox_message(
+            user=request.user, text=form.cleaned_data["message"]
+        )
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "ok": success,
+                "messages": selectors.get_shoutbox_messages(),
+            },
+            status=200 if success else 400,
+        )
+    return redirect("accounts:home")
 
 
 @login_not_required
@@ -64,9 +164,15 @@ def register(request):
     if request.method == "POST":
         client_ip = _client_ip(request)
         if services.is_register_rate_limited(client_ip):
-            response = render(request, "accounts/register.html", {
-                "form": RegisterForm(), "rate_limited": True,
-            }, status=429)
+            response = render(
+                request,
+                "accounts/register.html",
+                {
+                    "form": RegisterForm(),
+                    "rate_limited": True,
+                },
+                status=429,
+            )
             response["Retry-After"] = str(settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
             return response
         services.record_register_attempt(client_ip)
@@ -91,26 +197,53 @@ def register(request):
     return render(request, "accounts/register.html", {"form": form})
 
 
+def _login_response(request, form, *, retry_after=None):
+    response = render(
+        request,
+        "accounts/login.html",
+        {"form": form},
+        status=429 if retry_after else 200,
+    )
+    if retry_after:
+        response["Retry-After"] = retry_after
+    return response
+
+
 @login_not_required
 @require_http_methods(["GET", "POST"])
 def login(request):
     """Authenticate a user while throttling repeated failures."""
-    is_post = request.method == "POST"
+    if request.user.is_authenticated:
+        return redirect(_safe_login_redirect(request))
+
     form = LoginForm(
-        request=request,
-        data=request.POST if is_post else None,
+        data=request.POST if request.method == "POST" else None,
         initial={"next": request.GET.get("next", "")},
     )
-    if request.user.is_authenticated:
-        return redirect(_safe_login_redirect(request, form.next_url))
-    if is_post:
-        attempt = attempt_login(form=form, client_ip=_client_ip(request))
+
+    # Throttle only counts submissions that pass form validation;
+    # invalid forms never reach authenticate().
+    if request.method == "POST" and form.is_valid():
+        attempt = services.attempt_login(
+            identifier=form.cleaned_data["username"],
+            password=form.cleaned_data["password"],
+            client_ip=_client_ip(request),
+        )
         if attempt.user:
             auth_login(request, attempt.user)
-            return redirect(_safe_login_redirect(request, form.next_url))
+            return redirect(
+                _safe_login_redirect(request, form.cleaned_data.get("next", ""))
+            )
         if attempt.rate_limited:
-            return _rate_limited_response(request, form)
-    return render(request, "accounts/login.html", {"form": form, "next": form.next_url})
+            form.add_error(
+                None, "ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง"
+            )
+            return _login_response(
+                request, form, retry_after=str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+            )
+        form.add_error(None, form.get_invalid_login_error())
+
+    return _login_response(request, form)
 
 
 @login_not_required
@@ -125,26 +258,39 @@ def logout(request):
 @require_http_methods(["GET", "POST"])
 def delete_account(request):
     """ผู้ใช้ขอลบบัญชีตัวเองตาม PDPA หลังยืนยันรหัสผ่านแล้วออกจากระบบ (US-13)"""
-    client_ip = _client_ip(request)
-    if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
-        response = render(request, "accounts/delete_account.html", {"form": DeleteAccountForm(), "rate_limited": True}, status=429)
+    if services.is_delete_account_rate_limited(user_id=request.user.pk):
+        response = render(
+            request,
+            "accounts/delete_account.html",
+            {"form": DeleteAccountForm(), "rate_limited": True},
+            status=429,
+        )
         response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
         return response
 
     form = DeleteAccountForm(request.POST or None)
     if form.is_bound and form.is_valid():
         try:
-            services.delete_own_account(user=request.user, password=form.cleaned_data["password"])
+            services.delete_own_account(
+                user=request.user, password=form.cleaned_data["password"]
+            )
         except ValidationError as exc:
             if hasattr(exc, "message_dict") and "password" in exc.message_dict:
-                services.record_delete_account_failure(user_id=request.user.pk, client_ip=client_ip)
-                if services.is_delete_account_rate_limited(user_id=request.user.pk, client_ip=client_ip):
-                    response = render(request, "accounts/delete_account.html", {"form": form, "rate_limited": True}, status=429)
-                    response["Retry-After"] = str(settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS)
+                services.record_delete_account_failure(user_id=request.user.pk)
+                if services.is_delete_account_rate_limited(user_id=request.user.pk):
+                    response = render(
+                        request,
+                        "accounts/delete_account.html",
+                        {"form": form, "rate_limited": True},
+                        status=429,
+                    )
+                    response["Retry-After"] = str(
+                        settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS
+                    )
                     return response
             form.add_error(None, exc)
         else:
-            services.clear_delete_account_failures(user_id=request.user.pk, client_ip=client_ip)
+            services.clear_delete_account_failures(user_id=request.user.pk)
             auth_logout(request)
             messages.success(request, "ลบบัญชีของคุณเรียบร้อยแล้ว")
             return redirect("accounts:home")
@@ -159,12 +305,17 @@ def moderator_manage(request):
     if request.method == "POST" and form.is_valid():
         user, dept = form.cleaned_data["user"], form.cleaned_data["department"]
         try:
-            services.assign_moderator(user=user, department=dept, granted_by=request.user)
+            services.assign_moderator(
+                user=user, department=dept, granted_by=request.user
+            )
         except ValidationError as e:
             for msg in e.messages:
                 messages.error(request, msg)
         else:
-            messages.success(request, f"แต่งตั้ง {user.email} เป็น Moderator ภาควิชา {dept.code} สำเร็จแล้ว")
+            messages.success(
+                request,
+                f"แต่งตั้ง {user.email} เป็น Moderator ภาควิชา {dept.code} สำเร็จแล้ว",
+            )
             return redirect("accounts:moderator_manage")
     context = {"form": form, "moderators": selectors.moderator_list()}
     return render(request, "accounts/moderator_manage.html", context)
@@ -178,5 +329,8 @@ def moderator_remove(request, pk):
     user_email = user_role.user.email
     dept_code = user_role.department.code
     services.remove_moderator(user_role=user_role)
-    messages.success(request, f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว")
+    messages.success(
+        request,
+        f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว",
+    )
     return redirect("accounts:moderator_manage")

@@ -23,12 +23,12 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 ### 3.1.3 เกณฑ์คุณภาพ (ตารางที่ 3.4)
 
 - **Definition of Ready:** User Story ครบ 3 ส่วน, ผ่าน INVEST และไม่เกิน 8 แต้ม, AC 3–5 ข้อ, ประเมินแต้มร่วมกันแล้ว, มี mockup หรือรายการฟิลด์, dependency พร้อม
-- **Definition of Done:** ผ่าน AC ครบ, มี automated test ผ่านทั้งหมด, PR ได้ approve ≥ 1 คน, merge เข้า `develop` ไม่พัง migration, view บาง/logic อยู่ใน service, ไม่มี N+1 query และ circular import, ผ่าน security พื้นฐาน, PEP 8 + docstring, รันบนเครื่องอื่นได้, อัปเดตเอกสารที่เกี่ยวข้อง
+- **Definition of Done:** ผ่าน AC ครบ, มี automated test ผ่านทั้งหมด, PR ได้ approve ≥ 1 คน, merge เข้า `main` ไม่พัง migration, view บาง/logic อยู่ใน service, ไม่มี N+1 query และ circular import, ผ่าน security พื้นฐาน, PEP 8 + docstring, รันบนเครื่องอื่นได้, อัปเดตเอกสารที่เกี่ยวข้อง
 - งานที่เสร็จ 99% นับเป็น 0 Story Points
 
 ### 3.1.4 การจัดการ Source Code และ Workflow
 
-- Git branch strategy: `main` (production) / `develop` (integration, default branch) / feature branch แตกจาก `develop`
+- Git branch strategy: `main` (default branch, integration + production) / feature branch แตกจาก `main`
 - Pull Request + Peer Code Review ทุกงาน ใช้ PR template และ Issue template (Feature Story, Bug Report, Tech Debt) ใน `.github/`
 - Commit message ตาม Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:` ฯลฯ)
 - GitHub Projects เป็น Scrum board พร้อม custom fields (Story Points, Sprint, Track)
@@ -60,7 +60,7 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 | E3 แบ่งปันเอกสาร | อัปโหลดเข้าที่ถูกต้องได้ง่าย | US-5, US-12, US-21 – US-24 |
 | E4 คัดกรองคุณภาพ | ตรวจก่อนเผยแพร่ ข้อสอบคุมเข้มกว่า | US-6, US-9, US-10, US-25 – US-27 |
 | E5 ค้นหาและอ่าน | พิมพ์รหัสวิชาแล้วเจอทุกรุ่นในหน้าเดียว | US-7, US-8, US-11, US-28 |
-| E6 ชุมชน | ถาม-ตอบ แจ้งจุดผิด ให้คะแนน | US-29 – US-31 |
+| E6 ชุมชนและปฏิสัมพันธ์เว็บบอร์ด | บรรยากาศเว็บบอร์ดยุค 2000s, พูดคุยทักทาย, โพล, เพลงประกอบ, ถาม-ตอบ | US-29 – US-31, US-36 – US-39 |
 | E7 ลิขสิทธิ์และความไว้วางใจ | รายงาน/แจ้งลบได้ ตรวจย้อนหลังได้ | US-32, US-33, US-35 |
 | TD งานเทคนิค | ส่งมอบเร็วและมั่นคงขึ้น | TD-1 – TD-5 |
 

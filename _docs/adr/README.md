@@ -9,6 +9,7 @@
 | [0002](./0002-service-layer-and-selectors.md) | Service Layer และ Selectors | Accepted |
 | [0003](./0003-document-storage-and-protected-preview.md) | การเก็บไฟล์เอกสารและ Preview ผ่าน View ที่ตรวจสิทธิ์ | Proposed |
 | [0004](./0004-approval-tables-in-materials.md) | ตารางการอนุมัติอยู่ใน app `materials` | Proposed |
+| [0005](./0005-production-deployment-and-backup.md) | การเลือกแพลตฟอร์ม Deploy, ฐานข้อมูล Production, การจัดเก็บไฟล์เอกสาร และกลยุทธ์การสำรองข้อมูล | Accepted |
 
 ## กติกา
 - เปิด ADR ใหม่เมื่อการตัดสินใจ**เปลี่ยนยาก**ภายหลัง หรือทีมเถียงเรื่องเดิมซ้ำ (เช่น เพิ่ม app ใหม่, เลือกวิธีเก็บไฟล์, เลือกบริการส่งอีเมล)

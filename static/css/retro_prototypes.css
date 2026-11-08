@@ -1,0 +1,814 @@
+/* ==========================================================================
+   Retro Webboard Prototypes (Variants A, B, C)
+   Researched from: Pantip (2002-2005), Pramool (2004), Dek-D/Hi5 (2004-2006)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Floating Prototype Switcher Bar (UI.md Spec)
+   -------------------------------------------------------------------------- */
+.prototype-switcher-bar {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #111827;
+    color: #F9FAFB;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+    border: 2px solid #F59E0B;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    user-select: none;
+}
+.prototype-switcher-bar a {
+    color: #F3F4F6;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #374151;
+    border-radius: 50%;
+    transition: background 0.15s, transform 0.15s;
+    font-weight: bold;
+}
+.prototype-switcher-bar a:hover {
+    background: #F59E0B;
+    color: #111827;
+    transform: scale(1.1);
+}
+.prototype-switcher-label {
+    font-weight: 600;
+    color: #FBBF24;
+    padding: 0 8px;
+    white-space: nowrap;
+}
+.prototype-switcher-hint {
+    color: #9CA3AF;
+    font-size: 11px;
+    margin-left: 4px;
+    border-left: 1px solid #4B5563;
+    padding-left: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Variant A: Pantip & Classic Forum (2002–2005)
+   - Warm cream, dashed notices, rubber stamp, topic status icons
+   -------------------------------------------------------------------------- */
+.variant-a-body {
+    background-color: #EBF2F7 !important;
+    background-image: 
+        radial-gradient(circle at 50% 50%, #CAD9E8 1.5px, transparent 1.5px) !important;
+    background-size: 16px 16px !important;
+}
+
+/* กระดานประกาศสีเหลืองเส้นประ Pantip */
+.pantip-notice-box {
+    background: #FFFDE8;
+    border: 1.5px dashed #D4A017;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    border-radius: 4px;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+.pantip-notice-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #8C5800;
+    font-weight: bold;
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+.pantip-stamp {
+    display: inline-block;
+    border: 2px solid #B91C1C;
+    color: #B91C1C;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transform: rotate(-3deg);
+    border-radius: 3px;
+    background: #FEF2F2;
+    box-shadow: 1px 1px 2px rgba(185, 28, 28, 0.2);
+    margin-left: 8px;
+}
+.pantip-tags-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.pantip-tag {
+    background: #E2E8F0;
+    border: 1px solid #CBD5E1;
+    color: #334155;
+    padding: 2px 6px;
+    font-size: 11px;
+    border-radius: 2px;
+}
+.pantip-tag--hot {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    color: #991B1B;
+    font-weight: bold;
+}
+
+/* --------------------------------------------------------------------------
+   Variant B: Pramool & RO Gamer 2004
+   - 3D Bevel Windows XP dialogue boxes, funny stickers, 88x31 badges
+   -------------------------------------------------------------------------- */
+.variant-b-body {
+    background-color: #0A3663 !important;
+    background-image: 
+        linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px) !important;
+    background-size: 20px 20px !important;
+}
+
+/* กล่องหน้าต่างแบบ Windows XP / 98 3D Bevel */
+.win-dialog-box {
+    background: #ECE9D8;
+    border-top: 3px solid #FFFFFF;
+    border-left: 3px solid #FFFFFF;
+    border-right: 3px solid #707070;
+    border-bottom: 3px solid #707070;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.35);
+    margin-bottom: 16px;
+    padding: 3px;
+}
+.win-titlebar {
+    background: linear-gradient(90deg, #0A246A 0%, #A6CAF0 100%);
+    color: #FFFFFF;
+    padding: 4px 8px;
+    font-weight: bold;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.5px;
+}
+.win-buttons {
+    display: flex;
+    gap: 2px;
+}
+.win-btn {
+    width: 16px;
+    height: 14px;
+    background: #ECE9D8;
+    border-top: 1px solid #FFFFFF;
+    border-left: 1px solid #FFFFFF;
+    border-right: 1px solid #707070;
+    border-bottom: 1px solid #707070;
+    font-size: 9px;
+    line-height: 12px;
+    text-align: center;
+    color: #000;
+    font-weight: bold;
+    cursor: default;
+}
+.win-btn--close {
+    background: #D75A4A;
+    color: #FFF;
+}
+.win-dialog-content {
+    padding: 12px;
+    background: #FFFFFF;
+    border: 2px inset #D4D0C8;
+    margin-top: 3px;
+    font-size: 12px;
+}
+
+/* สติ๊กเกอร์กวนๆ ยุค 2004 */
+.gamer-stickers-wrap {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+.gamer-sticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: bold;
+    border-radius: 4px;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.25);
+    text-transform: uppercase;
+}
+.gamer-sticker--ro {
+    background: #FCD34D;
+    color: #78350F;
+    border: 2px solid #B45309;
+}
+.gamer-sticker--warning {
+    background: #F87171;
+    color: #FFFFFF;
+    border: 2px solid #991B1B;
+    animation: retro-blink 1.2s infinite ease-in-out;
+}
+.gamer-sticker--undercon {
+    background: repeating-linear-gradient(
+        -45deg,
+        #FBBF24,
+        #FBBF24 10px,
+        #1F2937 10px,
+        #1F2937 20px
+    );
+    color: #FFFFFF;
+    font-weight: 900;
+    padding: 6px 14px;
+    text-shadow: 1px 1px 2px #000;
+    border: 2px solid #000;
+}
+
+/* แถบ 88x31 Badges ยุค Web 1.0 */
+.retro-badges-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 8px;
+    background: #1E293B;
+    border: 2px inset #475569;
+    margin-top: 10px;
+}
+.retro-badge-88 {
+    display: inline-flex;
+    width: 88px;
+    height: 31px;
+    background: #000;
+    color: #FFF;
+    font-size: 9px;
+    font-family: monospace;
+    border: 1px solid #94A3B8;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: bold;
+    box-shadow: 1px 1px 0px #FFF;
+}
+.retro-badge-88--blue { background: #1D4ED8; color: #DBEAFE; }
+.retro-badge-88--orange { background: #EA580C; color: #FFEDD5; }
+.retro-badge-88--green { background: #15803D; color: #DCFCE7; }
+
+/* --------------------------------------------------------------------------
+   Variant C: Hi5 & Cyber-Y2K Student Diary (2004–2006)
+   - Tilted washi tape photo cards, glitter sparkles, pastel cyan-purple
+   -------------------------------------------------------------------------- */
+.variant-c-body {
+    background-color: #FCE7F3 !important;
+    background-image: 
+        linear-gradient(45deg, #E0E7FF 25%, transparent 25%),
+        linear-gradient(-45deg, #E0E7FF 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #E0E7FF 75%),
+        linear-gradient(-45deg, transparent 75%, #E0E7FF 75%) !important;
+    background-size: 24px 24px !important;
+}
+
+/* การ์ดสไตล์โพลารอยด์แปะเทปใส (Washi Tape) */
+.hi5-tape-card {
+    position: relative;
+    background: #FFFFFF;
+    border: 2px solid #F472B6;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 5px 5px 15px rgba(244, 114, 182, 0.25);
+    margin: 20px 0 16px 0;
+    transform: rotate(-1deg);
+    transition: transform 0.2s ease;
+}
+.hi5-tape-card:hover {
+    transform: rotate(0deg) scale(1.01);
+}
+/* แถบเทปกาวใสแปะมุมบน */
+.hi5-tape-card::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 40px;
+    width: 90px;
+    height: 24px;
+    background: rgba(254, 240, 138, 0.85);
+    border: 1px dashed rgba(202, 138, 4, 0.4);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transform: rotate(-4deg);
+    z-index: 2;
+}
+
+.hi5-glitter-banner {
+    background: linear-gradient(90deg, #EC4899, #8B5CF6, #3B82F6, #EC4899);
+    background-size: 300% 300%;
+    animation: retro-gradient 4s ease infinite;
+    color: #FFFFFF;
+    padding: 8px 14px;
+    font-weight: bold;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    margin-bottom: 12px;
+}
+.hi5-quote-card {
+    background: #FEF9C3;
+    border: 1px solid #FDE047;
+    border-left: 5px solid #EAB308;
+    padding: 10px 14px;
+    font-style: italic;
+    font-size: 12px;
+    color: #713F12;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+/* Animations */
+@keyframes retro-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+@keyframes retro-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --------------------------------------------------------------------------
+   Inspirational Retro Components (2004 Engineering & Gaming Culture)
+   -------------------------------------------------------------------------- */
+
+/* 1. Student RPG Stats Bar (Ragnarok Online Style) */
+.student-rpg-status {
+    background: #111827;
+    border: 2px solid #374151;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 10px 0;
+    color: #F3F4F6;
+    font-family: monospace;
+    font-size: 11px;
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
+}
+.student-rpg-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+.student-rpg-bar-track {
+    flex-grow: 1;
+    height: 10px;
+    background: #374151;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid #1F2937;
+}
+.student-rpg-bar-fill--hp {
+    width: 25%;
+    height: 100%;
+    background: linear-gradient(90deg, #EF4444, #F87171);
+    box-shadow: 0 0 6px #EF4444;
+}
+.student-rpg-bar-fill--sp {
+    width: 8%;
+    height: 100%;
+    background: linear-gradient(90deg, #3B82F6, #60A5FA);
+}
+.student-rpg-debuffs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+.rpg-debuff-badge {
+    background: #374151;
+    color: #FCD34D;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 10px;
+    border-left: 2px solid #F59E0B;
+}
+
+/* 2. TSE Amulet / Talisman (ตรายันต์มหาอุตม์กัน F) */
+.tse-talisman {
+    position: relative;
+    display: inline-block;
+    background: #8B0000;
+    color: #FCD34D;
+    border: 2px solid #F59E0B;
+    padding: 4px 10px;
+    font-family: serif;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: 1px;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(0,0,0,0.5);
+    border-radius: 3px;
+    transform: rotate(2deg);
+}
+.tse-talisman::before {
+    content: "☸ ";
+    color: #FCD34D;
+}
+.tse-talisman::after {
+    content: " ☸";
+    color: #FCD34D;
+}
+
+/* 3. Pinned Post-it Note (กระดาษโน้ตแปะหมุดแดง) */
+.retro-pin-note {
+    position: relative;
+    background: #FEF08A;
+    border: 1px solid #FACC15;
+    color: #713F12;
+    padding: 12px 14px 10px 14px;
+    margin: 12px 0;
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.15);
+    transform: rotate(-1.5deg);
+    border-radius: 2px;
+    font-size: 12px;
+}
+.retro-pin-note::before {
+    content: "📌";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 16px;
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.3));
+}
+
+/* --------------------------------------------------------------------------
+   Wallpaper Pattern Themes (Interactive Background Switcher)
+   -------------------------------------------------------------------------- */
+body.wallpaper-blueprint {
+    background-color: #0b192c !important;
+    background-image: 
+        linear-gradient(rgba(59, 130, 246, 0.25) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.25) 1px, transparent 1px),
+        linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px) !important;
+    background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px !important;
+}
+
+body.wallpaper-starfield {
+    background-color: #0d0b18 !important;
+    background-image: 
+        radial-gradient(1px 1px at 25px 35px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1.5px 1.5px at 70px 120px, #ffd700, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 150px 80px, #a855f7, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 220px 180px, #38bdf8, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 300px 50px, #fff, rgba(0,0,0,0)) !important;
+    background-size: 320px 320px !important;
+}
+
+body.wallpaper-win98 {
+    background-color: #008080 !important;
+    background-image: none !important;
+}
+
+body.wallpaper-notebook {
+    background-color: #fdfbf7 !important;
+    background-image: 
+        linear-gradient(90deg, transparent 58px, #ef4444 58px, #ef4444 60px, transparent 60px),
+        linear-gradient(#e2e8f0 1px, transparent 1px) !important;
+    background-size: 100% 100%, 100% 24px !important;
+}
+
+body.wallpaper-matrix {
+    background-color: #050d08 !important;
+    background-image: 
+        linear-gradient(rgba(16, 185, 129, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.15) 1px, transparent 1px),
+        radial-gradient(circle at 50% 50%, rgba(5, 150, 105, 0.25) 0%, transparent 80%) !important;
+    background-size: 20px 20px, 20px 20px, 100% 100% !important;
+}
+
+body.wallpaper-corkboard {
+    background-color: #b58855 !important;
+    background-image: 
+        radial-gradient(#966838 15%, transparent 16%),
+        radial-gradient(#c69a68 15%, transparent 16%) !important;
+    background-size: 16px 16px, 16px 16px !important;
+    background-position: 0 0, 8px 8px !important;
+}
+
+body.wallpaper-y2k-grid {
+    background-color: #1a0b2e !important;
+    background-image: 
+        linear-gradient(rgba(236, 72, 153, 0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.2) 1px, transparent 1px) !important;
+    background-size: 32px 32px !important;
+}
+
+body.wallpaper-xp-bliss {
+    background-color: #245edb !important;
+    background-image: 
+        linear-gradient(180deg, #1846b0 0%, #2f6de8 40%, #76b1f8 70%, #d8ebfa 100%) !important;
+    background-attachment: fixed !important;
+}
+
+body.wallpaper-vintage-paper {
+    background-color: #f4ecd8 !important;
+    background-image: 
+        repeating-linear-gradient(45deg, #eee3cb 0, #eee3cb 1px, transparent 0, transparent 50%),
+        repeating-linear-gradient(-45deg, #eee3cb 0, #eee3cb 1px, #f4ecd8 0, #f4ecd8 50%) !important;
+    background-size: 12px 12px !important;
+}
+
+/* --------------------------------------------------------------------------
+   VisBug-Mini Retro Customizer Floating Widget
+   -------------------------------------------------------------------------- */
+.retro-customizer-toggle {
+    position: fixed;
+    right: 20px;
+    bottom: 16px;
+    z-index: 99998;
+    background: #4F46E5;
+    color: #FFFFFF;
+    border: 2px solid #FCD34D;
+    border-radius: 9999px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.15s, background 0.15s;
+    user-select: none;
+}
+.retro-customizer-toggle:hover {
+    transform: translateY(-2px);
+    background: #4338CA;
+}
+.retro-customizer-panel {
+    position: fixed;
+    right: 20px;
+    bottom: 65px;
+    width: 380px;
+    max-width: 95vw;
+    max-height: 82vh;
+    overflow-y: auto;
+    background: #111827;
+    color: #F9FAFB;
+    border: 2px solid #F59E0B;
+    border-radius: 8px;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+    z-index: 99999;
+    padding: 14px;
+    display: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+}
+.retro-customizer-panel.is-open {
+    display: block;
+    animation: customizerSlideUp 0.2s ease-out;
+}
+@keyframes customizerSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Customizer Tabs Navigation */
+.customizer-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #374151;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+}
+.customizer-tab-btn {
+    background: #1F2937;
+    color: #9CA3AF;
+    border: 1px solid #374151;
+    border-bottom: none;
+    padding: 5px 10px;
+    border-radius: 4px 4px 0 0;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 1;
+    text-align: center;
+    font-weight: 500;
+}
+.customizer-tab-btn:hover {
+    color: #F3F4F6;
+    background: #374151;
+}
+.customizer-tab-btn.active {
+    background: #2563EB;
+    color: #FFFFFF;
+    font-weight: bold;
+    border-color: #3B82F6;
+}
+.customizer-tab-pane {
+    display: none;
+}
+.customizer-tab-pane.active {
+    display: block;
+    animation: fadeInTab 0.15s ease-in;
+}
+@keyframes fadeInTab {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Big Save Layout Button */
+.customizer-save-btn {
+    width: 100%;
+    background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+    color: #FFFFFF;
+    border: 1px solid #34D399;
+    padding: 9px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform 0.1s, box-shadow 0.15s;
+}
+.customizer-save-btn:hover {
+    background: linear-gradient(180deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+}
+.customizer-save-btn:active {
+    transform: translateY(1px);
+}
+
+/* Retro Toast Notification */
+.retro-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: #064E3B;
+    color: #A7F3D0;
+    border: 2px solid #10B981;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    z-index: 100000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.retro-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.retro-customizer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #374151;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+.retro-customizer-header h4 {
+    margin: 0;
+    font-size: 13px;
+    color: #FBBF24;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.retro-customizer-close {
+    background: none;
+    border: none;
+    color: #9CA3AF;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+}
+.retro-customizer-close:hover {
+    color: #FFFFFF;
+}
+.retro-customizer-section {
+    margin-bottom: 12px;
+}
+.retro-customizer-section-title {
+    font-weight: 600;
+    color: #E5E7EB;
+    margin-bottom: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.wallpaper-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+.wallpaper-btn {
+    background: #374151;
+    border: 1px solid #4B5563;
+    color: #F3F4F6;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wallpaper-btn:hover {
+    border-color: #F59E0B;
+    background: #4B5563;
+}
+.wallpaper-btn.active {
+    background: #78350F;
+    border-color: #F59E0B;
+    color: #FCD34D;
+    font-weight: bold;
+}
+.sticker-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+.sticker-item-btn {
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 4px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+}
+.sticker-item-btn:hover {
+    border-color: #F59E0B;
+    transform: scale(1.08);
+}
+.sticker-item-btn img {
+    max-height: 28px;
+    max-width: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+.sticker-item-btn span {
+    font-size: 9px;
+    color: #9CA3AF;
+    margin-top: 3px;
+    text-align: center;
+    line-height: 1.1;
+}
+
+/* Floating Stamped Sticker */
+.draggable-stamp {
+    position: absolute;
+    z-index: 99990;
+    cursor: move;
+    user-select: none;
+    touch-action: none;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    transition: filter 0.15s;
+}
+.draggable-stamp:hover {
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8));
+}
+.draggable-stamp-close {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #EF4444;
+    color: #FFF;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.draggable-stamp:hover .draggable-stamp-close {
+    display: block;
+}
