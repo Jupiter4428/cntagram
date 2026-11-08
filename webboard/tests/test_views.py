@@ -103,6 +103,41 @@ class WebboardViewsTests(TestCase):
         self.thread.refresh_from_db()
         self.assertEqual(self.thread.views_count, initial_views + 1)
 
+    def test_thread_detail_renders_post_delete_button_for_author_and_moderator(self):
+        """Delete button is shown for author and moderator, but not strangers."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความทดสอบปุ่มลบ",
+        )
+        # Logged in as post author (student)
+        response = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk})
+        )
+        delete_url = reverse("webboard:post_delete", kwargs={"pk": post.pk})
+        self.assertContains(response, delete_url)
+
+        # Logged in as moderator
+        self.client.force_login(self.moderator)
+        response = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk})
+        )
+        self.assertContains(response, delete_url)
+
+        # Logged in as stranger
+        stranger = User.objects.create_user(
+            email="6610000088@student.tu.ac.th",
+            password="test-password-123",
+            nickname="StrangerViewer",
+            department=self.student.department,
+            pdpa_consent_at=timezone.now(),
+        )
+        self.client.force_login(stranger)
+        response = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk})
+        )
+        self.assertNotContains(response, delete_url)
+
     def test_thread_create_requires_login(self):
         """Unauthenticated user is redirected to login page."""
         anon = Client()
@@ -306,3 +341,80 @@ class WebboardViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    def test_post_delete_by_author_succeeds(self):
+        """Author can delete their post and gets redirected with message."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความที่ต้องการลบ",
+        )
+        response = self.client.post(
+            reverse("webboard:post_delete", kwargs={"pk": post.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk}),
+        )
+        self.assertFalse(Post.objects.filter(pk=post.pk).exists())
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("ลบความคิดเห็นเรียบร้อยแล้ว", messages)
+
+    def test_post_delete_by_moderator_succeeds(self):
+        """Moderator can delete any post."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความที่ผู้ดูแลจะลบ",
+        )
+        self.client.force_login(self.moderator)
+        response = self.client.post(
+            reverse("webboard:post_delete", kwargs={"pk": post.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Post.objects.filter(pk=post.pk).exists())
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("ลบความคิดเห็นเรียบร้อยแล้ว", messages)
+
+    def test_post_delete_by_stranger_denied(self):
+        """A stranger cannot delete another user's post."""
+        other = User.objects.create_user(
+            email="6610000099@student.tu.ac.th",
+            password="test-password-123",
+            nickname="StrangerPost",
+            department=self.student.department,
+            pdpa_consent_at=timezone.now(),
+        )
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความของคนอื่น",
+        )
+        self.client.force_login(other)
+        response = self.client.post(
+            reverse("webboard:post_delete", kwargs={"pk": post.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Post.objects.filter(pk=post.pk).exists())
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertIn("คุณไม่มีสิทธิ์ในการลบความคิดเห็นนี้", messages)
+
+    def test_post_delete_returns_404_for_missing_post(self):
+        """Deleting non-existent post returns 404."""
+        response = self.client.post(
+            reverse("webboard:post_delete", kwargs={"pk": 99999})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_delete_requires_post_method(self):
+        """GET request to post_delete returns 405 Method Not Allowed."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความทดสอบ GET",
+        )
+        response = self.client.get(
+            reverse("webboard:post_delete", kwargs={"pk": post.pk})
+        )
+        self.assertEqual(response.status_code, 405)

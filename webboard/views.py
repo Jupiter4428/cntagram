@@ -173,3 +173,21 @@ def thread_delete(request, pk):
         messages.error(request, str(err))
 
     return redirect("webboard:board_index")
+
+
+@login_required
+@require_POST
+def post_delete(request, pk):
+    """Delete a reply post if permitted."""
+    post = selectors.get_post_by_id(pk)
+    if not post:
+        raise Http404("ไม่พบความคิดเห็นที่ต้องการ")
+
+    thread_pk = post.thread_id
+    try:
+        services.delete_post(post=post, actor=request.user)
+        messages.success(request, "ลบความคิดเห็นเรียบร้อยแล้ว")
+    except PermissionDenied as err:
+        messages.error(request, str(err))
+
+    return redirect("webboard:thread_detail", pk=thread_pk)
