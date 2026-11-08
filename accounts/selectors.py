@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from catalog.models import Batch, Course, Department
 
-from .models import Role, User, UserCounter, UserRole
+from .models import PollVote, Role, ShoutboxMessage, User, UserCounter, UserRole
 
 
 def moderator_list():
@@ -136,3 +136,64 @@ def admin_dashboard(*, today=None, page=1):
             )
         ),
     }
+
+
+POLL_QUESTION = "วิชาไหนโหดสุดเทอมนี้"
+POLL_CHOICES = (
+    ("math", "Engineering Math / Calculus"),
+    ("dsa", "Data Structures & Algorithms"),
+    ("circuit", "Circuit Analysis / Physics"),
+)
+
+
+def get_weekly_poll():
+    """Return durable poll totals and percentages."""
+    vote_counts = dict(
+        PollVote.objects.values("choice")
+        .annotate(n=Count("pk"))
+        .values_list("choice", "n")
+    )
+    total_votes = sum(vote_counts.values())
+    choices = []
+    for key, label in POLL_CHOICES:
+        votes = vote_counts.get(key, 0)
+        choices.append(
+            {
+                "key": key,
+                "label": label,
+                "votes": votes,
+                "percent": round(votes * 100 / total_votes) if total_votes else 0,
+            }
+        )
+    return {"question": POLL_QUESTION, "total": total_votes, "choices": choices}
+
+
+SHOUTBOX_MAX_MESSAGES = 30
+DEFAULT_SHOUTBOX_MESSAGES = (
+    {"author": "[CN21] พี่บอย", "text": "น้องๆ อย่าลืมทวนวงจรไฟฟ้านะ"},
+    {"author": "[CN23] น้ำหวาน", "text": "ขอบคุณสำหรับชีทแคลคูลัสค่า!"},
+    {"author": "[ME22] ก้อง", "text": "ใครมีแนวข้อสอบ Thermo ฝากอัปหน่อย"},
+    {"author": "[CE24] เต้ย", "text": "สู้ๆ กับมิดเทอมทุกคนครับ"},
+)
+
+
+def get_shoutbox_messages():
+    """Return the newest 30 persisted messages, or demo content when empty."""
+    messages = list(
+        ShoutboxMessage.objects.select_related("user__department").order_by(
+            "-created_at", "-pk"
+        )[:SHOUTBOX_MAX_MESSAGES]
+    )
+    if not messages:
+        return list(DEFAULT_SHOUTBOX_MESSAGES)
+    messages.reverse()
+    return [
+        {
+            "author": (
+                f"[{msg.user.department.code if msg.user.department else 'Member'}] "
+                f"{msg.user.nickname}"
+            ),
+            "text": msg.text,
+        }
+        for msg in messages
+    ]

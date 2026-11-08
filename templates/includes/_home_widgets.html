@@ -44,24 +44,10 @@
         {% endif %}
     </div>
     <div class="retro-widget__body module-body">
-        <p class="mb-1"><strong>{{ poll.question|default:"วิชาไหนโหดสุดเทอมนี้" }}</strong></p>
+        <p class="mb-1"><strong>{{ poll.question }}</strong></p>
 
         {% if not show_poll_form %}
-            <div class="poll-results" aria-label="ผลโหวตล่าสุด">
-                {% for choice in poll.choices %}
-                    <div class="poll-result-row">
-                        <div class="poll-result-label">
-                            <span>{{ choice.label }}</span>
-                            <b>{{ choice.percent }}% ({{ choice.votes }})</b>
-                        </div>
-                        <div class="poll-bar-wrap">
-                            <div class="poll-bar-fill" style="width: {{ choice.percent }}%;"></div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            <p class="demo-note mb-1 text-center">ผลโหวตทั้งหมด {{ poll.total }} เสียง</p>
-            <a href="?poll_view=form" class="chrome-button chrome-button--quiet w-100 text-center d-block">ดูตัวเลือก / โหวตใหม่</a>
+            {% include "includes/_poll_results.html" %}
         {% else %}
             <form method="post" action="{% url 'accounts:poll_vote' %}" class="poll-form">
                 {% csrf_token %}

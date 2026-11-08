@@ -1,6 +1,6 @@
 # ADR 0005: การเลือกแพลตฟอร์ม Deploy, ฐานข้อมูล Production, การจัดเก็บไฟล์เอกสาร และกลยุทธ์การสำรองข้อมูล
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-06
 - **Issue:** #139 (SP-4)
 
@@ -30,7 +30,7 @@ Sprint 3 มีเป้าหมายสำคัญตาม Roadmap คื�
 - **Automated Build & Release:** ควบคุมการขึ้นระบบผ่านสคริปต์ `build.sh` (ติดตั้ง Dependency, รัน `check --deploy`, รวม Static Files ด้วย `collectstatic --noinput`, และรัน Database Migrations) และกำหนด Start Command เป็น `gunicorn portal.wsgi:application`
 
 ### 2. ฐานข้อมูล Production: Managed PostgreSQL (Region: Singapore)
-- แยกฐานข้อมูลออกจากเซิร์ฟเวอร์เว็บโดยใช้ **Managed PostgreSQL** บน Render (หรือ Neon PostgreSQL) ใน Region Singapore
+- แยกฐานข้อมูลออกจากเซิร์ฟเวอร์เว็บโดยใช้ **Managed PostgreSQL** บน Render ใน Region Singapore
 - เชื่อมต่อผ่านตัวแปรสภาพแวดล้อม `DATABASE_URL` (โดยใช้ `dj-database-url` ใน `settings.py`)
 - บน Cloud Web Service จะเชื่อมต่อผ่าน **Internal Database URL** เพื่อความเร็วระดับ Local Network ภายใน Data Center, ไม่คิดค่า Bandwidth ภายนอก และปลอดภัยสูงสุด
 - โครงสร้างตารางจะถูก Migrate โดยอัตโนมัติในขั้นตอน `build.sh` ด้วย `python manage.py migrate`
