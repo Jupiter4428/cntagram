@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return div.innerHTML;
     }
 
-    function renderPollResults(poll) {
+    function renderPollResults(data) {
         const pollBody = pollWidget.querySelector(".retro-widget__body");
         const statusBadge = pollWidget.querySelector(".retro-widget__titlebar small");
         if (statusBadge) {
@@ -90,11 +90,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!pollBody) return;
 
-        const question = poll.question || "วิชาไหนโหดสุดเทอมนี้";
-        let resultsHtml = `<p class="mb-1"><strong>${escapeHtml(question)}</strong></p>`;
+        const poll = (data && data.poll) ? data.poll : data;
+        const question = (poll && poll.question) ? poll.question : "";
+        const questionHtml = `<p class="mb-1"><strong>${escapeHtml(question)}</strong></p>`;
+
+        if (data && data.html) {
+            pollBody.innerHTML = questionHtml + data.html;
+            return;
+        }
+
+        let resultsHtml = questionHtml;
         resultsHtml += `<div class="poll-results" aria-label="ผลโหวตล่าสุด">`;
 
-        if (Array.isArray(poll.choices)) {
+        if (poll && Array.isArray(poll.choices)) {
             poll.choices.forEach((choice) => {
                 resultsHtml += `
                     <div class="poll-result-row">
@@ -110,8 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        const total = (poll && poll.total !== undefined) ? poll.total : 0;
         resultsHtml += `</div>`;
-        resultsHtml += `<p class="demo-note mb-1 text-center">ผลโหวตทั้งหมด ${poll.total} เสียง</p>`;
+        resultsHtml += `<p class="demo-note mb-1 text-center">ผลโหวตทั้งหมด ${total} เสียง</p>`;
         resultsHtml += `<a href="?poll_view=form" class="chrome-button chrome-button--quiet w-100 text-center d-block">ดูตัวเลือก / โหวตใหม่</a>`;
 
         pollBody.innerHTML = resultsHtml;
@@ -142,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const data = await response.json();
                 if (data.ok && data.poll) {
-                    renderPollResults(data.poll);
+                    renderPollResults(data);
                 } else {
                     pollForm.submit();
                 }

@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -56,24 +57,33 @@ def home(request):
         dashboard = selectors.admin_dashboard(page=request.GET.get("page"))
         return render(request, "accounts/index_admin.html", {"dashboard": dashboard})
 
-    poll = services.get_weekly_poll()
+    has_visited = bool(request.COOKIES.get("has_visited_home"))
+    if not has_visited:
+        visitor_digits = services.record_home_visit()
+    else:
+        visitor_digits = services.get_home_visit_count()
+
+    poll = selectors.get_weekly_poll()
     has_voted = (
         request.user.is_authenticated
         and PollVote.objects.filter(user=request.user).exists()
     )
     show_form = not has_voted  # A query parameter must never re-enable voting.
 
-    return render(
+    response = render(
         request,
         "accounts/index.html",
         {
-            "visitor_digits": services.record_home_visit(),
+            "visitor_digits": visitor_digits,
             "poll": poll,
             "has_voted_poll": has_voted,
             "show_poll_form": show_form,
-            "shoutbox_messages": services.get_shoutbox_messages(),
+            "shoutbox_messages": selectors.get_shoutbox_messages(),
         },
     )
+    if not has_visited:
+        response.set_cookie("has_visited_home", "1", httponly=True, samesite="Lax")
+    return response
 
 
 @login_required
@@ -87,12 +97,16 @@ def poll_vote(request):
             user=request.user, choice_key=form.cleaned_data["choice"]
         )
     else:
-        poll = services.get_weekly_poll()
+        poll = selectors.get_weekly_poll()
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        html = render_to_string(
+            "includes/_poll_results.html", {"poll": poll}, request=request
+        )
         return JsonResponse(
             {
                 "ok": success,
                 "poll": poll,
+                "html": html,
                 "has_voted": PollVote.objects.filter(user=request.user).exists(),
             },
             status=200 if success else 400,
@@ -114,7 +128,7 @@ def shoutbox_post(request):
         return JsonResponse(
             {
                 "ok": success,
-                "messages": services.get_shoutbox_messages(),
+                "messages": selectors.get_shoutbox_messages(),
             },
             status=200 if success else 400,
         )

@@ -6,10 +6,14 @@ from django.contrib.auth import authenticate, get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Count
 from django.utils.crypto import salted_hmac
 
 from accounts.models import PollVote, Role, ShoutboxMessage, UserRole
+from accounts.selectors import (
+    POLL_CHOICES,
+    get_shoutbox_messages,
+    get_weekly_poll,
+)
 
 User = get_user_model()
 
@@ -253,6 +257,12 @@ VISITOR_COUNTER_KEY = "site:visitor_count"
 VISITOR_COUNTER_BASE = 38
 
 
+def get_home_visit_count():
+    """Return the current visitor counter padded to 6 digits."""
+    total = cache.get(VISITOR_COUNTER_KEY, VISITOR_COUNTER_BASE)
+    return f"{total:06d}"
+
+
 def record_home_visit():
     """เพิ่มตัวนับการเปิดหน้า (cache ไม่รับประกัน atomic) และคืนเลข 6 หลัก"""
     first_visit = VISITOR_COUNTER_BASE + 1
@@ -261,36 +271,6 @@ def record_home_visit():
     else:
         total = cache.incr(VISITOR_COUNTER_KEY)
     return f"{total:06d}"
-
-
-POLL_QUESTION = "วิชาไหนโหดสุดเทอมนี้"
-POLL_CHOICES = (
-    ("math", "Engineering Math / Calculus"),
-    ("dsa", "Data Structures & Algorithms"),
-    ("circuit", "Circuit Analysis / Physics"),
-)
-
-
-def get_weekly_poll():
-    """Return durable poll totals and percentages."""
-    vote_counts = dict(
-        PollVote.objects.values("choice")
-        .annotate(n=Count("pk"))
-        .values_list("choice", "n")
-    )
-    total_votes = sum(vote_counts.values())
-    choices = []
-    for key, label in POLL_CHOICES:
-        votes = vote_counts.get(key, 0)
-        choices.append(
-            {
-                "key": key,
-                "label": label,
-                "votes": votes,
-                "percent": round(votes * 100 / total_votes) if total_votes else 0,
-            }
-        )
-    return {"question": POLL_QUESTION, "total": total_votes, "choices": choices}
 
 
 def record_poll_vote(*, user, choice_key):
@@ -303,37 +283,6 @@ def record_poll_vote(*, user, choice_key):
     except IntegrityError:
         return False, get_weekly_poll()
     return True, get_weekly_poll()
-
-
-SHOUTBOX_MAX_MESSAGES = 30
-DEFAULT_SHOUTBOX_MESSAGES = (
-    {"author": "[CN21] พี่บอย", "text": "น้องๆ อย่าลืมทวนวงจรไฟฟ้านะ"},
-    {"author": "[CN23] น้ำหวาน", "text": "ขอบคุณสำหรับชีทแคลคูลัสค่า!"},
-    {"author": "[ME22] ก้อง", "text": "ใครมีแนวข้อสอบ Thermo ฝากอัปหน่อย"},
-    {"author": "[CE24] เต้ย", "text": "สู้ๆ กับมิดเทอมทุกคนครับ"},
-)
-
-
-def get_shoutbox_messages():
-    """Return the newest 30 persisted messages, or demo content when empty."""
-    messages = list(
-        ShoutboxMessage.objects.select_related("user__department").order_by(
-            "-created_at", "-pk"
-        )[:SHOUTBOX_MAX_MESSAGES]
-    )
-    if not messages:
-        return list(DEFAULT_SHOUTBOX_MESSAGES)
-    messages.reverse()
-    return [
-        {
-            "author": (
-                f"[{msg.user.department.code if msg.user.department else 'Member'}] "
-                f"{msg.user.nickname}"
-            ),
-            "text": msg.text,
-        }
-        for msg in messages
-    ]
 
 
 def add_shoutbox_message(*, user, text):
