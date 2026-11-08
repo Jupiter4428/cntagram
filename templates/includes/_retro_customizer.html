@@ -1,0 +1,644 @@
+{% load static %}
+<!-- Retro VisBug-Mini Customizer Widget -->
+<button type="button" class="retro-customizer-toggle" id="retro-customizer-toggle" title="เปิดเครื่องมือตกแต่งเว็บ (เลือกพื้นหลัง & แปะสติ๊กเกอร์ & บันทึก)">
+    <span>🎨</span> ตกแต่งเว็บ
+</button>
+
+<div class="retro-toast" id="retro-toast" role="status" aria-live="polite">
+    ✅ บันทึกการจัดวางเรียบร้อยแล้ว!
+</div>
+
+<div class="retro-customizer-panel" id="retro-customizer-panel" role="dialog" aria-labelledby="customizer-heading">
+    <div class="retro-customizer-header">
+        <h4 id="customizer-heading">
+            <span>🛠️</span> เครื่องมือตกแต่งเรโทร VisBug
+        </h4>
+        <button type="button" class="retro-customizer-close" id="retro-customizer-close" aria-label="ปิดพาเนล">✕</button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="customizer-tabs" role="tablist">
+        <button type="button" class="customizer-tab-btn active" data-tab="tab-wallpapers">
+            🖼️ พื้นหลัง
+        </button>
+        <button type="button" class="customizer-tab-btn" data-tab="tab-stickers">
+            👾 สติ๊กเกอร์ GIF
+        </button>
+        <button type="button" class="customizer-tab-btn" data-tab="tab-save">
+            💾 บันทึก & ส่งออก
+        </button>
+    </div>
+
+    <!-- TAB 1: WALLPAPERS -->
+    <div class="customizer-tab-pane active" id="tab-wallpapers">
+        <div class="retro-customizer-section">
+            <div class="retro-customizer-section-title">🖼️ เลือกลายพื้นหลังคลาสสิก (10 สไตล์):</div>
+            <div class="wallpaper-grid">
+                <button type="button" class="wallpaper-btn active" data-wallpaper="">
+                    ⭐ ค่าเริ่มต้น
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-blueprint">
+                    📐 กราฟบลูพริ้นต์
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-starfield">
+                    🌌 อวกาศดวงดาว 90s
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-win98">
+                    🪟 Win98 Teal
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-notebook">
+                    📜 สมุดเลคเชอร์
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-matrix">
+                    📟 Matrix Rain
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-corkboard">
+                    🪵 บอร์ดไม้ก๊อก
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-y2k-grid">
+                    🌈 Y2K Neon Grid
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-xp-bliss">
+                    💻 WinXP Bliss
+                </button>
+                <button type="button" class="wallpaper-btn" data-wallpaper="wallpaper-vintage-paper">
+                    📜 กระดาษเก่า
+                </button>
+            </div>
+        </div>
+
+        <!-- Custom Wallpaper URL Input -->
+        <div class="retro-customizer-section mt-3 pt-2" style="border-top: 1px dashed #374151;">
+            <div class="retro-customizer-section-title">🔗 ใส่ลิงก์รูปพื้นหลังเอง (Custom Image URL):</div>
+            <div class="d-flex gap-2">
+                <input type="url" id="custom-wallpaper-input" placeholder="https://... (PNG/JPG/GIF)" 
+                       style="flex: 1; background: #1F2937; border: 1px solid #4B5563; color: #FFF; padding: 5px 8px; border-radius: 4px; font-size: 11px;">
+                <button type="button" id="apply-custom-wallpaper-btn" 
+                        style="background: #2563EB; border: 1px solid #3B82F6; color: #FFF; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">
+                    ใช้ภาพนี้
+                </button>
+            </div>
+            <div style="font-size: 10px; color: #9CA3AF; margin-top: 4px;">
+                💡 รองรับทั้งภาพแพทเทิร์นปูกระเบื้อง (Seamless Pattern) หรือภาพวิว
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: STICKERS & GIFS -->
+    <div class="customizer-tab-pane" id="tab-stickers">
+        <!-- Custom GIF URL Input -->
+        <div class="retro-customizer-section pb-2 mb-2" style="border-bottom: 1px dashed #374151;">
+            <div class="retro-customizer-section-title">➕ นำเข้า GIF จาก GifCities / ลิงก์ตรง:</div>
+            <div class="d-flex gap-2">
+                <input type="url" id="custom-gif-input" placeholder="วางลิงก์ภาพ GIF ที่นี่..." 
+                       style="flex: 1; background: #1F2937; border: 1px solid #4B5563; color: #FFF; padding: 5px 8px; border-radius: 4px; font-size: 11px;">
+                <button type="button" id="stamp-custom-gif-btn" 
+                        style="background: #D97706; border: 1px solid #F59E0B; color: #FFF; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap;">
+                    แปะลงเว็บ
+                </button>
+            </div>
+            <div style="font-size: 10px; color: #9CA3AF; margin-top: 3px;">
+                ค้นหา GIF ยุคเก่าได้ที่ <a href="https://gifcities.org/" target="_blank" rel="noopener" style="color: #60A5FA; text-decoration: underline;">GifCities.org</a> แล้วก๊อปลิงก์รูปมาแปะได้เลย!
+            </div>
+        </div>
+
+        <!-- Category A: วิศวะ & ชีวิตนักศึกษา -->
+        <div class="retro-customizer-section">
+            <div class="retro-customizer-section-title">🎓 วิศวะ & ชีวิตสอบมิดเทอม:</div>
+            <div class="sticker-palette-grid">
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span class='tse-talisman' style='font-size:12px; box-shadow:0 3px 6px rgba(0,0,0,0.4);'>ผ้ายันต์กัน F มธ.</span>">
+                    <span style="font-size: 16px;">📜</span>
+                    <span>ยันต์กัน F</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span class='pantip-stamp' style='font-size:12px; background:#FFFDE8; box-shadow:0 2px 5px rgba(0,0,0,0.3);'>ชีทแท้ 100%</span>">
+                    <span style="font-size: 16px;">💯</span>
+                    <span>ตราชีทแท้</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span class='gamer-sticker gamer-sticker--warning' style='font-size:11px; box-shadow:0 2px 5px rgba(0,0,0,0.3);'>⚠️ F อย่ามาทัก!</span>">
+                    <span style="font-size: 16px;">⚠️</span>
+                    <span>F อย่ามาทัก</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span style='background:#78350F; color:#FCD34D; border:1.5px solid #F59E0B; padding:3px 6px; border-radius:3px; font-size:11px; font-weight:bold;'>☕ กาแฟกระป๋องที่ 3</span>">
+                    <span style="font-size: 16px;">☕</span>
+                    <span>กาแฟสู้ตาย</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span style='background:#065F46; color:#A7F3D0; border:1.5px solid #10B981; padding:3px 6px; border-radius:3px; font-size:11px; font-weight:bold;'>🌟 คาถาขอ A จงมา</span>">
+                    <span style="font-size: 16px;">🌟</span>
+                    <span>ขอเกรด A</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span style='background:#991B1B; color:#FEE2E2; border:1.5px solid #EF4444; padding:3px 6px; border-radius:3px; font-size:11px; font-weight:bold;'>📖 สรุปชีทก่อนสอบ 24h</span>">
+                    <span style="font-size: 16px;">📖</span>
+                    <span>อ่านก่อนสอบ</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Category B: GifCities & Web 1.0 Retro Animations -->
+        <div class="retro-customizer-section mt-2">
+            <div class="retro-customizer-section-title">👾 GifCities & Web 1.0 ยอดฮิต:</div>
+            <div class="sticker-palette-grid">
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="{% static 'img/stickers/computer_nerd.gif' %}" data-alt="Nerd Typing">
+                    <img src="{% static 'img/stickers/computer_nerd.gif' %}" alt="Nerd">
+                    <span>เด็กเนิร์ดเคาะ</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="{% static 'img/stickers/under_construction.gif' %}" data-alt="Under Construction">
+                    <img src="{% static 'img/stickers/under_construction.gif' %}" alt="Under Construction">
+                    <span>ทางม้าลาย</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="{% static 'img/stickers/fire_flame.gif' %}" data-alt="Fire Flame">
+                    <img src="{% static 'img/stickers/fire_flame.gif' %}" alt="Flame">
+                    <span>ไฟลุก [RO]</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://media.giphy.com/media/unQ3IJU2RG7DO/giphy.gif" data-alt="Bongo Cat">
+                    <img src="https://media.giphy.com/media/unQ3IJU2RG7DO/giphy.gif" alt="Bongo Cat">
+                    <span>Bongo Cat</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Rotating_earth_%28large%29.gif" data-alt="3D Globe">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Rotating_earth_%28large%29.gif" alt="3D Globe">
+                    <span>ลูกโลก 3D</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://media.giphy.com/media/IB9foBA4PVkKA/giphy.gif" data-alt="Dancing Banana">
+                    <img src="https://media.giphy.com/media/IB9foBA4PVkKA/giphy.gif" alt="Dancing Banana">
+                    <span>กล้วยเต้น 2004</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://media.giphy.com/media/h8r328J16r8S899OqD/giphy.gif" data-alt="Coffee Cup">
+                    <img src="https://media.giphy.com/media/h8r328J16r8S899OqD/giphy.gif" alt="Coffee">
+                    <span>แก้วกาแฟควัน</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://media.giphy.com/media/26AHG5KGFxSkUWw1i/giphy.gif" data-alt="Flaming Skull">
+                    <img src="https://media.giphy.com/media/26AHG5KGFxSkUWw1i/giphy.gif" alt="Skull">
+                    <span>กะโหลกไฟ</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://media.giphy.com/media/14udF3WUwwGMaA/giphy.gif" data-alt="Dancing Baby">
+                    <img src="https://media.giphy.com/media/14udF3WUwwGMaA/giphy.gif" alt="Dancing Baby">
+                    <span>เบบี้ 3D 90s</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://media.giphy.com/media/sIIhZliB2McAo/giphy.gif" data-alt="Nyan Cat">
+                    <img src="https://media.giphy.com/media/sIIhZliB2McAo/giphy.gif" alt="Nyan Cat">
+                    <span>Nyan Cat</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://media.giphy.com/media/3o7TKoWXm3okO1kgHC/giphy.gif" data-alt="Pixel Heart">
+                    <img src="https://media.giphy.com/media/3o7TKoWXm3okO1kgHC/giphy.gif" alt="Heart">
+                    <span>หัวใจ 8-bit</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="img" data-src="https://web.archive.org/web/20090829175654id_/http://geocities.com/Athens/Agora/2372/images/floppy.gif" data-alt="Spinning Floppy">
+                    <img src="https://web.archive.org/web/20090829175654id_/http://geocities.com/Athens/Agora/2372/images/floppy.gif" alt="Floppy">
+                    <span>แผ่นดิสก์หมุน</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Category C: Ragnarok & Gaming 2004 -->
+        <div class="retro-customizer-section mt-2">
+            <div class="retro-customizer-section-title">⚔️ Ragnarok Online & บอร์ดประมูล:</div>
+            <div class="sticker-palette-grid">
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span style='background:#FDE047; color:#713F12; border:2px solid #CA8A04; border-radius:50%; padding:6px 8px; font-weight:bold; font-size:12px; display:inline-block; box-shadow:0 3px 6px rgba(0,0,0,0.3);'>🍮 Poring</span>">
+                    <span style="font-size: 16px;">🍮</span>
+                    <span>น้อง Poring</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span style='background:#FFFFFF; color:#1E40AF; border:2px solid #3B82F6; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px; box-shadow:0 2px 4px rgba(0,0,0,0.2);'>🧪 White Potion</span>">
+                    <span style="font-size: 16px;">🧪</span>
+                    <span>White Potion</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span class='gamer-sticker gamer-sticker--ro' style='font-size:11px; box-shadow:0 2px 5px rgba(0,0,0,0.3);'>[RO Guild] วอร์จบแต่การบ้านไม่จบ</span>">
+                    <span style="font-size: 16px;">🛡️</span>
+                    <span>RO กิลด์วอร์</span>
+                </button>
+                <button type="button" class="sticker-item-btn" data-stamp-type="html" data-html="<span style='background:#FEF3C7; color:#B45309; border:1.5px solid #F59E0B; padding:2px 8px; border-radius:99px; font-weight:bold; font-size:12px; box-shadow:0 2px 4px rgba(0,0,0,0.2);'>💬 !? ...</span>">
+                    <span style="font-size: 16px;">💬</span>
+                    <span>Emote บอลลูน</span>
+                </button>
+            </div>
+        </div>
+        <div style="font-size: 10px; color: #9CA3AF; margin-top: 8px;">
+            💡 คลิกสติ๊กเกอร์แล้วมันจะลอยขึ้นมาบนหน้าจอ สามารถคลิกลากไปวางตรงไหนก็ได้ และกด [×] เพื่อลบตัวนั้นออกได้ครับ
+        </div>
+    </div>
+
+    <!-- TAB 3: SAVE & EXPORT (ปุ่มบันทึกเพื่อไปใช้ต่อจริง) -->
+    <div class="customizer-tab-pane" id="tab-save">
+        <div class="retro-customizer-section">
+            <div class="retro-customizer-section-title">💾 บันทึกการจัดวางหน้าเว็บ (Save Layout):</div>
+            <button type="button" class="customizer-save-btn" id="save-layout-btn">
+                <span>💾</span> บันทึกการตกแต่งทั้งหมดไว้ในเบราว์เซอร์
+            </button>
+            <div style="font-size: 11px; color: #9CA3AF; margin-top: 6px; line-height: 1.4;">
+                📌 เมื่อกดบันทึก ทุกสติ๊กเกอร์ที่คุณลากวาง รวมถึงพื้นหลังที่เลือกไว้ จะถูกบันทึกไว้ในเบราว์เซอร์อย่างถาวร ทุกครั้งที่คุณรีเฟรชหรือกลับมาเปิดเว็บนี้ หน้าจอจะคงรูปแบบที่คุณแต่งไว้ทันที!
+            </div>
+        </div>
+
+        <div class="retro-customizer-section mt-3 pt-2" style="border-top: 1px dashed #374151;">
+            <div class="retro-customizer-section-title">📤 ส่งออก / นำเข้าโค้ดคอนฟิก (JSON):</div>
+            <div class="d-flex gap-2 mb-2">
+                <button type="button" id="export-json-btn" 
+                        style="flex: 1; background: #374151; border: 1px solid #4B5563; color: #F3F4F6; padding: 5px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                    📋 คัดลอก Config (Export)
+                </button>
+                <button type="button" id="import-json-btn" 
+                        style="flex: 1; background: #374151; border: 1px solid #4B5563; color: #F3F4F6; padding: 5px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                    📥 นำเข้าจาก JSON (Import)
+                </button>
+            </div>
+            <textarea id="config-json-area" placeholder="คลิก 'คัดลอก Config' เพื่อดูรหัส JSON หรือวางรหัส JSON ที่นี่เพื่อนำเข้า..." 
+                      style="width: 100%; height: 70px; background: #1F2937; border: 1px solid #4B5563; color: #FCD34D; font-family: monospace; font-size: 10px; padding: 6px; border-radius: 4px; resize: none;"></textarea>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-2" style="border-top: 1px solid #374151;">
+            <button type="button" id="clear-all-stamps-btn" 
+                    style="background: none; border: 1px solid #EF4444; color: #FCA5A5; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                🗑️ ลบสติ๊กเกอร์ทั้งหมด
+            </button>
+            <button type="button" id="reset-all-btn" 
+                    style="background: none; border: 1px solid #6B7280; color: #9CA3AF; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                🔄 ล้างการบันทึกทั้งหมด
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var STORAGE_KEY = 'cntagram_retro_saved_layout';
+    var toggleBtn = document.getElementById('retro-customizer-toggle');
+    var panel = document.getElementById('retro-customizer-panel');
+    var closeBtn = document.getElementById('retro-customizer-close');
+    var toast = document.getElementById('retro-toast');
+    var tabBtns = document.querySelectorAll('.customizer-tab-btn');
+    var tabPanes = document.querySelectorAll('.customizer-tab-pane');
+
+    var wallpaperBtns = document.querySelectorAll('.wallpaper-btn');
+    var customWallpaperInput = document.getElementById('custom-wallpaper-input');
+    var applyCustomWallpaperBtn = document.getElementById('apply-custom-wallpaper-btn');
+
+    var customGifInput = document.getElementById('custom-gif-input');
+    var stampCustomGifBtn = document.getElementById('stamp-custom-gif-btn');
+    var stickerBtns = document.querySelectorAll('.sticker-item-btn');
+
+    var saveLayoutBtn = document.getElementById('save-layout-btn');
+    var exportJsonBtn = document.getElementById('export-json-btn');
+    var importJsonBtn = document.getElementById('import-json-btn');
+    var configJsonArea = document.getElementById('config-json-area');
+    var clearAllBtn = document.getElementById('clear-all-stamps-btn');
+    var resetAllBtn = document.getElementById('reset-all-btn');
+
+    var activeWallpaperClass = '';
+    var activeCustomWallpaperUrl = '';
+
+    var allPresetWallpapers = [
+        'wallpaper-blueprint', 'wallpaper-starfield', 'wallpaper-win98',
+        'wallpaper-notebook', 'wallpaper-matrix', 'wallpaper-corkboard',
+        'wallpaper-y2k-grid', 'wallpaper-xp-bliss', 'wallpaper-vintage-paper'
+    ];
+
+    function showToast(msg) {
+        if (!toast) return;
+        toast.textContent = msg || '✅ บันทึกสำเร็จ!';
+        toast.classList.add('show');
+        setTimeout(function() {
+            toast.classList.remove('show');
+        }, 2500);
+    }
+
+    // 1. Toggle Panel
+    if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', function() {
+            panel.classList.toggle('is-open');
+        });
+    }
+    if (closeBtn && panel) {
+        closeBtn.addEventListener('click', function() {
+            panel.classList.remove('is-open');
+        });
+    }
+
+    // 2. Tabs Switcher
+    tabBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var targetTab = this.getAttribute('data-tab');
+            tabBtns.forEach(function(b) { b.classList.remove('active'); });
+            tabPanes.forEach(function(p) { p.classList.remove('active'); });
+            this.classList.add('active');
+            var targetPane = document.getElementById(targetTab);
+            if (targetPane) targetPane.classList.add('active');
+        });
+    });
+
+    // 3. Wallpaper Switcher
+    function applyWallpaper(wpClass, customUrl) {
+        allPresetWallpapers.forEach(function(cls) {
+            document.body.classList.remove(cls);
+        });
+
+        if (customUrl) {
+            document.body.style.backgroundImage = 'url("' + customUrl + '")';
+            document.body.style.backgroundRepeat = 'repeat';
+            document.body.style.backgroundSize = 'auto';
+            activeWallpaperClass = '';
+            activeCustomWallpaperUrl = customUrl;
+            if (customWallpaperInput) customWallpaperInput.value = customUrl;
+        } else {
+            document.body.style.backgroundImage = '';
+            document.body.style.backgroundRepeat = '';
+            document.body.style.backgroundSize = '';
+            activeCustomWallpaperUrl = '';
+            activeWallpaperClass = wpClass || '';
+            if (wpClass) {
+                document.body.classList.add(wpClass);
+            }
+        }
+
+        wallpaperBtns.forEach(function(btn) {
+            if (!customUrl && btn.getAttribute('data-wallpaper') === (wpClass || '')) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    wallpaperBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var wp = this.getAttribute('data-wallpaper') || '';
+            applyWallpaper(wp, '');
+        });
+    });
+
+    if (applyCustomWallpaperBtn && customWallpaperInput) {
+        applyCustomWallpaperBtn.addEventListener('click', function() {
+            var url = customWallpaperInput.value.trim();
+            if (url) {
+                applyWallpaper('', url);
+                showToast('🎨 ปรับใช้ภาพพื้นหลังเรียบร้อย!');
+            }
+        });
+    }
+
+    // 4. Draggable Stamps Engine
+    var activeDrag = null;
+    var dragOffsetX = 0;
+    var dragOffsetY = 0;
+
+    function makeDraggable(el) {
+        el.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('draggable-stamp-close')) return;
+            activeDrag = el;
+            var rect = el.getBoundingClientRect();
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+            el.style.zIndex = 99995;
+            e.preventDefault();
+        });
+
+        el.addEventListener('touchstart', function(e) {
+            if (e.target.classList.contains('draggable-stamp-close')) return;
+            activeDrag = el;
+            var touch = e.touches[0];
+            var rect = el.getBoundingClientRect();
+            dragOffsetX = touch.clientX - rect.left;
+            dragOffsetY = touch.clientY - rect.top;
+            el.style.zIndex = 99995;
+        }, {passive: false});
+    }
+
+    document.addEventListener('mousemove', function(e) {
+        if (!activeDrag) return;
+        var scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        var newX = e.clientX + scrollX - dragOffsetX;
+        var newY = e.clientY + scrollY - dragOffsetY;
+        activeDrag.style.left = Math.max(0, newX) + 'px';
+        activeDrag.style.top = Math.max(0, newY) + 'px';
+    });
+
+    document.addEventListener('touchmove', function(e) {
+        if (!activeDrag) return;
+        var touch = e.touches[0];
+        var scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        var newX = touch.clientX + scrollX - dragOffsetX;
+        var newY = touch.clientY + scrollY - dragOffsetY;
+        activeDrag.style.left = Math.max(0, newX) + 'px';
+        activeDrag.style.top = Math.max(0, newY) + 'px';
+        e.preventDefault();
+    }, {passive: false});
+
+    document.addEventListener('mouseup', function() {
+        if (activeDrag) {
+            activeDrag.style.zIndex = 99990;
+            activeDrag = null;
+        }
+    });
+
+    document.addEventListener('touchend', function() {
+        if (activeDrag) {
+            activeDrag.style.zIndex = 99990;
+            activeDrag = null;
+        }
+    });
+
+    function createStamp(spec) {
+        var stamp = document.createElement('div');
+        stamp.className = 'draggable-stamp';
+        stamp.setAttribute('data-stamp-type', spec.type);
+
+        if (spec.left !== undefined && spec.top !== undefined) {
+            stamp.style.left = spec.left + 'px';
+            stamp.style.top = spec.top + 'px';
+        } else {
+            var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            var initialX = (window.innerWidth / 2) - 60 + (Math.random() * 120 - 60);
+            var initialY = scrollY + 160 + (Math.random() * 100 - 50);
+            stamp.style.left = Math.max(10, initialX) + 'px';
+            stamp.style.top = Math.max(10, initialY) + 'px';
+        }
+
+        var closeBtn = document.createElement('span');
+        closeBtn.className = 'draggable-stamp-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.title = 'ลบสติ๊กเกอร์นี้';
+        closeBtn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            stamp.remove();
+        });
+        stamp.appendChild(closeBtn);
+
+        if (spec.type === 'img') {
+            stamp.setAttribute('data-src', spec.src);
+            stamp.setAttribute('data-alt', spec.alt || 'Sticker');
+            var img = document.createElement('img');
+            img.src = spec.src;
+            img.alt = spec.alt || 'Sticker';
+            img.style.maxHeight = '64px';
+            img.style.imageRendering = 'pixelated';
+            stamp.appendChild(img);
+        } else if (spec.type === 'html') {
+            stamp.setAttribute('data-html', spec.html);
+            var contentWrap = document.createElement('div');
+            contentWrap.innerHTML = spec.html;
+            stamp.appendChild(contentWrap);
+        }
+
+        document.body.appendChild(stamp);
+        makeDraggable(stamp);
+        return stamp;
+    }
+
+    stickerBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var type = this.getAttribute('data-stamp-type');
+            if (type === 'img') {
+                createStamp({
+                    type: 'img',
+                    src: this.getAttribute('data-src'),
+                    alt: this.getAttribute('data-alt')
+                });
+            } else if (type === 'html') {
+                createStamp({
+                    type: 'html',
+                    html: this.getAttribute('data-html')
+                });
+            }
+        });
+    });
+
+    if (stampCustomGifBtn && customGifInput) {
+        stampCustomGifBtn.addEventListener('click', function() {
+            var url = customGifInput.value.trim();
+            if (url) {
+                createStamp({
+                    type: 'img',
+                    src: url,
+                    alt: 'Custom User GIF'
+                });
+                showToast('👾 แปะ GIF ลงบนหน้าเว็บแล้ว! ใช้เมาส์ลากจัดตำแหน่งได้เลย');
+                customGifInput.value = '';
+            }
+        });
+    }
+
+    // 5. SAVE & EXPORT ENGINE (ปุ่มบันทึกเพื่อไปใช้ต่อจริง)
+    function serializeLayout() {
+        var stampsData = [];
+        var stampEls = document.querySelectorAll('.draggable-stamp');
+        stampEls.forEach(function(el) {
+            var type = el.getAttribute('data-stamp-type');
+            var item = {
+                type: type,
+                left: parseFloat(el.style.left) || 0,
+                top: parseFloat(el.style.top) || 0
+            };
+            if (type === 'img') {
+                item.src = el.getAttribute('data-src');
+                item.alt = el.getAttribute('data-alt');
+            } else if (type === 'html') {
+                item.html = el.getAttribute('data-html');
+            }
+            stampsData.push(item);
+        });
+
+        return {
+            wallpaperClass: activeWallpaperClass,
+            customWallpaperUrl: activeCustomWallpaperUrl,
+            stamps: stampsData,
+            savedAt: new Date().toISOString()
+        };
+    }
+
+    function saveLayout() {
+        try {
+            var layout = serializeLayout();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+            showToast('💾 บันทึกการจัดวางเรียบร้อยแล้ว!');
+            if (configJsonArea) {
+                configJsonArea.value = JSON.stringify(layout, null, 2);
+            }
+        } catch(e) {
+            alert('ไม่สามารถบันทึกลง LocalStorage ได้: ' + e.message);
+        }
+    }
+
+    function restoreLayout(layout) {
+        if (!layout) return;
+        // 1. Restore wallpaper
+        applyWallpaper(layout.wallpaperClass || '', layout.customWallpaperUrl || '');
+
+        // 2. Restore stamps
+        var existing = document.querySelectorAll('.draggable-stamp');
+        existing.forEach(function(s) { s.remove(); });
+
+        if (Array.isArray(layout.stamps)) {
+            layout.stamps.forEach(function(spec) {
+                createStamp(spec);
+            });
+        }
+    }
+
+    if (saveLayoutBtn) {
+        saveLayoutBtn.addEventListener('click', saveLayout);
+    }
+
+    if (exportJsonBtn && configJsonArea) {
+        exportJsonBtn.addEventListener('click', function() {
+            var layout = serializeLayout();
+            var jsonStr = JSON.stringify(layout, null, 2);
+            configJsonArea.value = jsonStr;
+            try {
+                navigator.clipboard.writeText(jsonStr);
+                showToast('📋 คัดลอกรหัส JSON ลง Clipboard เรียบร้อย!');
+            } catch(e) {
+                configJsonArea.select();
+                showToast('📋 แสดงรหัส JSON ในกล่องข้อความแล้ว');
+            }
+        });
+    }
+
+    if (importJsonBtn && configJsonArea) {
+        importJsonBtn.addEventListener('click', function() {
+            var raw = configJsonArea.value.trim();
+            if (!raw) {
+                alert('กรุณาวางรหัส JSON ลงในกล่องข้อความก่อนกดนำเข้า');
+                return;
+            }
+            try {
+                var parsed = JSON.parse(raw);
+                restoreLayout(parsed);
+                showToast('📥 นำเข้าการจัดวางเรียบร้อย!');
+            } catch(e) {
+                alert('รูปแบบ JSON ไม่ถูกต้อง: ' + e.message);
+            }
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', function() {
+            var stamps = document.querySelectorAll('.draggable-stamp');
+            stamps.forEach(function(s) { s.remove(); });
+            showToast('🗑️ ลบสติ๊กเกอร์ทั้งหมดแล้ว');
+        });
+    }
+
+    if (resetAllBtn) {
+        resetAllBtn.addEventListener('click', function() {
+            if (confirm('คุณต้องการรีเซ็ตการตกแต่งและล้างค่าที่บันทึกไว้ทั้งหมดใช่หรือไม่?')) {
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                } catch(e) {}
+                applyWallpaper('', '');
+                var stamps = document.querySelectorAll('.draggable-stamp');
+                stamps.forEach(function(s) { s.remove(); });
+                if (configJsonArea) configJsonArea.value = '';
+                showToast('🔄 รีเซ็ตการตกแต่งทั้งหมดเรียบร้อย');
+            }
+        });
+    }
+
+    // Auto-restore on page load
+    try {
+        var savedRaw = localStorage.getItem(STORAGE_KEY);
+        if (savedRaw) {
+            var savedObj = JSON.parse(savedRaw);
+            restoreLayout(savedObj);
+        }
+    } catch(e) {}
+})();
+</script>

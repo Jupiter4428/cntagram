@@ -3,11 +3,24 @@
 
 {% block title %}หน้าแรก | CNTAGRAM{% endblock %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/retro_prototypes.css' %}">
+{% endblock %}
+
+{% block body_class %}{% if variant == 'A' %}variant-a-body{% elif variant == 'B' %}variant-b-body{% elif variant == 'C' %}variant-c-body{% endif %}{% endblock %}
+
 {% block sidebar_extra %}
     {% include "includes/_home_widgets.html" %}
 {% endblock %}
 
 {% block content %}
+{% if variant == 'A' %}
+    {% include "includes/_retro_elements_a.html" %}
+{% elif variant == 'B' %}
+    {% include "includes/_retro_elements_b.html" %}
+{% elif variant == 'C' %}
+    {% include "includes/_retro_elements_c.html" %}
+{% endif %}
 <div class="webboard-banner-wrap">
     <div class="webboard-banner" role="note" aria-label="แบนเนอร์ประชาสัมพันธ์">
         <strong>★ ฝากชีทวันนี้ ช่วยรุ่นน้องผ่านมิดเทอม ★</strong>
@@ -254,6 +267,9 @@
     <span class="transmission-note__icon" aria-hidden="true">i</span>
     <p>คลังเอกสารและข้อสอบเก่าเปิดให้บริการแล้ว สามารถค้นหาและดาวน์โหลดชีทได้ที่คลังเอกสาร</p>
 </div>
+
+{% include "includes/_prototype_switcher.html" %}
+{% include "includes/_retro_customizer.html" %}
 
 {% endblock %}
 
