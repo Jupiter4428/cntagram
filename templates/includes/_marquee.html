@@ -7,3 +7,48 @@
         </div>
     </div>
 </div>
+
+<style>
+.retro-marquee {
+    display: flex;
+    align-items: center;
+    background: var(--cream);
+    border-bottom: 1px solid var(--cream-line);
+    font-family: Tahoma, "Leelawadee UI", "Sarabun", sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+.retro-marquee__label {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    color: #fff;
+    background: var(--navy);
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.retro-marquee__track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    padding: 4px 0;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    animation: marquee-scroll 38s linear infinite;
+}
+
+/* ระยะห่างของสัญลักษณ์/เครื่องหมายคั่นข้อความ */
+.retro-marquee__divider {
+    display: inline-block;
+    margin: 0 8px;
+    opacity: 0.6;
+}
