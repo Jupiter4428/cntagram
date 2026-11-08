@@ -46,10 +46,39 @@
         </select>
       </div>
 
-      <div class="upload-field">
-        <label for="id_batch_course">วิชา <span class="upload-field__sample">(พิมพ์ค้นหา เช่น CN200)</span></label>
-        <select name="batch_course" id="id_batch_course" required disabled
-                aria-describedby="course-status">
+      <div class="upload-field upload-combobox-field">
+        <label for="id_course_search">วิชา <span class="upload-field__sample">(พิมพ์ค้นหา เช่น CN200)</span></label>
+        <div class="retro-combobox" id="batch-course-combobox">
+          <input type="text"
+                 id="id_course_search"
+                 class="retro-combobox__input"
+                 role="combobox"
+                 aria-expanded="false"
+                 aria-haspopup="listbox"
+                 aria-autocomplete="list"
+                 aria-controls="id_batch_course_menu"
+                 aria-describedby="course-status"
+                 autocomplete="off"
+                 placeholder="เลือกรุ่นก่อน"
+                 disabled>
+          <button type="button"
+                  class="retro-combobox__toggle"
+                  id="id_course_toggle"
+                  tabindex="-1"
+                  aria-label="แสดงรายชื่อวิชาทั้งหมด"
+                  aria-expanded="false"
+                  disabled>
+            <span class="retro-combobox__arrow" aria-hidden="true">▾</span>
+          </button>
+          <ul class="retro-combobox__menu"
+              id="id_batch_course_menu"
+              role="listbox"
+              aria-label="รายชื่อวิชา"
+              tabindex="-1"
+              hidden>
+          </ul>
+        </div>
+        <select name="batch_course" id="id_batch_course" required hidden tabindex="-1" aria-hidden="true">
           <option value="">เลือกรุ่นก่อน</option>
         </select>
         <p class="upload-field__hint" id="course-status" role="status" aria-live="polite"></p>
