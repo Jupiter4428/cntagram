@@ -184,7 +184,10 @@ class HomeViewTests(TestCase):
                 self.assertTemplateUsed(response, "auth_base.html")
                 self.assertTemplateUsed(response, "includes/_auth_help.html")
                 self.assertContains(
-                    response, 'class="site-layout container-xl site-layout--auth"'
+                    response, 'class="site-layout container-fluid site-layout--auth"'
+                )
+                self.assertContains(
+                    response, 'class="site-content col-12 col-md-8 order-1"'
                 )
                 self.assertContains(response, "Member Help")
                 self.assertContains(response, "กลับหน้าแรก")
