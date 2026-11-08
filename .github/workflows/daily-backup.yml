@@ -24,19 +24,21 @@ jobs:
           done
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Backup database and media vault, then upload offsite
+      - name: Backup database and upload offsite
         run: |
           bash scripts/backup_restore.sh backup backups
-          test -n "$(find backups -name '*.dump' -print -quit)"
-          aws s3 cp backups/ "s3://$BACKUP_S3_BUCKET/cntagram/" --recursive --exclude "*" --include "*.dump" --include "*.tar.gz" --sse AES256 --no-progress
-      - name: Confirm backup present in offsite bucket
+          DB_FILE="$(find backups -maxdepth 1 -name 'db_*.dump' -print -quit)"
+          test -n "$DB_FILE"
+          echo "DB_FILE=$DB_FILE" >> "$GITHUB_ENV"
+          echo "DB_BASENAME=$(basename "$DB_FILE")" >> "$GITHUB_ENV"
+          aws s3 cp "$DB_FILE" "s3://$BACKUP_S3_BUCKET/cntagram/$(basename "$DB_FILE")" --sse AES256 --no-progress
+      - name: Confirm this run's database backup exists offsite
         run: |
-          aws s3 ls "s3://$BACKUP_S3_BUCKET/cntagram/" --recursive | grep -q 'db_.*\.dump'
-          echo "✓ Database dump verified in offsite bucket: s3://$BACKUP_S3_BUCKET/cntagram/"
-          if [ -n "$(find backups -name 'media_*.tar.gz' -print -quit)" ]; then
-            aws s3 ls "s3://$BACKUP_S3_BUCKET/cntagram/" --recursive | grep -q 'media_.*\.tar\.gz'
-            echo "✓ Media archive verified in offsite bucket: s3://$BACKUP_S3_BUCKET/cntagram/"
-          fi
+          aws s3api head-object             --bucket "$BACKUP_S3_BUCKET"             --key "cntagram/$DB_BASENAME"             >/dev/null
+          echo "✓ Current-run database dump verified: s3://$BACKUP_S3_BUCKET/cntagram/$DB_BASENAME"
+      - name: Explain media-vault backup boundary
+        run: |
+          echo "::notice::This GitHub-hosted runner cannot access files stored on a Render Web Service persistent disk. Media-vault backup must be executed from the service that owns the disk or after migrating media to external object storage."
       - name: Notify on backup failure
         if: failure()
         run: |
