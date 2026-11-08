@@ -58,6 +58,18 @@ class EmoticonsAndGifRenderingTests(SimpleTestCase):
         rendered = render_webboard_content(raw)
         self.assertIn("<br>", rendered)
 
+    def test_http_and_complex_query_params_images(self):
+        """HTTP protocol and image URLs with complex query parameters are supported."""
+        raw = (
+            "Check [img]http://example.com/test.png?size=large&v=1.2[/img] "
+            "and bare http://cdn.test.com/anim.gif?token=xyz123"
+        )
+        rendered = render_webboard_content(raw)
+        self.assertIn(
+            'src="http://example.com/test.png?size=large&amp;v=1.2"', rendered
+        )
+        self.assertIn('src="http://cdn.test.com/anim.gif?token=xyz123"', rendered)
+
     def test_templatetags_direct_call(self):
         """Webboard template tags return formatted content and emoticon list."""
         from webboard.templatetags.webboard_tags import (
