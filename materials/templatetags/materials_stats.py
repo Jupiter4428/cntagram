@@ -70,4 +70,3 @@ def community_archive_tree(context):
 def recent_published_documents(context, limit=3):
     """รายการเอกสาร published ล่าสุดสำหรับแสดงในประกาศชุมชนหน้าแรก."""
     return _request_snapshot(context)["docs"][:limit]
-

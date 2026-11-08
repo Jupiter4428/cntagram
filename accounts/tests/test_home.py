@@ -304,9 +304,10 @@ class HomeViewTests(TestCase):
     @override_settings(
         CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
     )
-    def test_guest_home_uses_two_fixed_widget_queries(self):
-        # One aggregate for poll votes and one bounded query for shoutbox.
-        with self.assertNumQueries(2):
+    def test_guest_home_uses_fixed_widget_queries(self):
+        # One aggregate for poll votes, one bounded query for shoutbox,
+        # and one for archive tree.
+        with self.assertNumQueries(3):
             self.client.get(reverse("accounts:home"))
 
     def test_record_home_visit_increments_and_zero_pads_counter(self):

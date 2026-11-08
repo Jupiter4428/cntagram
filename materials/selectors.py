@@ -379,7 +379,7 @@ def _is_exam(document):
 
 
 def recent_published_documents(*, limit: int = 3) -> list[Document]:
-    """ดึงเอกสาร published ล่าสุดจำนวน `limit` รายการ พร้อม preload ข้อมูลที่ต้องแสดง."""
+    """ดึงเอกสาร published ล่าสุดจำนวน `limit` รายการ พร้อม preload ข้อมูล."""
     return list(published_documents().order_by("-created_at", "-id")[:limit])
 
 
@@ -410,7 +410,7 @@ def community_archive_tree() -> list[dict]:
 
 
 def _build_published_vault_snapshot() -> dict:
-    """ดึงเอกสาร published ทั้งหมดใน 1 query แล้วคำนวณ tree, counts และรายการล่าสุดพร้อมกัน."""
+    """ดึงเอกสาร published ใน 1 query แล้วคำนวณ tree, counts และรายการล่าสุด."""
     docs = list(
         published_documents()
         .select_related("exam_detail")
