@@ -376,3 +376,119 @@ def _legacy_batch_max(documents):
 
 def _is_exam(document):
     return document.doc_type.vault == DocType.Vault.EXAM
+
+
+def recent_published_documents(*, limit: int = 3) -> list[Document]:
+    """ดึงเอกสาร published ล่าสุดจำนวน `limit` รายการ พร้อม preload ข้อมูลที่ต้องแสดง."""
+    return list(published_documents().order_by("-created_at", "-id")[:limit])
+
+
+def vault_category_counts() -> dict[str, int]:
+    """จำนวนเอกสาร published แยกตามหมวดหมู่บน Board Index (Lecture, Cheat, Exam)."""
+    counts = dict(
+        Document.objects.filter(status=Document.Status.PUBLISHED)
+        .values("doc_type__code")
+        .annotate(total=Count("id"))
+        .values_list("doc_type__code", "total")
+    )
+    cheatsheet = counts.get("cheatsheet", 0)
+    exam = counts.get("exam", 0)
+    lecture = sum(
+        count for code, count in counts.items() if code not in ("cheatsheet", "exam")
+    )
+    return {
+        "lecture": lecture,
+        "cheatsheet": cheatsheet,
+        "exam": exam,
+        "total": lecture + cheatsheet + exam,
+    }
+
+
+def community_archive_tree() -> list[dict]:
+    """สารบัญเอกสาร published จัดกลุ่มตามปีการศึกษา -> ภาคเรียน -> รายการเอกสาร."""
+    return _build_published_vault_snapshot()["tree"]
+
+
+def _build_published_vault_snapshot() -> dict:
+    """ดึงเอกสาร published ทั้งหมดใน 1 query แล้วคำนวณ tree, counts และรายการล่าสุดพร้อมกัน."""
+    docs = list(
+        published_documents()
+        .select_related("exam_detail")
+        .order_by("-created_at", "-id")
+    )
+    by_year: dict[int, dict[str, list[dict]]] = defaultdict(lambda: defaultdict(list))
+    lecture = 0
+    cheatsheet = 0
+    exam = 0
+
+    for doc in docs:
+        code = doc.doc_type.code
+        if code == "cheatsheet":
+            cheatsheet += 1
+        elif code == "exam":
+            exam += 1
+        else:
+            lecture += 1
+
+        local_dt = timezone.localtime(doc.created_at)
+        if local_dt.month >= 8:
+            semester_name = "ภาคเรียนที่ 1"
+            inferred_year_be = local_dt.year + 543
+        else:
+            semester_name = "ภาคเรียนที่ 2"
+            inferred_year_be = (local_dt.year - 1) + 543
+
+        exam_detail = getattr(doc, "exam_detail", None)
+        year_be = (
+            exam_detail.exam_year_be if exam_detail is not None else inferred_year_be
+        )
+        course_code = doc.batch_course.course.code
+        label = (
+            doc.title
+            if doc.title.startswith(course_code)
+            else f"{course_code} · {doc.title}"
+        )
+        by_year[year_be][semester_name].append(
+            {
+                "document_id": doc.pk,
+                "course_code": course_code,
+                "title": doc.title,
+                "label": label,
+            }
+        )
+
+    semester_order = ("ภาคเรียนที่ 1", "ภาคเรียนที่ 2")
+    tree = []
+    for year_be in sorted(by_year.keys(), reverse=True):
+        sem_map = by_year[year_be]
+        semesters = []
+        total_count = 0
+        for sem_name in semester_order:
+            items = sem_map.get(sem_name, [])
+            if items:
+                semesters.append(
+                    {
+                        "semester_name": sem_name,
+                        "count": len(items),
+                        "items": items,
+                    }
+                )
+                total_count += len(items)
+        if semesters:
+            tree.append(
+                {
+                    "year": year_be,
+                    "total_count": total_count,
+                    "semesters": semesters,
+                }
+            )
+    return {
+        "tree": tree,
+        "counts": {
+            "lecture": lecture,
+            "cheatsheet": cheatsheet,
+            "exam": exam,
+            "total": lecture + cheatsheet + exam,
+        },
+        "docs": docs,
+    }

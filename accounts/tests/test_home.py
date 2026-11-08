@@ -76,8 +76,9 @@ class HomeViewTests(TestCase):
         self.assertContains(response, "ประกาศปักหมุด")
         self.assertNotContains(response, "DEMO POST")
         self.assertContains(response, "Community Archive")
-        self.assertContains(response, "ปีการศึกษา 2569")
-        self.assertContains(response, "ภาคเรียนที่ 1")
+        self.assertContains(response, "ยังไม่มีเอกสารที่เผยแพร่ในคลังขณะนี้")
+        self.assertNotContains(response, "CN101 · Starter Notes")
+        self.assertNotContains(response, "?query=CN101")
         self.assertContains(response, "คลิกที่รายวิชาเพื่อค้นหาชีทและข้อสอบเก่าในคลัง")
         self.assertNotContains(response, 'href="#"')
 
@@ -137,7 +138,7 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, self.user.nickname)
         self.assertContains(response, f'href="{reverse("materials:vault")}"')
-        self.assertContains(
+        self.assertNotContains(
             response, f'href="{reverse("materials:vault")}?query=CN101"'
         )
         self.assertContains(response, f'href="{reverse("materials:upload")}"')

@@ -143,9 +143,7 @@ def thread_lock_toggle(request, pk):
         raise Http404("ไม่พบกระทู้ที่ต้องการ")
 
     try:
-        new_state = services.toggle_thread_lock(
-            thread=thread, actor=request.user
-        )
+        new_state = services.toggle_thread_lock(thread=thread, actor=request.user)
         msg = "ล็อกกระทู้แล้ว" if new_state else "ปลดล็อกกระทู้แล้ว"
         messages.success(request, msg)
     except PermissionDenied as err:

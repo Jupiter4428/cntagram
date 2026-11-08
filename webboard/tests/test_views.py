@@ -170,9 +170,7 @@ class WebboardViewsTests(TestCase):
             data={"title": "", "content": ""},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(
-            response.context["form"], "title", "กรุณาระบุหัวข้อกระทู้"
-        )
+        self.assertFormError(response.context["form"], "title", "กรุณาระบุหัวข้อกระทู้")
 
     def test_thread_reply_invalid_form_and_locked(self):
         """Replying with empty content or on locked thread shows message."""

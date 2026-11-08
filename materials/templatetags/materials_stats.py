@@ -41,3 +41,33 @@ def moderator_pending(user):
 def pending_documents_without_rules():
     """สรุปเอกสาร pending ที่ไม่มีกฎอนุมัติ ใช้เตือน Super Admin บน Dashboard."""
     return selectors.pending_documents_without_rules_summary()
+
+
+def _request_snapshot(context):
+    request = context.get("request") if context is not None else None
+    if request is None:
+        return selectors._build_published_vault_snapshot()
+    snapshot = getattr(request, "_materials_vault_snapshot", None)
+    if snapshot is None:
+        snapshot = selectors._build_published_vault_snapshot()
+        request._materials_vault_snapshot = snapshot
+    return snapshot
+
+
+@register.simple_tag(takes_context=True)
+def vault_category_counts(context):
+    """จำนวนเอกสาร published แยกตามหมวดหมู่บนหน้าแรก (Lecture, Cheat, Exam)."""
+    return _request_snapshot(context)["counts"]
+
+
+@register.simple_tag(takes_context=True)
+def community_archive_tree(context):
+    """สารบัญเอกสาร published จัดกลุ่มตามปีการศึกษาและภาคเรียนสำหรับ Archive."""
+    return _request_snapshot(context)["tree"]
+
+
+@register.simple_tag(takes_context=True)
+def recent_published_documents(context, limit=3):
+    """รายการเอกสาร published ล่าสุดสำหรับแสดงในประกาศชุมชนหน้าแรก."""
+    return _request_snapshot(context)["docs"][:limit]
+

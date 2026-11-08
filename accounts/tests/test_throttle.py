@@ -80,22 +80,23 @@ class LoginThrottleTests(ThrottleTestCase):
     )
     def test_password_spraying_from_single_ip_is_rate_limited(self):
         client_ip = "198.51.100.1"
-        # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน
-        # (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
-        for i in range(6):
-            username = f"66100000{i:02d}@student.tu.ac.th"
-            response = self.post_login(
-                self.wrong_password, username=username, REMOTE_ADDR=client_ip
-            )
-            self.assertEqual(response.status_code, 200)
+        with patch("accounts.services._login_window_index", return_value=100):
+            # IP เดียวลองผิดกับ 6 บัญชีที่ต่างกัน
+            # (ครั้งละ 1 ครั้ง ไม่ถึงเพดานต่อบัญชี 5 ครั้ง)
+            for i in range(6):
+                username = f"66100000{i:02d}@student.tu.ac.th"
+                response = self.post_login(
+                    self.wrong_password, username=username, REMOTE_ADDR=client_ip
+                )
+                self.assertEqual(response.status_code, 200)
 
-        # ครั้งที่ 7 จาก IP เดิมโดนบล็อกด้วย 429 ไม่ว่าจะลองบัญชีใดก็ตาม
-        response = self.post_login(
-            self.wrong_password,
-            username="6610000099@student.tu.ac.th",
-            REMOTE_ADDR=client_ip,
-        )
-        self.assertEqual(response.status_code, 429)
+            # ครั้งที่ 7 จาก IP เดิมโดนบล็อกด้วย 429 ไม่ว่าจะลองบัญชีใดก็ตาม
+            response = self.post_login(
+                self.wrong_password,
+                username="6610000099@student.tu.ac.th",
+                REMOTE_ADDR=client_ip,
+            )
+            self.assertEqual(response.status_code, 429)
 
     @override_settings(
         LOGIN_RATE_LIMIT_ATTEMPTS=3,

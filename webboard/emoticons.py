@@ -250,8 +250,8 @@ MSN_EMOTICONS = [
             '<span class="msn-icon msn-heart" title="(L)">'
             '<svg viewBox="0 0 24 24" width="20" height="20">'
             '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 '
-            '4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 '
-            '16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 '
+            "4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 "
+            "16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 "
             '21.35z" fill="#E53935" stroke="#B71C1C" stroke-width="1.2"/>'
             "</svg></span>"
         ),
@@ -264,8 +264,8 @@ MSN_EMOTICONS = [
             '<span class="msn-icon msn-broken-heart" title="(U)">'
             '<svg viewBox="0 0 24 24" width="20" height="20">'
             '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 '
-            '4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 '
-            '16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 '
+            "4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 "
+            "16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 "
             '21.35z" fill="#E53935" stroke="#B71C1C" stroke-width="1.2"/>'
             '<path d="M12 4 L9 10 L14 13 L11 18 L13 21" stroke="#FFFFFF" '
             'stroke-width="1.8" fill="none"/>'
@@ -393,4 +393,5 @@ def render_webboard_content(text: str) -> str:
     processed = processed.replace("\r\n", "\n").replace("\r", "\n")
     processed = processed.replace("\n", "<br>\n")
 
-    return mark_safe(processed)
+    # Input is HTML-escaped before safe SVGs are inserted
+    return mark_safe(processed)  # nosec B308, B703
