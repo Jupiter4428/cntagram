@@ -13,12 +13,13 @@
 - ใช้ **Django project เดียว (Modular Monolith)** config อยู่ที่ `portal/` และฐานข้อมูลเดียว
 - แบ่ง app ตามโดเมน แต่ละ app อธิบายได้ในประโยคเดียว:
   - `catalog`: โครงสร้างภาควิชา รุ่น รายวิชา และค่ากำหนดระบบ
-  - `accounts`: ผู้ใช้ บทบาท และสิทธิ์
-  - `materials`: เอกสาร ไฟล์ และเวอร์ชัน
-- **ทิศทาง Dependency ทางเดียว:** `catalog` ← `accounts` ← `materials` (ลูกศรชี้ไปที่ app ที่ถูกพึ่ง)
+  - `accounts`: ผู้ใช้ บทบาท สิทธิ์ และวิดเจ็ตชุมชนหน้าแรก (Shoutbox, Poll, Counter)
+  - `materials`: เอกสาร ไฟล์ เวอร์ชัน การอนุมัติ และบันทึกการดาวน์โหลด
+  - `webboard` (เพิ่มใน Sprint 3, PR #202): กระดานสนทนาชุมชน หมวดหมู่ กระทู้ถาม-ตอบ (ผูกรายวิชาได้) ข้อความตอบกลับ อีโมติคอน MSN และฝังภาพ GIF
+- **ทิศทาง Dependency ทางเดียว:** `catalog` ← `accounts` ← (`materials`, `webboard`) (ลูกศรชี้ไปที่ app ที่ถูกพึ่ง)
   - `catalog` ไม่ import app ใดเลย
   - `accounts` พึ่ง `catalog` ได้
-  - `materials` พึ่งได้ทั้งสอง
+  - `materials` และ `webboard` พึ่งได้ทั้ง `catalog` และ `accounts` (โดย `materials` กับ `webboard` ไม่ import กันเอง)
 - FK ข้าม app อ้างด้วย string (`"catalog.BatchCourse"`) และอ้างผู้ใช้ด้วย `settings.AUTH_USER_MODEL`
 - **ข้อยกเว้นสำหรับการอ่านข้อมูล (เพิ่ม 2026-10-26, #65):** app ต้นทางใช้ข้อมูลของ app ปลายทางได้ 2 ทาง โดยโค้ด Python ของ app ต้นทางไม่ต้อง import app ปลายทาง
   - template ของ app ต้นทาง `{% load %}` template tag ของ app ปลายทางได้ (เช่น `accounts/index_admin.html` ใช้ `materials_stats`) tag ต้องเรียก selector และอ่านอย่างเดียว

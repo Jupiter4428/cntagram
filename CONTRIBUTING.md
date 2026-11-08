@@ -1,5 +1,7 @@
 # Project Django (CN331)
 
+**สถานะโปรเจค (พฤศจิกายน 2026):** Production: [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) · รายการฟังก์ชันที่มีในโค้ดปัจจุบันและสิ่งที่กำลังพัฒนาต่อ (Open Issues / PRs) ดูที่ [`_docs/requirements.md` §10](./_docs/requirements.md#10-สถานะฟังก์ชันที่มีจริงและสิ่งที่กำลังจะตามมา) และ [`_docs/architecture/c4.md`](./_docs/architecture/c4.md)
+
 คู่มือสำหรับสมาชิกทีม: กระบวนการ Agile/Scrum, การใช้ Git/GitHub, สถาปัตยกรรมและมาตรฐานโค้ด Django และเกณฑ์ส่งงาน (DoR/DoD)
 อ่านให้จบก่อนเปิด Pull Request ครั้งแรก
 
@@ -548,8 +550,9 @@ gh pr merge 42 --squash --delete-branch    # หรือ --merge ตามท�
 | App | รับผิดชอบ (ประโยคเดียว) | พึ่งได้ |
 |---|---|---|
 | `catalog` | โครงสร้างภาควิชา รุ่น รายวิชา และค่ากำหนดระบบ | — |
-| `accounts` | ผู้ใช้ บทบาท และสิทธิ์ | `catalog` |
-| `materials` | เอกสาร ไฟล์ และเวอร์ชัน | `catalog`, `accounts` |
+| `accounts` | ผู้ใช้ บทบาท สิทธิ์ และวิดเจ็ตชุมชนหน้าแรก (Shoutbox, Poll, Counter) | `catalog` |
+| `materials` | เอกสาร ไฟล์ เวอร์ชัน การอนุมัติ และบันทึกการดาวน์โหลด | `catalog`, `accounts` |
+| `webboard` | กระดานสนทนาชุมชน หมวดหมู่ กระทู้ ข้อความตอบกลับ อีโมติคอน MSN และ GIF | `catalog`, `accounts` |
 
 - import ได้เฉพาะ**ตามทิศทางในตาราง** ห้ามย้อนทาง (กัน circular import) ถ้าเกิด circular import แปลว่าขอบเขต app เริ่มปนกัน ให้ย้าย logic ข้าม app ไปไว้ใน `services.py` ของ app ปลายทาง
 - จะเพิ่ม app ใหม่ (เช่นสำหรับตาราง Sprint 2) ต้องตกลงใน Sprint Planning และเขียน ADR
@@ -997,15 +1000,16 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 
 โครงสร้างตารางอ้างอิงจาก [`_docs/database-design.md`](./_docs/database-design.md) (ERD 3NF, SP-0) ถ้าจะเพิ่ม/แก้ตาราง ให้แก้ไฟล์นี้กับ `models.py` **ใน PR เดียวกัน** ไม่ให้เอกสารกับโค้ดเพี้ยนกัน
 
-### แบ่ง app (Sprint 1)
+### แบ่ง app (ปัจจุบัน)
 | App | Models | Story |
 |---|---|---|
-| `accounts` | `User`, `Role`, `UserRole` | US-1, US-2, US-10 |
+| `accounts` | `User`, `Role`, `UserRole`, `UserCounter`, `PollVote`, `ShoutboxMessage` | US-1, US-2, US-10, US-13, US-36 – US-38 |
 | `catalog` | `Department`, `Batch`, `Course`, `BatchCourse`, `SystemSetting` | US-3, US-4 |
-| `materials` | `DocType`, `ExamPeriod`, `Document`, `ExamDetail`, `DocumentVersion` | US-5, US-7 |
+| `materials` | `DocType`, `DocTypeRequiredRole`, `ExamPeriod`, `Document`, `ExamDetail`, `DocumentVersion`, `DownloadLog`, `Approval` | US-5, US-6, US-7, US-8, US-9, US-11, US-12 |
+| `webboard` | `BoardCategory`, `Thread`, `Post` | E6 กระดานสนทนาชุมชน (#202, #210) |
 
-- ตาราง Sprint 2 (`approval`, `download_log`, `audit_log`, `report`, `doc_type_required_role`) ยังไม่มีใน `models.py` ให้ตกลง app ปลายทางตอน Sprint 2 Planning และบันทึกเป็น ADR
-- ลำดับพึ่งพา: `catalog` ไม่พึ่ง app ใดเลย → `accounts` พึ่ง `catalog` → `materials` พึ่งทั้งสอง ([ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md))
+- ตารางที่กำลังพัฒนาต่อใน Sprint 3 (`report` สำหรับ US-32/US-33/US-35, `audit_log` สำหรับ US-26) อยู่ในแผนของ `materials`
+- ลำดับพึ่งพา: `catalog` ไม่พึ่ง app ใดเลย → `accounts` พึ่ง `catalog` → `materials` และ `webboard` พึ่ง `catalog` และ `accounts` ([ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md))
 - อ้างข้าม app ด้วย **string** เช่น `"catalog.Department"` และอ้างผู้ใช้ด้วย `settings.AUTH_USER_MODEL` ถ้าจำเป็นต้อง import ข้าม app ที่หัวไฟล์ `models.py` ให้ import ได้เฉพาะ app ที่อยู่ก่อนในลำดับพึ่งพาเท่านั้น (ตอนนี้มีจุดเดียวคือ `materials/models.py` import `SystemSetting` จาก `catalog`) ห้าม import ย้อนทาง (กัน circular import)
 
 ### ข้อตกลงที่ห้ามฝ่าฝืน
@@ -1116,10 +1120,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 4. ไฟล์ `.env` (ยังไม่ได้ใช้)
-ตอนนี้ `portal/settings.py` ยังตั้ง `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` ไว้ในไฟล์ตรงๆ สำหรับเครื่อง dev และยังไม่มี `.env.example` จึง**ข้ามขั้นนี้ไปได้** (`python-decouple` อยู่ใน `requirements.txt` แล้ว แต่ยังไม่ได้เชื่อมกับ settings)
-
-เมื่อเปลี่ยนไปอ่านค่าจาก `.env` แล้ว ค่าที่ต้องตั้งคือ:
+#### 4. ไฟล์ `.env`
+`portal/settings.py` อ่านค่าจาก `.env` ผ่าน `python-decouple` แล้ว โดยบนเครื่อง dev มีค่า default ให้พร้อมรันได้ทันที หากต้องการกำหนดเองสามารถสร้างไฟล์ `.env` ที่ root ของโปรเจคได้:
 ```
 SECRET_KEY=your-secret-key-here
 DEBUG=True
@@ -1133,14 +1135,14 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 python manage.py migrate
 python manage.py createcachetable
 ```
-> **หมายเหตุ:** `createcachetable` ใช้สร้างตาราง cache ในฐานข้อมูลสำหรับเก็บข้อมูล rate limit (ทำงานร่วมกับ `DatabaseCache` เพื่อแชร์สถานะข้าม worker)
+> **หมายเหตุ:** `createcachetable` ใช้สร้างตาราง cache ในฐานข้อมูลสำหรับเก็บข้อมูล rate limit และตัวนับผู้เข้าชม (ทำงานร่วมกับ `DatabaseCache` เพื่อแชร์สถานะข้าม worker)
 
 > ⚠️ **Custom User Model:** โปรเจคใช้ `accounts.User` และตั้ง `AUTH_USER_MODEL = 'accounts.User'` ไว้แล้ว **ห้ามแก้หรือลบบรรทัดนี้** การเปลี่ยนย้อนหลังทำให้ฐานข้อมูลพัง (`InconsistentMigrationHistory`) ดูรายละเอียดที่ [Database และ Models](#database-และ-models)
 
 #### 6. สร้าง superuser (สำหรับเข้า admin panel)
 User ผูกกับภาควิชา (`department` ห้ามว่าง) จึงต้องมี Department อย่างน้อย 1 แถวก่อน
 
-> ตอนนี้ `admin.py` ของทุก app ยังไม่ได้ register model จึงยังไม่เห็นตารางของโปรเจคในหน้า admin
+> `admin.py` ของทุก app (`catalog`, `accounts`, `materials`, `webboard`) ลงทะเบียนตารางไว้ครบแล้ว (TD-3)
 ```bash
 python manage.py seed_catalog
 python manage.py createsuperuser
@@ -1180,6 +1182,7 @@ cntagram/
 ├── _docs/           # เอกสารทั้งหมดที่ไม่ใช่โค้ด
 │   ├── requirements.md
 │   ├── known-limitations.md
+│   ├── backup-operations.md
 │   ├── deployment-prep-checklist.md
 │   ├── database-design.md
 │   ├── adr/
@@ -1191,8 +1194,12 @@ cntagram/
 ├── accounts/
 ├── catalog/
 ├── materials/
+├── webboard/
+├── scripts/
 ├── media/           # MEDIA_ROOT (.gitignore) เปิดผ่าน view ที่ตรวจสิทธิ์เท่านั้น
 ├── .github/
+├── build.sh
+├── Procfile
 ├── manage.py
 ├── requirements.txt
 ├── CONTRIBUTING.md

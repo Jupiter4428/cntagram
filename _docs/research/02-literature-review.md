@@ -57,7 +57,7 @@
 ### 2.3.5 Architectural Decision Records (ADR)
 บันทึกสั้นที่ระบุ Context / Decision / Alternatives / Consequences ของการตัดสินใจเชิงสถาปัตยกรรม [อ้างอิง: NYGARD2011]
 
-**การนำมาใช้ในโครงงาน:** Modular Monolith 3 app (`catalog` ← `accounts` ← `materials`), C4 Level 1–2, ADR 0001–0002 (บทที่ 3 หัวข้อ 3.3)
+**การนำมาใช้ในโครงงาน:** Modular Monolith 4 app (`catalog` ← `accounts` ← `materials`, `webboard`), C4 Level 1–2, ADR 0001–0005 (บทที่ 3 หัวข้อ 3.3)
 
 ## 2.4 Service Layer, Selectors และ Database Transaction
 

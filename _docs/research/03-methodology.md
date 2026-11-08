@@ -92,10 +92,11 @@ Spike ที่ต้องค้นคว้าก่อนตัดสิน�
 | App | ความรับผิดชอบ | Model |
 |---|---|---|
 | `catalog` | โครงสร้างภาควิชา รุ่น รายวิชา และค่ากำหนดระบบ | Department, Batch, Course, BatchCourse, SystemSetting |
-| `accounts` | ผู้ใช้ บทบาท และสิทธิ์ | User, Role, UserRole |
-| `materials` | เอกสาร ไฟล์ และเวอร์ชัน | DocType, ExamPeriod, Document, ExamDetail, DocumentVersion |
+| `accounts` | ผู้ใช้ บทบาท สิทธิ์ และวิดเจ็ตชุมชนหน้าแรก | User, Role, UserRole, UserCounter, PollVote, ShoutboxMessage |
+| `materials` | เอกสาร ไฟล์ เวอร์ชัน การอนุมัติ และบันทึกการดาวน์โหลด | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval, DownloadLog |
+| `webboard` | กระดานสนทนาชุมชน หมวดหมู่ กระทู้ ข้อความตอบกลับ อีโมติคอน MSN และ GIF | BoardCategory, Thread, Post |
 
-ทิศทาง dependency ทางเดียว `catalog` ← `accounts` ← `materials`; FK ข้าม app อ้างด้วย string และ `settings.AUTH_USER_MODEL`
+ทิศทาง dependency ทางเดียว `catalog` ← `accounts` ← (`materials`, `webboard`); FK ข้าม app อ้างด้วย string และ `settings.AUTH_USER_MODEL`
 ทางเลือกที่ไม่เลือก: app เดียว (God App), 1 model ต่อ 1 app, Microservices — เหตุผลใน ADR 0001
 
 ### 3.3.3 การแยกชั้นภายใน App (รูปที่ 3.4) — ADR 0002
@@ -143,12 +144,12 @@ UNF (ตารางเดียวจากตัวอย่างใน SRS v
 | ภาษา | Python | 3.12+ |
 | Web framework | Django | 6.1.2 |
 | UI | Bootstrap (CDN) | 5 |
-| ฐานข้อมูล | SQLite (dev), PostgreSQL (production) | **[เติม: เวอร์ชัน PostgreSQL]** |
-| ไลบรารีอื่น | Pillow 12.3.0, python-decouple 3.8 | |
+| ฐานข้อมูล | SQLite (dev), PostgreSQL (production) | Managed PostgreSQL บน Render (Singapore) |
+| ไลบรารีอื่น | Pillow 12.3.0, python-decouple 3.8, gunicorn, whitenoise, dj-database-url, psycopg2-binary | |
 | Version control / PM | Git, GitHub (Issues, Projects, Pull Request, Actions) | |
 | IDE | VS Code + Python, Git Graph | |
 | Diagram | Mermaid | |
-| Deploy | **[เติม: ผล SP-4]** | |
+| Deploy | Render Web Service + Managed PostgreSQL (Singapore) (`https://cntagram-h195.onrender.com/`) | ADR 0005 |
 
 ## 3.7 แผนการทดสอบและการประเมินผล
 

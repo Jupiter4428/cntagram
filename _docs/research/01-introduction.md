@@ -88,3 +88,4 @@ E1 เข้าระบบอย่างปลอดภัย · E2 โคร�
 - 2026-10-02 ถึง 2026-10-05 เขียนแนวปฏิบัติของทีม (CONTRIBUTING) และเอกสารความต้องการ
 - 2026-10-09 ถึง 2026-10-10 สร้าง Django apps (`catalog`, `accounts`, `materials`) และ data models
 - 2026-10-12 เปลี่ยนจาก SRS v1 เป็น Product Backlog แบบ Agile และบันทึก ADR 0001–0002, C4 Diagram
+- 2026-11-06 ถึง 2026-11-09 เพิ่มแอป `webboard` (กระดานสนทนาชุมชนเรโทร), วิดเจ็ตหน้าแรก (Shoutbox, Poll, Counter, BGM Player), ตั้งค่า CI/CD + Static Analysis (`black`, `flake8`, `bandit`, `coverage ≥ 80%`) และ Deploy ระบบขึ้นใช้งานจริงบน Render (`https://cntagram-h195.onrender.com/`) ตาม ADR 0005

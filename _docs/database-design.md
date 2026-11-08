@@ -2,7 +2,7 @@
 
 เอกสารนี้ใช้เป็น **SP-0 (ERD 3NF)** ของ Sprint 1 และอัปเดตใน PR เดียวกับที่แก้ `models.py` เสมอ
 Requirement ที่ตารางเหล่านี้รองรับอยู่ใน [`requirements.md`](./requirements.md) (อ้างด้วยรหัส story เช่น US-5) ขอบเขต app และการแยกชั้นโค้ดดู [ADR 0001](./adr/0001-modular-monolith-and-app-boundaries.md) และ [ADR 0002](./adr/0002-service-layer-and-selectors.md)
-สมมติฐาน: ใช้ RDBMS แบบ relational (MySQL/PostgreSQL) กับ Django และ FK ทุกเส้นเป็น `on_delete=PROTECT`
+สภาพแวดล้อมปัจจุบัน: Django ใช้ SQLite สำหรับการพัฒนา และ PostgreSQL สำหรับ Production บน Render; FK ของตารางโครงสร้างและเอกสารใช้ `on_delete=PROTECT` (ส่วนตารางกิจกรรมชุมชนบางตารางใช้ `CASCADE` / `SET_NULL` ตามที่ระบุในหัวข้อที่ 3)
 แนะนำ **PostgreSQL**: `user_role` ใช้ partial unique index ซึ่ง MySQL ไม่รองรับ (Django จะข้าม constraint นี้ จึงมีเช็กซ้ำใน model ด้วย)
 
 ---
@@ -34,6 +34,8 @@ erDiagram
     course ||--o{ batch_course : "offered in"
     department ||--o{ app_user : "belongs to"
     app_user ||--o{ user_role : has
+    app_user ||--o| poll_vote : casts
+    app_user ||--o{ shoutbox_message : posts
     role ||--o{ user_role : granted
     department |o--o{ user_role : "scope (moderator)"
     batch_course ||--o{ document : contains
@@ -48,7 +50,12 @@ erDiagram
     app_user ||--o{ approval : decides
     document ||--o{ download_log : "downloaded"
     app_user ||--o{ download_log : ""
-    document ||--o{ report : "reported"
+    board_category ||--o{ thread : groups
+    course |o--o{ thread : "related to"
+    app_user ||--o{ thread : authors
+    thread ||--o{ post : has
+    app_user ||--o{ post : replies
+    document ||--o{ report : "reported (upcoming)"
     app_user ||--o{ report : files
     app_user ||--o{ audit_log : acts
     document ||--o{ comment : ""
@@ -164,6 +171,24 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | total | INTEGER | NN, ≥ 0 |
 
 > signal `post_save` ของ `User` บวกทีละหนึ่งทุกครั้งที่สร้างผู้ใช้ ไม่ลดเมื่อลบ ตอนสร้างตารางตั้งค่าเริ่มจากจำนวนผู้ใช้ที่มีอยู่
+
+**poll_vote** (โพลหน้าแรก US-37 · 1 เสียงต่อบัญชี)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| user_id | BIGINT | FK → app_user, NN, **UQ**, ON DELETE CASCADE |
+| choice | VARCHAR(20) | NN (ตรวจกับ `POLL_CHOICES` ใน service) |
+| created_at | TIMESTAMP | NN |
+
+**shoutbox_message** (Shoutbox หน้าแรก US-36)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| user_id | BIGINT | FK → app_user, NN, ON DELETE CASCADE |
+| text | VARCHAR(200) | NN |
+| created_at | TIMESTAMP | NN |
+
+> สองตารางนี้ใช้ CASCADE เพราะเป็นข้อมูลวิดเจ็ตชุมชนหน้าแรก ส่วนตัวนับผู้เข้าชมเว็บไซต์ (US-38) เก็บใน Django cache (`DatabaseCache`) จึงไม่มีตารางแยกใน ERD
 
 ### 3.3 เอกสารและไฟล์ (Sprint 1)
 
@@ -299,10 +324,45 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 > `target_type` + `target_id` เป็น polymorphic reference จึงไม่มี FK จริง (เลือกเพราะ log ต้องเก็บได้ทุกชนิด และต้องไม่หายแม้ target ถูกลบ) ข้อเสียคือ DB ไม่บังคับความถูกต้องให้ ต้องควบคุมที่ service layer
 
-### 3.6 ชุมชน (Sprint 3+)
+### 3.6 ชุมชนและกระดานสนทนาเว็บบอร์ด (`webboard` — Sprint 3)
 
-**comment**: `id` PK · `document_id` FK · `user_id` FK · `body` · `is_pinned` · `created_at`
-**rating**: PK (`document_id`, `user_id`) · `stars` CHECK 1–5 · `review` · `created_at`
+**board_category** (`webboard_boardcategory` — หมวดหมู่กระดานสนทนา)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| name | VARCHAR(100) | NN |
+| slug | VARCHAR(100) | UQ, NN |
+| description | TEXT | NN (blank ได้) |
+| icon | VARCHAR(50) | NN, default `💬` |
+| order | INTEGER | NN, ≥ 0, default 0 |
+| created_at | TIMESTAMP | NN |
+
+**thread** (`webboard_thread` — กระทู้สนทนา)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| category_id | BIGINT | FK → board_category, NN, ON DELETE CASCADE |
+| course_id | BIGINT | FK → course, NULL, ON DELETE SET_NULL (ผูกวิชาที่เกี่ยวข้องได้) |
+| author_id | BIGINT | FK → app_user, NN, ON DELETE CASCADE |
+| title | VARCHAR(200) | NN |
+| content | TEXT | NN |
+| views_count | INTEGER | NN, ≥ 0, default 0 |
+| is_pinned | BOOLEAN | NN, default false |
+| is_locked | BOOLEAN | NN, default false |
+| created_at / updated_at | TIMESTAMP | NN |
+
+**post** (`webboard_post` — ความคิดเห็นตอบกลับกระทู้)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| thread_id | BIGINT | FK → thread, NN, ON DELETE CASCADE |
+| author_id | BIGINT | FK → app_user, NN, ON DELETE CASCADE |
+| content | TEXT | NN |
+| created_at / updated_at | TIMESTAMP | NN |
+
+**ตารางใน Backlog ระยะถัดไป (ยังไม่สร้างใน `models.py`):**
+- **comment** (ใต้เอกสารโดยตรง US-29/US-31): `id` PK · `document_id` FK · `user_id` FK · `body` · `is_pinned` · `created_at`
+- **rating** (ให้คะแนนเอกสาร US-30): PK (`document_id`, `user_id`) · `stars` CHECK 1–5 · `review` · `created_at`
 
 ---
 
@@ -390,22 +450,25 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ตารางถูกสร้างเมื่อ story ที่ใช้ถูกดึงเข้า Sprint (ไม่สร้างล่วงหน้า) ลำดับด้านล่างเป็นแผนปัจจุบัน ปรับได้ตอน Sprint Planning
 
-- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting, approval, doc_type_required_role
-  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้, US-6 → approval, US-9 → doc_type_required_role)*
-  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role`: migration `0005` seed ให้ `doc_type` ที่มีอยู่ตอน migrate ส่วน `doc_type` ที่ seed ทีหลังใช้ `seed_approval_rules` (US-9)
-- **Sprint 1:** download_log (US-8) เพิ่มใน migration ของฟีเจอร์ดาวน์โหลดแล้ว
-- **ถัดไป:** audit_log (US-26), report (US-32)
-- **ภายหลัง:** comment / rating (US-29 – US-31), email verification token (US-14), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
+- **สร้างแล้วในโค้ดปัจจุบัน (`main`):**
+  - `catalog`: `department`, `batch`, `course`, `batch_course`, `system_setting`
+  - `accounts`: `app_user`, `role`, `user_role`, `user_counter`, `poll_vote`, `shoutbox_message`
+  - `materials`: `doc_type`, `doc_type_required_role`, `exam_period`, `document`, `exam_detail`, `document_version`, `approval`, `download_log`
+  - `webboard`: `webboard_boardcategory`, `webboard_thread`, `webboard_post`
+  - ข้อมูลตั้งต้น: `role` seed ใน migration `accounts.0004_seed_roles`, รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4), `doc_type` / `exam_period` / `system_setting` / `doc_type_required_role` ด้วย `seed_materials` และ `seed_approval_rules`, หมวดหมู่เว็บบอร์ดตั้งต้นด้วย migration `webboard.0002_seed_categories`
+- **กำลังพัฒนาต่อ (Open Issues ใน Sprint 3):** `report` (US-32/US-33/US-35 — Issues #218, #219, #220), `audit_log` (US-26)
+- **ภายหลัง (Backlog):** `comment` / `rating` ใต้เอกสาร (US-29 – US-31), email verification token (US-14)
 
 ## 8. Django app ↔ ตาราง
 
 | App | Model | ตารางใน DB |
 |---|---|---|
 | `catalog` | Department, Batch, Course, BatchCourse, SystemSetting | department, batch, course, batch_course, system_setting |
-| `accounts` | User, Role, UserRole | app_user, role, user_role |
-| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval | doc_type, doc_type_required_role, exam_period, document, exam_detail, document_version, approval |
+| `accounts` | User, Role, UserRole, UserCounter, PollVote, ShoutboxMessage | app_user, role, user_role, user_counter, poll_vote, shoutbox_message |
+| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, DownloadLog, Approval | doc_type, doc_type_required_role, exam_period, document, exam_detail, document_version, download_log, approval |
+| `webboard` | BoardCategory, Thread, Post | webboard_boardcategory, webboard_thread, webboard_post |
 
 - แอป `materials` ชื่อเดิมคือ `documents` ชื่อตารางไม่เปลี่ยนเพราะตั้ง `db_table` ไว้ทุก model ตรงกับ ERD
 - ตั้ง `AUTH_USER_MODEL = "accounts.User"` ก่อน `migrate` ครั้งแรก
-- ลำดับ migration: `catalog` → `accounts` → `materials`
+- ลำดับ dependency ของแอป: `catalog` → `accounts` → (`materials`, `webboard`)
 - ตาราง `auth_group`, `auth_permission` และ M2M ของ `PermissionsMixin` ถูกสร้างโดย Django เพิ่มเติม ไม่อยู่ใน ERD นี้ (สิทธิ์ของระบบใช้ `role` + `user_role` เป็นหลัก)
