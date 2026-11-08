@@ -7,13 +7,23 @@ from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_http_methods
 
+import zipfile
+
 from catalog.models import Batch
+from portal.permissions import super_admin_required
 
 from . import selectors
 from .approval_ui import attach_approval_ui
-from .forms import HideDocumentForm, ReviewForm, SearchForm, UploadForm
+from .forms import (
+    BulkImportForm,
+    HideDocumentForm,
+    ReviewForm,
+    SearchForm,
+    UploadForm,
+)
 from .models import Document, max_upload_mb
 from .services import (
+    bulk_import_documents_from_csv,
     ensure_can_upload_to,
     file_too_large_message,
     hide_document,
@@ -282,3 +292,56 @@ def document_hide(request, document_id):
 
     messages.success(request, f"ซ่อนเอกสาร '{document.title}' เรียบร้อยแล้ว")
     return redirect("materials:vault")
+
+
+@super_admin_required
+@require_http_methods(["GET", "POST"])
+def bulk_import(request):
+    """หน้าสำหรับ Super Admin นำเข้าเอกสารเดิมจำนวนมากด้วย CSV และไฟล์ ZIP (US-17)"""
+    summary = None
+    has_run = False
+    dry_run = True
+
+    if request.method == "POST":
+        form = BulkImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = form.cleaned_data["csv_file"]
+            zip_file = form.cleaned_data["zip_file"]
+            dry_run = form.cleaned_data["dry_run"]
+
+            try:
+                csv_content = csv_file.read().decode("utf-8-sig")
+            except Exception:
+                try:
+                    csv_content = csv_file.read().decode("cp874")
+                except Exception as e:
+                    form.add_error("csv_file", f"ไม่สามารถถอดรหัสไฟล์ CSV ได้: {e}")
+                    csv_content = None
+
+            if csv_content is not None:
+                try:
+                    with zipfile.ZipFile(zip_file) as zf:
+                        summary = bulk_import_documents_from_csv(
+                            csv_content=csv_content,
+                            zip_archive=zf,
+                            user=request.user,
+                            dry_run=dry_run,
+                        )
+                        has_run = True
+                except zipfile.BadZipFile:
+                    form.add_error("zip_file", "ไฟล์ ZIP เสียหายหรือไม่ถูกต้อง")
+                except Exception as e:
+                    form.add_error(None, f"เกิดข้อผิดพลาดในการประมวลผล: {e}")
+    else:
+        form = BulkImportForm()
+
+    return render(
+        request,
+        "materials/bulk_import.html",
+        {
+            "form": form,
+            "summary": summary,
+            "has_run": has_run,
+            "dry_run": dry_run,
+        },
+    )
