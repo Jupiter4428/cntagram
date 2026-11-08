@@ -35,7 +35,7 @@
             </h1>
         </div>
 
-        {% if request.user.is_staff or request.user.is_superuser %}
+        {% if can_moderate %}
             <div class="d-flex align-items-center gap-1">
                 <form method="post" action="{% url 'webboard:thread_pin_toggle' pk=thread.pk %}" class="d-inline">
                     {% csrf_token %}

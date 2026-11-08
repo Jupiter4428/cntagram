@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
+from portal.permissions import can_moderate_content
 from webboard import selectors, services
 from webboard.forms import PostForm, ThreadForm
 
@@ -54,13 +55,18 @@ def thread_detail(request, pk):
     if not thread:
         raise Http404("ไม่พบกระทู้ที่ต้องการ")
 
-    services.increment_thread_views(thread_id=thread.pk)
+    thread.views_count = services.increment_thread_views(thread_id=thread.pk)
     posts = selectors.list_posts_for_thread(thread_id=thread.pk)
     form = PostForm()
     return render(
         request,
         "webboard/thread_detail.html",
-        {"thread": thread, "posts": posts, "form": form},
+        {
+            "thread": thread,
+            "posts": posts,
+            "form": form,
+            "can_moderate": can_moderate_content(request.user),
+        },
     )
 
 
@@ -119,7 +125,7 @@ def thread_reply(request, pk):
 @login_required
 @require_POST
 def thread_pin_toggle(request, pk):
-    """Toggle thread pinned state by staff."""
+    """Toggle thread pinned state by a content moderator."""
     thread = selectors.get_thread_by_id(pk)
     if not thread:
         raise Http404("ไม่พบกระทู้ที่ต้องการ")
@@ -137,7 +143,7 @@ def thread_pin_toggle(request, pk):
 @login_required
 @require_POST
 def thread_lock_toggle(request, pk):
-    """Toggle thread locked state by staff."""
+    """Toggle thread locked state by a content moderator."""
     thread = selectors.get_thread_by_id(pk)
     if not thread:
         raise Http404("ไม่พบกระทู้ที่ต้องการ")

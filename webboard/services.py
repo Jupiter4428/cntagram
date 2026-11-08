@@ -3,6 +3,7 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import F
+from portal.permissions import can_moderate_content
 from webboard.models import BoardCategory, Post, Thread
 
 
@@ -43,7 +44,8 @@ def create_post(
     content: str,
 ) -> Post:
     """Create a reply post under a thread, verifying it is not locked."""
-    if thread.is_locked:
+    locked_thread = Thread.objects.select_for_update().get(pk=thread.pk)
+    if locked_thread.is_locked:
         raise ValidationError("กระทู้นี้ถูกล็อกแล้ว ไม่อนุญาตให้ตอบข้อความเพิ่ม")
 
     cleaned_content = content.strip()
@@ -51,24 +53,25 @@ def create_post(
         raise ValidationError({"content": "กรุณาระบุข้อความตอบกลับ"})
 
     post = Post.objects.create(
-        thread=thread,
+        thread=locked_thread,
         author=author,
         content=cleaned_content,
     )
     return post
 
 
-def increment_thread_views(*, thread_id: int) -> None:
-    """Increment thread view count atomically using an F expression."""
+def increment_thread_views(*, thread_id: int) -> int:
+    """Increment a thread view count atomically and return the current count."""
     Thread.objects.filter(pk=thread_id).update(
         views_count=F("views_count") + 1,
     )
+    return Thread.objects.values_list("views_count", flat=True).get(pk=thread_id)
 
 
 @transaction.atomic
 def toggle_thread_pin(*, thread: Thread, actor) -> bool:
-    """Toggle the pinned status of a thread by a staff member."""
-    if not (actor.is_staff or actor.is_superuser):
+    """Toggle the pinned status of a thread by a content moderator."""
+    if not can_moderate_content(actor):
         raise PermissionDenied("เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถปักหมุดกระทู้ได้")
 
     thread.is_pinned = not thread.is_pinned
@@ -78,8 +81,8 @@ def toggle_thread_pin(*, thread: Thread, actor) -> bool:
 
 @transaction.atomic
 def toggle_thread_lock(*, thread: Thread, actor) -> bool:
-    """Toggle the locked status of a thread by a staff member."""
-    if not (actor.is_staff or actor.is_superuser):
+    """Toggle the locked status of a thread by a content moderator."""
+    if not can_moderate_content(actor):
         raise PermissionDenied("เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถล็อกกระทู้ได้")
 
     thread.is_locked = not thread.is_locked
@@ -89,8 +92,8 @@ def toggle_thread_lock(*, thread: Thread, actor) -> bool:
 
 @transaction.atomic
 def delete_thread(*, thread: Thread, actor) -> None:
-    """Delete a thread if the actor is its author or a staff member."""
-    if not (actor == thread.author or actor.is_staff or actor.is_superuser):
+    """Delete a thread if the actor is its author or a content moderator."""
+    if not (actor == thread.author or can_moderate_content(actor)):
         raise PermissionDenied("คุณไม่มีสิทธิ์ในการลบกระทู้นี้")
 
     thread.delete()
@@ -98,8 +101,8 @@ def delete_thread(*, thread: Thread, actor) -> None:
 
 @transaction.atomic
 def delete_post(*, post: Post, actor) -> None:
-    """Delete a reply post if the actor is its author or a staff member."""
-    if not (actor == post.author or actor.is_staff or actor.is_superuser):
+    """Delete a reply if the actor is its author or a content moderator."""
+    if not (actor == post.author or can_moderate_content(actor)):
         raise PermissionDenied("คุณไม่มีสิทธิ์ในการลบความคิดเห็นนี้")
 
     post.delete()

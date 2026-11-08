@@ -6,7 +6,6 @@ from webboard import views
 app_name = "webboard"
 
 urlpatterns = [
-    path("", views.board_index, name="index"),
     path("", views.board_index, name="board_index"),
     path(
         "category/<slug:slug>/",

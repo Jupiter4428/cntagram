@@ -74,42 +74,64 @@ class WebboardSelectorsTests(TestCase):
         self.assertEqual(cat_map.get("cat-a"), 1)
         self.assertEqual(cat_map.get("cat-b"), 1)
 
-    def test_get_category_by_slug(self):
-        """Retrieve category by valid slug, returns None for missing slug."""
+    def test_get_category_by_slug_returns_category(self):
+        """Retrieve a category by its valid slug."""
         cat = selectors.get_category_by_slug("cat-a")
+
         self.assertIsNotNone(cat)
         self.assertEqual(cat.name, "หมวด ก")
+
+    def test_get_category_by_slug_returns_none_for_missing_slug(self):
+        """A missing category slug returns None."""
         self.assertIsNone(selectors.get_category_by_slug("non-existent"))
 
-    def test_list_threads_filtering_and_pin_ordering(self):
-        """Pinned threads appear first, and category filtering works."""
+    def test_list_threads_orders_pinned_threads_first(self):
+        """Pinned threads appear before unpinned threads."""
         threads = list(selectors.list_threads())
+
         self.assertEqual(threads[0].id, self.thread_1.id)
 
+    def test_list_threads_filters_by_category(self):
+        """Category filtering returns only threads in that category."""
         cat_b_threads = list(selectors.list_threads(category_slug="cat-b"))
+
         self.assertEqual(len(cat_b_threads), 1)
         self.assertEqual(cat_b_threads[0].id, self.thread_2.id)
 
+    def test_list_threads_filters_by_course(self):
+        """Course filtering returns only threads for that course."""
         course_threads = list(selectors.list_threads(course_code="CN101"))
+
         self.assertEqual(len(course_threads), 1)
         self.assertEqual(course_threads[0].id, self.thread_1.id)
 
+    def test_list_threads_filters_by_search_query(self):
+        """Search filtering matches thread content."""
         searched = list(selectors.list_threads(search_query="เรื่องอื่น"))
+
         self.assertEqual(len(searched), 1)
         self.assertEqual(searched[0].id, self.thread_2.id)
 
-    def test_get_thread_by_id(self):
-        """Retrieve thread by primary key, or None if not found."""
+    def test_get_thread_by_id_returns_thread(self):
+        """Retrieve a thread by its primary key."""
         thread = selectors.get_thread_by_id(self.thread_1.id)
+
         self.assertIsNotNone(thread)
         self.assertEqual(thread.title, "กระทู้ที่หนึ่ง หมวด ก")
+
+    def test_get_thread_by_id_returns_none_when_missing(self):
+        """A missing thread ID returns None."""
         self.assertIsNone(selectors.get_thread_by_id(999999))
 
-    def test_list_posts_for_thread(self):
-        """List posts returns comments for a specific thread in order."""
+    def test_list_posts_for_thread_returns_posts_in_order(self):
+        """List posts returns replies for a specific thread in order."""
         posts = list(selectors.list_posts_for_thread(self.thread_1.id))
+
         self.assertEqual(len(posts), 1)
         self.assertEqual(posts[0].content, "ตอบกระทู้ 1")
 
+    def test_list_posts_for_thread_returns_empty_queryset(self):
+        """List posts returns no replies for a thread without replies."""
         empty_posts = list(selectors.list_posts_for_thread(self.thread_2.id))
+
         self.assertEqual(len(empty_posts), 0)
