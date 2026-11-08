@@ -6,14 +6,14 @@
 
 ## 1. สถาปัตยกรรมและกำหนดการสำรองข้อมูล (Backup Strategy & Schedule)
 
-ระบบ CNtagram กำหนดให้มีการสำรองข้อมูลทั้ง **ฐานข้อมูล (PostgreSQL Database Dump)** และ **คลังไฟล์เอกสาร (Protected Media Vault Archive)** วันละ 1 ครั้งโดยอัตโนมัติ
+ระบบ CNtagram กำหนดให้มีการสำรองข้อมูลวันละ 1 ครั้งโดยอัตโนมัติ แต่ต้องแยกตามที่เก็บข้อมูลจริง:\n\n- **PostgreSQL Database Dump**: สำรองจาก GitHub Actions ไป S3 ได้โดยตรง\n- **Protected Media Vault บน Render persistent disk**: GitHub-hosted runner และ Render Cron Job ไม่สามารถเข้าถึง disk ของ Web Service ได้ จึงห้ามนับ `tar media/` บน runner ว่าเป็น production media backup\n- Media Vault จะถือว่าผ่าน AC เมื่อสำรองจาก service ที่ถือ disk จริง หรือย้าย primary media storage ไป private object storage แล้วตั้ง replication/versioning/offsite copy
 
 | รายการ | รายละเอียด |
 |---|---|
 | **ความถี่และเวลา** | ทุกวัน เวลา **02:17 น. (Asia/Bangkok)** หรือ `19:17 UTC` (ตั้งเป็น cron `17 19 * * *`) |
 | **Scheduler** | **GitHub Actions** (`.github/workflows/daily-backup.yml`) หรือ **Render Cron Job** |
 | **ฐานข้อมูล** | PostgreSQL Logical Backup ผ่าน `pg_dump -Fc` (Custom Compressed Format) |
-| **คลังเอกสาร PDF** | บีบอัดโฟลเดอร์ `media/` เป็น `media_YYYYMMDD_HHMMSS.tar.gz` |
+| **คลังเอกสาร PDF** | ต้องสำรองจาก runtime ที่เข้าถึง production media จริง หรือย้ายไป private object storage; GitHub Actions checkout ไม่ถือเป็น production media source |
 | **สถานที่จัดเก็บ Offsite** | **AWS S3** (Region: `ap-southeast-1` Singapore) เข้ารหัสด้วย `AES256` |
 | **ระยะเวลาเก็บรักษา** | 30 วัน (กำหนดผ่าน S3 Lifecycle Expiration Rule) |
 
@@ -36,7 +36,7 @@
 ## 3. การกำหนดสิทธิ์แบบ Least Privilege และ S3 Lifecycle Policy
 
 ### 3.1 IAM Policy สำหรับ Backup Worker (Least Privilege)
-สร้าง IAM Policy ที่จำกัดสิทธิ์เฉพาะการ Upload (`s3:PutObject`) และ List (`s3:ListBucket`) ไปยัง Bucket สำรองข้อมูลเท่านั้น:
+สร้าง IAM Policy ที่จำกัดสิทธิ์เฉพาะที่ workflow ปัจจุบันใช้จริง คือ Upload (`s3:PutObject`) และตรวจ object เฉพาะ key ที่สร้างในรอบนั้น (`s3:GetObject`) ภายใต้ prefix `cntagram/`:
 
 ```json
 {
@@ -99,7 +99,7 @@ aws s3api put-bucket-lifecycle-configuration \
 
 ---
 
-## 4. การทดสอบและซักซ้อมการกู้คืน (Disaster Recovery Rehearsal)
+## 3.3 ข้อจำกัดของ Render Persistent Disk และ Media Backup\n\nRender persistent disk เข้าถึงได้เฉพาะ service instance ที่ผูก disk อยู่เท่านั้น ดังนั้น workflow บน GitHub Actions จะสำรองได้เฉพาะฐานข้อมูลที่เชื่อมผ่าน network และไฟล์ที่มีอยู่บน runner เท่านั้น\n\n**ผลต่อ Issue #192:** การสำรอง Media Vault จะยังไม่ถือว่าผ่านจนกว่าจะมีหนึ่งในสองแนวทางต่อไปนี้:\n1. ย้าย media ไป private object storage แล้วตั้ง offsite copy/versioning/lifecycle ที่ตรวจสอบได้ หรือ\n2. เพิ่มกลไก backup ที่รันจาก Web Service/runtime ที่ถือ persistent disk และ upload archive ออกไป S3 โดยไม่เปิดไฟล์ media เป็น public URL\n\nห้ามแนบหลักฐานจาก `media/` ใน GitHub checkout แล้วอ้างว่าเป็น production media backup\n\n## 4. การทดสอบและซักซ้อมการกู้คืน (Disaster Recovery Rehearsal)
 
 คำสั่ง `bash scripts/backup_restore.sh test` ใช้สำหรับทดสอบความสมบูรณ์ของกระบวนการ Backup และ Restore จริง:
 
