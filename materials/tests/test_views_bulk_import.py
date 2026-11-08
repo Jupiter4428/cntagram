@@ -1,7 +1,5 @@
 import io
-import os
 import zipfile
-from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -10,8 +8,14 @@ from django.utils import timezone
 
 from accounts.models import Role, UserRole
 from catalog.models import Batch, BatchCourse, Course, Department
-from materials.models import DocType, Document, ExamPeriod
+from materials.models import DocType, Document
 from materials.tests.base import PDF_BYTES
+
+
+CSV_HEADER = (
+    "file_path,department,batch,course,doc_type,title,"
+    "description,exam_period,exam_year_be\n"
+)
 
 
 class BulkImportViewTests(TestCase):
@@ -80,10 +84,8 @@ class BulkImportViewTests(TestCase):
 
     def test_super_admin_dry_run_post(self):
         self.client.force_login(self.admin_user)
-        csv_bytes = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            "sheet.pdf,CN,21,CN200,summary,ชีทสรุป 1,,,,\n"
-        ).encode("utf-8")
+        csv_row = "sheet.pdf,CN,21,CN200,summary,ชีทสรุป 1,,,,\n"
+        csv_bytes = (CSV_HEADER + csv_row).encode("utf-8")
         zip_bytes = self._create_zip_file({"sheet.pdf": PDF_BYTES})
 
         csv_file = SimpleUploadedFile("data.csv", csv_bytes, content_type="text/csv")
@@ -110,10 +112,8 @@ class BulkImportViewTests(TestCase):
 
     def test_super_admin_real_run_post(self):
         self.client.force_login(self.admin_user)
-        csv_bytes = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            "sheet.pdf,CN,21,CN200,summary,ชีทสรุป 1,,,,\n"
-        ).encode("utf-8")
+        csv_row = "sheet.pdf,CN,21,CN200,summary,ชีทสรุป 1,,,,\n"
+        csv_bytes = (CSV_HEADER + csv_row).encode("utf-8")
         zip_bytes = self._create_zip_file({"sheet.pdf": PDF_BYTES})
 
         csv_file = SimpleUploadedFile("data.csv", csv_bytes, content_type="text/csv")

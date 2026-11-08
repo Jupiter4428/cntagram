@@ -2,7 +2,6 @@ import io
 import os
 import shutil
 import tempfile
-from unittest import mock
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -13,6 +12,12 @@ from accounts.models import Role, UserRole
 from catalog.models import Batch, BatchCourse, Course, Department
 from materials.models import DocType, Document, ExamPeriod
 from materials.tests.base import PDF_BYTES
+
+
+CSV_HEADER = (
+    "file_path,department,batch,course,doc_type,title,"
+    "description,exam_period,exam_year_be\n"
+)
 
 
 class ImportDocumentsCommandTests(TestCase):
@@ -62,8 +67,8 @@ class ImportDocumentsCommandTests(TestCase):
         self.csv_path = os.path.join(self.temp_dir, "import.csv")
         with open(self.csv_path, "w", encoding="utf-8") as f:
             f.write(
-                "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-                f"{self.pdf_filename},CN,21,CN200,summary,CN200 สรุป,ละเอียด,,\n"
+                CSV_HEADER
+                + f"{self.pdf_filename},CN,21,CN200,summary,CN200 สรุป,ละเอียด,,\n"
             )
 
     def test_command_requires_existing_csv(self):

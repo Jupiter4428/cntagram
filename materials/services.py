@@ -14,7 +14,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
 
-from catalog.models import Batch, BatchCourse, Course, Department
+from catalog.models import Batch, BatchCourse
 from portal.permissions import is_super_admin
 
 from . import selectors
@@ -344,9 +344,7 @@ def validate_bulk_import_row(
     try:
         doc_type = DocType.objects.get(code=doc_type_code)
     except DocType.DoesNotExist:
-        raise ValidationError(
-            {"doc_type": f"ไม่พบประเภทเอกสารรหัส {doc_type_code}"}
-        )
+        raise ValidationError({"doc_type": f"ไม่พบประเภทเอกสารรหัส {doc_type_code}"})
 
     is_exam = doc_type.vault == DocType.Vault.EXAM
     exam_period = None

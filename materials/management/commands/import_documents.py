@@ -30,7 +30,7 @@ class Command(BaseCommand):
             dest="user_email",
             type=str,
             default=None,
-            help="Email of the Super Admin executing the import (default: first Super Admin in system)",
+            help="Email of Super Admin running import (default: first Super Admin)",
         )
 
     def handle(self, *args, **options):
@@ -85,15 +85,16 @@ class Command(BaseCommand):
                 "skipped": self.style.WARNING("[SKIP]"),
                 "failed": self.style.ERROR("[FAIL]"),
             }.get(res.status, res.status)
-            self.stdout.write(
-                f"  แถว {res.row_num}: {tag} {res.title or res.file_path} - {res.message}"
-            )
+            msg = f"{res.title or res.file_path} - {res.message}"
+            self.stdout.write(f"  แถว {res.row_num}: {tag} {msg}")
 
         self.stdout.write("\n" + "=" * 50)
         self.stdout.write(f"สรุปผลการนำเข้า {mode_label}:")
         self.stdout.write(f"  ทั้งหมด: {summary.total_rows} แถว")
         if dry_run:
-            self.stdout.write(self.style.SUCCESS(f"  ผ่าน {summary.imported_count} แถว"))
+            self.stdout.write(
+                self.style.SUCCESS(f"  ผ่าน {summary.imported_count} แถว")
+            )
         else:
             self.stdout.write(
                 self.style.SUCCESS(f"  นำเข้าสำเร็จ {summary.imported_count} แถว")

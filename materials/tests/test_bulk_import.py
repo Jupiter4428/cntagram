@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-from unittest import mock
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
@@ -11,12 +10,13 @@ from django.utils import timezone
 from accounts.models import Role, UserRole
 from catalog.models import Batch, BatchCourse, Course, Department
 from materials.models import DocType, Document, ExamPeriod
-from materials.services import (
-    BulkImportItemResult,
-    bulk_import_documents_from_csv,
-    validate_bulk_import_row,
+from materials.services import bulk_import_documents_from_csv
+from materials.tests.base import PDF_BYTES
+
+CSV_HEADER = (
+    "file_path,department,batch,course,doc_type,title,"
+    "description,exam_period,exam_year_be\n"
 )
-from materials.tests.base import PDF_BYTES, pdf_file
 
 
 class BulkImportServiceTests(TestCase):
@@ -73,8 +73,8 @@ class BulkImportServiceTests(TestCase):
 
     def test_regular_user_cannot_bulk_import(self):
         csv_content = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            f"{self.pdf_filename},CN,21,CN200,summary,สรุปบทที่ 1,คำอธิบาย,,\n"
+            CSV_HEADER
+            + f"{self.pdf_filename},CN,21,CN200,summary,สรุปบทที่ 1,คำอธิบาย,,\n"
         )
         with self.assertRaises(ValidationError) as ctx:
             bulk_import_documents_from_csv(
@@ -87,8 +87,8 @@ class BulkImportServiceTests(TestCase):
 
     def test_dry_run_valid_row_does_not_write_db_or_storage(self):
         csv_content = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            f"{self.pdf_filename},CN,21,CN200,summary,สรุปบทที่ 1,คำอธิบาย,,\n"
+            CSV_HEADER
+            + f"{self.pdf_filename},CN,21,CN200,summary,สรุปบทที่ 1,คำอธิบาย,,\n"
         )
         summary = bulk_import_documents_from_csv(
             csv_content=csv_content,
@@ -104,8 +104,8 @@ class BulkImportServiceTests(TestCase):
 
     def test_real_run_imports_published_document(self):
         csv_content = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            f"{self.pdf_filename},CN,21,CN200,summary,สรุปบทที่ 1,คำอธิบาย,,\n"
+            CSV_HEADER
+            + f"{self.pdf_filename},CN,21,CN200,summary,สรุปบทที่ 1,คำอธิบาย,,\n"
         )
         summary = bulk_import_documents_from_csv(
             csv_content=csv_content,
@@ -124,8 +124,9 @@ class BulkImportServiceTests(TestCase):
 
     def test_exam_detail_imported_properly(self):
         csv_content = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            f"{self.pdf_filename},CN,21,CN200,exam,ข้อสอบกลางภาค,ข้อสอบ 2568,midterm,2568\n"
+            CSV_HEADER
+            + f"{self.pdf_filename},CN,21,CN200,exam,"
+            "ข้อสอบกลางภาค,ข้อสอบ 2568,midterm,2568\n"
         )
         summary = bulk_import_documents_from_csv(
             csv_content=csv_content,
@@ -141,8 +142,7 @@ class BulkImportServiceTests(TestCase):
 
     def test_duplicate_file_is_skipped(self):
         csv_content = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            f"{self.pdf_filename},CN,21,CN200,summary,สรุป 1,,,,\n"
+            CSV_HEADER + f"{self.pdf_filename},CN,21,CN200,summary,สรุป 1,,,,\n"
         )
         # Import once
         bulk_import_documents_from_csv(
@@ -155,8 +155,7 @@ class BulkImportServiceTests(TestCase):
 
         # Import again with different title but same file
         csv_content_2 = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            f"{self.pdf_filename},CN,21,CN200,summary,สรุป 2,,,,\n"
+            CSV_HEADER + f"{self.pdf_filename},CN,21,CN200,summary,สรุป 2,,,,\n"
         )
         summary = bulk_import_documents_from_csv(
             csv_content=csv_content_2,
@@ -171,11 +170,11 @@ class BulkImportServiceTests(TestCase):
 
     def test_invalid_rows_reported_and_valid_rows_imported(self):
         csv_content = (
-            "file_path,department,batch,course,doc_type,title,description,exam_period,exam_year_be\n"
-            f"non_existent.pdf,CN,21,CN200,summary,สรุป 1,,,,\n"
-            f"{self.pdf_filename},CN,99,CN200,summary,สรุป 2,,,,\n"
-            f"{self.pdf_filename},CN,21,CN999,summary,สรุป 3,,,,\n"
-            f"{self.pdf_filename},CN,21,CN200,summary,สรุปถูกต้อง,,,,\n"
+            CSV_HEADER
+            + "non_existent.pdf,CN,21,CN200,summary,สรุป 1,,,,\n"
+            + f"{self.pdf_filename},CN,99,CN200,summary,สรุป 2,,,,\n"
+            + f"{self.pdf_filename},CN,21,CN999,summary,สรุป 3,,,,\n"
+            + f"{self.pdf_filename},CN,21,CN200,summary,สรุปถูกต้อง,,,,\n"
         )
         summary = bulk_import_documents_from_csv(
             csv_content=csv_content,
