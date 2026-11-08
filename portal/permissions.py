@@ -18,9 +18,7 @@ def can_moderate_content(user):
     """Return whether a user has a moderator or super-admin role."""
     return (
         user.is_authenticated
-        and user.user_roles.filter(
-            role__code__in=(MODERATOR, SUPER_ADMIN)
-        ).exists()
+        and user.user_roles.filter(role__code__in=(MODERATOR, SUPER_ADMIN)).exists()
     )
 
 
