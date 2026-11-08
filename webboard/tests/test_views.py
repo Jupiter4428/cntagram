@@ -1,0 +1,308 @@
+"""Unit tests for webboard views and request handling."""
+
+from django.contrib.auth import get_user_model
+from django.contrib.messages import get_messages
+from django.test import Client, TestCase
+from django.urls import reverse
+from django.utils import timezone
+from accounts.models import Role, UserRole
+from catalog.models import Department
+from webboard.models import BoardCategory, Post, Thread
+
+User = get_user_model()
+
+
+class WebboardViewsTests(TestCase):
+    """Test HTTP views and permissions on the webboard."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Prepare a student, moderator, category, and test thread."""
+        dept, _ = Department.objects.get_or_create(
+            code="CN",
+            defaults={
+                "name_th": "วิศวกรรมคอมพิวเตอร์",
+                "name_en": "Computer Engineering",
+            },
+        )
+        cls.student = User.objects.create_user(
+            email="6610000006@student.tu.ac.th",
+            password="test-password-123",
+            nickname="ViewStudent",
+            department=dept,
+            pdpa_consent_at=timezone.now(),
+        )
+        cls.moderator = User.objects.create_user(
+            email="6610000007@student.tu.ac.th",
+            password="test-password-123",
+            nickname="ViewModerator",
+            department=dept,
+            pdpa_consent_at=timezone.now(),
+        )
+        UserRole.objects.create(
+            user=cls.moderator,
+            role=Role.objects.get(code=Role.MODERATOR),
+            department=dept,
+        )
+        cls.category = BoardCategory.objects.create(
+            name="ห้องวิชาการ",
+            slug="academic",
+            order=1,
+        )
+        cls.thread = Thread.objects.create(
+            category=cls.category,
+            author=cls.student,
+            title="เทคนิคการอ่านสอบไฟนอล",
+            content="แชร์วิธีการเตรียมสอบวิชา CN101 ครับ :)",
+        )
+
+    def setUp(self):
+        """Log in student by default for authenticated actions."""
+        self.client.force_login(self.student)
+
+    def test_guest_redirected_to_login(self):
+        """Unauthenticated guests are redirected to the login page."""
+        guest = Client()
+        response = guest.get(reverse("webboard:board_index"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.url)
+
+    def test_board_index_for_student(self):
+        """Webboard index is accessible to authenticated student (status 200)."""
+        response = self.client.get(reverse("webboard:board_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "เว็บบอร์ดเด็กวิศวะ CNTAGRAM")
+        self.assertContains(response, "เทคนิคการอ่านสอบไฟนอล")
+
+    def test_category_threads_view_filters_by_slug(self):
+        """Category view displays the selected category."""
+        response = self.client.get(
+            reverse("webboard:category_threads", kwargs={"slug": "academic"})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ห้องวิชาการ")
+
+    def test_category_threads_view_returns_404_for_missing_slug(self):
+        """Category view returns 404 for a missing category."""
+        response = self.client.get(
+            reverse("webboard:category_threads", kwargs={"slug": "not-found"})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_thread_detail_view_and_view_counter(self):
+        """Thread detail displays content and increments views count."""
+        initial_views = self.thread.views_count
+        response = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "เทคนิคการอ่านสอบไฟนอล")
+        self.assertContains(response, f"ยอดอ่าน: {initial_views + 1}")
+        self.thread.refresh_from_db()
+        self.assertEqual(self.thread.views_count, initial_views + 1)
+
+    def test_thread_create_requires_login(self):
+        """Unauthenticated user is redirected to login page."""
+        anon = Client()
+        response = anon.get(reverse("webboard:thread_create"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.url)
+
+    def test_thread_create_post_success(self):
+        """Authenticated student can compose and post a thread."""
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:thread_create"),
+            data={
+                "category": self.category.id,
+                "title": "กระทู้สร้างจากวิว",
+                "content": "เนื้อหาผ่านฟอร์ม [img]https://example.com/a.gif[/img]",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        created = Thread.objects.filter(title="กระทู้สร้างจากวิว").first()
+        self.assertIsNotNone(created)
+        self.assertEqual(created.author, self.student)
+
+    def test_thread_reply_post(self):
+        """Authenticated user can submit reply comment to thread."""
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:thread_reply", kwargs={"pk": self.thread.pk}),
+            data={"content": "ขอบคุณสำหรับคำแนะนำครับ :D"},
+        )
+        self.assertEqual(response.status_code, 302)
+        post = Post.objects.filter(thread=self.thread).first()
+        self.assertIsNotNone(post)
+        self.assertEqual(post.content, "ขอบคุณสำหรับคำแนะนำครับ :D")
+
+    def test_moderator_can_pin_thread(self):
+        """A user with the moderator role can pin a thread."""
+        self.client.force_login(self.moderator)
+        response = self.client.post(
+            reverse("webboard:thread_pin_toggle", kwargs={"pk": self.thread.pk})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.thread.refresh_from_db()
+        self.assertTrue(self.thread.is_pinned)
+
+    def test_moderator_can_lock_thread(self):
+        """A user with the moderator role can lock a thread."""
+        self.client.force_login(self.moderator)
+        response = self.client.post(
+            reverse("webboard:thread_lock_toggle", kwargs={"pk": self.thread.pk})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.thread.refresh_from_db()
+        self.assertTrue(self.thread.is_locked)
+
+    def test_thread_delete_by_author(self):
+        """Author can delete their thread, redirecting to index."""
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:thread_delete", kwargs={"pk": self.thread.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Thread.objects.filter(pk=self.thread.pk).exists())
+
+    def test_thread_create_get_with_category_param(self):
+        """Visiting thread create with category query pre-selects category."""
+        self.client.force_login(self.student)
+        response = self.client.get(
+            f"{reverse('webboard:thread_create')}?category=academic"
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_thread_create_invalid_form(self):
+        """Submitting invalid thread form redisplays page with errors."""
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:thread_create"),
+            data={"title": "", "content": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context["form"], "title", "กรุณาระบุหัวข้อกระทู้")
+
+    def test_thread_reply_invalid_form_keeps_posts_unchanged(self):
+        """An empty reply shows a specific error and creates no post."""
+        response = self.client.post(
+            reverse("webboard:thread_reply", kwargs={"pk": self.thread.pk}),
+            data={"content": ""},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Post.objects.filter(thread=self.thread).exists())
+        self.assertIn(
+            "กรุณากรอกข้อความตอบกลับให้ถูกต้อง",
+            [str(message) for message in get_messages(response.wsgi_request)],
+        )
+
+    def test_thread_reply_locked_thread_keeps_posts_unchanged(self):
+        """A locked thread shows a specific error and creates no post."""
+        self.thread.is_locked = True
+        self.thread.save(update_fields=["is_locked"])
+        response = self.client.post(
+            reverse("webboard:thread_reply", kwargs={"pk": self.thread.pk}),
+            data={"content": "ตอบในกระทู้ล็อก"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Post.objects.filter(thread=self.thread).exists())
+        self.assertIn(
+            "['กระทู้นี้ถูกล็อกแล้ว ไม่อนุญาตให้ตอบข้อความเพิ่ม']",
+            [str(message) for message in get_messages(response.wsgi_request)],
+        )
+
+    def test_thread_detail_returns_404_for_missing_thread(self):
+        """Thread detail returns 404 for a missing thread."""
+        response = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": 99999})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_thread_reply_returns_404_for_missing_thread(self):
+        """Thread reply returns 404 for a missing thread."""
+        response = self.client.post(
+            reverse("webboard:thread_reply", kwargs={"pk": 99999}),
+            data={"content": "ข้อความ"},
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_thread_pin_returns_404_for_missing_thread(self):
+        """Pin toggle returns 404 for a missing thread."""
+        response = self.client.post(
+            reverse("webboard:thread_pin_toggle", kwargs={"pk": 99999})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_student_cannot_pin_thread(self):
+        """A student cannot pin a thread and sees the permission error."""
+        response = self.client.post(
+            reverse("webboard:thread_pin_toggle", kwargs={"pk": self.thread.pk})
+        )
+
+        self.thread.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(self.thread.is_pinned)
+        self.assertIn(
+            "เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถปักหมุดกระทู้ได้",
+            [str(message) for message in get_messages(response.wsgi_request)],
+        )
+
+    def test_thread_lock_returns_404_for_missing_thread(self):
+        """Lock toggle returns 404 for a missing thread."""
+        response = self.client.post(
+            reverse("webboard:thread_lock_toggle", kwargs={"pk": 99999})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_student_cannot_lock_thread(self):
+        """A student cannot lock a thread and sees the permission error."""
+        response = self.client.post(
+            reverse("webboard:thread_lock_toggle", kwargs={"pk": self.thread.pk})
+        )
+
+        self.thread.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(self.thread.is_locked)
+        self.assertIn(
+            "เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถล็อกกระทู้ได้",
+            [str(message) for message in get_messages(response.wsgi_request)],
+        )
+
+    def test_stranger_cannot_delete_thread(self):
+        """A stranger cannot delete a thread and sees the permission error."""
+        other = User.objects.create_user(
+            email="6610000099@student.tu.ac.th",
+            password="test-password-123",
+            nickname="Stranger",
+            department=self.student.department,
+            pdpa_consent_at=timezone.now(),
+        )
+        self.client.force_login(other)
+        response = self.client.post(
+            reverse("webboard:thread_delete", kwargs={"pk": self.thread.pk})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Thread.objects.filter(pk=self.thread.pk).exists())
+        self.assertIn(
+            "คุณไม่มีสิทธิ์ในการลบกระทู้นี้",
+            [str(message) for message in get_messages(response.wsgi_request)],
+        )
+
+    def test_thread_delete_returns_404_for_missing_thread(self):
+        """Thread deletion returns 404 for a missing thread."""
+        response = self.client.post(
+            reverse("webboard:thread_delete", kwargs={"pk": 99999})
+        )
+
+        self.assertEqual(response.status_code, 404)

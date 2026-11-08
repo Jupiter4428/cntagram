@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "accounts",
     "catalog",
     "materials",
+    "webboard",
 ]
 
 MIDDLEWARE = [

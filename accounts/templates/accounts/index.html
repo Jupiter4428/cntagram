@@ -129,11 +129,12 @@
     </section>
 {% endif %}
 
+{% vault_category_counts as vault_counts %}
 <section class="retro-widget forum-panel" aria-labelledby="board-index-title">
     <div class="retro-widget__header retro-widget__titlebar">
         <span aria-hidden="true">»</span>
         <strong id="board-index-title">หมวดหมู่คลังเอกสาร</strong>
-        <small>3 หมวดหลัก</small>
+        <small>3 หมวดหลัก · {{ vault_counts.total }} ไฟล์</small>
     </div>
     <div class="table-responsive">
         <table class="board-index">
@@ -154,7 +155,7 @@
                         <strong class="board-index__name">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}">Lecture Notes</a>{% else %}<a href="{% url 'accounts:login' %}">Lecture Notes</a>{% endif %}</strong> <b class="new-sticker">NEW!</b>
                         <p>ชีทสรุป บันทึกในห้องเรียน และสไลด์ประกอบการเรียน อ่านแล้วอาจเข้าใจ (มั้ง)</p>
                     </td>
-                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">เปิดอ่าน</span>{% else %}<span class="cyber-badge">สมาชิก</span>{% endif %}</td>
+                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">{{ vault_counts.lecture }} ไฟล์</span>{% else %}<span class="cyber-badge">{{ vault_counts.lecture }} ไฟล์ · สมาชิก</span>{% endif %}</td>
                     <td class="board-index__last">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--quiet">เข้าสู่คลัง »</a>{% else %}<a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet">เข้าสู่ระบบเพื่ออ่าน »</a>{% endif %}</td>
                 </tr>
                 <tr>
@@ -165,7 +166,7 @@
                         <strong class="board-index__name">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}">Cheat Sheets</a>{% else %}<a href="{% url 'accounts:login' %}">Cheat Sheets</a>{% endif %}</strong> <b class="hot-sticker">HOT!</b>
                         <p>สูตรสำคัญและสรุปแบบอ่านเร็ว เปิดตำราแล้ว แต่สมองยัง loading...</p>
                     </td>
-                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">เปิดอ่าน</span>{% else %}<span class="cyber-badge">สมาชิก</span>{% endif %}</td>
+                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">{{ vault_counts.cheatsheet }} ไฟล์</span>{% else %}<span class="cyber-badge">{{ vault_counts.cheatsheet }} ไฟล์ · สมาชิก</span>{% endif %}</td>
                     <td class="board-index__last">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--quiet">เข้าสู่คลัง »</a>{% else %}<a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet">เข้าสู่ระบบเพื่ออ่าน »</a>{% endif %}</td>
                 </tr>
                 <tr>
@@ -176,7 +177,7 @@
                         <strong class="board-index__name">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}">Exam Archive</a>{% else %}<a href="{% url 'accounts:login' %}">Exam Archive</a>{% endif %}</strong>
                         <p>คลังข้อสอบเก่า มิดเทอมและไฟนอล แยกตามรายวิชาและรุ่น</p>
                     </td>
-                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">เปิดอ่าน</span>{% else %}<span class="cyber-badge">สมาชิก</span>{% endif %}</td>
+                    <td class="board-index__count">{% if request.user.is_authenticated %}<span class="cyber-badge">{{ vault_counts.exam }} ไฟล์</span>{% else %}<span class="cyber-badge">{{ vault_counts.exam }} ไฟล์ · สมาชิก</span>{% endif %}</td>
                     <td class="board-index__last">{% if request.user.is_authenticated %}<a href="{% url 'materials:vault' %}" class="chrome-button chrome-button--quiet">เข้าสู่คลัง »</a>{% else %}<a href="{% url 'accounts:login' %}" class="chrome-button chrome-button--quiet">เข้าสู่ระบบเพื่ออ่าน »</a>{% endif %}</td>
                 </tr>
             </tbody>
@@ -230,14 +231,21 @@
             </header>
             <div class="post-entry__body">
                 <p>รวมชีทสรุปวิชายอดนิยมและแนวข้อสอบสำหรับทบทวนความรู้ก่อนสอบมิดเทอม สามารถค้นหาและดาวน์โหลดได้จากคลังเอกสาร</p>
+                {% recent_published_documents as recent_docs %}
                 <ul class="post-entry__list">
-                    {% if request.user.is_authenticated %}
-                        <li><a href="{% url 'materials:vault' %}?query=CN101">CN101 Starter Notes</a> — สรุปพื้นฐานวิศวกรรมคอมพิวเตอร์</li>
-                        <li><a href="{% url 'materials:vault' %}?query=Math">Engineering Math Cheat Sheet</a> — สรุปสูตรและแนวข้อสอบคณิตศาสตร์วิศวกรรม</li>
-                    {% else %}
-                        <li><a href="{% url 'accounts:login' %}">CN101 Starter Notes</a> — สรุปพื้นฐานวิศวกรรมคอมพิวเตอร์ (เข้าสู่ระบบเพื่อเปิดอ่าน)</li>
-                        <li><a href="{% url 'accounts:login' %}">Engineering Math Cheat Sheet</a> — สรุปสูตรและแนวข้อสอบคณิตศาสตร์วิศวกรรม (เข้าสู่ระบบเพื่อเปิดอ่าน)</li>
-                    {% endif %}
+                    {% for doc in recent_docs %}
+                        {% if request.user.is_authenticated %}
+                            <li><a href="{% url 'materials:document_detail' doc.pk %}">{{ doc.batch_course.course.code }} · {{ doc.title }}</a> — {{ doc.doc_type.name_th }}</li>
+                        {% else %}
+                            <li><a href="{% url 'accounts:login' %}">{{ doc.batch_course.course.code }} · {{ doc.title }}</a> — {{ doc.doc_type.name_th }} (เข้าสู่ระบบเพื่อเปิดอ่าน)</li>
+                        {% endif %}
+                    {% empty %}
+                        {% if request.user.is_authenticated %}
+                            <li>ยังไม่มีเอกสารที่เผยแพร่ล่าสุด — <a href="{% url 'materials:upload' %}">ร่วมส่งต่อชีทสรุปใบแรกเข้าคลัง</a></li>
+                        {% else %}
+                            <li>ยังไม่มีเอกสารที่เผยแพร่ล่าสุด — <a href="{% url 'accounts:login' %}">เข้าสู่ระบบเพื่อร่วมแบ่งปันชีทสรุป</a></li>
+                        {% endif %}
+                    {% endfor %}
                 </ul>
             </div>
             <hr>

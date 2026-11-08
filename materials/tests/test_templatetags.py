@@ -176,8 +176,8 @@ class UserDashboardTemplateTagsTests(TestCase):
         self.assertContains(response, "รออนุมัติ <strong>1</strong> ไฟล์ (ภาค CN)")
         self.assertContains(response, reverse("materials:approval_queue"))
 
-        # Baseline dashboard 8 queries + 3 fixed poll/shoutbox DB queries.
-        with self.assertNumQueries(11):
+        # Baseline dashboard 8 queries + 3 fixed poll/shoutbox + 1 vault snapshot = 12.
+        with self.assertNumQueries(12):
             self.client.get(reverse("accounts:home"))
 
         # Add 4 more pending documents in CN (total 5)
@@ -191,7 +191,7 @@ class UserDashboardTemplateTagsTests(TestCase):
             )
 
         # Query count remains constant with 5 documents (no N+1).
-        with self.assertNumQueries(11):
+        with self.assertNumQueries(12):
             resp = self.client.get(reverse("accounts:home"))
         self.assertContains(resp, "รออนุมัติ <strong>5</strong> ไฟล์ (ภาค CN)")
 
@@ -214,8 +214,9 @@ class UserDashboardTemplateTagsTests(TestCase):
             title="Doc 0",
             status=Document.Status.PUBLISHED,
         )
-        # Dashboard: 5 queries + poll aggregate, vote existence, shoutbox = 8.
-        with self.assertNumQueries(8):
+        # Dashboard: 5 queries + poll aggregate, vote existence,
+        # shoutbox, vault snapshot = 9.
+        with self.assertNumQueries(9):
             self.client.get(reverse("accounts:home"))
 
         # Add 4 more documents (total 5)
@@ -228,6 +229,35 @@ class UserDashboardTemplateTagsTests(TestCase):
                 status=Document.Status.PUBLISHED,
             )
 
-        # Same 8 queries regardless of document count (no N+1).
-        with self.assertNumQueries(8):
+        # Same 9 queries regardless of document count (no N+1).
+        with self.assertNumQueries(9):
             self.client.get(reverse("accounts:home"))
+
+    def test_home_archive_and_board_index_reflect_published_documents(self):
+        doc = Document.objects.create(
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            uploader=self.student,
+            title="Real Lecture Note",
+            status=Document.Status.PUBLISHED,
+        )
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CN101 · Real Lecture Note")
+        self.assertContains(response, f'{reverse("materials:vault")}?course_code=CN101')
+        self.assertContains(
+            response, reverse("materials:document_detail", args=[doc.pk])
+        )
+        self.assertContains(response, "1 ไฟล์")
+        self.assertNotContains(response, "ยังไม่มีเอกสารที่เผยแพร่ในคลังขณะนี้")
+
+        # Guest sees login links for the published items
+        self.client.logout()
+        guest_resp = self.client.get(reverse("accounts:home"))
+        self.assertContains(guest_resp, "CN101 · Real Lecture Note")
+        self.assertContains(guest_resp, "1 ไฟล์ · สมาชิก")
+        self.assertNotContains(
+            guest_resp, f'{reverse("materials:vault")}?course_code=CN101'
+        )

@@ -1,0 +1,1 @@
+"""Webboard application package."""

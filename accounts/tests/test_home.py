@@ -76,8 +76,9 @@ class HomeViewTests(TestCase):
         self.assertContains(response, "ประกาศปักหมุด")
         self.assertNotContains(response, "DEMO POST")
         self.assertContains(response, "Community Archive")
-        self.assertContains(response, "ปีการศึกษา 2569")
-        self.assertContains(response, "ภาคเรียนที่ 1")
+        self.assertContains(response, "ยังไม่มีเอกสารที่เผยแพร่ในคลังขณะนี้")
+        self.assertNotContains(response, "CN101 · Starter Notes")
+        self.assertNotContains(response, "?query=CN101")
         self.assertContains(response, "คลิกที่รายวิชาเพื่อค้นหาชีทและข้อสอบเก่าในคลัง")
         self.assertNotContains(response, 'href="#"')
 
@@ -137,7 +138,7 @@ class HomeViewTests(TestCase):
 
         self.assertContains(response, self.user.nickname)
         self.assertContains(response, f'href="{reverse("materials:vault")}"')
-        self.assertContains(
+        self.assertNotContains(
             response, f'href="{reverse("materials:vault")}?query=CN101"'
         )
         self.assertContains(response, f'href="{reverse("materials:upload")}"')
@@ -303,9 +304,10 @@ class HomeViewTests(TestCase):
     @override_settings(
         CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
     )
-    def test_guest_home_uses_two_fixed_widget_queries(self):
-        # One aggregate for poll votes and one bounded query for shoutbox.
-        with self.assertNumQueries(2):
+    def test_guest_home_uses_fixed_widget_queries(self):
+        # One aggregate for poll votes, one bounded query for shoutbox,
+        # and one for archive tree.
+        with self.assertNumQueries(3):
             self.client.get(reverse("accounts:home"))
 
     def test_record_home_visit_increments_and_zero_pads_counter(self):
@@ -333,10 +335,8 @@ class HomeViewTests(TestCase):
             "<span>3</span><span>9</span>"
         )
         self.assertContains(first_response, digits_39)
-        # In the same session (refresh), the counter does not increment
         self.assertContains(second_response, digits_39)
 
-        # A new visitor (new session) increments the counter
         new_client = self.client_class()
         third_response = new_client.get(reverse("accounts:home"))
         digits_40 = (
