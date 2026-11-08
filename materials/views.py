@@ -66,15 +66,21 @@ def open_document_pdf(document):
     return stream, version
 
 
-def _inline_pdf_response(document):
-    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL)
+def _pdf_response(document, *, as_attachment=False):
+    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสาร (ไม่มี Direct URL)
 
     ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว
     """
     file, version = open_document_pdf(document)
-    return FileResponse(
-        file, content_type="application/pdf", filename=version.original_name
+    response = FileResponse(
+        file,
+        as_attachment=as_attachment,
+        content_type="application/pdf",
+        filename=version.original_name,
     )
+    if as_attachment:
+        response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
@@ -84,7 +90,7 @@ def document_preview(request, document_id):
     ผ่าน view ที่ตรวจสิทธิ์
     """
     document = get_object_or_404(selectors.published_documents(), pk=document_id)
-    return _inline_pdf_response(document)
+    return _pdf_response(document)
 
 
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าพิจารณาของเว็บเราเองแสดงได้
@@ -104,7 +110,21 @@ def approval_document_preview(request, document_id):
         )
     except Document.DoesNotExist:
         raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
-    return _inline_pdf_response(document)
+    return _pdf_response(document)
+
+
+@require_GET
+def approval_document_download(request, document_id):
+    """ดาวน์โหลดไฟล์ PDF ของเอกสารที่รอพิจารณา (pending)
+    สำหรับผู้ตรวจที่มีสิทธิ์เท่านั้น (Moderator ประจำภาค หรือ Super Admin)
+    """
+    try:
+        document = selectors.get_document_for_review(
+            document_id=document_id, user=request.user
+        )
+    except Document.DoesNotExist:
+        raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
+    return _pdf_response(document, as_attachment=True)
 
 
 def _add_service_errors(form, exc):

@@ -802,7 +802,10 @@ class ApprovalPreviewViewTests(ApprovalBaseTestCase):
         response = self.client.get(reverse("materials:approval_review", args=[doc.pk]))
 
         preview_url = reverse("materials:approval_preview", args=[doc.pk])
+        download_url = reverse("materials:approval_download", args=[doc.pk])
         self.assertContains(response, f'<iframe src="{preview_url}"')
+        self.assertContains(response, f'href="{download_url}"')
+        self.assertNotContains(response, "sticky-top")
         self.assertNotContains(response, storage_path)
 
     def test_review_page_has_no_iframe_when_document_has_no_file(self):
@@ -814,3 +817,79 @@ class ApprovalPreviewViewTests(ApprovalBaseTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "<iframe")
+        self.assertNotContains(
+            response, reverse("materials:approval_download", args=[doc.pk])
+        )
+
+    def test_moderator_can_download_pending_pdf_attachment(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn)
+        self.client.force_login(self.mod_cn)
+
+        response = self.client.get(
+            reverse("materials:approval_download", args=[doc.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertTrue(response["Content-Disposition"].startswith("attachment"))
+        self.assertIn("test.pdf", response["Content-Disposition"])
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+        self.assertEqual(b"".join(response.streaming_content), PDF_BYTES)
+
+    def test_super_admin_can_download_pending_pdf_of_any_department(self):
+        doc = self.create_document_with_file(batch_course=self.bc_me)
+        self.client.force_login(self.super_admin)
+
+        response = self.client.get(
+            reverse("materials:approval_download", args=[doc.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Disposition"].startswith("attachment"))
+
+    def test_unauthorized_users_cannot_download_pending_pdf(self):
+        doc = self.create_document_with_file(batch_course=self.bc_cn)
+        url = reverse("materials:approval_download", args=[doc.pk])
+
+        for user in (self.mod_me, self.normal_student):
+            with self.subTest(user=user.nickname):
+                self.client.force_login(user)
+                self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_uploaded_lecture_11_polymorphism_pdf_upload_preview_and_download(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from ..services import upload_document
+
+        raw_bytes = b"%PDF-1.3\n% lecture 11 polymorphism\n%%EOF\n"
+        uploaded = SimpleUploadedFile(
+            "11-polymorphism.pdf", raw_bytes, content_type="application/pdf"
+        )
+        doc = upload_document(
+            uploader=self.uploader_cn,
+            batch_course=self.bc_cn,
+            doc_type=self.doc_type_summary,
+            title="lecture 11 polymorphism",
+            description="",
+            file=uploaded,
+        )
+
+        self.client.force_login(self.super_admin)
+        review_res = self.client.get(
+            reverse("materials:approval_review", args=[doc.pk])
+        )
+        self.assertEqual(review_res.status_code, 200)
+        self.assertContains(review_res, "11-polymorphism.pdf")
+
+        preview_res = self.client.get(
+            reverse("materials:approval_preview", args=[doc.pk])
+        )
+        self.assertEqual(preview_res.status_code, 200)
+        self.assertTrue(preview_res["Content-Disposition"].startswith("inline"))
+        self.assertEqual(b"".join(preview_res.streaming_content), raw_bytes)
+
+        download_res = self.client.get(
+            reverse("materials:approval_download", args=[doc.pk])
+        )
+        self.assertEqual(download_res.status_code, 200)
+        self.assertTrue(download_res["Content-Disposition"].startswith("attachment"))
+        self.assertEqual(b"".join(download_res.streaming_content), raw_bytes)

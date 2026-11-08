@@ -23,9 +23,7 @@
 .approval-page .approval-link { color: var(--navy); }
 .approval-page .approval-truncate { max-width: 240px; }
 .approval-page .approval-empty { max-width: 450px; margin-inline: auto; }
-.approval-page .approval-sticky { top: 1rem; }
 .approval-page .approval-action:focus-visible, .approval-page .approval-secondary:focus-visible, .approval-page .approval-radio:focus-visible { outline: 2px solid var(--orange-deep); outline-offset: 2px; }
-@media (max-width: 767px) { .approval-page .approval-sticky { position: static !important; } }
 @media (max-width: 575.98px) { .approval-page .approval-action, .approval-page .approval-secondary, .approval-page .approval-radio { min-height: 40px; } }
 
 /* Semantic document metadata and themed surface for Approval UI. */
