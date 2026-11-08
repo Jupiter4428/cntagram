@@ -1394,3 +1394,90 @@ body:has(.site-frame) {
 /* admin lists already render their own arrow span */
 .directory-list li > span[aria-hidden="true"] { display: none; }
 .transmission-note .tech-label { display: inline; color: var(--navy); font-weight: 700; }
+
+/* ---------- webboard / msn palette & post display ---------- */
+.msn-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px;
+    background: #f7f5ed;
+    border: 1px inset #d4d0c8;
+    max-height: 140px;
+    overflow-y: auto;
+}
+.msn-btn {
+    background: #ffffff;
+    border: 1px outset #d4d0c8;
+    padding: 2px 4px;
+    cursor: pointer;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+}
+.msn-btn:hover {
+    background: #e3edf7;
+    border-color: var(--blue-main);
+}
+.msn-btn:active {
+    border-style: inset;
+}
+.msn-icon {
+    display: inline-flex;
+    vertical-align: -3px;
+    margin: 0 2px;
+    line-height: 1;
+}
+.msn-icon svg {
+    display: inline-block;
+    vertical-align: middle;
+}
+.webboard-embed-box {
+    margin: 8px 0;
+    padding: 4px;
+    background: #faf8f2;
+    border: 1px dashed var(--cream-line);
+    display: inline-block;
+    max-width: 100%;
+}
+.webboard-embed-img {
+    max-width: 100%;
+    max-height: 420px;
+    height: auto;
+    display: block;
+    border: 1px solid #c0c0c0;
+}
+.webboard-post-card {
+    border: 1px solid var(--cream-line);
+    background: #ffffff;
+    margin-bottom: 12px;
+}
+.webboard-post-header {
+    background: #f0ede3;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--cream-line);
+    font-size: 12px;
+}
+.webboard-author-box {
+    background: #faf8f2;
+    border-right: 1px solid var(--cream-line);
+    padding: 8px;
+    font-size: 12px;
+}
+.webboard-body {
+    padding: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    word-break: break-word;
+}
+.webboard-pinned {
+    color: #b71c1c;
+    font-weight: 700;
+}
+.webboard-locked {
+    color: #555555;
+    font-size: 11px;
+}
+
