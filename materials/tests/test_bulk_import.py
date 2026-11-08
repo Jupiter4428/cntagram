@@ -124,8 +124,7 @@ class BulkImportServiceTests(TestCase):
 
     def test_exam_detail_imported_properly(self):
         csv_content = (
-            CSV_HEADER
-            + f"{self.pdf_filename},CN,21,CN200,exam,"
+            CSV_HEADER + f"{self.pdf_filename},CN,21,CN200,exam,"
             "ข้อสอบกลางภาค,ข้อสอบ 2568,midterm,2568\n"
         )
         summary = bulk_import_documents_from_csv(

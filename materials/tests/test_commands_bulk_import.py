@@ -13,7 +13,6 @@ from catalog.models import Batch, BatchCourse, Course, Department
 from materials.models import DocType, Document, ExamPeriod
 from materials.tests.base import PDF_BYTES
 
-
 CSV_HEADER = (
     "file_path,department,batch,course,doc_type,title,"
     "description,exam_period,exam_year_be\n"
