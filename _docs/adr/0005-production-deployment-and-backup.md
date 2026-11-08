@@ -88,7 +88,7 @@ Sprint 3 มีเป้าหมายสำคัญตาม Roadmap คื�
   - กำหนดเวลาสำรองข้อมูลอัตโนมัติวันละ 1 ครั้ง ผ่าน GitHub Actions Workflow (`.github/workflows/daily-backup.yml`) รันตามตารางเวลา `17 19 * * *` (ทุกวันเวลา 02:17 น. ตามเวลาประเทศไทย / Asia/Bangkok)
   - นอกจากนี้ สามารถตั้ง Render Cron Job บน Render Dashboard ได้เช่นกันเพื่อรันคำสั่งสำรองข้อมูลโดยตรง
   - สำรองทั้งโครงสร้างและข้อมูลของ PostgreSQL ผ่านคำสั่ง `pg_dump` ในฟอร์แมต Custom Compressed (`-Fc`)
-  - สำรองไฟล์เอกสารใน Protected Media Vault (`MEDIA_ROOT` หรือ `media/`) เป็น `.tar.gz`
+  - PostgreSQL backup รันผ่าน GitHub Actions ได้โดยตรง ส่วน Protected Media Vault ต้องสำรองจาก runtime ที่เข้าถึง production media จริง หรือย้ายไป private object storage; ห้ามถือ `media/` จาก GitHub checkout เป็น production backup
 - **สถานที่จัดเก็บข้อมูลสำรองภายนอก (Offsite Storage & Retention Policy):**
   - ส่งไฟล์สำรองทั้งฐานข้อมูล (`*.dump`) และ Media Vault (`*.tar.gz`) ไปยัง Cloud Object Storage ภายนอก (AWS S3 หรือเทียบเท่า เช่น Cloudflare R2 / Backblaze B2) ใน Region Singapore (`ap-southeast-1`)
   - **การจำกัดสิทธิ์ (Least-Privilege Access):** S3 Bucket เป็น Private 100% (Block all public access), IAM Credential ที่ใช้จำกัดสิทธิ์เฉพาะ `s3:PutObject` และ `s3:ListBucket` เท่านั้น
