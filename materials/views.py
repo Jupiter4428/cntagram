@@ -11,11 +11,12 @@ from catalog.models import Batch
 
 from . import selectors
 from .approval_ui import attach_approval_ui
-from .forms import ReviewForm, SearchForm, UploadForm
+from .forms import HideDocumentForm, ReviewForm, SearchForm, UploadForm
 from .models import Document, max_upload_mb
 from .services import (
     ensure_can_upload_to,
     file_too_large_message,
+    hide_document,
     review_document,
     upload_document,
 )
@@ -38,6 +39,7 @@ def document_detail(request, document_id):
         selectors.published_document_with_download_count(),
         pk=document_id,
     )
+    can_hide = selectors.can_hide_document(document=document, user=request.user)
     return render(
         request,
         "materials/document_detail.html",
@@ -49,6 +51,8 @@ def document_detail(request, document_id):
                 if document.current_version
                 else None
             ),
+            "can_hide": can_hide,
+            "hide_form": HideDocumentForm() if can_hide else None,
         },
     )
 
@@ -250,3 +254,31 @@ def approval_review(request, document_id):
         {"document": document, "form": form},
         status=status,
     )
+
+
+@require_http_methods(["POST"])
+def document_hide(request, document_id):
+    """ซ่อนไฟล์ที่เผยแพร่แล้วแต่มีปัญหา (US-15)"""
+    document = get_object_or_404(Document, pk=document_id)
+    if not selectors.can_hide_document(document=document, user=request.user):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ซ่อนเอกสารนี้")
+
+    form = HideDocumentForm(request.POST)
+    if not form.is_valid():
+        reason_err = form.errors.get("reason")
+        err_msg = reason_err[0] if reason_err else "ข้อมูลไม่ถูกต้อง"
+        messages.error(request, err_msg)
+        return redirect("materials:document_detail", document_id=document.pk)
+
+    try:
+        hide_document(
+            document=document,
+            user=request.user,
+            reason=form.cleaned_data["reason"],
+        )
+    except ValidationError as err:
+        messages.error(request, str(err))
+        return redirect("materials:document_detail", document_id=document.pk)
+
+    messages.success(request, f"ซ่อนเอกสาร '{document.title}' เรียบร้อยแล้ว")
+    return redirect("materials:vault")

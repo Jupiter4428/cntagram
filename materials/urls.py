@@ -14,6 +14,11 @@ urlpatterns = [
     path("vault/", views.vault, name="vault"),
     path("documents/<int:document_id>/", views.document_detail, name="document_detail"),
     path(
+        "documents/<int:document_id>/hide/",
+        views.document_hide,
+        name="document_hide",
+    ),
+    path(
         "documents/<int:document_id>/preview/",
         views.document_preview,
         name="document_preview",
