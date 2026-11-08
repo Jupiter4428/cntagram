@@ -4,6 +4,21 @@
 
 ---
 
+## 0. สถานะ Production ที่ตรวจสอบล่าสุด (2026-11-08)
+
+ตรวจจาก Render workspace ปัจจุบันแบบ read-only:
+
+- Web Service `cntagram`: Region Singapore, Plan Free, branch `main`, auto deploy enabled
+- PostgreSQL `cntagram-db`: Region Singapore, Plan Free, PostgreSQL 18, status available
+- Free PostgreSQL instance มีวันหมดอายุ **2026-12-07**
+- Web Service ปัจจุบันไม่มี persistent disk ใน service configuration
+- Latest live deploy ที่ตรวจพบ: commit `a3ef619`
+
+ผลกระทบต่อแผน backup:
+- Database ต้องพึ่ง offsite logical backup เพราะ Free PostgreSQL ไม่มี production-grade retention แบบ paid plan
+- Media Vault บน Free Web Service ไม่ควรถูกถือว่าคงทนข้าม redeploy/restart และ GitHub Actions ไม่สามารถเข้าถึงไฟล์ production ใน runtime ได้
+- ก่อนปิด Issue #192 ต้องมีหลักฐาน restore ลง disposable PostgreSQL และหลักฐาน offsite backup ที่รันจริง
+
 ## 1. สถาปัตยกรรมและกำหนดการสำรองข้อมูล (Backup Strategy & Schedule)
 
 ระบบ CNtagram กำหนดให้มีการสำรองข้อมูลวันละ 1 ครั้งโดยอัตโนมัติ แต่ต้องแยกตามที่เก็บข้อมูลจริง:\n\n- **PostgreSQL Database Dump**: สำรองจาก GitHub Actions ไป S3 ได้โดยตรง\n- **Protected Media Vault บน Render persistent disk**: GitHub-hosted runner และ Render Cron Job ไม่สามารถเข้าถึง disk ของ Web Service ได้ จึงห้ามนับ `tar media/` บน runner ว่าเป็น production media backup\n- Media Vault จะถือว่าผ่าน AC เมื่อสำรองจาก service ที่ถือ disk จริง หรือย้าย primary media storage ไป private object storage แล้วตั้ง replication/versioning/offsite copy
