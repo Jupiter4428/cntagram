@@ -60,3 +60,8 @@ def list_posts_for_thread(thread_id: int) -> QuerySet[Post]:
         .select_related("author")
         .order_by("created_at")
     )
+
+
+def get_post_by_id(post_id: int) -> Post | None:
+    """Return a single post with author and thread loaded, or None."""
+    return Post.objects.select_related("author", "thread").filter(pk=post_id).first()

@@ -30,4 +30,9 @@ urlpatterns = [
         views.thread_delete,
         name="thread_delete",
     ),
+    path(
+        "post/<int:pk>/delete/",
+        views.post_delete,
+        name="post_delete",
+    ),
 ]
