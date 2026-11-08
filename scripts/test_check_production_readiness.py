@@ -1,14 +1,6 @@
 """Tests for the read-only production readiness helper."""
 
-import os
-import sys
 import unittest
-from pathlib import Path
-
-# Allow running directly: python scripts/test_check_production_readiness.py
-REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.check_production_readiness import check
 
