@@ -1,6 +1,6 @@
 # Project Django (CN331)
 
-**สถานะโปรเจค (พฤศจิกายน 2026):** Production: [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) · รายการฟังก์ชันที่มีในโค้ดปัจจุบันและสิ่งที่กำลังพัฒนาต่อ (Open Issues / PRs) ดูที่ [`_docs/requirements.md` §10](./_docs/requirements.md#10-สถานะฟังก์ชันที่มีจริงและสิ่งที่กำลังจะตามมา) และ [`_docs/architecture/c4.md`](./_docs/architecture/c4.md)
+**สถานะโปรเจค (พฤศจิกายน 2026):** Production: [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) · รายการฟังก์ชันที่มีในโค้ดปัจจุบันและ Product Backlog ทั้งหมดดูที่ [`_docs/requirements.md`](./_docs/requirements.md) และ [`_docs/architecture/c4.md`](./_docs/architecture/c4.md)
 
 คู่มือสำหรับสมาชิกทีม: กระบวนการ Agile/Scrum, การใช้ Git/GitHub, สถาปัตยกรรมและมาตรฐานโค้ด Django และเกณฑ์ส่งงาน (DoR/DoD)
 อ่านให้จบก่อนเปิด Pull Request ครั้งแรก
@@ -1008,7 +1008,6 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 | `materials` | `DocType`, `DocTypeRequiredRole`, `ExamPeriod`, `Document`, `ExamDetail`, `DocumentVersion`, `DownloadLog`, `Approval` | US-5, US-6, US-7, US-8, US-9, US-11, US-12 |
 | `webboard` | `BoardCategory`, `Thread`, `Post` | E6 กระดานสนทนาชุมชน (#202, #210) |
 
-- ตารางที่กำลังพัฒนาต่อใน Sprint 3 (`report` สำหรับ US-32/US-33/US-35, `audit_log` สำหรับ US-26) อยู่ในแผนของ `materials`
 - ลำดับพึ่งพา: `catalog` ไม่พึ่ง app ใดเลย → `accounts` พึ่ง `catalog` → `materials` และ `webboard` พึ่ง `catalog` และ `accounts` ([ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md))
 - อ้างข้าม app ด้วย **string** เช่น `"catalog.Department"` และอ้างผู้ใช้ด้วย `settings.AUTH_USER_MODEL` ถ้าจำเป็นต้อง import ข้าม app ที่หัวไฟล์ `models.py` ให้ import ได้เฉพาะ app ที่อยู่ก่อนในลำดับพึ่งพาเท่านั้น (ตอนนี้มีจุดเดียวคือ `materials/models.py` import `SystemSetting` จาก `catalog`) ห้าม import ย้อนทาง (กัน circular import)
 

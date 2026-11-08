@@ -31,8 +31,8 @@
 - ถ้า `research/` หรือ `archive/` ขัดกับไฟล์ข้างบน ให้ยึดไฟล์ข้างบนเป็นหลัก
 - เปลี่ยนโค้ดส่วนไหน ให้แก้เอกสารที่เกี่ยวข้องใน PR เดียวกันด้วย
 
-## สถานะปัจจุบันและสิ่งที่กำลังจะตามมา (พฤศจิกายน 2026)
+## สถานะปัจจุบัน (พฤศจิกายน 2026)
 
 - **เว็บไซต์ Production:** [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) (Render — Singapore)
-- สรุปฟังก์ชันที่มีจริงในโค้ดปัจจุบัน (`catalog`, `accounts`, `materials`, `webboard`) และรายการฟีเจอร์ที่กำลังพัฒนาต่อ (Open Issues / PRs) ดูที่ [`requirements.md` §10](./requirements.md#10-สถานะฟังก์ชันที่มีจริงและสิ่งที่กำลังจะตามมา) และ [`architecture/c4.md`](./architecture/c4.md)
+- สรุปฟังก์ชันที่มีจริงในโค้ดปัจจุบัน (`catalog`, `accounts`, `materials`, `webboard`) และรายการ Product Backlog ดูที่ [`requirements.md`](./requirements.md) และ [`architecture/c4.md`](./architecture/c4.md)
 - แผนการสำรองและซ้อมกู้คืนฐานข้อมูล Production ดูที่ [`backup-operations.md`](./backup-operations.md)

@@ -27,38 +27,16 @@
 | **PASS** | `CntagramAdmin2026!` |
 | **บทบาท** | Super Admin / Superuser (เข้าได้ทั้งหน้าเว็บหลัก คิวอนุมัติเอกสาร จัดการภาควิชา/รุ่น/วิชา จัดการ Moderator และ `/admin/`) |
 
-> สรุปฟังก์ชันที่มีจริงในปัจจุบันและรายการฟีเจอร์ที่กำลังพัฒนา (Upcoming / In-Progress Issues) ดูได้ที่ [Product Backlog §10](./_docs/requirements.md#10-สถานะฟังก์ชันที่มีจริงและสิ่งที่กำลังจะตามมา)
+> สรุปฟังก์ชันทั้งหมดของระบบและรายการ Product Backlog ดูได้ที่ [Product Backlog (`_docs/requirements.md`)](./_docs/requirements.md)
 
 ---
 
-## สถานะฟีเจอร์ปัจจุบันและสิ่งที่กำลังจะตามมา (Current & Upcoming Features)
+## ฟีเจอร์ที่มีในระบบปัจจุบัน (Current Features)
 
-### 1. ฟีเจอร์ที่เปิดใช้งานแล้วในระบบปัจจุบัน (`main`)
 - **ระบบยืนยันตัวตนและความปลอดภัย (`accounts`):** สมัครสมาชิกด้วยอีเมลคณะวิศวกรรมศาสตร์ (`@student.tu.ac.th` รหัสคณะ `10`), เข้าสู่ระบบ/ออกจากระบบพร้อม Two-bucket Rate Limiting (จำกัดตามบัญชีและ IP), แต่งตั้ง/ถอดถอน Moderator ประจำภาควิชา และลบบัญชีตนเองตาม PDPA (`/account/delete/` แบบ Anonymize)
 - **การจัดการโครงสร้างหลักสูตร (`catalog`):** Super Admin จัดการภาควิชา (`Department`), รุ่น (`Batch`), รายวิชา (`Course`) และการผูกวิชาเข้ากับรุ่น (`BatchCourse`) พร้อมค่ากำหนดระบบ (`SystemSetting`)
-- **คลังเอกสารและการคัดกรอง (`materials`):** อัปโหลดชีทสรุป/สไลด์/ข้อสอบเก่า (PDF) พร้อมตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, ค้นหาและกรองเอกสารในคลัง (Vault), เปิดดูตัวอย่าง (Inline PDF Preview) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog`, ระบบคิวอนุมัติแยกตามกฎ `DocTypeRequiredRole` (ชีททั่วไปใช้ Moderator หรือ Super Admin 1 คน / ข้อสอบเก่าต้องผ่านทั้งสองฝ่าย) พร้อมพรีวิวและดาวน์โหลดไฟล์ระหว่างรอพิจารณา
+- **คลังเอกสารและการคัดกรอง (`materials`):** อัปโหลดชีทสรุป/สไลด์/ข้อสอบเก่า (PDF) พร้อมตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, ค้นหาและกรองเอกสารในคลัง (Vault), เปิดดูตัวอย่าง (Inline PDF Preview) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog`, ระบบคิวอนุมัติแยกตามกฎ `DocTypeRequiredRole` (ชีททั่วไปใช้ Moderator หรือ Super Admin 1 คน / ข้อสอบเก่าต้องผ่านทั้งสองฝ่าย)
 - **ชุมชนและเว็บบอร์ดเรโทรยุค 2000s (`webboard` & `accounts`):** กระดานสนทนาแยกหมวดหมู่ (`BoardCategory`), ตั้งกระทู้ (`Thread`) ผูกรายวิชา, ตอบกลับ (`Post`), แปลงรหัสอีโมติคอน MSN (เช่น `:D`, `(L)`) และฝังภาพ `[img]...[/img]` แบบปลอดภัย, ปักหมุด/ล็อก/ลบกระทู้และคอมเมนต์ รวมถึงวิดเจ็ตหน้าแรก (Shoutbox สดแบบ AJAX, โพลประจำสัปดาห์แบบ AJAX, ตัวนับผู้เข้าชม LCD 6 หลัก, เครื่องเล่นเพลง BGM Player ยุค 2000s)
-
-### 2. ฟีเจอร์ที่กำลังพัฒนาและเตรียมส่งมอบ (Upcoming / Open Issues)
-- **การจัดการคลังและเอกสาร:**
-  - นำเข้าเอกสารเดิมจำนวนมากด้วยไฟล์ CSV พร้อมโหมดทดลองรัน (Dry-run) (US-17 / Issue [#215](https://github.com/Jupiter4428/cntagram/issues/215), PR [#223](https://github.com/Jupiter4428/cntagram/pull/223))
-  - Moderator และ Super Admin ซ่อนเอกสารที่เผยแพร่แล้วแต่พบปัญหา (US-25 / Issue [#216](https://github.com/Jupiter4428/cntagram/issues/216), PR [#227](https://github.com/Jupiter4428/cntagram/pull/227))
-  - ผู้อัปโหลดส่งไฟล์เวอร์ชันใหม่ แก้ไขคำอธิบาย หรือลบเอกสารของตนเอง (US-21 / Issue [#217](https://github.com/Jupiter4428/cntagram/issues/217))
-  - ช่องค้นหาและเลือกรายวิชาแบบพิมพ์ค้นหาได้ (Searchable Course Combobox) ในหน้าอัปโหลดเอกสาร (Issue [#224](https://github.com/Jupiter4428/cntagram/issues/224), PR [#225](https://github.com/Jupiter4428/cntagram/pull/225))
-  - ปรับปรุงหน้าพิจารณาอนุมัติเอกสารให้การ์ดฟอร์มไม่เลื่อนทับตาม scroll และให้ผู้ตรวจดาวน์โหลดไฟล์ PDF ที่รออนุมัติได้โดยตรง (PR [#228](https://github.com/Jupiter4428/cntagram/pull/228))
-- **ลิขสิทธิ์และการรายงานปัญหา (Epic E7):**
-  - ผู้ใช้รายงานเอกสารที่มีปัญหา (ละเมิดลิขสิทธิ์, ข้อสอบห้ามเผยแพร่, เนื้อหาผิดพลาด) (US-32 / Issue [#218](https://github.com/Jupiter4428/cntagram/issues/218))
-  - แบบฟอร์มสาธารณะสำหรับอาจารย์/เจ้าของลิขสิทธิ์ที่ไม่มีบัญชีเพื่อแจ้งลบเนื้อหา (Notice and Takedown) (US-33 / Issue [#219](https://github.com/Jupiter4428/cntagram/issues/219))
-  - หน้าจัดการเรื่องร้องเรียนให้ Super Admin ตรวจสอบและตัดสินชี้ขาด (ลบ, คืนสถานะ, ให้แก้ไข) (US-35 / Issue [#220](https://github.com/Jupiter4428/cntagram/issues/220))
-- **การยกระดับเว็บบอร์ดและ UI:**
-  - แก้ไขกระทู้และข้อความตอบกลับพร้อมแสดงเวลาแก้ไขล่าสุด (Issue [#212](https://github.com/Jupiter4428/cntagram/issues/212))
-  - แบ่งหน้าแสดงผล (Pagination) และป้องกันการปั๊มยอดเข้าชมกระทู้ซ้ำ (View Debounce) (Issue [#211](https://github.com/Jupiter4428/cntagram/issues/211))
-  - ป้องกันการแปลงรหัสอีโมติคอน MSN ซ้อนในคำศัพท์หรือ URL (Issue [#213](https://github.com/Jupiter4428/cntagram/issues/213))
-  - รองรับ URL รูปภาพ GIF ภายนอกเพิ่มเติมและปรับปรุงแผงอีโมติคอนบนมือถือ (Issue [#209](https://github.com/Jupiter4428/cntagram/issues/209), PR [#222](https://github.com/Jupiter4428/cntagram/pull/222))
-  - ปรับปรุงการแสดงผลสระภาษาไทยในแถบตัววิ่งประกาศ (Announcement Marquee) (Issue [#208](https://github.com/Jupiter4428/cntagram/issues/208), PR [#214](https://github.com/Jupiter4428/cntagram/pull/214))
-- **ความมั่นคงและการสำรองข้อมูล Production:**
-  - ซ้อมกู้คืนฐานข้อมูล PostgreSQL บนฐานข้อมูลแยก (`_restore_test`) และตั้งค่าสำรองข้อมูลรายวันแบบ Offsite (SP-4 / Issue [#192](https://github.com/Jupiter4428/cntagram/issues/192), PR [#199](https://github.com/Jupiter4428/cntagram/pull/199))
-  - ชุดทดสอบความพร้อม Production ตามเกณฑ์ความปลอดภัย CN331 (PR [#204](https://github.com/Jupiter4428/cntagram/pull/204))
 
 ---
 
@@ -70,32 +48,26 @@
 
 ### 1. C4 Model — Level 1: System Context
 
-ภาพรวมความสัมพันธ์ระหว่างผู้ใช้งานระบบกลุ่มต่างๆ และระบบภายนอก
+ภาพรวมความสัมพันธ์ระหว่างผู้ใช้งานระบบกลุ่มต่างๆ
 
 ```mermaid
 flowchart LR
     G["👤 Guest<br/>ยังไม่ล็อกอิน"]
-    S["👤 Student / Alumni<br/>ค้นหา อ่าน อัปโหลด"]
+    S["👤 Student / Alumni<br/>ค้นหา อ่าน อัปโหลด พูดคุย"]
     M["👤 Moderator<br/>คัดกรองเอกสารของภาค"]
     A["👤 Super Admin<br/>ดูแลระบบส่วนกลาง"]
-    C["👤 อาจารย์ / เจ้าของลิขสิทธิ์<br/>แจ้งลบเนื้อหา"]
-    SYS["📚 CNtagram<br/>คลังชีทสรุปและข้อสอบเก่า<br/>คณะวิศวกรรมศาสตร์"]
-    MAIL["✉️ Email Service<br/>ยืนยันอีเมล / แจ้งเตือน"]
+    SYS["📚 CNtagram<br/>คลังชีทสรุป ข้อสอบเก่า และเว็บบอร์ด<br/>คณะวิศวกรรมศาสตร์"]
 
     G -- "HTTPS" --> SYS
     S -- "HTTPS" --> SYS
     M -- "HTTPS" --> SYS
     A -- "HTTPS" --> SYS
-    C -. "HTTPS (แบบฟอร์มสาธารณะ)" .-> SYS
-    SYS -. "SMTP / API (SP-2)" .-> MAIL
 ```
 
-- **Guest:** ค้นหาและดูตัวอย่างเอกสารสาธารณะได้บางส่วน ต้องล็อกอินเพื่ออ่านฉบับเต็ม
-- **Student / Alumni:** นักศึกษาและศิษย์เก่า เข้าสู่ระบบด้วยอีเมลมหาวิทยาลัย ค้นหา อ่าน ให้คะแนน และอัปโหลดชีท/ข้อสอบ
-- **Moderator:** ผู้ตรวจคัดกรองเอกสารประจำภาควิชา ตรวจสอบความถูกต้องและอนุมัติเอกสารก่อนเผยแพร่
-- **Super Admin:** ผู้ดูแลระบบระดับคณะ จัดการผู้ใช้ ค่ากำหนดระบบ (System Settings) และภาพรวมความปลอดภัย
-- **อาจารย์ / เจ้าของลิขสิทธิ์:** ผู้ร้องเรียนหรือแจ้งลบเอกสารผ่านฟอร์ม
-- **Email Service:** ส่งอีเมลยืนยันตัวตนและการแจ้งเตือนสถานะเอกสาร
+- **Guest:** เข้าดูหน้าแรก สมัครสมาชิก และเข้าสู่ระบบ (ต้องล็อกอินเพื่อเข้าใช้งานคลังเอกสารและเว็บบอร์ด)
+- **Student / Alumni:** นักศึกษาและศิษย์เก่า เข้าสู่ระบบด้วยอีเมลมหาวิทยาลัย ค้นหา อ่าน ดาวน์โหลด อัปโหลดชีท/ข้อสอบ และร่วมพูดคุยในเว็บบอร์ด/วิดเจ็ตชุมชน
+- **Moderator:** ผู้ตรวจคัดกรองเอกสารประจำภาควิชา ตรวจสอบความถูกต้องและอนุมัติเอกสารก่อนเผยแพร่ รวมถึงดูแลความเรียบร้อยในเว็บบอร์ด
+- **Super Admin:** ผู้ดูแลระบบระดับคณะ จัดการโครงสร้างภาควิชา/รุ่น/รายวิชา แต่งตั้ง Moderator และดูแลภาพรวมระบบ
 
 ---
 
@@ -105,7 +77,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    U["👤 ผู้ใช้<br/>Web Browser<br/>HTML + Bootstrap 5"]
+    U["👤 ผู้ใช้<br/>Web Browser<br/>HTML + Bootstrap 5 + JS"]
     subgraph APP["Django 6.x Application (Modular Monolith)"]
         V["views.py / forms.py<br/>Presentation"]
         SV["services.py / selectors.py<br/>Business Logic / Data Access"]
@@ -120,14 +92,10 @@ flowchart LR
     end
     DB["🗄️ Database<br/>SQLite (dev) / PostgreSQL (prod)"]
     FS["📁 File Storage<br/>PDF ใน media/vault/ (MEDIA_ROOT)<br/>ส่งผ่าน view ที่ตรวจสิทธิ์ ไม่มี Direct URL"]
-    MAIL["✉️ Email Service"]
-    AV["🛡️ Virus Scanner"]
 
     U -- "HTTPS" --> V
     APPS -- "SQL / Django ORM" --> DB
     SV -- "อ่าน/เขียนไฟล์" --> FS
-    SV -. "SMTP / API (SP-2)" .-> MAIL
-    SV -. "สแกนไฟล์ (SP-1)" .-> AV
 ```
 
 ---
@@ -219,13 +187,10 @@ erDiagram
     app_user ||--o{ thread : authors
     thread ||--o{ post : has
     app_user ||--o{ post : replies
-    document ||--o{ report : "reported (upcoming)"
-    app_user ||--o{ report : files
-    app_user ||--o{ audit_log : acts
 ```
 
 - **Data Integrity:** Foreign Key ของตารางหลักกำหนด `on_delete=models.PROTECT` เพื่อป้องกันการลบข้อมูลโครงสร้างและเอกสารที่เชื่อมโยง (ส่วนตารางกิจกรรมชุมชนอย่าง `PollVote`, `ShoutboxMessage`, `Thread`, `Post` ใช้ `CASCADE` / `SET_NULL` ตามความเหมาะสม)
-- **PDPA Anonymization:** ผู้ใช้ที่ขอลบบัญชีจะใช้วิธี Anonymize ล้างข้อมูลระบุตัวตนและปิด `is_active` แทนการลบแถว เพื่อรักษาประวัติการอัปโหลดและ Audit Trail
+- **PDPA Anonymization:** ผู้ใช้ที่ขอลบบัญชีจะใช้วิธี Anonymize ล้างข้อมูลระบุตัวตนและปิด `is_active` แทนการลบแถว เพื่อรักษาประวัติการอัปโหลดและข้อมูลที่เชื่อมโยง
 - **Flexible Approvals:** กฎการอนุมัติเอกสารกำหนดผ่านตาราง `DocTypeRequiredRole` ทำให้ปรับเปลี่ยนเกณฑ์การอนุมัติได้โดยไม่ต้องแก้โค้ด
 
 ---
@@ -249,9 +214,9 @@ erDiagram
 ```text
 cntagram/
 ├── _docs/                  # เอกสารทั้งหมดที่ไม่ใช่โค้ด (Product Backlog, ADR, C4, Database Design)
-│   ├── requirements.md     # Product Backlog: Epics, User Stories, สถานะปัจจุบันและสิ่งที่กำลังจะตามมา
-│   ├── database-design.md  # ออกแบบฐานข้อมูล (ERD 3NF)
-│   ├── known-limitations.md# ข้อจำกัดของระบบและงานที่กำลังพัฒนาต่อ
+│   ├── requirements.md     # Product Backlog: Epics, User Stories, สถานะปัจจุบันและ Backlog
+│   ├── database-design.md  # ออกแบบฐานข้อมูล (ERD 3NF ของตารางที่มีจริงในระบบ)
+│   ├── known-limitations.md# ข้อจำกัดของระบบรุ่นปัจจุบัน
 │   ├── backup-operations.md# ขั้นตอนและสถานะการสำรอง/กู้คืนข้อมูล Production
 │   ├── deployment-prep-checklist.md
 │   ├── adr/                # Architectural Decision Records (ADR 0001 - 0005)

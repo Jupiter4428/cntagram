@@ -228,4 +228,4 @@ git push origin v1.0.0
 
 ## สถานะปัจจุบัน (พฤศจิกายน 2026)
 - **Production URL:** [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) (Render — Singapore Region)
-- สรุปฟังก์ชันที่มีบน `main` และงานที่กำลังพัฒนาต่อ (เช่น Issue [#192](https://github.com/Jupiter4428/cntagram/issues/192) / PR [#199](https://github.com/Jupiter4428/cntagram/pull/199), PR [#204](https://github.com/Jupiter4428/cntagram/pull/204)) ดูที่ [`requirements.md` §10](./requirements.md#10-สถานะฟังก์ชันที่มีจริงและสิ่งที่กำลังจะตามมา)
+- สรุปฟังก์ชันที่มีบน `main` และ Product Backlog ทั้งหมดดูที่ [`requirements.md`](./requirements.md)

@@ -53,21 +53,17 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 
 ### 3.2.3 Epic และ Product Backlog (ตารางที่ 3.2)
 
-| Epic | คุณค่าที่ผู้ใช้ได้ | Story |
+| Epic | คุณค่าที่ผู้ใช้ได้ | Story ที่ส่งมอบแล้วในระบบ |
 |---|---|---|
-| E1 เข้าระบบอย่างปลอดภัย | เฉพาะคนในคณะเข้าได้ ศิษย์เก่าใช้ต่อได้ | US-1, US-2, US-13 – US-16 |
-| E2 โครงสร้างคลัง | จัดตาม ภาค → รุ่น → วิชา ขยายภาคได้ | SP-0, US-3, US-4, US-17 – US-20 |
-| E3 แบ่งปันเอกสาร | อัปโหลดเข้าที่ถูกต้องได้ง่าย | US-5, US-12, US-21 – US-24 |
-| E4 คัดกรองคุณภาพ | ตรวจก่อนเผยแพร่ ข้อสอบคุมเข้มกว่า | US-6, US-9, US-10, US-25 – US-27 |
-| E5 ค้นหาและอ่าน | พิมพ์รหัสวิชาแล้วเจอทุกรุ่นในหน้าเดียว | US-7, US-8, US-11, US-28 |
-| E6 ชุมชนและปฏิสัมพันธ์เว็บบอร์ด | บรรยากาศเว็บบอร์ดยุค 2000s, พูดคุยทักทาย, โพล, เพลงประกอบ, ถาม-ตอบ | US-29 – US-31, US-36 – US-39 |
-| E7 ลิขสิทธิ์และความไว้วางใจ | รายงาน/แจ้งลบได้ ตรวจย้อนหลังได้ | US-32, US-33, US-35 |
-| TD งานเทคนิค | ส่งมอบเร็วและมั่นคงขึ้น | TD-1 – TD-5 |
+| E1 เข้าระบบอย่างปลอดภัย | เฉพาะคนในคณะเข้าได้ ลบบัญชีตาม PDPA ได้ | US-1, US-2, US-13 |
+| E2 โครงสร้างคลัง | จัดตาม ภาค → รุ่น → วิชา ขยายภาคได้ | SP-0, US-3, US-4 |
+| E3 แบ่งปันเอกสาร | อัปโหลดเข้าที่ถูกต้องได้ง่าย ป้องกันไฟล์ซ้ำ | US-5, US-12 |
+| E4 คัดกรองคุณภาพ | ตรวจก่อนเผยแพร่ ข้อสอบคุมเข้มกว่า | US-6, US-9, US-10 |
+| E5 ค้นหาและอ่าน | พิมพ์รหัสวิชาแล้วเจอทุกรุ่นในหน้าเดียว | US-7, US-8, US-11 |
+| E6 ชุมชนและปฏิสัมพันธ์เว็บบอร์ด | บรรยากาศเว็บบอร์ดยุค 2000s, พูดคุยทักทาย, โพล, เพลงประกอบ, กระดานถาม-ตอบ | US-36 – US-39, `webboard` (#202, #210) |
+| TD งานเทคนิค | ส่งมอบเร็วและมั่นคงขึ้น | TD-1, TD-3, TD-8, TD-9, SP-3, SP-4 |
 
-Sprint 1 commit 11 รายการ (SP-0, US-1 – US-10) เปิดเป็น GitHub issue #23 – #33
-**[เติม: Story Points ของแต่ละรายการจาก issue]**
-
-Spike ที่ต้องค้นคว้าก่อนตัดสินใจ: SP-1 สแกนไฟล์อันตราย/ไวรัส, SP-2 บริการส่งอีเมล/OTP, SP-3 preview PDF ไม่เปิด Direct URL, SP-4 สถานที่ deploy และการสำรองข้อมูล
+(รายการ User Story อื่นๆ ที่อยู่ใน Product Backlog สำหรับพัฒนาต่อยอด ดูได้ที่ [`requirements.md`](../requirements.md))
 
 ### 3.2.4 ความต้องการด้านคุณภาพ (Non-Functional)
 
@@ -85,7 +81,7 @@ Spike ที่ต้องค้นคว้าก่อนตัดสิน�
 ## 3.3 การออกแบบสถาปัตยกรรมระบบ
 
 ### 3.3.1 System Context และ Container (รูปที่ 3.1, 3.2)
-ดู [`architecture/c4.md`](../architecture/c4.md) — ผู้ใช้ 5 กลุ่มเข้าระบบผ่าน HTTPS, ระบบประกอบด้วย Django application (Modular Monolith), ฐานข้อมูล (SQLite ช่วงพัฒนา / PostgreSQL production), File Storage ที่ไม่เปิด Direct URL, และระบบภายนอกที่ยังรอ Spike (Email Service, Virus Scanner)
+ดู [`architecture/c4.md`](../architecture/c4.md) — ผู้ใช้เข้าระบบผ่าน HTTPS, ระบบประกอบด้วย Django application (Modular Monolith 4 แอป), ฐานข้อมูล (SQLite ช่วงพัฒนา / PostgreSQL production), และ File Storage ที่ไม่เปิด Direct URL
 
 ### 3.3.2 Modular Monolith และขอบเขต App (รูปที่ 3.3) — ADR 0001
 
@@ -110,7 +106,7 @@ Spike ที่ต้องค้นคว้าก่อนตัดสิน�
 ดูรายละเอียดเต็มใน [`database-design.md`](../database-design.md) (ใส่ data dictionary ฉบับเต็มในภาคผนวก)
 
 ### 3.4.1 ERD (รูปที่ 3.5)
-ตาราง 20 ตารางใน 6 กลุ่ม: โครงสร้างภาควิชา, ผู้ใช้และสิทธิ์, เอกสารและไฟล์, ตั้งค่าและกฎ, การอนุมัติและตรวจสอบ, ชุมชน
+ตารางทั้งหมดที่มีจริงในระบบปัจจุบันแบ่งตามกลุ่มโดเมน: โครงสร้างภาควิชา (`department`, `batch`, `course`, `batch_course`, `system_setting`), ผู้ใช้และสิทธิ์ (`app_user`, `role`, `user_role`, `user_counter`, `poll_vote`, `shoutbox_message`), เอกสารและกฏการอนุมัติ (`doc_type`, `doc_type_required_role`, `exam_period`, `document`, `exam_detail`, `document_version`, `approval`, `download_log`), และกระดานสนทนาชุมชน (`webboard_boardcategory`, `webboard_thread`, `webboard_post`)
 
 ### 3.4.2 กระบวนการ Normalization
 UNF (ตารางเดียวจากตัวอย่างใน SRS v1) → 1NF (แยก `user_role`, `approval` ออกจากช่องหลายค่า) → 2NF (แยก `course`, `department`, `batch_course`) → 3NF (ไม่เก็บรหัสรุ่น `CN21` และปีเข้า เพราะคำนวณได้, ย้าย `vault` ไป `doc_type`, แยก `exam_detail` 1:1) → ตรวจ BCNF
@@ -120,14 +116,14 @@ UNF (ตารางเดียวจากตัวอย่างใน SRS v
 - แยก `document` กับ `document_version` — รองรับหลายเวอร์ชันโดยประวัติไม่หาย
 - partial unique index 2 ชุดบน `user_role` แก้ปัญหา `NULL ≠ NULL` ใน UNIQUE
 - ลบผู้ใช้ตาม PDPA ด้วยการ anonymize เพราะ FK เป็น `PROTECT`
-- จุดที่ตั้งใจไม่ normalize: polymorphic reference ใน `audit_log`, enum `status`, `approval.approver_role_id`
+- จุดที่ตั้งใจไม่ normalize: enum `status`, `approval.approver_role_id`, และ `user_counter.total`
 
 ### 3.4.4 การบังคับกฎใน 3 ชั้น
 | ชั้น | ตัวอย่างกฎ |
 |---|---|
 | ฐานข้อมูล (PK/FK/UQ/CHECK) | รุ่นซ้ำในภาคเดียวกัน, ขนาดไฟล์ 0 < x ≤ 50 MB, ปี พ.ศ. 2500–2700, สถานะนอกค่าที่กำหนด |
 | Model (`clean()`/`save()`) | อีเมล @student.tu.ac.th + รหัสคณะ `10`, moderator ต้องมีภาค, `exam_detail` เฉพาะเอกสารคลัง exam |
-| Service | อัปโหลดได้เฉพาะภาคตัวเอง, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้, ข้อสอบต้องอนุมัติครบทุก role, Super Admin ≥ 2 คน, เขียน audit log ใน transaction เดียวกัน |
+| Service | อัปโหลดได้เฉพาะภาคตัวเอง, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้, ข้อสอบต้องอนุมัติครบทุก role, Super Admin ≥ 2 คน |
 
 ## 3.5 การออกแบบกระบวนการหลัก
 
