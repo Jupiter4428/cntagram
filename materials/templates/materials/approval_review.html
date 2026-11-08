@@ -89,18 +89,25 @@
                     </div>
                     <div class="card-body p-4">
                         {% if document.current_version %}
-                            <div class="d-flex align-items-center p-3 border rounded-3 approval-surface">
-                                <div class="display-6 me-3" aria-hidden="true">▤</div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark text-break">{{ document.current_version.original_name }}</div>
-                                    <div class="small approval-muted">
-                                        เวอร์ชัน: v{{ document.current_version.version_no }} |
-                                        ขนาด: {{ document.current_version.size_bytes|filesizeformat }} |
-                                        อัปโหลด: {{ document.current_version.uploaded_at|date:"d M Y, H:i" }}
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 border rounded-3 approval-surface">
+                                <div class="d-flex align-items-center">
+                                    <div class="display-6 me-3" aria-hidden="true">▤</div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold text-dark text-break">{{ document.current_version.original_name }}</div>
+                                        <div class="small approval-muted">
+                                            เวอร์ชัน: v{{ document.current_version.version_no }} |
+                                            ขนาด: {{ document.current_version.size_bytes|filesizeformat }} |
+                                            อัปโหลด: {{ document.current_version.uploaded_at|date:"d M Y, H:i" }}
+                                        </div>
+                                        <div class="small approval-muted mt-1">
+                                            SHA256: <code class="approval-muted">{{ document.current_version.sha256|truncatechars:24 }}</code>
+                                        </div>
                                     </div>
-                                    <div class="small approval-muted mt-1">
-                                        SHA256: <code class="approval-muted">{{ document.current_version.sha256|truncatechars:24 }}</code>
-                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <a href="{% url 'materials:approval_download' document.pk %}" class="btn approval-action px-3" download aria-label="ดาวน์โหลด {{ document.current_version.original_name }}">
+                                        ดาวน์โหลดไฟล์
+                                    </a>
                                 </div>
                             </div>
                         {% else %}
@@ -125,7 +132,7 @@
 
             <!-- Right Column: Review Action Form Card -->
             <div class="col-12 col-lg-5">
-                <div class="card approval-panel shadow-sm rounded-3 sticky-top approval-sticky" >
+                <div class="card approval-panel shadow-sm rounded-3">
                     <div class="card-header py-3 border-bottom">
                         <h2 class="h5 fw-bold mb-0 text-dark">แบบฟอร์มการพิจารณา</h2>
                     </div>

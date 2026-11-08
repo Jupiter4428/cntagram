@@ -32,4 +32,9 @@ urlpatterns = [
         views.approval_document_preview,
         name="approval_preview",
     ),
+    path(
+        "approvals/<int:document_id>/download/",
+        views.approval_document_download,
+        name="approval_download",
+    ),
 ]
