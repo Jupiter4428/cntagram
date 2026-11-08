@@ -76,23 +76,34 @@ Sprint 3 มีเป้าหมายสำคัญตาม Roadmap คื�
   - กำหนด `X_FRAME_OPTIONS = "DENY"` เพื่อป้องกัน Clickjacking โดยหน้าเอกสารที่ต้อง Preview ภายใน iframe มีการใช้ `@xframe_options_sameorigin` รองรับไว้อย่างถูกต้อง
 
 ### 6. กลยุทธ์การสำรองและกู้คืนข้อมูล (Backup & Disaster Recovery Strategy)
-- **Automated Daily Database Backup:**
-  - บน Render Managed PostgreSQL แบบเสียเงิน (Paid Plan เริ่มต้น $7/เดือน) จะมีระบบ Automated Daily Snapshots ให้บริการอัตโนมัติ
-  - บน Render Free PostgreSQL ฐานข้อมูลมีอายุจำกัด 30 วันและไม่มี Automated Snapshots จึงต้องพึ่งพาสคริปต์สำรองข้อมูลภายนอก (Offsite Logical Backup) ด้วย `scripts/backup_restore.sh`
-  - สคริปต์สำรองข้อมูลรองรับทั้ง PostgreSQL ผ่านคำสั่ง `pg_dump` แบบ Custom Compressed Format (`-Fc`):
-    ```bash
-    pg_dump "$DATABASE_URL" -Fc -f "backups/cntagram_backup_$(date +%Y%m%d_%H%M%S).dump"
-    ```
-    และรองรับ SQLite สำหรับ Local Development/Testing ผ่าน Python SQLite backup API
-- **การกู้คืนข้อมูล (Restore Procedure):**
-  - กู้คืนฐานข้อมูลผ่านคำสั่ง `pg_restore`:
-    ```bash
-    pg_restore --clean --if-exists --no-owner --no-privileges -d "$DATABASE_URL" "backups/<backup_file>.dump"
-    ```
-    หรือกู้คืน SQLite จากไฟล์ backup ได้ทันที พร้อมตรวจสอบความสมบูรณ์ของตารางและจำนวนแถว
-  - จัดทำขั้นตอนการทดสอบ Restore จริงลงในสคริปต์ `scripts/backup_restore.sh test` ซึ่งทำการสำรองและกู้คืนเปรียบเทียบข้อมูลแถวจริง เพื่อให้มั่นใจในเกณฑ์ RTO < 1 ชั่วโมง และ RPO ≤ 24 ชั่วโมง
-- **การสำรองไฟล์เอกสาร (PDF Backups):**
-  - สคริปต์ Archive บีบอัดโฟลเดอร์เอกสารตาม `MEDIA_ROOT` (หรือ `media/`) เป็น `tar.gz` ประจำวันเพื่อเก็บสำรองไว้นอกเซิร์ฟเวอร์
+- **สถาปัตยกรรมและแผนบริการ Render (Render Plans & Production Architecture):**
+  - **สำหรับ Production เต็มรูปแบบ (Paid Tier ~$14.25/เดือน):**
+    - Render Web Service Starter ($7/เดือน): ไม่ Sleep, รองรับ Custom Domain, SSL อัตโนมัติ
+    - Render Managed PostgreSQL Starter ($7/เดือน): ข้อมูลไม่หมดอายุ, มี Automated Daily Snapshots ในตัวแบบ Point-in-time recovery
+    - Render Persistent Disk ($0.25/GB/เดือน): Mount ที่ `/var/data/media` เพื่อเก็บไฟล์ PDF ใน Protected Media Vault อย่างถาวร
+  - **สำหรับสภาพแวดล้อม Prototype / Free Plan ($0/เดือน):**
+    - Web Service และ Managed PostgreSQL ฟรี (DB มีอายุ 30 วัน, ไม่มี Auto Snapshot ในตัว, Disk เป็น Ephemeral)
+    - จึงต้องมีระบบสำรองข้อมูลภายนอกแบบอัตโนมัติ (Automated Offsite Backup) ทุกวัน
+- **การสำรองข้อมูลอัตโนมัติรายวัน (Automated Daily Offsite Backup):**
+  - กำหนดเวลาสำรองข้อมูลอัตโนมัติวันละ 1 ครั้ง ผ่าน GitHub Actions Workflow (`.github/workflows/daily-backup.yml`) รันตามตารางเวลา `17 19 * * *` (ทุกวันเวลา 02:17 น. ตามเวลาประเทศไทย / Asia/Bangkok)
+  - นอกจากนี้ สามารถตั้ง Render Cron Job บน Render Dashboard ได้เช่นกันเพื่อรันคำสั่งสำรองข้อมูลโดยตรง
+  - สำรองทั้งโครงสร้างและข้อมูลของ PostgreSQL ผ่านคำสั่ง `pg_dump` ในฟอร์แมต Custom Compressed (`-Fc`)
+  - สำรองไฟล์เอกสารใน Protected Media Vault (`MEDIA_ROOT` หรือ `media/`) เป็น `.tar.gz`
+- **สถานที่จัดเก็บข้อมูลสำรองภายนอก (Offsite Storage & Retention Policy):**
+  - ส่งไฟล์สำรองทั้งฐานข้อมูล (`*.dump`) และ Media Vault (`*.tar.gz`) ไปยัง Cloud Object Storage ภายนอก (AWS S3 หรือเทียบเท่า เช่น Cloudflare R2 / Backblaze B2) ใน Region Singapore (`ap-southeast-1`)
+  - **การจำกัดสิทธิ์ (Least-Privilege Access):** S3 Bucket เป็น Private 100% (Block all public access), IAM Credential ที่ใช้จำกัดสิทธิ์เฉพาะ `s3:PutObject` และ `s3:ListBucket` เท่านั้น
+  - **การเข้ารหัส (Encryption):** บังคับใช้ Server-Side Encryption (`--sse AES256`) ทุกไฟล์
+  - **ระยะเวลาการจัดเก็บ (Lifecycle Policy):** กำหนด S3 Lifecycle Rule ให้อายุของไฟล์สำรองหมดอายุและถูกลบโดยอัตโนมัติหลังจาก 30 วัน (`Expiration: 30 days`) เพื่อประหยัดพื้นที่และสอดคล้องตามมาตรฐานความมั่นคงปลอดภัย
+  - **การตรวจสอบความสำเร็จและการแจ้งเตือน (Audit & Alerting):** ใน Workflow มีขั้นตอนตรวจสอบยืนยันการมีอยู่ของไฟล์ใน S3 bucket หากเกิดความล้มเหลวจะมีการส่ง Alert แจ้งเตือนผู้ดูแลระบบผ่าน GitHub Actions notification ทันที
+- **มาตรการป้องกันการกู้คืนทับฐานข้อมูล Production โดยไม่ตั้งใจ (Production Restore Safety Guard):**
+  - ในสคริปต์ `scripts/backup_restore.sh restore` มีการตรวจจับ Host และชื่อฐานข้อมูลเป้าหมาย หากพบว่าเป็น Production (เช่น โฮสต์ลงท้ายด้วย `render.com` / `onrender.com` หรือไม่ใช่ test/localhost) สคริปต์จะปฏิเสธการทำงานทันที เว้นแต่ผู้สั่งการจะระบุทั้ง:
+    1. `ALLOW_DESTRUCTIVE_RESTORE=YES`
+    2. `CONFIRM_PRODUCTION_RESTORE="<target_db_name>"` (ต้องพิมพ์ชื่อฐานข้อมูลเป้าหมายตรงกันทุกตัวอักษร)
+- **การทดสอบกู้คืนข้อมูลและการซักซ้อมจริง (Disaster Recovery & Rehearsal):**
+  - จัดทำคำสั่ง `scripts/backup_restore.sh test` ซึ่งจำลองการสำรองและกู้คืนจริง
+  - บน PostgreSQL: บังคับให้ระบุ `RESTORE_TEST_DATABASE_URL` ชี้ไปยังฐานข้อมูลทดสอบที่แยกต่างหาก (ห้ามเป็น Production และชื่อฐานข้อมูลต้องมีคำว่า `_restore_test` หรือ `test`)
+  - สคริปต์จะกู้คืนลงฐานข้อมูลทดสอบ และรันสคริปต์ตรวจสอบจำนวนแถว (`SELECT count(*)`) ของทุกตารางใน Schema เปรียบเทียบระหว่างต้นทางและฐานข้อมูลทดสอบให้ตรงกัน 100%
+  - หากไม่มีคำสั่ง `pg_restore` บนเครื่อง ระบบจะส่งสัญญาณล้มเหลว (Exit code 1) ทันที ไม่มีการข้ามการทดสอบ เพื่อให้มั่นใจในเกณฑ์ RTO < 1 ชั่วโมง และ RPO ≤ 24 ชั่วโมง
 
 ---
 
