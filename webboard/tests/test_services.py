@@ -149,6 +149,39 @@ class WebboardServicesTests(TestCase):
         thread.refresh_from_db()
         self.assertEqual(thread.views_count, 1)
 
+    def test_increment_thread_views_with_session_debounces(self):
+        """Thread views counter only increments once per session."""
+        thread1 = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="ทดสอบยอดวิว 1",
+            content="รายละเอียด",
+        )
+        thread2 = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="ทดสอบยอดวิว 2",
+            content="รายละเอียด",
+        )
+        session = {}
+
+        # First visit to thread 1: increments
+        services.increment_thread_views(thread_id=thread1.id, session=session)
+        thread1.refresh_from_db()
+        self.assertEqual(thread1.views_count, 1)
+        self.assertIn(thread1.id, session.get("viewed_threads", []))
+
+        # Repeated visit (refresh) to thread 1: does not increment
+        services.increment_thread_views(thread_id=thread1.id, session=session)
+        thread1.refresh_from_db()
+        self.assertEqual(thread1.views_count, 1)
+
+        # Visit to thread 2: increments
+        services.increment_thread_views(thread_id=thread2.id, session=session)
+        thread2.refresh_from_db()
+        self.assertEqual(thread2.views_count, 1)
+        self.assertIn(thread2.id, session.get("viewed_threads", []))
+
     def test_create_post_rechecks_locked_thread_in_transaction(self):
         """Reply creation rejects a thread locked after the caller read it."""
         thread = services.create_thread(
