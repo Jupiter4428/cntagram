@@ -341,6 +341,17 @@ BARE_IMG_REGEX = re.compile(
     re.IGNORECASE,
 )
 
+PROTECTED_CONTENT_REGEX = re.compile(
+    r'(<div class="webboard-embed-box">.*?</div>|https?://[^\s<>"]+)',
+    re.IGNORECASE | re.DOTALL,
+)
+
+EMOTICON_MAP = {escape(emo["code"]): emo["svg"] for emo in MSN_EMOTICONS}
+_sorted_escaped_codes = sorted(EMOTICON_MAP.keys(), key=len, reverse=True)
+EMOTICON_REGEX = re.compile(
+    rf'(?<!\w)(?:{"|".join(re.escape(c) for c in _sorted_escaped_codes)})(?!\w)'
+)
+
 
 def get_msn_emoticons_list():
     """Return the available list of curated MSN emoticons."""
@@ -380,15 +391,16 @@ def render_webboard_content(text: str) -> str:
             tokens[idx] = BARE_IMG_REGEX.sub(_replace_bare_img, token)
     processed = "".join(tokens)
 
-    sorted_emoticons = sorted(
-        MSN_EMOTICONS,
-        key=lambda item: len(item["code"]),
-        reverse=True,
-    )
-
-    for emo in sorted_emoticons:
-        code_escaped = escape(emo["code"])
-        processed = processed.replace(code_escaped, emo["svg"])
+    # Prevent replacing emoticons inside URLs or existing HTML embed boxes
+    content_tokens = PROTECTED_CONTENT_REGEX.split(processed)
+    for idx, token in enumerate(content_tokens):
+        if not token.startswith('<div class="webboard-embed-box">') and not re.match(
+            r"^https?://", token, re.IGNORECASE
+        ):
+            content_tokens[idx] = EMOTICON_REGEX.sub(
+                lambda m: EMOTICON_MAP[m.group(0)], token
+            )
+    processed = "".join(content_tokens)
 
     processed = processed.replace("\r\n", "\n").replace("\r", "\n")
     processed = processed.replace("\n", "<br>\n")

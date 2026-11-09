@@ -79,3 +79,36 @@ class EmoticonsAndGifRenderingTests(SimpleTestCase):
 
         self.assertIn("<br>", format_webboard("a\nb"))
         self.assertGreater(len(get_msn_emoticons()), 10)
+
+    def test_prevent_false_positive_emoticon_replacement_in_words_and_urls(self):
+        """Codes like (c), (r), (p), and URLs do not turn into emoticons."""
+        raw = (
+            "Section (c) and item (r) and paragraph (p) are normal text. "
+            "Also check copyright (c) 2026, registered (r), and paragraph (p). "
+            "Sub-word parts such as :Dabc, abc:D, test:), Word(H) should not convert. "
+            "Visit https://example.com/:D/view?file=(H)&ref=(c) and "
+            "http://example.com/path/(p)/test. "
+            "Real emoticons :) and :D and (H) must still convert."
+        )
+        rendered = render_webboard_content(raw)
+
+        # Normal parenthesized words/letters should be preserved
+        self.assertIn("Section (c)", rendered)
+        self.assertIn("item (r)", rendered)
+        self.assertIn("paragraph (p)", rendered)
+        self.assertIn("(c) 2026", rendered)
+
+        # Sub-word strings should be preserved
+        self.assertIn(":Dabc", rendered)
+        self.assertIn("abc:D", rendered)
+        self.assertIn("test:)", rendered)
+        self.assertIn("Word(H)", rendered)
+
+        # URLs should preserve query parameters and paths without emoticon SVGs
+        self.assertIn("https://example.com/:D/view?file=(H)&amp;ref=(c)", rendered)
+        self.assertIn("http://example.com/path/(p)/test", rendered)
+
+        # Legitimate emoticons with proper boundaries should still be converted
+        self.assertIn('class="msn-icon msn-smile"', rendered)
+        self.assertIn('class="msn-icon msn-laugh"', rendered)
+        self.assertIn('class="msn-icon msn-cool"', rendered)
