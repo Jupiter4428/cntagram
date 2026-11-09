@@ -333,3 +333,46 @@ class BulkImportForm(forms.Form):
             if not file.name.lower().endswith(".zip"):
                 raise forms.ValidationError("กรุณาอัปโหลดไฟล์ที่มีนามสกุล .zip")
         return file
+
+
+class DocumentEditForm(forms.Form):
+    """ฟอร์มสำหรับเจ้าของเอกสารแก้ไขชื่อและคำอธิบาย (US-16)"""
+
+    title = forms.CharField(
+        label="ชื่อเอกสาร",
+        max_length=200,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        error_messages={
+            "required": "กรุณาระบุชื่อเอกสาร",
+            "max_length": (
+                "ชื่อเอกสารต้องมีความยาวไม่เกิน %(limit_value)d ตัวอักษร"
+            ),
+        },
+    )
+    description = forms.CharField(
+        label="รายละเอียด",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+        required=False,
+    )
+
+    def clean_title(self):
+        title = (self.cleaned_data.get("title") or "").strip()
+        if not title:
+            raise forms.ValidationError("กรุณาระบุชื่อเอกสาร")
+        return title
+
+
+class DocumentNewVersionForm(forms.Form):
+    """ฟอร์มสำหรับเจ้าของเอกสารส่งไฟล์ PDF เวอร์ชันใหม่ (US-16)"""
+
+    file = forms.FileField(
+        label="ไฟล์ PDF เวอร์ชันใหม่",
+        widget=forms.FileInput(
+            attrs={"class": "form-control", "accept": ".pdf,application/pdf"}
+        ),
+        error_messages={
+            "required": "กรุณาแนบไฟล์ PDF",
+            "empty": "ไฟล์ที่แนบว่างเปล่า",
+            "invalid": "ไฟล์ที่แนบไม่ถูกต้อง",
+        },
+    )

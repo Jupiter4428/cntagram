@@ -685,3 +685,137 @@ class DocumentHideViewTests(ApprovalBaseTestCase):
         vault_url = reverse("materials:vault")
         res_vault = self.client.get(vault_url, {"course_code": self.course_cn.code})
         self.assertNotContains(res_vault, self.doc_cn.title)
+
+
+class ManageOwnDocumentViewTests(ApprovalBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.doc = self.create_document(
+            batch_course=self.bc_cn,
+            uploader=self.uploader_cn,
+            status=Document.Status.PUBLISHED,
+            title="CN101 สรุปสำหรับสอบ",
+        )
+        self.edit_url = reverse(
+            "materials:document_edit", kwargs={"document_id": self.doc.pk}
+        )
+        self.new_version_url = reverse(
+            "materials:document_new_version", kwargs={"document_id": self.doc.pk}
+        )
+        self.delete_url = reverse(
+            "materials:document_delete", kwargs={"document_id": self.doc.pk}
+        )
+        self.detail_url = reverse(
+            "materials:document_detail", kwargs={"document_id": self.doc.pk}
+        )
+
+    def test_anonymous_redirects_to_login(self):
+        for url in (self.edit_url, self.new_version_url, self.delete_url):
+            with self.subTest(url=url):
+                res = self.client.get(url)
+                self.assertEqual(res.status_code, 302)
+
+    def test_owner_can_get_and_post_edit_view(self):
+        self.client.force_login(self.uploader_cn)
+        res_get = self.client.get(self.edit_url)
+        self.assertEqual(res_get.status_code, 200)
+        self.assertTemplateUsed(res_get, "materials/document_edit.html")
+        self.assertEqual(
+            res_get.context["form"]["title"].value(), "CN101 สรุปสำหรับสอบ"
+        )
+
+        res_post = self.client.post(
+            self.edit_url,
+            data={"title": "CN101 สรุปฉบับปรับปรุง", "description": "แก้สูตรแล้ว"},
+            follow=True,
+        )
+        self.assertRedirects(res_post, self.detail_url)
+        self.doc.refresh_from_db()
+        self.assertEqual(self.doc.title, "CN101 สรุปฉบับปรับปรุง")
+        self.assertEqual(self.doc.description, "แก้สูตรแล้ว")
+
+    def test_non_owner_cannot_edit_view(self):
+        self.client.force_login(self.normal_student)
+        res_get = self.client.get(self.edit_url)
+        self.assertEqual(res_get.status_code, 403)
+
+        res_post = self.client.post(
+            self.edit_url,
+            data={"title": "แอบแก้ชื่อ", "description": "แอบแก้"},
+        )
+        self.assertEqual(res_post.status_code, 403)
+        self.doc.refresh_from_db()
+        self.assertEqual(self.doc.title, "CN101 สรุปสำหรับสอบ")
+
+    def test_owner_can_get_and_post_new_version_view(self):
+        self.client.force_login(self.uploader_cn)
+        res_get = self.client.get(self.new_version_url)
+        self.assertEqual(res_get.status_code, 200)
+        self.assertTemplateUsed(res_get, "materials/document_new_version.html")
+
+        new_pdf = pdf_file(
+            name="cn101_v2.pdf",
+            content=b"%PDF-1.4\nNew Content for v2\n%%EOF",
+        )
+        res_post = self.client.post(
+            self.new_version_url,
+            data={"file": new_pdf},
+            follow=True,
+        )
+        self.assertRedirects(res_post, self.detail_url)
+        self.doc.refresh_from_db()
+        self.assertEqual(self.doc.current_version.version_no, 2)
+
+    def test_non_owner_cannot_upload_new_version_view(self):
+        self.client.force_login(self.normal_student)
+        res_get = self.client.get(self.new_version_url)
+        self.assertEqual(res_get.status_code, 403)
+
+        new_pdf = pdf_file(
+            name="hacked.pdf",
+            content=b"%PDF-1.4\nHacked\n%%EOF",
+        )
+        res_post = self.client.post(
+            self.new_version_url,
+            data={"file": new_pdf},
+        )
+        self.assertEqual(res_post.status_code, 403)
+        self.doc.refresh_from_db()
+        self.assertEqual(self.doc.current_version.version_no, 1)
+
+    def test_owner_can_delete_document_view(self):
+        self.client.force_login(self.uploader_cn)
+        res_get = self.client.get(self.delete_url)
+        self.assertEqual(res_get.status_code, 405)
+
+        res_post = self.client.post(self.delete_url)
+        course_code = self.doc.batch_course.course.code
+        expected_redirect = f"{reverse('materials:vault')}?course_code={course_code}"
+        self.assertRedirects(res_post, expected_redirect)
+        self.assertFalse(Document.objects.filter(pk=self.doc.pk).exists())
+
+        res_detail = self.client.get(self.detail_url)
+        self.assertEqual(res_detail.status_code, 404)
+
+    def test_non_owner_cannot_delete_document_view(self):
+        self.client.force_login(self.normal_student)
+        res_post = self.client.post(self.delete_url)
+        self.assertEqual(res_post.status_code, 403)
+        self.assertTrue(Document.objects.filter(pk=self.doc.pk).exists())
+
+    def test_document_detail_shows_owner_controls_only_for_owner(self):
+        # Owner sees edit, new-version, delete
+        self.client.force_login(self.uploader_cn)
+        res_owner = self.client.get(self.detail_url)
+        self.assertEqual(res_owner.status_code, 200)
+        self.assertContains(res_owner, self.edit_url)
+        self.assertContains(res_owner, self.new_version_url)
+        self.assertContains(res_owner, self.delete_url)
+
+        # Other user does NOT see owner controls
+        self.client.force_login(self.normal_student)
+        res_other = self.client.get(self.detail_url)
+        self.assertEqual(res_other.status_code, 200)
+        self.assertNotContains(res_other, self.edit_url)
+        self.assertNotContains(res_other, self.new_version_url)
+        self.assertNotContains(res_other, self.delete_url)

@@ -396,6 +396,98 @@ def hide_document(*, document, user, reason):
     return locked_doc
 
 
+@transaction.atomic
+def update_document_info(*, document, actor, title, description=""):
+    """แก้ไขชื่อและคำอธิบายของเอกสารโดยเจ้าของเอกสาร (US-16)"""
+    cleaned_title = (title or "").strip()
+    if not cleaned_title:
+        raise ValidationError({"title": "กรุณาระบุชื่อเอกสาร"})
+
+    locked_doc = Document.objects.select_for_update().get(pk=document.pk)
+
+    if actor != locked_doc.uploader:
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดการเอกสารนี้")
+
+    locked_doc.title = cleaned_title
+    locked_doc.description = (description or "").strip()
+    locked_doc.save(update_fields=["title", "description", "updated_at"])
+    return locked_doc
+
+
+@transaction.atomic
+def add_document_version(*, document, actor, file):
+    """ส่งไฟล์ PDF เวอร์ชันใหม่ของเอกสารโดยเจ้าของเอกสาร (US-16)"""
+    locked_doc = (
+        Document.objects.select_for_update()
+        .select_related(
+            "batch_course__batch__department",
+            "batch_course__course",
+            "doc_type",
+        )
+        .get(pk=document.pk)
+    )
+
+    if actor != locked_doc.uploader:
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดการเอกสารนี้")
+
+    _validate_pdf(file)
+    sha256 = _sha256(file)
+    if selectors.file_in_vault(sha256=sha256):
+        raise ValidationError({"file": "ไฟล์นี้มีอยู่ในคลังแล้ว"})
+
+    storage_path = default_storage.save(
+        _storage_path(locked_doc.batch_course, locked_doc.doc_type), file
+    )
+    try:
+        version = locked_doc.add_version(
+            storage_path=storage_path,
+            original_name=file.name,
+            size_bytes=file.size,
+            sha256=sha256,
+        )
+        locked_doc.save(update_fields=["updated_at"])
+    except Exception:
+        try:
+            default_storage.delete(storage_path)
+        except Exception:
+            logger.exception(
+                "Could not remove orphaned upload %s", storage_path
+            )
+        raise
+    return version
+
+
+@transaction.atomic
+def delete_document(*, document, actor):
+    """ลบเอกสารและไฟล์ที่เกี่ยวข้องทั้งหมดโดยเจ้าของเอกสาร (US-16)"""
+    locked_doc = Document.objects.select_for_update().get(pk=document.pk)
+
+    if actor != locked_doc.uploader:
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดการเอกสารนี้")
+
+    storage_paths = list(
+        locked_doc.versions.values_list("storage_path", flat=True)
+    )
+
+    if hasattr(locked_doc, "exam_detail"):
+        locked_doc.exam_detail.delete()
+    locked_doc.approvals.all().delete()
+    locked_doc.download_logs.all().delete()
+    if hasattr(locked_doc, "reports"):
+        locked_doc.reports.all().delete()
+    locked_doc.versions.all().delete()
+    locked_doc.delete()
+
+    for path in storage_paths:
+        try:
+            default_storage.delete(path)
+        except Exception:
+            logger.exception(
+                "Could not remove storage file %s during document deletion",
+                path,
+            )
+
+
 @dataclass
 class BulkImportItemResult:
     row_num: int

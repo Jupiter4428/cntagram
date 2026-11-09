@@ -1,12 +1,16 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import (
+    require_GET,
+    require_http_methods,
+    require_POST,
+)
 
 import zipfile
 
@@ -17,6 +21,8 @@ from . import selectors
 from .approval_ui import attach_approval_ui
 from .forms import (
     BulkImportForm,
+    DocumentEditForm,
+    DocumentNewVersionForm,
     HideDocumentForm,
     ReviewForm,
     SearchForm,
@@ -24,11 +30,14 @@ from .forms import (
 )
 from .models import Document, max_upload_mb
 from .services import (
+    add_document_version,
     bulk_import_documents_from_csv,
+    delete_document,
     ensure_can_upload_to,
     file_too_large_message,
     hide_document,
     review_document,
+    update_document_info,
     upload_document,
 )
 
@@ -51,6 +60,9 @@ def document_detail(request, document_id):
         pk=document_id,
     )
     can_hide = selectors.can_hide_document(document=document, user=request.user)
+    can_manage = selectors.can_edit_document(
+        document=document, user=request.user
+    )
     return render(
         request,
         "materials/document_detail.html",
@@ -64,6 +76,7 @@ def document_detail(request, document_id):
             ),
             "can_hide": can_hide,
             "hide_form": HideDocumentForm() if can_hide else None,
+            "can_manage": can_manage,
         },
     )
 
@@ -479,4 +492,121 @@ def bulk_import(request):
             "has_run": has_run,
             "dry_run": dry_run,
         },
+    )
+
+
+@login_required
+def document_edit(request, document_id):
+    """หน้าแก้ไขชื่อและคำอธิบายเอกสารโดยเจ้าของ (US-16)"""
+    document = get_object_or_404(
+        Document.objects.select_related("batch_course__course", "uploader"),
+        pk=document_id,
+    )
+    if not selectors.can_edit_document(document=document, user=request.user):
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดการเอกสารนี้")
+
+    if request.method == "POST":
+        form = DocumentEditForm(request.POST)
+        if form.is_valid():
+            try:
+                update_document_info(
+                    document=document,
+                    actor=request.user,
+                    title=form.cleaned_data["title"],
+                    description=form.cleaned_data["description"],
+                )
+                messages.success(
+                    request, "บันทึกการแก้ไขข้อมูลเอกสารเรียบร้อยแล้ว"
+                )
+                if document.status == Document.Status.PUBLISHED:
+                    return redirect(
+                        "materials:document_detail",
+                        document_id=document.pk,
+                    )
+                return redirect("accounts:home")
+            except ValidationError as exc:
+                for field, msg in exc.message_dict.items():
+                    form.add_error(
+                        field if field in form.fields else None, msg
+                    )
+    else:
+        form = DocumentEditForm(
+            initial={
+                "title": document.title,
+                "description": document.description,
+            }
+        )
+
+    return render(
+        request,
+        "materials/document_edit.html",
+        {
+            "document": document,
+            "form": form,
+        },
+    )
+
+
+@login_required
+def document_new_version(request, document_id):
+    """หน้าส่งไฟล์ PDF เวอร์ชันใหม่ของเอกสารโดยเจ้าของ (US-16)"""
+    document = get_object_or_404(
+        Document.objects.select_related("batch_course__course", "uploader"),
+        pk=document_id,
+    )
+    if not selectors.can_edit_document(document=document, user=request.user):
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดการเอกสารนี้")
+
+    if request.method == "POST":
+        form = DocumentNewVersionForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                add_document_version(
+                    document=document,
+                    actor=request.user,
+                    file=form.cleaned_data["file"],
+                )
+                messages.success(
+                    request, "อัปโหลดเอกสารเวอร์ชันใหม่เรียบร้อยแล้ว"
+                )
+                if document.status == Document.Status.PUBLISHED:
+                    return redirect(
+                        "materials:document_detail",
+                        document_id=document.pk,
+                    )
+                return redirect("accounts:home")
+            except ValidationError as exc:
+                for field, msg in exc.message_dict.items():
+                    form.add_error(
+                        field if field in form.fields else None, msg
+                    )
+    else:
+        form = DocumentNewVersionForm()
+
+    return render(
+        request,
+        "materials/document_new_version.html",
+        {
+            "document": document,
+            "form": form,
+        },
+    )
+
+
+@login_required
+@require_POST
+def document_delete(request, document_id):
+    """ลบเอกสารและไฟล์ที่เกี่ยวข้องทั้งหมดโดยเจ้าของ (US-16)"""
+    document = get_object_or_404(
+        Document.objects.select_related("batch_course__course", "uploader"),
+        pk=document_id,
+    )
+    if not selectors.can_edit_document(document=document, user=request.user):
+        raise PermissionDenied("คุณไม่มีสิทธิ์จัดการเอกสารนี้")
+
+    course_code = document.batch_course.course.code
+    delete_document(document=document, actor=request.user)
+    messages.success(request, "ลบเอกสารเรียบร้อยแล้ว")
+    return redirect(
+        f"{reverse('materials:vault')}?course_code={course_code}"
     )
