@@ -1,5 +1,7 @@
 # Architectural Decision Records (ADR)
 
+**หมายเหตุ (พฤศจิกายน 2026):** ADR บันทึกการตัดสินใจ ณ เวลาที่เขียน สถานะ Proposed/Accepted เป็นสถานะการตัดสินใจเชิงสถาปัตยกรรม ดู [`architecture/c4.md`](../architecture/c4.md) และ [`requirements.md`](../requirements.md) สำหรับภาพรวมของระบบปัจจุบัน
+
 บันทึกสั้นๆ ว่า**ทำไม**ทีมเลือกสถาปัตยกรรมแบบนี้ มีทางเลือกอะไรที่ไม่เลือก และต้องแลกกับอะไร
 ตามหลักใน [`lecture-notes/04-django-service-layer-and-transactions.md`](../lecture-notes/04-django-service-layer-and-transactions.md#การบันทึกการตัดสินใจสถาปัตยกรรม-architectural-decision-records-adr)
 

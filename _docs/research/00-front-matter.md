@@ -23,9 +23,9 @@
 
 ปัจจุบันชีทสรุปและข้อสอบเก่าของนักศึกษาคณะวิศวกรรมศาสตร์กระจัดกระจายอยู่ตามกลุ่มแชทและไดรฟ์ส่วนตัว ทำให้ค้นหาได้ยาก ไม่มีการคัดกรองคุณภาพ และความรู้ไม่ถูกส่งต่อระหว่างรุ่นอย่างต่อเนื่อง โครงงานนี้จึงพัฒนาระบบ CNtagram ซึ่งเป็นเว็บแอปพลิเคชันคลังเอกสารกลางที่จัดเอกสารตามภาควิชา รุ่น และรายวิชา แยกคลังชีทสรุปซึ่งผูกกับรุ่นออกจากคลังข้อสอบเก่าซึ่งรวมศูนย์ตามรายวิชา จำกัดการเข้าถึงเฉพาะนักศึกษาคณะด้วยการตรวจอีเมลมหาวิทยาลัยและรหัสคณะในรหัสนักศึกษา และกำหนดให้เอกสารทุกชิ้นผ่านการอนุมัติจากผู้ดูแลก่อนเผยแพร่ โดยข้อสอบเก่าต้องได้รับการอนุมัติทั้งจากผู้ดูแลประจำภาควิชาและผู้ดูแลระบบส่วนกลาง
 
-ระบบพัฒนาด้วย Python และ Django ตามกระบวนการ Scrum จำนวน 3 Sprint ใช้สถาปัตยกรรมแบบโมโนลิทเชิงโมดูล (Modular Monolith) แบ่งเป็น 3 แอปตามโดเมนที่มีทิศทางการพึ่งพาทางเดียว และแยกชั้นตรรกะทางธุรกิจ (Service Layer) ออกจากชั้นนำเสนอ ฐานข้อมูลออกแบบตามบรรทัดฐานที่ 3 (3NF) โดยเก็บกฎการอนุมัติและค่ากำหนดเป็นข้อมูลเพื่อปรับได้โดยไม่ต้องแก้โค้ด และออกแบบให้สอดคล้องกับพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562
+ระบบพัฒนาด้วย Python และ Django ตามกระบวนการ Scrum จำนวน 3 Sprint ใช้สถาปัตยกรรมแบบโมโนลิทเชิงโมดูล (Modular Monolith) แบ่งเป็น 4 แอปตามโดเมน (`catalog`, `accounts`, `materials`, `webboard`) ที่มีทิศทางการพึ่งพาทางเดียว และแยกชั้นตรรกะทางธุรกิจ (Service Layer) ออกจากชั้นนำเสนอ ฐานข้อมูลออกแบบตามบรรทัดฐานที่ 3 (3NF) โดยเก็บกฎการอนุมัติและค่ากำหนดเป็นข้อมูลเพื่อปรับได้โดยไม่ต้องแก้โค้ด และออกแบบให้สอดคล้องกับพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562
 
-ผลการดำเนินงานพบว่า **[เติม: ทีมส่งมอบ User Story ได้ X จาก Y เรื่อง รวม Z Story Points, Velocity เฉลี่ย …, ชุดทดสอบอัตโนมัติ N กรณีผ่านทั้งหมด coverage …%, หน้าค้นหาตอบสนองเฉลี่ย … วินาที, ผลประเมินความพึงพอใจ/SUS …]**
+ผลการดำเนินงานพบว่า **[เติม: ทีมส่งมอบ User Story ได้ X จาก Y เรื่อง รวม Z Story Points, Velocity เฉลี่ย …, ชุดทดสอบอัตโนมัติ 535+ กรณีผ่านทั้งหมด coverage 96%, หน้าค้นหาตอบสนองเฉลี่ย … วินาที, ผลประเมินความพึงพอใจ/SUS …]**
 
 **คำสำคัญ:** คลังเอกสารการเรียน, ข้อสอบเก่า, Django, สกรัม, โมโนลิทเชิงโมดูล, การออกแบบฐานข้อมูลเชิงสัมพันธ์
 
@@ -35,7 +35,7 @@
 
 Lecture summaries and past examination papers for engineering students are currently scattered across chat groups and personal cloud drives, making them hard to find, unvetted, and poorly passed on between cohorts. This project develops CNtagram, a web-based central repository that organizes materials by department, cohort (batch) and course. It separates a cohort-specific lecture vault from a course-centric past-exam vault, restricts access to faculty members by validating university e-mail addresses and the faculty code embedded in student IDs, and requires every document to be approved before publication, with past exams requiring approval from both a department moderator and a central administrator.
 
-The system is built with Python and Django over three Scrum sprints. It follows a modular monolith architecture of three domain-based Django apps with a one-way dependency direction and a service layer that separates business logic from presentation. The relational schema is normalized to third normal form (3NF), stores approval rules and system settings as data so they can change without code modification, and is designed to comply with Thailand's Personal Data Protection Act B.E. 2562 (2019).
+The system is built with Python and Django over three Scrum sprints. It follows a modular monolith architecture of four domain-based Django apps (`catalog`, `accounts`, `materials`, `webboard`) with a one-way dependency direction and a service layer that separates business logic from presentation. The relational schema is normalized to third normal form (3NF), stores approval rules and system settings as data so they can change without code modification, and is designed to comply with Thailand's Personal Data Protection Act B.E. 2562 (2019).
 
 **[Fill in: delivered stories and story points, average velocity, number of automated tests and coverage, search response time, user satisfaction/SUS score.]**
 
