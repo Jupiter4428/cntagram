@@ -531,6 +531,37 @@ def open_reports_for_reviewer(*, user):
     return qs.filter(document__batch_course__batch__department_id__in=department_ids)
 
 
+def review_all_reports(*, status="open"):
+    from .models import Report, TakedownRequest
+
+    if status not in ("open", "resolved", "all"):
+        status = "open"
+    reports = Report.objects.select_related(
+        "document__batch_course__batch__department", "handled_by"
+    ).order_by("-created_at")
+    takedowns = TakedownRequest.objects.select_related(
+        "document", "handled_by"
+    ).order_by("-created_at")
+    if status != "all":
+        reports = reports.filter(status=status)
+        takedowns = takedowns.filter(status=status)
+    return reports, takedowns
+
+
+def get_report_for_resolution(*, kind, report_id):
+    from django.http import Http404
+    from django.shortcuts import get_object_or_404
+    from .models import Report, TakedownRequest
+
+    if kind == "report":
+        qs = Report.objects.select_related("document", "handled_by")
+    elif kind == "takedown":
+        qs = TakedownRequest.objects.select_related("document", "handled_by")
+    else:
+        raise Http404
+    return get_object_or_404(qs, pk=report_id)
+
+
 def open_takedown_requests_for_reviewer(*, user):
     from .models import TakedownRequest
 

@@ -403,6 +403,12 @@ class Approval(models.Model):
         return f"{self.document_id} - {self.approver_id} ({self.decision})"
 
 
+class ReportDecision(models.TextChoices):
+    REMOVE = "remove", "นำลง / ซ่อนเอกสาร"
+    DISMISS = "dismiss", "ยกคำร้อง"
+    REQUEST_CHANGES = "request_changes", "ให้ผู้อัปโหลดแก้ไข"
+
+
 class Report(models.Model):
     class Reason(models.TextChoices):
         COPYRIGHT = "copyright", "ละเมิดลิขสิทธิ์"
@@ -429,6 +435,19 @@ class Report(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="handled_reports",
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    decision = models.CharField(
+        max_length=20, choices=ReportDecision.choices, blank=True, default=""
+    )
+    resolution_reason = models.TextField(blank=True, default="")
+
     class Meta:
         db_table = "report"
         constraints = [
@@ -446,6 +465,12 @@ class Report(models.Model):
             models.CheckConstraint(
                 condition=models.Q(status__in=["open", "resolved"]),
                 name="report_status_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    decision__in=["", "remove", "dismiss", "request_changes"]
+                ),
+                name="report_decision_valid",
             ),
         ]
 
@@ -469,5 +494,40 @@ class TakedownRequest(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    document = models.ForeignKey(
+        Document,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="external_takedown_requests",
+    )
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="handled_takedowns",
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    decision = models.CharField(
+        max_length=20, choices=ReportDecision.choices, blank=True, default=""
+    )
+    resolution_reason = models.TextField(blank=True, default="")
+
     class Meta:
         db_table = "takedown_request"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(status__in=["open", "resolved"]),
+                name="takedown_request_status_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    decision__in=["", "remove", "dismiss", "request_changes"]
+                ),
+                name="takedown_request_decision_valid",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.reference} ({self.claimant_name})"

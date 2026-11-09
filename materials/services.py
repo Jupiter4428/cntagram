@@ -276,6 +276,66 @@ def submit_takedown_request(
     )
 
 
+def resolve_report(
+    *, kind, report_id, actor, decision, resolution_reason, document_id=None
+):
+    from django.core.exceptions import PermissionDenied, ValidationError
+    from django.db import transaction
+    from django.utils import timezone
+    from portal.permissions import is_super_admin
+    from .models import Document, Report, TakedownRequest
+
+    if not is_super_admin(actor):
+        raise PermissionDenied
+    if (
+        decision not in ("remove", "dismiss", "request_changes")
+        or not resolution_reason.strip()
+    ):
+        raise ValidationError("กรุณาระบุผลการตัดสินและเหตุผล")
+    model = (
+        Report if kind == "report" else TakedownRequest if kind == "takedown" else None
+    )
+    if model is None:
+        raise ValidationError("ประเภทคำร้องไม่ถูกต้อง")
+    with transaction.atomic():
+        report = model.objects.select_for_update().get(pk=report_id)
+        if report.status != "open":
+            raise ValidationError("คำร้องนี้ได้รับการตัดสินแล้ว")
+        document = report.document
+        if kind == "takedown" and document_id:
+            document = (
+                Document.objects.select_for_update().filter(pk=document_id).first()
+            )
+            if document is None:
+                raise ValidationError("ไม่พบเอกสารที่ระบุ")
+            report.document = document
+        elif document is not None:
+            document = Document.objects.select_for_update().get(pk=document.pk)
+        if decision != "dismiss" and document is None:
+            raise ValidationError("กรุณาระบุรหัสเอกสารที่ตรวจสอบแล้ว")
+        if document is not None:
+            if document.status not in (
+                Document.Status.PUBLISHED,
+                Document.Status.HIDDEN,
+            ):
+                raise ValidationError("สถานะเอกสารไม่รองรับการตัดสินนี้")
+            target = (
+                Document.Status.PUBLISHED
+                if decision == "dismiss"
+                else Document.Status.HIDDEN
+            )
+            if document.status != target:
+                document.status = target
+                document.save(update_fields=["status", "updated_at"])
+        report.status = "resolved"
+        report.decision = decision
+        report.resolution_reason = resolution_reason.strip()
+        report.handled_by = actor
+        report.resolved_at = timezone.now()
+        report.save()
+        return report
+
+
 def _takedown_rate_key(ip):
     import time
     from django.conf import settings

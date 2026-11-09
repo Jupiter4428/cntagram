@@ -340,6 +340,56 @@ def public_takedown(request):
     return render(request, "materials/public_takedown.html", {"form": form})
 
 
+@require_http_methods(["GET", "POST"])
+@super_admin_required
+def resolve_report_view(request, kind, report_id):
+    from .forms import ResolveReportForm
+    from .services import resolve_report
+
+    report = selectors.get_report_for_resolution(kind=kind, report_id=report_id)
+    form = ResolveReportForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            resolve_report(
+                kind=kind, report_id=report_id, actor=request.user, **form.cleaned_data
+            )
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            messages.success(request, "บันทึกผลการตัดสินแล้ว")
+            return redirect("materials:review_reports")
+    return render(
+        request,
+        "materials/resolve_report.html",
+        {
+            "report": report,
+            "form": form,
+            "kind": kind,
+        },
+    )
+
+
+@require_GET
+@super_admin_required
+def review_reports(request):
+    from datetime import timedelta
+    from django.utils import timezone
+
+    status = request.GET.get("status", "open")
+    reports, takedowns = selectors.review_all_reports(status=status)
+    deadline = timezone.now() - timedelta(hours=72)
+    return render(
+        request,
+        "materials/review_reports.html",
+        {
+            "reports": reports,
+            "takedowns": takedowns,
+            "deadline": deadline,
+            "status": status,
+        },
+    )
+
+
 @login_not_required
 @require_GET
 def takedown_submitted(request):
