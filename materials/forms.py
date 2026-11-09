@@ -344,9 +344,7 @@ class DocumentEditForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control"}),
         error_messages={
             "required": "กรุณาระบุชื่อเอกสาร",
-            "max_length": (
-                "ชื่อเอกสารต้องมีความยาวไม่เกิน %(limit_value)d ตัวอักษร"
-            ),
+            "max_length": ("ชื่อเอกสารต้องมีความยาวไม่เกิน %(limit_value)d ตัวอักษร"),
         },
     )
     description = forms.CharField(

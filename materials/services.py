@@ -450,9 +450,7 @@ def add_document_version(*, document, actor, file):
         try:
             default_storage.delete(storage_path)
         except Exception:
-            logger.exception(
-                "Could not remove orphaned upload %s", storage_path
-            )
+            logger.exception("Could not remove orphaned upload %s", storage_path)
         raise
     return version
 
@@ -465,9 +463,7 @@ def delete_document(*, document, actor):
     if actor != locked_doc.uploader:
         raise PermissionDenied("คุณไม่มีสิทธิ์จัดการเอกสารนี้")
 
-    storage_paths = list(
-        locked_doc.versions.values_list("storage_path", flat=True)
-    )
+    storage_paths = list(locked_doc.versions.values_list("storage_path", flat=True))
 
     if hasattr(locked_doc, "exam_detail"):
         locked_doc.exam_detail.delete()

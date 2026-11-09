@@ -343,9 +343,7 @@ class AddDocumentVersionServiceTests(UploadTestCase):
         self.document.refresh_from_db()
         self.assertEqual(self.document.current_version.version_no, 2)
         with default_storage.open(version.storage_path, "rb") as stored:
-            self.assertEqual(
-                stored.read(), b"%PDF-1.4\nNew version content\n%%EOF"
-            )
+            self.assertEqual(stored.read(), b"%PDF-1.4\nNew version content\n%%EOF")
 
     def test_non_owner_cannot_upload_new_version(self):
         new_pdf = pdf_file(

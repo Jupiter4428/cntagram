@@ -60,9 +60,7 @@ def document_detail(request, document_id):
         pk=document_id,
     )
     can_hide = selectors.can_hide_document(document=document, user=request.user)
-    can_manage = selectors.can_edit_document(
-        document=document, user=request.user
-    )
+    can_manage = selectors.can_edit_document(document=document, user=request.user)
     return render(
         request,
         "materials/document_detail.html",
@@ -515,9 +513,7 @@ def document_edit(request, document_id):
                     title=form.cleaned_data["title"],
                     description=form.cleaned_data["description"],
                 )
-                messages.success(
-                    request, "บันทึกการแก้ไขข้อมูลเอกสารเรียบร้อยแล้ว"
-                )
+                messages.success(request, "บันทึกการแก้ไขข้อมูลเอกสารเรียบร้อยแล้ว")
                 if document.status == Document.Status.PUBLISHED:
                     return redirect(
                         "materials:document_detail",
@@ -526,9 +522,7 @@ def document_edit(request, document_id):
                 return redirect("accounts:home")
             except ValidationError as exc:
                 for field, msg in exc.message_dict.items():
-                    form.add_error(
-                        field if field in form.fields else None, msg
-                    )
+                    form.add_error(field if field in form.fields else None, msg)
     else:
         form = DocumentEditForm(
             initial={
@@ -566,9 +560,7 @@ def document_new_version(request, document_id):
                     actor=request.user,
                     file=form.cleaned_data["file"],
                 )
-                messages.success(
-                    request, "อัปโหลดเอกสารเวอร์ชันใหม่เรียบร้อยแล้ว"
-                )
+                messages.success(request, "อัปโหลดเอกสารเวอร์ชันใหม่เรียบร้อยแล้ว")
                 if document.status == Document.Status.PUBLISHED:
                     return redirect(
                         "materials:document_detail",
@@ -577,9 +569,7 @@ def document_new_version(request, document_id):
                 return redirect("accounts:home")
             except ValidationError as exc:
                 for field, msg in exc.message_dict.items():
-                    form.add_error(
-                        field if field in form.fields else None, msg
-                    )
+                    form.add_error(field if field in form.fields else None, msg)
     else:
         form = DocumentNewVersionForm()
 
@@ -607,6 +597,4 @@ def document_delete(request, document_id):
     course_code = document.batch_course.course.code
     delete_document(document=document, actor=request.user)
     messages.success(request, "ลบเอกสารเรียบร้อยแล้ว")
-    return redirect(
-        f"{reverse('materials:vault')}?course_code={course_code}"
-    )
+    return redirect(f"{reverse('materials:vault')}?course_code={course_code}")
