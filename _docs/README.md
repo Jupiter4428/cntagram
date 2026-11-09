@@ -13,8 +13,9 @@
 | [`architecture/c4.md`](./architecture/c4.md) | ไดอะแกรม C4 Model ระดับ 1–2 (System Context, Container) | อยากเห็นภาพรวมว่าระบบประกอบด้วยอะไร |
 | [`adr/`](./adr/) | Architectural Decision Records (ADR 0001–0005): บันทึกว่าทำไมถึงเลือกสถาปัตยกรรมแบบนี้ | ก่อนเพิ่ม app ใหม่ หรือเปลี่ยนโครงสร้างโค้ด |
 | [`backup-operations.md`](./backup-operations.md) | ขั้นตอนสำรองและกู้คืนข้อมูล Production (PostgreSQL & Offsite S3 Backup) | ก่อนรันสคริปต์สำรอง/กู้คืนฐานข้อมูลจริง |
-| [`lecture-notes/`](./lecture-notes/) | สรุปเนื้อหารายวิชา CN331 (Django ORM, CBV, Architecture, Service Layer, Scrum, Automated Testing, CI/CD & Static Analysis, Web Security & Deployment) | ต้องการทฤษฎีหรือแนวทางที่โปรเจคอ้างอิง |
 | [`deployment-prep-checklist.md`](./deployment-prep-checklist.md) | เช็กลิสต์เตรียมก่อน Deploy (security, packages, WhiteNoise, PostgreSQL, Render, Release) ตาม lecture สัปดาห์ 13 | ก่อนขึ้น Cloud / ทำ SP-4 |
+| [`production-demo-readiness.md`](./production-demo-readiness.md) | รายงานตรวจสอบความพร้อมของระบบ Production สำหรับการสาธิต | ตรวจสอบสถานะความพร้อมของสภาพแวดล้อมจริง |
+| [`lecture-notes/`](./lecture-notes/) | สรุปเนื้อหารายวิชา CN331 (Django ORM, CBV, Architecture, Service Layer, Scrum, Automated Testing, CI/CD & Static Analysis, Web Security & Deployment) | ต้องการทฤษฎีหรือแนวทางที่โปรเจคอ้างอิง |
 | [`research/`](./research/) | ร่างเล่มรายงานโครงงาน แยกตามบท 1–5 พร้อมบรรณานุกรมและภาคผนวก | เขียนหรือแก้เล่มรายงาน |
 | [`archive/`](./archive/) | เอกสารเก่าที่เลิกใช้แล้ว เช่น SRS v1 (`.pdf`, `.docx`) | อยากดูที่มาของ requirement เดิมเท่านั้น |
 

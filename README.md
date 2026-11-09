@@ -33,10 +33,10 @@
 
 ## ฟีเจอร์ที่มีในระบบปัจจุบัน (Current Features)
 
-- **ระบบยืนยันตัวตนและความปลอดภัย (`accounts`):** สมัครสมาชิกด้วยอีเมลคณะวิศวกรรมศาสตร์ (`@student.tu.ac.th` รหัสคณะ `10`), เข้าสู่ระบบ/ออกจากระบบพร้อม Two-bucket Rate Limiting (จำกัดตามบัญชีและ IP), แต่งตั้ง/ถอดถอน Moderator ประจำภาควิชา และลบบัญชีตนเองตาม PDPA (`/account/delete/` แบบ Anonymize)
+- **ระบบยืนยันตัวตนและความปลอดภัย (`accounts`):** สมัครสมาชิกด้วยอีเมลคณะวิศวกรรมศาสตร์ (`@student.tu.ac.th` รหัสคณะ `10`), เข้าสู่ระบบ/ออกจากระบบพร้อม Two-bucket Rate Limiting (จำกัดตามบัญชีและ IP), แต่งตั้ง/ถอดถอน Moderator ประจำภาควิชา, ลบบัญชีตนเองตาม PDPA (`/account/delete/` แบบ Anonymize) และแสดงสถานะ "ไฟล์ของฉัน" พร้อมเหตุผลที่ไม่ผ่านอนุมัติและแจ้งเตือนคิวตรวจเอกสารบนหน้าแรก
 - **การจัดการโครงสร้างหลักสูตร (`catalog`):** Super Admin จัดการภาควิชา (`Department`), รุ่น (`Batch`), รายวิชา (`Course`) และการผูกวิชาเข้ากับรุ่น (`BatchCourse`) พร้อมค่ากำหนดระบบ (`SystemSetting`)
-- **คลังเอกสารและการคัดกรอง (`materials`):** อัปโหลดชีทสรุป/สไลด์/ข้อสอบเก่า (PDF) พร้อมตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, ค้นหาและกรองเอกสารในคลัง (Vault), เปิดดูตัวอย่าง (Inline PDF Preview) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog`, ระบบคิวอนุมัติแยกตามกฎ `DocTypeRequiredRole` (ชีททั่วไปใช้ Moderator หรือ Super Admin 1 คน / ข้อสอบเก่าต้องผ่านทั้งสองฝ่าย)
-- **ชุมชนและเว็บบอร์ดเรโทรยุค 2000s (`webboard` & `accounts`):** กระดานสนทนาแยกหมวดหมู่ (`BoardCategory`), ตั้งกระทู้ (`Thread`) ผูกรายวิชา, ตอบกลับ (`Post`), แปลงรหัสอีโมติคอน MSN (เช่น `:D`, `(L)`) และฝังภาพ `[img]...[/img]` แบบปลอดภัย, ปักหมุด/ล็อก/ลบกระทู้และคอมเมนต์ รวมถึงวิดเจ็ตหน้าแรก (Shoutbox สดแบบ AJAX, โพลประจำสัปดาห์แบบ AJAX, ตัวนับผู้เข้าชม LCD 6 หลัก, เครื่องเล่นเพลง BGM Player ยุค 2000s)
+- **คลังเอกสาร การคัดกรอง และการร้องเรียน (`materials`):** อัปโหลดชีทสรุป/สไลด์/ข้อสอบเก่า (PDF) พร้อมช่องค้นหารายวิชาแบบ Combobox และตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, ผู้อัปโหลดแก้ไขคำอธิบาย/อัปโหลดเวอร์ชันใหม่/ลบเอกสารของตนเองได้ (`document_edit`, `document_new_version`, `document_delete`), นำเข้าเอกสารจำนวนมากผ่าน CSV + ZIP ทั้งทาง CLI (`import_documents`) และหน้าเว็บ (`/materials/bulk-import/` พร้อมโหมดทดลองรัน), ค้นหาและกรองเอกสารในคลัง (Vault), เปิดดูตัวอย่าง (Inline PDF Preview) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog`, ระบบคิวอนุมัติแยกตามกฎ `DocTypeRequiredRole` (ชีททั่วไปใช้ Moderator หรือ Super Admin 1 คน / ข้อสอบเก่าต้องผ่านทั้งสองฝ่าย), ซ่อนเอกสารที่เผยแพร่แล้วพร้อมระบุเหตุผล (`document_hide`), รายงานเอกสารที่ไม่เหมาะสม (`Report`), แบบฟอร์มสาธารณะแจ้งลบเนื้อหาละเมิดลิขสิทธิ์ (`TakedownRequest` ที่ `/materials/takedown/`) และหน้าตัดสินเรื่องร้องเรียนของ Super Admin (`review_reports`, `resolve_report`)
+- **ชุมชนและเว็บบอร์ดเรโทรยุค 2000s (`webboard` & `accounts`):** กระดานสนทนาแยกหมวดหมู่ (`BoardCategory`), ตั้งกระทู้ (`Thread`) ผูกรายวิชา, ตอบกลับ (`Post`), แบ่งหน้า Pagination และกันปั๊มยอดวิวด้วย Session, แก้ไขกระทู้/ข้อความพร้อมป้ายกำกับแก้ไขแล้ว (`is_edited`), แปลงรหัสอีโมติคอน MSN (เช่น `:D`, `(L)`) และฝังภาพ `[img]...[/img]` หรือลิงก์ GIF แบบปลอดภัย, ปักหมุด/ล็อก/ลบกระทู้และคอมเมนต์ รวมถึงวิดเจ็ตหน้าแรก (Shoutbox สดแบบ AJAX, โพลประจำสัปดาห์แบบ AJAX, ตัวนับผู้เข้าชม LCD 6 หลัก, เครื่องเล่นเพลง BGM Player ยุค 2000s)
 
 ---
 
@@ -64,10 +64,10 @@ flowchart LR
     A -- "HTTPS" --> SYS
 ```
 
-- **Guest:** เข้าดูหน้าแรก สมัครสมาชิก และเข้าสู่ระบบ (ต้องล็อกอินเพื่อเข้าใช้งานคลังเอกสารและเว็บบอร์ด)
-- **Student / Alumni:** นักศึกษาและศิษย์เก่า เข้าสู่ระบบด้วยอีเมลมหาวิทยาลัย ค้นหา อ่าน ดาวน์โหลด อัปโหลดชีท/ข้อสอบ และร่วมพูดคุยในเว็บบอร์ด/วิดเจ็ตชุมชน
-- **Moderator:** ผู้ตรวจคัดกรองเอกสารประจำภาควิชา ตรวจสอบความถูกต้องและอนุมัติเอกสารก่อนเผยแพร่ รวมถึงดูแลความเรียบร้อยในเว็บบอร์ด
-- **Super Admin:** ผู้ดูแลระบบระดับคณะ จัดการโครงสร้างภาควิชา/รุ่น/รายวิชา แต่งตั้ง Moderator และดูแลภาพรวมระบบ
+- **Guest:** เข้าดูหน้าแรก สมัครสมาชิก เข้าสู่ระบบ และส่งคำร้องแจ้งลบเอกสารละเมิดลิขสิทธิ์ผ่านแบบฟอร์มสาธารณะ (`/materials/takedown/`)
+- **Student / Alumni:** นักศึกษาและศิษย์เก่า เข้าสู่ระบบด้วยอีเมลมหาวิทยาลัย ค้นหา อ่าน ดาวน์โหลด อัปโหลดชีท/ข้อสอบ รายงานเอกสารที่ไม่เหมาะสม และร่วมพูดคุยในเว็บบอร์ด/วิดเจ็ตชุมชน
+- **Moderator:** ผู้ตรวจคัดกรองเอกสารประจำภาควิชา ตรวจสอบความถูกต้องและอนุมัติเอกสารก่อนเผยแพร่ ซ่อนเอกสารหรือดูรายการรายงานในภาคของตน รวมถึงดูแลความเรียบร้อยในเว็บบอร์ด
+- **Super Admin:** ผู้ดูแลระบบระดับคณะ จัดการโครงสร้างภาควิชา/รุ่น/รายวิชา นำเข้าเอกสารจำนวนมาก (Bulk Import) แต่งตั้ง Moderator ตัดสินเรื่องร้องเรียน/ลิขสิทธิ์ และดูแลภาพรวมระบบ
 
 ---
 
@@ -110,7 +110,7 @@ $$\text{catalog} \longleftarrow \text{accounts} \longleftarrow (\text{materials}
 |---|---|---|
 | `catalog` | โครงสร้างภาควิชา (`Department`), รุ่น (`Batch`), รายวิชา (`Course`, `BatchCourse`) และค่ากำหนดระบบ (`SystemSetting`) | **ไม่ import app อื่นเลย** เป็นรากฐานของระบบ |
 | `accounts` | ผู้ใช้ (`User`), บทบาท (`Role`), สิทธิ์ตามภาควิชา (`UserRole`), ยอดสะสมผู้ใช้ (`UserCounter`), โพลและ Shoutbox หน้าแรก (`PollVote`, `ShoutboxMessage`) | import พึ่งพา `catalog` ได้ ห้าม import `materials` หรือ `webboard` |
-| `materials` | เอกสาร (`Document`, `DocType`), เวอร์ชันไฟล์ (`DocumentVersion`), ข้อสอบ (`ExamDetail`, `ExamPeriod`), การอนุมัติ (`Approval`, `DocTypeRequiredRole`), สถิติการดาวน์โหลด (`DownloadLog`) | import พึ่งพาได้ทั้ง `catalog` และ `accounts` |
+| `materials` | เอกสาร (`Document`, `DocType`), เวอร์ชันไฟล์ (`DocumentVersion`), ข้อสอบ (`ExamDetail`, `ExamPeriod`), การอนุมัติ (`Approval`, `DocTypeRequiredRole`), สถิติการดาวน์โหลด (`DownloadLog`), รายงานปัญหาและคำร้องแจ้งลบ (`Report`, `TakedownRequest`) | import พึ่งพาได้ทั้ง `catalog` และ `accounts` |
 | `webboard` | กระดานสนทนาชุมชน: หมวดหมู่ (`BoardCategory`), กระทู้ (`Thread` ผูกรายวิชาได้), ข้อความตอบกลับ (`Post`), ตัวแปลงอีโมติคอน MSN และฝังภาพ GIF | import พึ่งพาได้ทั้ง `catalog` และ `accounts` |
 
 - การอ้างอิง Foreign Key ข้าม app ใช้ String reference เสมอ เช่น `"catalog.BatchCourse"` และ `settings.AUTH_USER_MODEL`
@@ -182,6 +182,9 @@ erDiagram
     app_user ||--o{ approval : decides
     document ||--o{ download_log : "downloaded"
     app_user ||--o{ download_log : ""
+    document ||--o{ report : "reported in"
+    app_user ||--o{ report : submits
+    document ||--o{ takedown_request : "challenged by"
     board_category ||--o{ thread : groups
     course |o--o{ thread : "related to"
     app_user ||--o{ thread : authors
@@ -214,11 +217,12 @@ erDiagram
 ```text
 cntagram/
 ├── _docs/                  # เอกสารทั้งหมดที่ไม่ใช่โค้ด (Product Backlog, ADR, C4, Database Design)
-│   ├── requirements.md     # Product Backlog: Epics, User Stories, สถานะปัจจุบันและ Backlog
+│   ├── requirements.md     # Product Backlog: Epics, User Stories ของฟีเจอร์ที่มีในระบบ
 │   ├── database-design.md  # ออกแบบฐานข้อมูล (ERD 3NF ของตารางที่มีจริงในระบบ)
 │   ├── known-limitations.md# ข้อจำกัดของระบบรุ่นปัจจุบัน
 │   ├── backup-operations.md# ขั้นตอนและสถานะการสำรอง/กู้คืนข้อมูล Production
 │   ├── deployment-prep-checklist.md
+│   ├── production-demo-readiness.md
 │   ├── adr/                # Architectural Decision Records (ADR 0001 - 0005)
 │   ├── architecture/       # C4 Model diagrams
 │   ├── lecture-notes/      # สรุปเนื้อหาวิชา CN331
@@ -227,13 +231,13 @@ cntagram/
 ├── portal/                 # Django project config (settings, urls, permissions, wsgi/asgi)
 ├── accounts/               # ผู้ใช้, สิทธิ์, บทบาท และวิดเจ็ตหน้าแรก (User, Role, UserRole, UserCounter, PollVote, ShoutboxMessage)
 ├── catalog/                # โครงสร้างหลักสูตร (Department, Batch, Course, BatchCourse, SystemSetting)
-├── materials/              # เอกสารและไฟล์ (Document, DocType, DocumentVersion, ExamDetail, Approval, DownloadLog)
+├── materials/              # เอกสาร การอนุมัติ และการร้องเรียน (Document, DocType, DocumentVersion, ExamDetail, Approval, DownloadLog, Report, TakedownRequest)
 ├── webboard/               # กระดานสนทนาชุมชนเรโทร (BoardCategory, Thread, Post, MSN emoticons & GIF embeds)
-├── scripts/                # สคริปต์สำรองและกู้คืนข้อมูล (backup_restore.sh)
+├── scripts/                # สคริปต์สำรองข้อมูลและตรวจความพร้อม Production (backup_restore.sh, check_production_readiness.py, deploy_wizard.sh)
 ├── media/                  # ไฟล์เอกสารอัปโหลด (MEDIA_ROOT) ไม่อยู่ใน Git และเข้าถึงผ่าน view ที่ตรวจสิทธิ์เท่านั้น
 ├── static/                 # CSS, JavaScript และ assets ส่วนกลาง
 ├── templates/              # Base templates และ shared components
-├── .github/                # Workflows (CI, Daily Backup), Issue & PR templates
+├── .github/                # Workflows (CI, Daily Backup)
 ├── build.sh                # สคริปต์เตรียมสภาพแวดล้อม Production บน Render
 ├── Procfile                # คำสั่งรัน Gunicorn บน PaaS
 ├── manage.py
@@ -310,7 +314,6 @@ coverage report -m --fail-under=80
 |---|---|---|
 | [`README.md`](./README.md) | ภาพรวมระบบ, สถาปัตยกรรม (C4 / ERD / ADR), โครงสร้างโปรเจค และวิธีติดตั้ง | เริ่มต้นใช้งานหรือทำความเข้าใจภาพรวมระบบ |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | คู่มือการพัฒนา, ข้อตกลง Scrum, DoD/DoR, กฎ Branch/PR, แนวทางการเขียนโค้ดและเทสต์ | ก่อนเริ่มลงมือพัฒนาหรือเปิด Pull Request |
-| [`AGENTS.md`](./AGENTS.md) | กฎและคู่มือทักษะการทำงานของ AI Coding Assistant | สำหรับ Agent ในการปฏิบัติตาม Workflow |
 
 ### เอกสารการออกแบบและพัฒนา (`_docs/`)
 | ไฟล์ / โฟลเดอร์ | เนื้อหา | อ่านเมื่อ |
@@ -322,6 +325,7 @@ coverage report -m --fail-under=80
 | [`_docs/adr/`](./_docs/adr/) | Architectural Decision Records (ADR 0001–0005) บันทึกเหตุผลการเลือกสถาปัตยกรรม | ก่อนเพิ่ม app หรือปรับโครงสร้างระบบ |
 | [`_docs/backup-operations.md`](./_docs/backup-operations.md) | ขั้นตอนปฏิบัติการสำรองและกู้คืนข้อมูล Production (PostgreSQL & Offsite Backup) | ก่อนรันสคริปต์สำรอง/กู้คืนฐานข้อมูลจริง |
 | [`_docs/deployment-prep-checklist.md`](./_docs/deployment-prep-checklist.md) | เช็กลิสต์เตรียมความพร้อมก่อน Deploy สู่ Production (Render, PostgreSQL, WhiteNoise) | ก่อนขึ้น Cloud หรือเตรียมส่งมอบระบบ |
+| [`_docs/production-demo-readiness.md`](./_docs/production-demo-readiness.md) | รายงานตรวจสอบความพร้อมของระบบ Production สำหรับการสาธิต | ตรวจสอบสถานะความพร้อมของสภาพแวดล้อมจริง |
 | [`_docs/lecture-notes/`](./_docs/lecture-notes/) | สรุปเนื้อหาและทฤษฎีรายวิชา CN331 (ORM, Architecture, Testing, CI/CD, Web Security) | ศึกษาแนวทางและมาตรฐานวิศวกรรมซอฟต์แวร์ |
 | [`_docs/research/`](./_docs/research/) | ร่างรายงานเล่มสมบูรณ์ (บทที่ 1–5, บรรณานุกรม, ภาคผนวก) | เขียนหรือแก้ไขเล่มรายงานโครงงาน |
 

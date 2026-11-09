@@ -35,4 +35,4 @@
 
 ## 5.4 ข้อเสนอแนะและงานในอนาคต
 
-รายการฟีเจอร์ที่ยังไม่ได้สร้างในรุ่นที่ส่งมอบ ถูกรวบรวมและจัดลำดับความสำคัญไว้ใน Product Backlog ที่ [`requirements.md`](../requirements.md) เพียงที่เดียว เพื่อใช้เป็นแนวทางพัฒนาต่อยอดในอนาคต (เช่น การย้ายที่เก็บไฟล์ PDF ไปยัง Private Object Storage เพื่อแก้ข้อจำกัด Ephemeral Disk บน PaaS Free Tier และการค้นหาแบบ Full-text Search บน PostgreSQL)
+ข้อจำกัดของระบบรุ่นที่ส่งมอบสรุปไว้ที่ [`known-limitations.md`](../known-limitations.md) เพื่อใช้เป็นแนวทางพัฒนาต่อยอดในอนาคต (เช่น การย้ายที่เก็บไฟล์ PDF ไปยัง Private Object Storage เพื่อแก้ข้อจำกัด Ephemeral Disk บน PaaS Free Tier, การยืนยันอีเมลด้วยลิงก์/OTP และการค้นหาแบบ Full-text Search บน PostgreSQL)

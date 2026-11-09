@@ -29,7 +29,7 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 ### 3.1.4 การจัดการ Source Code และ Workflow
 
 - Git branch strategy: `main` (default branch, integration + production) / feature branch แตกจาก `main`
-- Pull Request + Peer Code Review ทุกงาน ใช้ PR template และ Issue template (Feature Story, Bug Report, Tech Debt) ใน `.github/`
+- Pull Request + Peer Code Review ทุกงาน ตามโครงสร้าง PR และ Issue ที่กำหนดใน `CONTRIBUTING.md`
 - Commit message ตาม Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:` ฯลฯ)
 - GitHub Projects เป็น Scrum board พร้อม custom fields (Story Points, Sprint, Track)
 - กติกาการใช้ AI ช่วยเขียนโค้ด: ผู้ commit รับผิดชอบ 100%, ต้องรันเทสต์และอธิบายโค้ดได้ทุกบรรทัด
@@ -56,14 +56,15 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 | Epic | คุณค่าที่ผู้ใช้ได้ | Story ที่ส่งมอบแล้วในระบบ |
 |---|---|---|
 | E1 เข้าระบบอย่างปลอดภัย | เฉพาะคนในคณะเข้าได้ ลบบัญชีตาม PDPA ได้ | US-1, US-2, US-13 |
-| E2 โครงสร้างคลัง | จัดตาม ภาค → รุ่น → วิชา ขยายภาคได้ | SP-0, US-3, US-4 |
-| E3 แบ่งปันเอกสาร | อัปโหลดเข้าที่ถูกต้องได้ง่าย ป้องกันไฟล์ซ้ำ | US-5, US-12 |
-| E4 คัดกรองคุณภาพ | ตรวจก่อนเผยแพร่ ข้อสอบคุมเข้มกว่า | US-6, US-9, US-10 |
+| E2 โครงสร้างคลัง | จัดตาม ภาค → รุ่น → วิชา และนำเข้าไฟล์จำนวนมากได้ | SP-0, US-3, US-4, US-17 |
+| E3 แบ่งปันเอกสาร | อัปโหลดเข้าที่ถูกต้องได้ง่าย ป้องกันไฟล์ซ้ำ แก้ไข/อัปโหลดเวอร์ชันใหม่/ลบไฟล์ของตน และติดตามสถานะเอกสารได้ | US-5, US-12, US-21, US-34 |
+| E4 คัดกรองคุณภาพ | ตรวจก่อนเผยแพร่ ข้อสอบคุมเข้มกว่า ซ่อนเอกสารที่มีปัญหาได้ | US-6, US-9, US-10, US-25 |
 | E5 ค้นหาและอ่าน | พิมพ์รหัสวิชาแล้วเจอทุกรุ่นในหน้าเดียว | US-7, US-8, US-11 |
-| E6 ชุมชนและปฏิสัมพันธ์เว็บบอร์ด | บรรยากาศเว็บบอร์ดยุค 2000s, พูดคุยทักทาย, โพล, เพลงประกอบ, กระดานถาม-ตอบ | US-36 – US-39, `webboard` (#202, #210) |
-| TD งานเทคนิค | ส่งมอบเร็วและมั่นคงขึ้น | TD-1, TD-3, TD-8, TD-9, SP-3, SP-4 |
+| E6 ชุมชนและปฏิสัมพันธ์เว็บบอร์ด | บรรยากาศเว็บบอร์ดยุค 2000s, พูดคุยทักทาย, โพล, เพลงประกอบ, กระดานถาม-ตอบ | US-36 – US-39, `webboard` (#202, #209, #210, #211, #212, #213) |
+| E7 ลิขสิทธิ์และความไว้วางใจ | รายงานเอกสาร แจ้งลบผ่านฟอร์มสาธารณะ และตัดสินข้อพิพาทลิขสิทธิ์ได้ | US-32, US-33, US-35 |
+| TD งานเทคนิค | ส่งมอบเร็วและมั่นคงขึ้น | TD-1 – TD-5, TD-7 – TD-9, SP-3, SP-4 |
 
-(รายการ User Story อื่นๆ ที่อยู่ใน Product Backlog สำหรับพัฒนาต่อยอด ดูได้ที่ [`requirements.md`](../requirements.md))
+(รายละเอียดทั้งหมดดูได้ที่ [`requirements.md`](../requirements.md))
 
 ### 3.2.4 ความต้องการด้านคุณภาพ (Non-Functional)
 
@@ -89,7 +90,7 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 |---|---|---|
 | `catalog` | โครงสร้างภาควิชา รุ่น รายวิชา และค่ากำหนดระบบ | Department, Batch, Course, BatchCourse, SystemSetting |
 | `accounts` | ผู้ใช้ บทบาท สิทธิ์ และวิดเจ็ตชุมชนหน้าแรก | User, Role, UserRole, UserCounter, PollVote, ShoutboxMessage |
-| `materials` | เอกสาร ไฟล์ เวอร์ชัน การอนุมัติ และบันทึกการดาวน์โหลด | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval, DownloadLog |
+| `materials` | เอกสาร ไฟล์ เวอร์ชัน การอนุมัติ บันทึกการดาวน์โหลด และการร้องเรียน/แจ้งลบ | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval, DownloadLog, Report, TakedownRequest |
 | `webboard` | กระดานสนทนาชุมชน หมวดหมู่ กระทู้ ข้อความตอบกลับ อีโมติคอน MSN และ GIF | BoardCategory, Thread, Post |
 
 ทิศทาง dependency ทางเดียว `catalog` ← `accounts` ← (`materials`, `webboard`); FK ข้าม app อ้างด้วย string และ `settings.AUTH_USER_MODEL`
@@ -106,7 +107,7 @@ Sprint Planning (คำนวณ Velocity, ตั้ง Sprint Goal, ดึง s
 ดูรายละเอียดเต็มใน [`database-design.md`](../database-design.md) (ใส่ data dictionary ฉบับเต็มในภาคผนวก)
 
 ### 3.4.1 ERD (รูปที่ 3.5)
-ตารางทั้งหมดที่มีจริงในระบบปัจจุบันแบ่งตามกลุ่มโดเมน: โครงสร้างภาควิชา (`department`, `batch`, `course`, `batch_course`, `system_setting`), ผู้ใช้และสิทธิ์ (`app_user`, `role`, `user_role`, `user_counter`, `poll_vote`, `shoutbox_message`), เอกสารและกฏการอนุมัติ (`doc_type`, `doc_type_required_role`, `exam_period`, `document`, `exam_detail`, `document_version`, `approval`, `download_log`), และกระดานสนทนาชุมชน (`webboard_boardcategory`, `webboard_thread`, `webboard_post`)
+ตารางทั้งหมดที่มีจริงในระบบปัจจุบันแบ่งตามกลุ่มโดเมน: โครงสร้างภาควิชา (`department`, `batch`, `course`, `batch_course`, `system_setting`), ผู้ใช้และสิทธิ์ (`app_user`, `role`, `user_role`, `user_counter`, `poll_vote`, `shoutbox_message`), เอกสาร กฎการอนุมัติ และการร้องเรียน (`doc_type`, `doc_type_required_role`, `exam_period`, `document`, `exam_detail`, `document_version`, `approval`, `download_log`, `report`, `takedown_request`), และกระดานสนทนาชุมชน (`webboard_boardcategory`, `webboard_thread`, `webboard_post`)
 
 ### 3.4.2 กระบวนการ Normalization
 UNF (ตารางเดียวจากตัวอย่างใน SRS v1) → 1NF (แยก `user_role`, `approval` ออกจากช่องหลายค่า) → 2NF (แยก `course`, `department`, `batch_course`) → 3NF (ไม่เก็บรหัสรุ่น `CN21` และปีเข้า เพราะคำนวณได้, ย้าย `vault` ไป `doc_type`, แยก `exam_detail` 1:1) → ตรวจ BCNF

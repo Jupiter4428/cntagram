@@ -18,7 +18,7 @@ Requirement ที่ตารางเหล่านี้รองรับ�
 | ชีทสรุป กับ ข้อสอบเก่า | ตาราง `document` ร่วมกัน + `exam_detail` (1:1) สำหรับข้อมูลเฉพาะข้อสอบ | หลีกเลี่ยง column ที่ว่างเป็นส่วนใหญ่ และรองรับ vault 2 แบบ |
 | กฎอนุมัติ | เก็บเป็นข้อมูลใน `doc_type_required_role` ไม่ hardcode | เปลี่ยนกฎ (ข้อสอบต้อง Moderator + Admin) โดยไม่แก้โค้ด |
 | ค่ากำหนด (รุ่น ≤ 23, ขนาดไฟล์ 50 MB) | ตาราง `system_setting` | ปรับได้โดยไม่ deploy ใหม่ |
-| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | US-21 ส่งเวอร์ชันแก้ไขได้ ประวัติไม่หาย |
+| ไฟล์หลายเวอร์ชัน | ตาราง `document_version` | รองรับการเก็บประวัติเวอร์ชันไฟล์ (`Document.add_version()`) |
 | จำนวนดาวน์โหลด | นับจาก `download_log` | ไม่เก็บตัวนับซ้ำ (ถ้าช้าค่อยเพิ่ม cache ทีหลังโดยเจตนา) |
 | ลบข้อมูลผู้ใช้ (PDPA) | **anonymize** แถวเดิม ไม่ลบจริง | FK เป็น `PROTECT` จึงลบผู้ใช้ที่มีเอกสารไม่ได้ ล้างอีเมล/รหัส/ชื่อเล่นแทน แล้วปิด `is_active` |
 | อีเมล / รหัสวิชา / รหัสภาค | เก็บเป็นรูปแบบเดียว (อีเมลตัวพิมพ์เล็ก, รหัสตัวพิมพ์ใหญ่) | กัน `Alice@x` กับ `alice@x`, `cn101` กับ `CN101` เป็นคนละค่าใน UNIQUE |
@@ -34,6 +34,8 @@ erDiagram
     course ||--o{ batch_course : "offered in"
     department ||--o{ app_user : "belongs to"
     app_user ||--o{ user_role : has
+    app_user ||--o| poll_vote : casts
+    app_user ||--o{ shoutbox_message : posts
     role ||--o{ user_role : granted
     department |o--o{ user_role : "scope (moderator)"
     batch_course ||--o{ document : contains
@@ -48,13 +50,14 @@ erDiagram
     app_user ||--o{ approval : decides
     document ||--o{ download_log : "downloaded"
     app_user ||--o{ download_log : ""
-    document ||--o{ report : "reported"
+    document ||--o{ report : "reported in"
     app_user ||--o{ report : files
-    app_user ||--o{ audit_log : acts
-    document ||--o{ comment : ""
-    app_user ||--o{ comment : writes
-    document ||--o{ rating : ""
-    app_user ||--o{ rating : gives
+    document |o--o{ takedown_request : "challenged by"
+    webboard_boardcategory ||--o{ webboard_thread : groups
+    course |o--o{ webboard_thread : "related to"
+    app_user |o--o{ webboard_thread : authors
+    webboard_thread ||--o{ webboard_post : has
+    app_user |o--o{ webboard_post : replies
 ```
 
 ---
@@ -251,9 +254,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 > - ปฏิเสธ 1 ครั้งจากฝ่ายใดก็ได้ = `rejected`
 > - หน้าจอถามสถานะได้จาก `materials.selectors.approval_progress` (เอกสารเดียว) หรือ `approval_progress_for` (หน้าคิว ไม่เกิน 3 query ไม่ว่ากี่แถว) คืน role ที่อนุมัติแล้ว / ยังรอ และ `approvable` (False = ไม่ใช่ `pending` หรือกฎไม่มี role ที่อนุมัติได้)
 
-### 3.5 การอนุมัติและการตรวจสอบ (Sprint 1–2)
-
-> `approval` สร้างใน Sprint 1 กับ US-6 · `download_log` กับ US-8 (Stretch) · `report`, `audit_log` ใน Sprint 2
+### 3.5 การอนุมัติ การดาวน์โหลด และการร้องเรียน (Sprint 1–3)
 
 **approval**
 | Column | Type | Constraint |
@@ -275,22 +276,22 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | user_id | BIGINT | FK → app_user, NN |
 | downloaded_at | TIMESTAMP | NN |
 
-**report**
+**report** (ผู้ใช้ที่ล็อกอินแจ้งปัญหาเอกสารที่เผยแพร่แล้ว, US-32 / US-35)
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
 | document_id | BIGINT | FK → document, NN |
 | reporter_id | BIGINT | FK → app_user, NN |
 | reason | TEXT | NN |
-| reason_type | VARCHAR(20) | NN (copyright, prohibited, incorrect, other) |
-| status | VARCHAR(20) | NN (open, resolved) |
+| reason_type | VARCHAR(20) | NN (`copyright`, `prohibited`, `incorrect`, `other`) |
+| status | VARCHAR(20) | NN (`open`, `resolved`) |
 | handled_by | BIGINT | FK → app_user, NULL |
 | created_at / resolved_at | TIMESTAMP | NN / NULL |
-| decision | VARCHAR(20) | NN, default empty; remove/dismiss/request_changes |
+| decision | VARCHAR(20) | NN, default empty; `remove` / `dismiss` / `request_changes` |
 | resolution_reason | TEXT | NN, default empty |
-| Constraints | — | unique open (document_id, reporter_id), valid status/reason/decision |
+| Constraints | — | unique open `(document_id, reporter_id)`, valid status/reason/decision |
 
-**takedown_request**
+**takedown_request** (แบบฟอร์มสาธารณะแจ้งลบเนื้อหาละเมิดลิขสิทธิ์, US-33 / US-35)
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
@@ -301,29 +302,61 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | reason | TEXT | NN |
 | rights_confirmed | BOOLEAN | NN |
 | document_id | BIGINT | FK → document, NULL |
-| status | VARCHAR(20) | NN (open, resolved) |
+| status | VARCHAR(20) | NN (`open`, `resolved`) |
 | handled_by | BIGINT | FK → app_user, NULL |
 | created_at / resolved_at | TIMESTAMP | NN / NULL |
-| decision | VARCHAR(20) | NN, default empty; remove/dismiss/request_changes |
+| decision | VARCHAR(20) | NN, default empty; `remove` / `dismiss` / `request_changes` |
 | resolution_reason | TEXT | NN, default empty |
 
-**audit_log** (เขียนอย่างเดียว ห้ามแก้/ลบ)
+### 3.6 ชุมชนและเว็บบอร์ดเรโทร (Sprint 3)
+
+**poll_vote** (โพลหน้าแรกใน `accounts`, 1 คนโหวตได้ 1 ครั้ง, US-37)
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| actor_id | BIGINT | FK → app_user, NN |
-| action | VARCHAR(40) | NN (`approve`, `reject`, `hide`, `delete`, `grant_role`, …) |
-| target_type | VARCHAR(30) | NN |
-| target_id | BIGINT | NN |
-| reason | TEXT | NN |
-| created_at | TIMESTAMP | NN |
+| user_id | BIGINT | FK → app_user (`CASCADE`), UQ, NN |
+| choice | VARCHAR(20) | NN (`summary`, `slide`, `exam`, `video`) |
+| updated_at | TIMESTAMP | NN |
 
-> `target_type` + `target_id` เป็น polymorphic reference จึงไม่มี FK จริง (เลือกเพราะ log ต้องเก็บได้ทุกชนิด และต้องไม่หายแม้ target ถูกลบ) ข้อเสียคือ DB ไม่บังคับความถูกต้องให้ ต้องควบคุมที่ service layer
+**shoutbox_message** (ข้อความ Shoutbox หน้าแรกใน `accounts`, US-36)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| user_id | BIGINT | FK → app_user (`CASCADE`), NN |
+| message | VARCHAR(150) | NN |
+| created_at | TIMESTAMP | NN, INDEX |
 
-### 3.6 ชุมชน (Sprint 3+)
+**webboard_boardcategory** (`webboard.BoardCategory`)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| name | VARCHAR(100) | NN |
+| slug | VARCHAR(50) | UQ, NN |
+| description | TEXT | NN (อนุญาตสตริงว่าง) |
+| order | INTEGER | NN, ≥ 0, default 0 |
 
-**comment**: `id` PK · `document_id` FK · `user_id` FK · `body` · `is_pinned` · `created_at`
-**rating**: PK (`document_id`, `user_id`) · `stars` CHECK 1–5 · `review` · `created_at`
+**webboard_thread** (`webboard.Thread`)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| category_id | BIGINT | FK → webboard_boardcategory (`CASCADE`), NN |
+| course_id | BIGINT | FK → course (`SET_NULL`), NULL |
+| author_id | BIGINT | FK → app_user (`SET_NULL`), NULL |
+| title | VARCHAR(200) | NN |
+| content | TEXT | NN |
+| is_pinned | BOOLEAN | NN, default false |
+| is_locked | BOOLEAN | NN, default false |
+| view_count | INTEGER | NN, ≥ 0, default 0 |
+| created_at / updated_at | TIMESTAMP | NN |
+
+**webboard_post** (`webboard.Post`)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| thread_id | BIGINT | FK → webboard_thread (`CASCADE`), NN |
+| author_id | BIGINT | FK → app_user (`SET_NULL`), NULL |
+| content | TEXT | NN |
+| created_at / updated_at | TIMESTAMP | NN |
 
 ---
 
@@ -371,10 +404,9 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ### 4.5 จุดที่ตั้งใจไม่ normalize (ต้องรู้ไว้)
 
-1. `audit_log.target_type/target_id` — polymorphic reference ไม่มี FK (เหตุผลในหัวข้อ 3.5)
-2. `document.status` เป็นค่า enum ในตาราง ไม่แยกเป็น lookup table (ค่าน้อยและตายตัว ลด join)
-3. `approval.approver_role_id` — เก็บ "ตัดสินในบทบาทใด" เพราะผู้ใช้คนเดียวอาจมีหลาย role (ไม่ซ้ำซ้อน เพราะไม่ได้ derive จาก user ได้ตรงๆ)
-4. `user_counter.total` — เก็บยอดสะสมแยกไว้ เพราะนับจาก `app_user` ไม่ได้หลังมีการลบผู้ใช้
+1. `document.status` เป็นค่า enum ในตาราง ไม่แยกเป็น lookup table (ค่าน้อยและตายตัว ลด join)
+2. `approval.approver_role_id` — เก็บ "ตัดสินในบทบาทใด" เพราะผู้ใช้คนเดียวอาจมีหลาย role (ไม่ซ้ำซ้อน เพราะไม่ได้ derive จาก user ได้ตรงๆ)
+3. `user_counter.total` — เก็บยอดสะสมแยกไว้ เพราะนับจาก `app_user` ไม่ได้หลังมีการลบผู้ใช้
 
 ---
 
@@ -392,51 +424,47 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | approval | UQ (document_id, approver_id) | กันอนุมัติซ้ำ |
 | user_role | UQ (user_id, role_id, department_id), IDX (role_id, department_id) | หา Moderator ของภาค |
 | download_log | IDX (document_id) | นับจำนวนดาวน์โหลด |
-| audit_log | IDX (actor_id), IDX (target_type, target_id), IDX (created_at) | filter หน้า Audit Log |
+| report | IDX (document_id, status), IDX (status, created_at) | คิวเรื่องร้องเรียนและป้องกันรายงานซ้ำ |
+| takedown_request | UQ (reference), IDX (status, created_at) | อ้างอิงคำร้องและคิวพิจารณา |
+| shoutbox_message | IDX (created_at) | ดึงข้อความล่าสุดใน Shoutbox |
 
 > **การค้นหาของ US-7** (`materials.selectors.search_documents`) ใช้ index ที่มีอยู่แล้วทั้งหมด จึงไม่ต้องเพิ่ม migration: เทียบ `course.code` แบบตรงตัว (ตัวพิมพ์ใหญ่) เพื่อใช้ UQ (code) → `batch_course` ผ่าน IDX (course_id) → `document` ผ่าน IDX (batch_course_id, status) / IDX (doc_type_id, status) ส่วนรุ่นไม่ได้เก็บรหัส `CN21` จึงกรองผ่าน `batch_course__batch` ผลค้นหาทั้งหน้าโหลดด้วย query เดียว (`select_related`) ตรวจด้วย `assertNumQueries(1)`
 
 ## 6. กฎทางธุรกิจที่ฐานข้อมูลบังคับให้เอง
 
 - ลบ Department / Batch / Course ที่ยังมี batch_course หรือ document ผูกอยู่ไม่ได้ (FK RESTRICT/`PROTECT`)
-- รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, ผู้อนุมัติซ้ำคนเดิมในเอกสารเดียวกัน → ถูกบล็อกด้วย UQ
-- `size_bytes` ≤ 0 หรือเกิน 50 MB, `exam_year_be` นอก 2500–2700, `batch.number` < 1, `stars` นอก 1–5, `status` นอกค่าที่กำหนด → ถูกบล็อกด้วย CHECK
+- รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, ผู้อนุมัติซ้ำคนเดิมในเอกสารเดียวกัน, รายงานซ้ำที่ยังเปิดอยู่จากผู้ใช้คนเดิมในเอกสารเดียวกัน → ถูกบล็อกด้วย UQ
+- `size_bytes` ≤ 0 หรือเกิน 50 MB, `exam_year_be` นอก 2500–2700, `batch.number` < 1, `status` นอกค่าที่กำหนด → ถูกบล็อกด้วย CHECK
 - `storage_path` ซ้ำ → ถูกบล็อกด้วย UQ
 
 **ที่ต้องเขียนใน application (DB ทำไม่ได้):**
 - ใน **model** (`clean()`/`save()` ตรวจความถูกต้องของแถว): กฎของ `app_user` (โดเมนอีเมล = student_id), moderator ต้องมีภาค / role อื่นห้ามมีภาค, `exam_detail` เฉพาะข้อสอบ, ขนาดไฟล์ตาม `max_upload_mb`
-- ใน **service** (`services.py` กฎธุรกิจที่ต้องดูข้อมูลอื่น): ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้, Super Admin ต้องมีอย่างน้อย 2 คน, เขียน `audit_log` ใน transaction เดียวกับการกระทำ
+- ใน **service** (`services.py` กฎธุรกิจที่ต้องดูข้อมูลอื่น): ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้, Super Admin ต้องมีอย่างน้อย 2 คน, การซ่อนเอกสาร (`hide_document`) และการตัดสินเรื่องร้องเรียน (`resolve_report`) เปลี่ยนสถานะเอกสารเป็น `hidden` ภายใน transaction เดียวกัน
 
-## 7. ลำดับสร้างตาราง (ตาม story)
+## 7. ลำดับสร้างตาราง (ตาม Sprint ที่พัฒนาจริง)
 
-ตารางถูกสร้างเมื่อ story ที่ใช้ถูกดึงเข้า Sprint (ไม่สร้างล่วงหน้า) ลำดับด้านล่างเป็นแผนปัจจุบัน ปรับได้ตอน Sprint Planning
-
-- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting, approval, doc_type_required_role
-  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้, US-6 → approval, US-9 → doc_type_required_role)*
-  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role`: migration `0005` seed ให้ `doc_type` ที่มีอยู่ตอน migrate ส่วน `doc_type` ที่ seed ทีหลังใช้ `seed_approval_rules` (US-9)
-- **Sprint 1:** download_log (US-8) เพิ่มใน migration ของฟีเจอร์ดาวน์โหลดแล้ว
-- **ถัดไป:** audit_log (US-26), report (US-32)
-- **ภายหลัง:** comment / rating (US-29 – US-31), email verification token (US-14), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
+- **Sprint 1:** `department`, `batch`, `course`, `batch_course`, `role`, `app_user`, `user_role`, `doc_type`, `exam_period`, `document`, `exam_detail`, `document_version`, `system_setting`, `approval`, `doc_type_required_role`, `download_log`
+  ข้อมูลตั้งต้น: `role`, `doc_type` / `exam_period` / `system_setting`, รุ่น/วิชาตัวอย่างด้วย `seed_catalog`, และกฎอนุมัติด้วย `seed_approval_rules`
+- **Sprint 2:** `user_counter` (#65 สำหรับนับยอดสะสมผู้ใช้)
+- **Sprint 3:** `poll_vote`, `shoutbox_message` (วิดเจ็ตหน้าแรกใน `accounts`), `webboard_boardcategory`, `webboard_thread`, `webboard_post` (เว็บบอร์ดชุมชนใน `webboard`), `report`, `takedown_request` (ระบบเรื่องร้องเรียนและแจ้งลบใน `materials`)
 
 ## 8. Django app ↔ ตาราง
 
 | App | Model | ตารางใน DB |
 |---|---|---|
-| `catalog` | Department, Batch, Course, BatchCourse, SystemSetting | department, batch, course, batch_course, system_setting |
-| `accounts` | User, Role, UserRole | app_user, role, user_role |
-| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval | doc_type, doc_type_required_role, exam_period, document, exam_detail, document_version, approval |
+| `catalog` | Department, Batch, Course, BatchCourse, SystemSetting | `department`, `batch`, `course`, `batch_course`, `system_setting` |
+| `accounts` | User, Role, UserRole, UserCounter, PollVote, ShoutboxMessage | `app_user`, `role`, `user_role`, `user_counter`, `poll_vote`, `shoutbox_message` |
+| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval, DownloadLog, Report, TakedownRequest | `doc_type`, `doc_type_required_role`, `exam_period`, `document`, `exam_detail`, `document_version`, `approval`, `download_log`, `report`, `takedown_request` |
+| `webboard` | BoardCategory, Thread, Post | `webboard_boardcategory`, `webboard_thread`, `webboard_post` |
 
-- แอป `materials` ชื่อเดิมคือ `documents` ชื่อตารางไม่เปลี่ยนเพราะตั้ง `db_table` ไว้ทุก model ตรงกับ ERD
 - ตั้ง `AUTH_USER_MODEL = "accounts.User"` ก่อน `migrate` ครั้งแรก
-- ลำดับ migration: `catalog` → `accounts` → `materials`
+- ลำดับการพึ่งพา: `catalog` ← `accounts` ← (`materials`, `webboard`)
 - ตาราง `auth_group`, `auth_permission` และ M2M ของ `PermissionsMixin` ถูกสร้างโดย Django เพิ่มเติม ไม่อยู่ใน ERD นี้ (สิทธิ์ของระบบใช้ `role` + `user_role` เป็นหลัก)
 
-## ระบบเรื่องร้องเรียนและการตัดสิน (Issues #218–#220)
+## 9. ระบบเรื่องร้องเรียนและการตัดสิน (`Report` & `TakedownRequest`)
 
-การพัฒนาส่วนนี้อยู่ใน PR แบบต่อเนื่อง และ **ยังไม่ถือว่าเปิดใช้งานบน Production จนกว่า PR ทั้งสามจะ Merge และ Deploy**
-
-- `report`: ผู้ใช้ที่เข้าสู่ระบบแจ้งปัญหาเอกสารที่เผยแพร่แล้ว มี `document`, `reporter`, `reason_type`, `reason`, `status`, `created_at` และ unique constraint ต่อ `(document, reporter)` เมื่อสถานะเป็น `open`.
-- `takedown_request`: ผู้ไม่มีบัญชีแจ้งคำขอลบผ่านแบบฟอร์มสาธารณะ มี `reference` แบบ UUID, ชื่อ, อีเมล, ข้อมูลระบุเนื้อหา, เหตุผล และการยืนยันสิทธิ์; `document` อาจว่างจนกว่า Super Admin จะตรวจจับคู่เอกสารจริง
+- `report`: ผู้ใช้ที่เข้าสู่ระบบแจ้งปัญหาเอกสารที่เผยแพร่แล้ว มี `document`, `reporter`, `reason_type`, `reason`, `status`, `created_at` และ unique constraint ต่อ `(document, reporter)` เมื่อสถานะเป็น `open`
+- `takedown_request`: ผู้ไม่มีบัญชีแจ้งคำขอลบผ่านแบบฟอร์มสาธารณะ (`/materials/takedown/`) มี `reference` แบบ UUID, ชื่อ, อีเมล, ข้อมูลระบุเนื้อหา, เหตุผล และการยืนยันสิทธิ์; `document` อาจว่างจนกว่า Super Admin จะตรวจจับคู่เอกสารจริง
 - ทั้งสองโมเดลมี `decision`, `resolution_reason`, `handled_by`, `resolved_at` เพื่อบันทึกผลการพิจารณา; ผล `remove` และ `request_changes` เปลี่ยนเอกสารเป็น `hidden` ภายใน transaction; ผล `dismiss` ไม่เปลี่ยนสถานะเอกสาร
-- เฉพาะ Super Admin ตัดสินได้ ส่วน Moderator ดูรายการรายงานที่ยังเปิดของภาคตัวเองได้ตามสิทธิ์
+- เฉพาะ Super Admin ตัดสินได้ (`/materials/reports/review/`) ส่วน Moderator ดูรายการรายงานที่ยังเปิดของภาคตัวเองได้ตามสิทธิ์ (`/materials/reports/`)
 - กรณีคำร้องจากภายนอก ต้องระบุเอกสารที่ตรวจสอบแล้วก่อนตัดสินนำลงหรือให้แก้ไข

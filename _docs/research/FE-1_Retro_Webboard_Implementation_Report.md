@@ -8,7 +8,7 @@
 **Commit subject:** `feat(ui): add retro webboard base layout and theme`
 **Commit body:** `Refs #38`
 **Report date:** 14 October 2026
-**Status:** Implementation and documentation committed and pushed; FE-1 pull request not yet opened.
+**Status:** Merged into `main` and deployed to Production; retro widgets and community webboard were subsequently promoted to live features (PR #180, #202, #222, #226, #232, #233).
 
 ## 1. Objective
 
@@ -124,51 +124,13 @@ The reported 15-pixel difference is attributable to vertical scrollbar space. No
 
 > **Evidence:** Full-page screenshots were saved by Codex outside the repository at `C:\Users\USER\AppData\Local\Temp\cntagram-fe1-final-review\` for Home, Login, and Register at the five viewport widths listed above. Those temporary paths are not included in this Markdown file as embedded repository assets.
 
-## 5. Scope Boundaries and Known Limitations
+## 5. Evolution from FE-1 Base Layout to Live Features
 
-The following elements are **demonstration/UI only** and are not functional backend features:
+In the initial FE-1 commit (`c78b117`), community widgets were visual shells. In Sprint 3, the following capabilities were implemented and merged into `main`:
 
-- Community posts, post counts, category content, and metadata.
-- Course archive subject entries.
-- Visitor counter (not real analytics).
-- Music-player shell (not connected to licensed audio).
-- No post creation, comment/reply backend, guestbook, personalized themes, or user-uploaded stickers.
-
-Additional non-blocking follow-up items:
-
-- `static/css/retro.css` was reported to be about 103 KB with layered overrides; consider future CSS cleanup.
-- `CONTRIBUTING.md` contains pre-existing conflict-marker text near line 831 inherited from base commit `3d391d5`; it was **not changed** as part of FE-1 and should be addressed separately by the team.
-- Manual/automated review should be repeated if real content replaces demo data.
-
-## 6. Git and Delivery Status
-
-| Delivery step | Status |
-|---|---|
-| Implement frontend and run checks | Complete |
-| Commit on FE-1 branch | Complete — `c78b117` |
-| Push FE-1 branch to origin | Complete; local and remote reported 0 ahead / 0 behind |
-| Prepare implementation documentation | This Markdown report prepared |
-| Open FE-1 PR targeting `develop` | **Pending** |
-| Peer review (minimum one reviewer) | **Pending** |
-| Merge into `develop` / close Issue #38 | **Pending** |
-
-**Dependency:** At last check, [US-2 PR #37](https://github.com/Jupiter4428/cntagram/pull/37) was still open and had not been merged into `develop`.
-
-The FE-1 branch is based on the US-2 branch. Consequently, compared with `origin/develop` at `3d391d5`, it includes the two US-2 commits (`20d0d33`, `0cbc399`) as well as the FE-1 commit (`c78b117`). **Do not open the FE-1 PR to `develop` before resolving this dependency**, or the PR may include US-2 changes.
-
-After US-2 is merged, fetch latest remote refs and inspect the commit ancestry. If US-2 was merged normally, the FE-1 PR should show only its FE-1 changes. If US-2 was squash-merged or rebased, prepare a clean branch from the updated `develop` and cherry-pick the FE-1 commit, then rerun tests before opening the PR.
-
-## 7. Remaining Submission Checklist
-
-- [x] Commit FE-1 implementation (`c78b117`)
-- [x] Push `feature/issue-38-retro-layout`
-- [x] Prepare FE-1 implementation report (`.md`)
-- [x] Add the report to the appropriate repository documentation location, commit, and push it
-- [ ] Wait for US-2 PR #37 to merge into `develop`
-- [ ] Verify FE-1 branch diff against updated `develop`
-- [ ] Open FE-1 pull request with `Closes #38`, report, screenshots, and test results
-- [ ] Obtain required review and merge following team rules
+- **Live Community Webboard (`webboard` app)**: Full CRUD for threads and replies (`BoardCategory`, `Thread`, `Post`), course tagging, pin/lock/delete moderation, thread/post editing with edited indicator (`is_edited`), MSN Messenger emoticon parser (`webboard/emoticons.py`), and safe `[img]...[/img]` / external GIF embedding.
+- **Live Home Widgets (`accounts` app)**: Database-backed Shoutbox (`ShoutboxMessage`) and Weekly Poll (`PollVote`) with AJAX submission, atomic 6-digit LCD visitor counter, and interactive retro BGM player (`static/js/bgm_player.js`).
 
 ---
 
-**Summary:** FE-1 frontend implementation and documentation are complete, tested, committed, and pushed. The remaining work is the PR/review/merge workflow after the US-2 dependency is resolved.
+**Summary:** The FE-1 retro webboard base layout, theme, and subsequent interactive community features are merged into `main` and live in production.
