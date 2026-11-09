@@ -7,6 +7,12 @@ app_name = "materials"
 
 urlpatterns = [
     path(
+        "documents/<int:document_id>/report/",
+        views.report_document_view,
+        name="report_document",
+    ),
+    path("reports/", views.open_reports, name="open_reports"),
+    path(
         "documents/<int:document_id>/download/",
         document_download,
         name="document_download",

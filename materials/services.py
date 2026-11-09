@@ -221,6 +221,38 @@ def review_document(*, document, approver, decision, reason=None):
     return approval
 
 
+def report_document(*, document, reporter, reason_type, reason):
+    from django.core.exceptions import ValidationError
+    from django.db import IntegrityError, transaction
+    from .models import Document, Report
+
+    if not reporter.is_authenticated:
+        raise ValidationError("กรุณาเข้าสู่ระบบ")
+    if not reason.strip() or reason_type not in Report.Reason.values:
+        raise ValidationError("กรุณาเลือกประเภทและระบุเหตุผล")
+    try:
+        with transaction.atomic():
+            locked_doc = (
+                Document.objects.select_for_update()
+                .filter(pk=document.pk, status=Document.Status.PUBLISHED)
+                .first()
+            )
+            if locked_doc is None:
+                raise ValidationError("ไม่สามารถรายงานเอกสารนี้ได้")
+            if Report.objects.filter(
+                document=locked_doc, reporter=reporter, status=Report.Status.OPEN
+            ).exists():
+                raise ValidationError("คุณมีรายงานที่รอดำเนินการสำหรับเอกสารนี้แล้ว")
+            return Report.objects.create(
+                document=locked_doc,
+                reporter=reporter,
+                reason_type=reason_type,
+                reason=reason.strip(),
+            )
+    except IntegrityError as exc:
+        raise ValidationError("คุณมีรายงานที่รอดำเนินการสำหรับเอกสารนี้แล้ว") from exc
+
+
 @transaction.atomic
 def hide_document(*, document, user, reason):
     """ซ่อนไฟล์ที่เผยแพร่แล้วแต่มีปัญหา (US-15)

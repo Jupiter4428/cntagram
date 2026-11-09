@@ -511,3 +511,21 @@ def _build_published_vault_snapshot() -> dict:
         },
         "docs": docs,
     }
+
+
+def open_reports_for_reviewer(*, user):
+    from .models import Report
+
+    if not user.is_authenticated:
+        return Report.objects.none()
+    qs = (
+        Report.objects.filter(status=Report.Status.OPEN)
+        .select_related("document__batch_course__batch__department")
+        .order_by("-created_at")
+    )
+    if is_super_admin(user):
+        return qs
+    department_ids = UserRole.objects.filter(
+        user=user, role__code=Role.MODERATOR, department__isnull=False
+    ).values_list("department_id", flat=True)
+    return qs.filter(document__batch_course__batch__department_id__in=department_ids)

@@ -214,6 +214,16 @@ class ReviewForm(forms.Form):
         return cleaned_data
 
 
+class ReportForm(forms.Form):
+    reason_type = forms.ChoiceField(
+        label="ประเภทรายงาน",
+        choices=__import__(
+            "materials.models", fromlist=["Report"]
+        ).Report.Reason.choices,
+    )
+    reason = forms.CharField(label="เหตุผล", max_length=2000, widget=forms.Textarea)
+
+
 class HideDocumentForm(forms.Form):
     """ฟอร์มสำหรับ Moderator / Super Admin ซ่อนไฟล์ที่เผยแพร่แล้ว (US-15)"""
 
