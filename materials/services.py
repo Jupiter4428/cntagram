@@ -212,12 +212,19 @@ def report_document(*, document, reporter, reason_type, reason):
         raise ValidationError("กรุณาเลือกประเภทและระบุเหตุผล")
     try:
         with transaction.atomic():
-            if not Document.objects.filter(
-                pk=document.pk, status=Document.Status.PUBLISHED
-            ).exists():
+            locked_doc = (
+                Document.objects.select_for_update()
+                .filter(pk=document.pk, status=Document.Status.PUBLISHED)
+                .first()
+            )
+            if locked_doc is None:
                 raise ValidationError("ไม่สามารถรายงานเอกสารนี้ได้")
+            if Report.objects.filter(
+                document=locked_doc, reporter=reporter, status=Report.Status.OPEN
+            ).exists():
+                raise ValidationError("คุณมีรายงานที่รอดำเนินการสำหรับเอกสารนี้แล้ว")
             return Report.objects.create(
-                document=document,
+                document=locked_doc,
                 reporter=reporter,
                 reason_type=reason_type,
                 reason=reason.strip(),

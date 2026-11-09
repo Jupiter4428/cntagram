@@ -436,4 +436,17 @@ class Report(models.Model):
                 condition=models.Q(status="open"),
                 name="unique_open_report_per_user_document",
             ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    reason_type__in=["copyright", "prohibited", "incorrect", "other"]
+                ),
+                name="report_reason_type_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(status__in=["open", "resolved"]),
+                name="report_status_valid",
+            ),
         ]
+
+    def __str__(self):
+        return f"Report #{self.pk} on {self.document_id} ({self.status})"

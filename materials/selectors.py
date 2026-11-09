@@ -501,7 +501,7 @@ def open_reports_for_reviewer(*, user):
         return Report.objects.none()
     qs = (
         Report.objects.filter(status=Report.Status.OPEN)
-        .select_related("document__batch_course__batch__department", "reporter")
+        .select_related("document__batch_course__batch__department")
         .order_by("-created_at")
     )
     if is_super_admin(user):
