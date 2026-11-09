@@ -89,6 +89,13 @@ class Thread(models.Model):
         """Return thread title with category prefix."""
         return f"[{self.category.name}] {self.title}"
 
+    @property
+    def is_edited(self) -> bool:
+        """Return True if updated_at is more than 1 second after created_at."""
+        if not self.updated_at or not self.created_at:
+            return False
+        return (self.updated_at - self.created_at).total_seconds() > 1
+
 
 class Post(models.Model):
     """Reply comment on a discussion thread."""
@@ -123,3 +130,10 @@ class Post(models.Model):
     def __str__(self):
         """Return brief post description."""
         return f"Reply #{self.id} on {self.thread.title}"
+
+    @property
+    def is_edited(self) -> bool:
+        """Return True if updated_at is more than 1 second after created_at."""
+        if not self.updated_at or not self.created_at:
+            return False
+        return (self.updated_at - self.created_at).total_seconds() > 1

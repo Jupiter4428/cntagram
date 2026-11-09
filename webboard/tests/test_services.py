@@ -318,3 +318,181 @@ class WebboardServicesTests(TestCase):
         services.delete_post(post=post, actor=self.moderator_user)
 
         self.assertFalse(Post.objects.filter(pk=post.pk).exists())
+
+    def test_author_can_update_thread(self):
+        """Author can update their thread title, content, and clear course."""
+        from catalog.models import Course
+
+        course = Course.objects.create(
+            code="CN101",
+            name_th="วิชาทดสอบ",
+            name_en="Test Course",
+        )
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="หัวข้อเดิม",
+            content="เนื้อหาเดิม",
+            course=course,
+        )
+        self.assertEqual(thread.course, course)
+
+        updated_thread = services.update_thread(
+            thread=thread,
+            actor=self.author,
+            title="หัวข้อใหม่ที่แก้ไขแล้ว",
+            content="เนื้อหาใหม่ที่แก้ไขแล้ว",
+            course=None,
+        )
+        thread.refresh_from_db()
+        self.assertEqual(thread.title, "หัวข้อใหม่ที่แก้ไขแล้ว")
+        self.assertEqual(thread.content, "เนื้อหาใหม่ที่แก้ไขแล้ว")
+        self.assertIsNone(thread.course)
+        self.assertEqual(updated_thread.pk, thread.pk)
+
+    def test_non_author_cannot_update_thread(self):
+        """Non-author cannot update thread and gets PermissionDenied."""
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="หัวข้อของเจ้าของ",
+            content="เนื้อหาของเจ้าของ",
+        )
+        with self.assertRaises(PermissionDenied):
+            services.update_thread(
+                thread=thread,
+                actor=self.other_user,
+                title="พยายามแก้หัวข้อ",
+                content="พยายามแก้เนื้อหา",
+            )
+        thread.refresh_from_db()
+        self.assertEqual(thread.title, "หัวข้อของเจ้าของ")
+
+    def test_cannot_update_locked_thread(self):
+        """Cannot update a thread that is locked."""
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="กระทู้จะถูกล็อก",
+            content="เนื้อหาจะถูกล็อก",
+        )
+        services.toggle_thread_lock(thread=thread, actor=self.moderator_user)
+        self.assertTrue(thread.is_locked)
+
+        with self.assertRaises(PermissionDenied):
+            services.update_thread(
+                thread=thread,
+                actor=self.author,
+                title="พยายามแก้ตอนล็อก",
+                content="พยายามแก้ตอนล็อก",
+            )
+
+    def test_update_thread_validates_title_and_content(self):
+        """Updating thread with empty title or content raises ValidationError."""
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="หัวข้อก่อนเทสต์",
+            content="เนื้อหาก่อนเทสต์",
+        )
+        with self.assertRaises(ValidationError):
+            services.update_thread(
+                thread=thread,
+                actor=self.author,
+                title="   ",
+                content="เนื้อหาปกติ",
+            )
+        with self.assertRaises(ValidationError):
+            services.update_thread(
+                thread=thread,
+                actor=self.author,
+                title="หัวข้อปกติ",
+                content="   ",
+            )
+
+    def test_author_can_update_post(self):
+        """Author can update their reply post content."""
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="กระทู้สำหรับทดสอบคอมเมนต์",
+            content="เนื้อหา",
+        )
+        post = services.create_post(
+            thread=thread,
+            author=self.author,
+            content="ข้อความเดิม",
+        )
+        updated_post = services.update_post(
+            post=post,
+            actor=self.author,
+            content="ข้อความใหม่ที่แก้ไขแล้ว",
+        )
+        post.refresh_from_db()
+        self.assertEqual(post.content, "ข้อความใหม่ที่แก้ไขแล้ว")
+        self.assertEqual(updated_post.pk, post.pk)
+
+    def test_non_author_cannot_update_post(self):
+        """Non-author cannot update reply post and gets PermissionDenied."""
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="กระทู้สำหรับทดสอบสิทธิ์คอมเมนต์",
+            content="เนื้อหา",
+        )
+        post = services.create_post(
+            thread=thread,
+            author=self.author,
+            content="ข้อความเดิม",
+        )
+        with self.assertRaises(PermissionDenied):
+            services.update_post(
+                post=post,
+                actor=self.other_user,
+                content="พยายามแก้ข้อความของผู้อื่น",
+            )
+        post.refresh_from_db()
+        self.assertEqual(post.content, "ข้อความเดิม")
+
+    def test_cannot_update_post_in_locked_thread(self):
+        """Cannot update a post if its parent thread is locked."""
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="กระทู้ที่กำลังจะถูกล็อก",
+            content="เนื้อหา",
+        )
+        post = services.create_post(
+            thread=thread,
+            author=self.author,
+            content="ข้อความในกระทู้ล็อก",
+        )
+        services.toggle_thread_lock(thread=thread, actor=self.moderator_user)
+        self.assertTrue(thread.is_locked)
+
+        with self.assertRaises(PermissionDenied):
+            services.update_post(
+                post=post,
+                actor=self.author,
+                content="พยายามแก้ข้อความในกระทู้ที่ล็อก",
+            )
+
+    def test_update_post_validates_content(self):
+        """Updating post with empty content raises ValidationError."""
+        thread = services.create_thread(
+            author=self.author,
+            category=self.category,
+            title="กระทู้ทดสอบ validation",
+            content="เนื้อหา",
+        )
+        post = services.create_post(
+            thread=thread,
+            author=self.author,
+            content="ข้อความเดิม",
+        )
+        with self.assertRaises(ValidationError):
+            services.update_post(
+                post=post,
+                actor=self.author,
+                content="    ",
+            )

@@ -418,3 +418,202 @@ class WebboardViewsTests(TestCase):
             reverse("webboard:post_delete", kwargs={"pk": post.pk})
         )
         self.assertEqual(response.status_code, 405)
+
+    def test_thread_edit_get_anonymous_redirects_login(self):
+        """Anonymous user is redirected to login when visiting thread_edit."""
+        anon_client = Client()
+        response = anon_client.get(
+            reverse("webboard:thread_edit", kwargs={"pk": self.thread.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_thread_edit_get_by_author_returns_200(self):
+        """Author can view thread_edit form prefilled with data."""
+        self.client.force_login(self.student)
+        response = self.client.get(
+            reverse("webboard:thread_edit", kwargs={"pk": self.thread.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "webboard/thread_edit.html")
+        self.assertEqual(response.context["thread"].pk, self.thread.pk)
+        self.assertEqual(response.context["form"]["title"].value(), self.thread.title)
+
+    def test_thread_edit_get_by_non_author_returns_403(self):
+        """Non-author gets 403 when trying to access thread_edit."""
+        other = User.objects.create_user(
+            email="6610000088@student.tu.ac.th",
+            password="test-password-123",
+            nickname="StrangerEdit",
+            department=self.student.department,
+            pdpa_consent_at=timezone.now(),
+        )
+        self.client.force_login(other)
+        response = self.client.get(
+            reverse("webboard:thread_edit", kwargs={"pk": self.thread.pk})
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_thread_edit_post_success_redirects_to_detail(self):
+        """Author POST to thread_edit successfully updates thread and redirects."""
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:thread_edit", kwargs={"pk": self.thread.pk}),
+            {
+                "category": self.category.pk,
+                "title": "หัวข้อใหม่หลังการแก้ไข",
+                "content": "เนื้อหาใหม่หลังการแก้ไข",
+            },
+        )
+        self.assertRedirects(
+            response,
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk}),
+        )
+        self.thread.refresh_from_db()
+        self.assertEqual(self.thread.title, "หัวข้อใหม่หลังการแก้ไข")
+        self.assertEqual(self.thread.content, "เนื้อหาใหม่หลังการแก้ไข")
+
+    def test_thread_edit_post_on_locked_thread_denied(self):
+        """Author cannot edit a locked thread and receives 403."""
+        self.thread.is_locked = True
+        self.thread.save(update_fields=["is_locked"])
+
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:thread_edit", kwargs={"pk": self.thread.pk}),
+            {
+                "category": self.category.pk,
+                "title": "พยายามแก้ไขกระทู้ล็อก",
+                "content": "พยายามแก้ไขกระทู้ล็อก",
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_thread_edit_post_invalid_re_renders_form(self):
+        """POST with empty title re-renders thread_edit form with error."""
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:thread_edit", kwargs={"pk": self.thread.pk}),
+            {
+                "category": self.category.pk,
+                "title": "",
+                "content": "เนื้อหาปกติ",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context["form"], "title", "กรุณาระบุหัวข้อกระทู้")
+
+    def test_post_edit_get_by_author_returns_200(self):
+        """Author can view post_edit form prefilled with current content."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความตอบกลับเดิม",
+        )
+        self.client.force_login(self.student)
+        response = self.client.get(
+            reverse("webboard:post_edit", kwargs={"pk": post.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "webboard/post_edit.html")
+        self.assertEqual(response.context["post"].pk, post.pk)
+        self.assertEqual(
+            response.context["form"]["content"].value(), "ข้อความตอบกลับเดิม"
+        )
+
+    def test_post_edit_get_by_non_author_returns_403(self):
+        """Non-author gets 403 when trying to access post_edit."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความของคนอื่น",
+        )
+        other = User.objects.create_user(
+            email="6610000087@student.tu.ac.th",
+            password="test-password-123",
+            nickname="StrangerPostEdit",
+            department=self.student.department,
+            pdpa_consent_at=timezone.now(),
+        )
+        self.client.force_login(other)
+        response = self.client.get(
+            reverse("webboard:post_edit", kwargs={"pk": post.pk})
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_post_edit_post_success_redirects_to_detail(self):
+        """Author POST to post_edit updates reply and redirects to thread_detail."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความก่อนแก้",
+        )
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:post_edit", kwargs={"pk": post.pk}),
+            {"content": "ข้อความตอบกลับที่แก้ไขแล้ว"},
+        )
+        self.assertRedirects(
+            response,
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk}),
+        )
+        post.refresh_from_db()
+        self.assertEqual(post.content, "ข้อความตอบกลับที่แก้ไขแล้ว")
+
+    def test_post_edit_post_on_locked_thread_denied(self):
+        """Author cannot edit reply when parent thread is locked and gets 403."""
+        self.thread.is_locked = True
+        self.thread.save(update_fields=["is_locked"])
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความในกระทู้ล็อก",
+        )
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:post_edit", kwargs={"pk": post.pk}),
+            {"content": "พยายามแก้โพสต์ในกระทู้ล็อก"},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_post_edit_post_invalid_re_renders_form(self):
+        """POST to post_edit with empty content re-renders form with error."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="ข้อความก่อนแก้",
+        )
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("webboard:post_edit", kwargs={"pk": post.pk}),
+            {"content": "   "},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context["form"], "content", "กรุณาระบุข้อความตอบกลับ"
+        )
+
+    def test_thread_detail_shows_edit_buttons_and_timestamp(self):
+        """thread_detail renders edit buttons for author and displays update notice."""
+        post = Post.objects.create(
+            thread=self.thread,
+            author=self.student,
+            content="คอมเมนต์ที่จะถูกแก้",
+        )
+        # Simulate edited timestamps
+        later = timezone.now() + timezone.timedelta(seconds=10)
+        Thread.objects.filter(pk=self.thread.pk).update(updated_at=later)
+        Post.objects.filter(pk=post.pk).update(updated_at=later)
+
+        self.client.force_login(self.student)
+        response = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response, reverse("webboard:thread_edit", kwargs={"pk": self.thread.pk})
+        )
+        self.assertContains(
+            response, reverse("webboard:post_edit", kwargs={"pk": post.pk})
+        )
+        self.assertContains(response, "แก้ไขล่าสุดเมื่อ")

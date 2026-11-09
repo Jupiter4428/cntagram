@@ -59,7 +59,12 @@
                 </form>
             </div>
         {% elif request.user == thread.author %}
-            <div>
+            <div class="d-flex align-items-center gap-2">
+                {% if not thread.is_locked %}
+                    <a href="{% url 'webboard:thread_edit' pk=thread.pk %}" class="chrome-button chrome-button--quiet">
+                        ✏️ แก้ไขกระทู้
+                    </a>
+                {% endif %}
                 <form method="post" action="{% url 'webboard:thread_delete' pk=thread.pk %}"
                       onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบกระทู้ของคุณ?');"
                       class="d-inline">
@@ -77,6 +82,9 @@
             <div>
                 <strong>ความคิดเห็นที่ 0 (เจ้าของกระทู้)</strong> ·
                 <span>โพสต์เมื่อ {{ thread.created_at|date:"d/m/Y H:i:s" }}</span>
+                {% if thread.is_edited %}
+                    <span class="text-muted small ms-1"><em>(แก้ไขล่าสุดเมื่อ {{ thread.updated_at|date:"d/m/Y H:i" }})</em></span>
+                {% endif %}
             </div>
             <div>
                 <span>ยอดอ่าน: {{ thread.views_count }}</span>
@@ -114,8 +122,16 @@
                     <div>
                         <strong>ความคิดเห็นที่ {{ forloop.counter }}</strong> ·
                         <span>{{ post.created_at|date:"d/m/Y H:i:s" }}</span>
+                        {% if post.is_edited %}
+                            <span class="text-white-50 small ms-1"><em>(แก้ไขล่าสุดเมื่อ {{ post.updated_at|date:"d/m/Y H:i" }})</em></span>
+                        {% endif %}
                     </div>
                     <div class="d-flex align-items-center gap-2">
+                        {% if request.user == post.author and not thread.is_locked %}
+                            <a href="{% url 'webboard:post_edit' pk=post.pk %}" class="btn btn-link btn-sm text-white p-0 text-decoration-none" title="แก้ไขความคิดเห็น">
+                                ✏️ แก้ไข
+                            </a>
+                        {% endif %}
                         {% if can_moderate or request.user == post.author %}
                             <form method="post" action="{% url 'webboard:post_delete' pk=post.pk %}"
                                   onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบความคิดเห็นนี้?');"

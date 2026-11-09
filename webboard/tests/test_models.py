@@ -67,3 +67,31 @@ class WebboardModelsTests(TestCase):
             content="ข้อความตอบกลับแรก",
         )
         self.assertEqual(str(post), f"Reply #{post.id} on หัวข้อกระทู้หลัก")
+
+    def test_thread_and_post_is_edited_property(self):
+        """is_edited returns True when updated_at is more than 1 second after
+        created_at.
+        """
+        now = timezone.now()
+        thread = Thread.objects.create(
+            category=self.category,
+            author=self.user,
+            title="กระทู้ทดสอบ is_edited",
+            content="เนื้อหาทดสอบ",
+        )
+        post = Post.objects.create(
+            thread=thread,
+            author=self.user,
+            content="ข้อความตอบกลับ",
+        )
+        self.assertFalse(thread.is_edited)
+        self.assertFalse(post.is_edited)
+
+        # Simulate update 10 seconds later
+        later = now + timezone.timedelta(seconds=10)
+        Thread.objects.filter(pk=thread.pk).update(updated_at=later)
+        Post.objects.filter(pk=post.pk).update(updated_at=later)
+        thread.refresh_from_db()
+        post.refresh_from_db()
+        self.assertTrue(thread.is_edited)
+        self.assertTrue(post.is_edited)
