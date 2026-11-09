@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}แจ้งลบเนื้อหา | CNTAGRAM{% endblock %}
+{% block content %}
+<h1>แจ้งลบเนื้อหาที่อาจละเมิดลิขสิทธิ์</h1>
+<p>ไม่จำเป็นต้องเข้าสู่ระบบ โปรดระบุข้อมูลเอกสารให้เพียงพอเพื่อให้เจ้าหน้าที่ตรวจสอบ</p>
+{% if rate_limited %}<p role="alert">ส่งคำขอบ่อยเกินไป กรุณารอสักครู่</p>{% endif %}
+<form method="post">{% csrf_token %}{{ form.as_p }}
+<button type="submit">ส่งคำขอ</button></form>
+{% endblock %}

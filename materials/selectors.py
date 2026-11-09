@@ -529,3 +529,13 @@ def open_reports_for_reviewer(*, user):
         user=user, role__code=Role.MODERATOR, department__isnull=False
     ).values_list("department_id", flat=True)
     return qs.filter(document__batch_course__batch__department_id__in=department_ids)
+
+
+def open_takedown_requests_for_reviewer(*, user):
+    from .models import TakedownRequest
+
+    if not is_super_admin(user):
+        return TakedownRequest.objects.none()
+    return TakedownRequest.objects.filter(status=TakedownRequest.Status.OPEN).order_by(
+        "-created_at"
+    )

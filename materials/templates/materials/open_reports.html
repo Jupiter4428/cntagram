@@ -8,3 +8,6 @@
 <p>ส่งเมื่อ {{ report.created_at }}</p></article>
 {% empty %}<p>ไม่มีรายงานที่รอดำเนินการ</p>{% endfor %}
 {% endblock %}
+
+{% if takedowns %}<h2>คำขอแจ้งลบจากเจ้าของสิทธิ์</h2>{% for item in takedowns %}<article><p>{{ item.content_identifier }} — {{ item.created_at }}</p><p>{{ item.reason }}</p></article>{% endfor %}{% endif %}
+
