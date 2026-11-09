@@ -1,12 +1,16 @@
+import logging
 import time
+import uuid
 from dataclasses import dataclass
 
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 from django.db import IntegrityError, transaction
 from django.utils.crypto import salted_hmac
+from PIL import Image, UnidentifiedImageError
 
 from accounts.models import PollVote, Role, ShoutboxMessage, UserRole
 from accounts.selectors import (
@@ -15,6 +19,7 @@ from accounts.selectors import (
     get_weekly_poll,
 )
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
@@ -292,3 +297,68 @@ def add_shoutbox_message(*, user, text):
         raise ValidationError("Message must contain 1–200 characters")
     ShoutboxMessage.objects.create(user=user, text=clean_text)
     return get_shoutbox_messages()
+
+
+MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB
+ALLOWED_AVATAR_FORMATS = {"JPEG", "PNG", "GIF", "WEBP"}
+ALLOWED_AVATAR_EXTENSIONS = {
+    "JPEG": "jpg",
+    "PNG": "png",
+    "GIF": "gif",
+    "WEBP": "webp",
+}
+
+
+def update_user_avatar(*, user, file):
+    """Validate, store, and assign a user avatar image."""
+    if getattr(file, "size", 0) > MAX_AVATAR_SIZE_BYTES:
+        raise ValidationError("ขนาดไฟล์ต้องไม่เกิน 2 MB")
+
+    try:
+        file.seek(0)
+        img = Image.open(file)
+        img.verify()
+        img_format = img.format
+    except (UnidentifiedImageError, Exception) as exc:
+        raise ValidationError("ไฟล์ที่อัปโหลดไม่ใช่รูปภาพที่ถูกต้อง") from exc
+
+    if not img_format or img_format.upper() not in ALLOWED_AVATAR_FORMATS:
+        raise ValidationError("รองรับเฉพาะไฟล์ภาพนามสกุล JPEG, PNG, GIF, WEBP")
+
+    file.seek(0)
+    ext = ALLOWED_AVATAR_EXTENSIONS.get(img_format.upper(), "jpg")
+    filename = f"avatars/user_{user.pk}_{uuid.uuid4().hex}.{ext}"
+    saved_path = default_storage.save(filename, file)
+
+    old_avatar = user.avatar
+    try:
+        with transaction.atomic():
+            user.avatar = saved_path
+            user.save(update_fields=["avatar"])
+    except Exception:
+        default_storage.delete(saved_path)
+        user.avatar = old_avatar
+        raise
+
+    if old_avatar and old_avatar != saved_path:
+        try:
+            default_storage.delete(old_avatar)
+        except Exception as exc:
+            logger.warning("Could not delete old avatar %s: %s", old_avatar, exc)
+
+    return user
+
+
+def delete_user_avatar(*, user):
+    """Remove user avatar file from storage and clear user record."""
+    old_avatar = user.avatar
+    if old_avatar:
+        with transaction.atomic():
+            user.avatar = None
+            user.save(update_fields=["avatar"])
+
+        try:
+            default_storage.delete(old_avatar)
+        except Exception as exc:
+            logger.warning("Could not delete avatar %s: %s", old_avatar, exc)
+    return user

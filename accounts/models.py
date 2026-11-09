@@ -166,6 +166,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     email_verified_at = models.DateTimeField(null=True, blank=True)
     pdpa_consent_at = models.DateTimeField()
+    avatar = models.CharField(
+        "Avatar storage path", max_length=255, null=True, blank=True
+    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)  # สำหรับเข้า Django admin
     created_at = models.DateTimeField(auto_now_add=True)
@@ -261,6 +264,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.email = f"deleted-{self.pk}@deleted.invalid"
         self.student_id = f"x{self.pk:09d}"  # 10 ตัวอักษร ไม่ชนกับรหัสจริง
         self.personal_email = None
+        if self.avatar:
+            from django.core.files.storage import default_storage
+
+            try:
+                default_storage.delete(self.avatar)
+            except Exception:  # nosec B110
+                pass
+            self.avatar = None
         self.nickname = "Deleted user"
         self.is_active = False
         self.set_unusable_password()

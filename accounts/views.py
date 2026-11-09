@@ -1,10 +1,14 @@
+import mimetypes
+
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_not_required, login_required
 from django.core.exceptions import ValidationError
-from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -15,6 +19,7 @@ from portal.permissions import is_super_admin, super_admin_required
 
 from . import selectors, services
 from .forms import (
+    AvatarUploadForm,
     DeleteAccountForm,
     LoginForm,
     ModeratorAssignmentForm,
@@ -23,6 +28,8 @@ from .forms import (
     ShoutboxForm,
 )
 from .models import PollVote, Role, UserRole
+
+User = get_user_model()
 
 
 def _client_ip(request):
@@ -73,9 +80,9 @@ def home(request):
     # UI Prototype variants (Refs .claude/skills/prototype/UI.md)
     variant = request.GET.get("variant", "A").upper()
     variant_labels = {
-        "A": "A (Pantip Classic Board 2002-2005)",
-        "B": "B (Pramool & RO Gamer 2004)",
-        "C": "C (Hi5 & Cyber-Y2K Diary 2006)",
+        "A": "A",
+        "B": "B",
+        "C": "C",
     }
     if variant not in variant_labels:
         variant = "A"
@@ -334,3 +341,56 @@ def moderator_remove(request, pk):
         f"ถอดถอน {user_email} จากการเป็น Moderator ภาควิชา {dept_code} สำเร็จแล้ว",
     )
     return redirect("accounts:moderator_manage")
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def profile(request):
+    """หน้าจัดการข้อมูลส่วนตัวและอัปโหลดรูปโปรไฟล์."""
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "delete":
+            services.delete_user_avatar(user=request.user)
+            messages.success(request, "ลบรูปโปรไฟล์เรียบร้อยแล้ว")
+            return redirect("accounts:profile")
+
+        form = AvatarUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                services.update_user_avatar(
+                    user=request.user, file=form.cleaned_data["avatar"]
+                )
+            except ValidationError as exc:
+                form.add_error("avatar", exc)
+            else:
+                messages.success(request, "อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว")
+                return redirect("accounts:profile")
+    else:
+        form = AvatarUploadForm()
+
+    return render(
+        request,
+        "accounts/profile.html",
+        {
+            "form": form,
+            "user": request.user,
+        },
+    )
+
+
+@login_required
+@require_GET
+def user_avatar(request, user_id):
+    """เสิร์ฟรูปภาพโปรไฟล์ของผู้ใช้ผ่าน storage โดยตรง (ADR 0003)."""
+    user = get_object_or_404(User, pk=user_id, is_active=True)
+    if not user.avatar or not default_storage.exists(user.avatar):
+        raise Http404("Avatar not found")
+
+    content_type, _ = mimetypes.guess_type(user.avatar)
+    if not content_type:
+        content_type = "image/jpeg"
+
+    file_stream = default_storage.open(user.avatar, "rb")
+    response = FileResponse(file_stream, content_type=content_type)
+    response["Cache-Control"] = "private, no-cache"
+    return response

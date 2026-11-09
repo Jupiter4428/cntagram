@@ -504,3 +504,147 @@ class DeleteAccountRateLimitViewTests(TestCase):
         self.assertEqual(success_res.status_code, 200)
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
+
+
+class ProfileViewTests(RegistrationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = self.register()
+        self.client.force_login(self.user)
+        self.url = reverse("accounts:profile")
+
+    def make_image_file(self, format="PNG", size=(40, 40)):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        buf = io.BytesIO()
+        img = Image.new("RGB", size, color="green")
+        img.save(buf, format=format)
+        ext = format.lower()
+        return SimpleUploadedFile(
+            f"avatar.{ext}", buf.getvalue(), content_type=f"image/{ext}"
+        )
+
+    def test_profile_get_requires_login(self):
+        self.client.logout()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("accounts:login"), response.url)
+
+    def test_profile_get_renders_profile_template(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/profile.html")
+        self.assertIn("form", response.context)
+
+    def test_profile_post_upload_valid_image(self):
+        from django.core.files.storage import default_storage
+
+        image_file = self.make_image_file()
+        response = self.client.post(self.url, {"avatar": image_file}, follow=True)
+        self.assertRedirects(response, self.url)
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.avatar)
+        self.addCleanup(default_storage.delete, self.user.avatar)
+        self.assertContains(response, "อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว")
+
+    def test_profile_post_upload_invalid_file_shows_error(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        bad_file = SimpleUploadedFile(
+            "bad.txt", b"plain text", content_type="text/plain"
+        )
+        response = self.client.post(self.url, {"avatar": bad_file})
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context["form"], "avatar", "ไฟล์ที่อัปโหลดไม่ใช่รูปภาพที่ถูกต้อง"
+        )
+
+    def test_profile_post_delete_avatar_removes_avatar(self):
+        image_file = self.make_image_file()
+        services.update_user_avatar(user=self.user, file=image_file)
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.avatar)
+
+        response = self.client.post(self.url, {"action": "delete"}, follow=True)
+        self.assertRedirects(response, self.url)
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.avatar)
+        self.assertContains(response, "ลบรูปโปรไฟล์เรียบร้อยแล้ว")
+
+
+class UserAvatarViewTests(RegistrationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = self.register()
+        self.client.force_login(self.user)
+
+    def test_user_avatar_requires_login(self):
+        self.client.logout()
+        url = reverse("accounts:user_avatar", kwargs={"user_id": self.user.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("accounts:login"), response.url)
+
+    def make_image_file(self, format="JPEG", size=(40, 40)):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        buf = io.BytesIO()
+        img = Image.new("RGB", size, color="red")
+        img.save(buf, format=format)
+        ext = format.lower()
+        return SimpleUploadedFile(
+            f"avatar.{ext}", buf.getvalue(), content_type=f"image/{ext}"
+        )
+
+    def test_user_avatar_returns_image_file(self):
+        from django.core.files.storage import default_storage
+
+        img = self.make_image_file()
+        services.update_user_avatar(user=self.user, file=img)
+        self.addCleanup(default_storage.delete, self.user.avatar)
+
+        url = reverse("accounts:user_avatar", kwargs={"user_id": self.user.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        response.close()
+
+    def test_user_avatar_returns_404_when_no_avatar(self):
+        url = reverse("accounts:user_avatar", kwargs={"user_id": self.user.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_user_avatar_returns_404_when_file_missing_from_storage(self):
+        self.user.avatar = "avatars/missing_file.jpg"
+        self.user.save(update_fields=["avatar"])
+
+        url = reverse("accounts:user_avatar", kwargs={"user_id": self.user.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_user_avatar_returns_404_for_non_existent_user(self):
+        url = reverse("accounts:user_avatar", kwargs={"user_id": 999999})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_user_avatar_returns_404_for_inactive_user(self):
+        from django.core.files.storage import default_storage
+
+        img = self.make_image_file()
+        services.update_user_avatar(user=self.user, file=img)
+        self.addCleanup(default_storage.delete, self.user.avatar)
+
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+
+        # Authenticate as another active user requesting the avatar
+        viewer = self.register(email="6610619998@student.tu.ac.th")
+        self.client.force_login(viewer)
+
+        url = reverse("accounts:user_avatar", kwargs={"user_id": self.user.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
