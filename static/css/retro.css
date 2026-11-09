@@ -1337,6 +1337,8 @@ body:has(.site-frame) {
 
 .site-frame .text-muted,
 .site-frame .text-secondary { color: var(--muted) !important; }
+.site-frame .text-navy,
+.text-navy { color: var(--navy) !important; }
 
 .forbidden-copy { max-width: 520px; }
 
