@@ -28,6 +28,21 @@ urlpatterns = [
     path("vault/", views.vault, name="vault"),
     path("documents/<int:document_id>/", views.document_detail, name="document_detail"),
     path(
+        "documents/<int:document_id>/edit/",
+        views.document_edit,
+        name="document_edit",
+    ),
+    path(
+        "documents/<int:document_id>/new-version/",
+        views.document_new_version,
+        name="document_new_version",
+    ),
+    path(
+        "documents/<int:document_id>/delete/",
+        views.document_delete,
+        name="document_delete",
+    ),
+    path(
         "documents/<int:document_id>/hide/",
         views.document_hide,
         name="document_hide",

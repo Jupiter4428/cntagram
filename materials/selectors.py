@@ -149,6 +149,13 @@ def can_review_any(*, user):
     )
 
 
+def can_edit_document(*, document, user) -> bool:
+    """ตรวจสอบว่าผู้ใช้เป็นเจ้าของเอกสารและมีสิทธิ์จัดการเอกสารหรือไม่ (US-16)"""
+    if not user or not user.is_authenticated:
+        return False
+    return document.uploader_id == user.id
+
+
 def can_hide_document(*, document, user) -> bool:
     """ตรวจสอบว่าผู้ใช้มีสิทธิ์ซ่อนเอกสารนี้หรือไม่ (US-15)
 

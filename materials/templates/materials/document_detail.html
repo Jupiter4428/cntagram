@@ -45,6 +45,38 @@
     {% include "materials/_pdf_preview.html" %}
   </section>
 
+  {% if can_manage %}
+    <section class="card shadow-sm border-primary mt-4 dv-panel" aria-labelledby="owner-heading">
+      <div class="card-header bg-primary bg-opacity-10 border-primary d-flex align-items-center justify-content-between">
+        <h2 class="h6 mb-0 text-primary fw-bold" id="owner-heading">
+          พื้นที่จัดการเอกสารสำหรับผู้อัปโหลด
+        </h2>
+        {% if document.current_version %}
+          <span class="badge bg-primary">เวอร์ชันปัจจุบัน: v{{ document.current_version.version_no }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <p class="small text-secondary mb-3">
+          คุณสามารถแก้ไขข้อมูลเอกสาร อัปโหลดไฟล์ PDF ฉบับใหม่ หรือลบเอกสารออกจากระบบได้
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{% url 'materials:document_edit' document.pk %}" class="btn btn-outline-primary">
+            แก้ไขข้อมูล
+          </a>
+          <a href="{% url 'materials:document_new_version' document.pk %}" class="btn btn-outline-success">
+            ส่งเวอร์ชันใหม่
+          </a>
+          <form method="post" action="{% url 'materials:document_delete' document.pk %}" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบเอกสารนี้? การลบจะไม่สามารถกู้คืนได้');" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger">
+              ลบเอกสาร
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
   {% if can_hide %}
     <section class="card shadow-sm border-danger mt-4 dv-panel" aria-labelledby="moderator-heading">
       <div class="card-header bg-danger bg-opacity-10 border-danger d-flex align-items-center justify-content-between">

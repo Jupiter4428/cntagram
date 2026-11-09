@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}ส่งเวอร์ชันใหม่ | CNTAGRAM{% endblock %}
+
+{% block content %}
+<div class="container py-3" style="max-width: 720px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    {% if document.status == 'published' %}
+      <a href="{% url 'materials:document_detail' document.pk %}">← กลับไปหน้ารายละเอียดเอกสาร</a>
+    {% else %}
+      <a href="{% url 'accounts:home' %}">← กลับไปหน้าแรก</a>
+    {% endif %}
+  </nav>
+
+  <div class="card shadow-sm border">
+    <div class="card-header bg-primary text-white py-2">
+      <h1 class="h5 mb-0 fw-bold">ส่งไฟล์เอกสารเวอร์ชันใหม่</h1>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary small mb-2">
+        เอกสาร: <strong>{{ document.title }}</strong>
+      </p>
+      <p class="text-secondary small mb-3">
+        วิชา: <strong>{{ document.batch_course.course.code }}</strong> ({{ document.batch_course.batch.code }}) — เวอร์ชันปัจจุบัน: <strong>v{{ document.current_version.version_no }}</strong>
+      </p>
+
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger" role="alert">
+            {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label for="{{ form.file.id_for_label }}" class="form-label fw-bold">
+            {{ form.file.label }} <span class="text-danger">*</span>
+          </label>
+          {{ form.file }}
+          <div class="form-text small text-muted">
+            รับเฉพาะไฟล์ PDF เท่านั้น ไฟล์จะได้รับการบันทึกเป็นเวอร์ชันถัดไป
+          </div>
+          {% if form.file.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.file.errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+          {% if document.status == 'published' %}
+            <a href="{% url 'materials:document_detail' document.pk %}" class="btn btn-secondary">ยกเลิก</a>
+          {% else %}
+            <a href="{% url 'accounts:home' %}" class="btn btn-secondary">ยกเลิก</a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary">อัปโหลดเวอร์ชันใหม่</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
