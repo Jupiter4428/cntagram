@@ -509,8 +509,13 @@ body:has(.site-frame) {
 .retro-widget__header h2,
 .retro-widget__header h3 {
     margin: 0;
-    color: inherit;
+    color: var(--bar-ink, #ffffff) !important;
     font-size: 12px;
+}
+.retro-widget__header em {
+    color: var(--cream, #fff8d6) !important;
+    font-style: normal;
+    font-weight: 400;
 }
 .upload-card__titlebar h1 {
     color: inherit;
@@ -1332,6 +1337,8 @@ body:has(.site-frame) {
 
 .site-frame .text-muted,
 .site-frame .text-secondary { color: var(--muted) !important; }
+.site-frame .text-navy,
+.text-navy { color: var(--navy) !important; }
 
 .forbidden-copy { max-width: 520px; }
 

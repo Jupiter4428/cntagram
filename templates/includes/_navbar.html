@@ -28,10 +28,19 @@
 
         <div class="cyber-nav__account">
             {% if request.user.is_authenticated %}
-                <span class="identity-capsule" title="สมาชิกที่เข้าสู่ระบบแล้ว">
-                    <span class="identity-capsule__signal" aria-hidden="true"></span>
+                <a class="identity-capsule text-decoration-none" href="{% url 'accounts:profile' %}" title="ดูและตั้งค่าโปรไฟล์">
+                    {% if request.user.avatar %}
+                        <img src="{% url 'accounts:user_avatar' user_id=request.user.pk %}"
+                             width="18" height="18"
+                             alt=""
+                             class="rounded-circle border me-1"
+                             style="object-fit: cover; vertical-align: middle;">
+                    {% else %}
+                        <span class="identity-capsule__signal" aria-hidden="true"></span>
+                    {% endif %}
                     {{ request.user.nickname }}
-                </span>
+                </a>
+                <a class="chrome-button chrome-button--quiet" href="{% url 'accounts:profile' %}">โปรไฟล์</a>
                 <a class="chrome-button chrome-button--quiet" href="{% url 'accounts:delete_account' %}">ลบบัญชี</a>
                 <form method="post" action="{% url 'accounts:logout' %}">
                     {% csrf_token %}

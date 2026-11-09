@@ -116,6 +116,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | password_hash | VARCHAR(255) | NN |
 | nickname | VARCHAR(50) | NN (แสดงแทนอีเมล — PDPA) |
 | department_id | BIGINT | FK → department, NN (ผู้ใช้กรอกตัวย่อภาค เช่น CN, CHE ตอนสมัคร/createsuperuser ระบบแปลงเป็น id; ภาควิชา admin ต้องสร้างไว้ก่อน ถ้าไม่มีจะแจ้งว่าไม่พบ) |
+| avatar | VARCHAR(255) | NULL (path สัมพัทธ์ใน storage media/avatars/) |
 | email_verified_at | TIMESTAMP | NULL |
 | pdpa_consent_at | TIMESTAMP | NN |
 | is_active | BOOLEAN | NN |
@@ -132,7 +133,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 > - `department` ผู้ใช้กรอกตัวย่อภาค (เช่น `CN`, `CHE`) ต้องมีในตาราง `department` ที่ Admin เพิ่มไว้และ `is_active`
 > - `nickname` ห้ามซ้ำกับคำสงวน (admin, moderator, แอดมิน ฯลฯ)
 > - `pdpa_consent_at` ต้องส่งมาจากการกดยอมรับจริง ระบบไม่เติมให้ (ยกเว้นสร้าง superuser ผ่าน CLI)
-> - ลบผู้ใช้ตาม PDPA ใช้ `anonymize()` (ล้างข้อมูลระบุตัวตน + ปิดบัญชี)
+> - ลบผู้ใช้ตาม PDPA ใช้ `anonymize()` (ล้างข้อมูลระบุตัวตน ลบรูปโปรไฟล์ + ปิดบัญชี)
 
 **role**
 | Column | Type | Constraint |

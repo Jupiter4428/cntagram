@@ -230,3 +230,19 @@ class ShoutboxForm(forms.Form):
     """Validate a shoutbox post without silently truncating messages."""
 
     message = forms.CharField(max_length=200, strip=True)
+
+
+class AvatarUploadForm(forms.Form):
+    """ฟอร์มอัปโหลดรูปภาพโปรไฟล์ (จำกัดขนาดไม่เกิน 2MB รองรับ JPEG, PNG, GIF, WEBP)."""
+
+    avatar = forms.FileField(
+        label="เลือกไฟล์รูปภาพโปรไฟล์ใหม่",
+        required=True,
+        error_messages=REQUIRED_ERROR,
+        widget=forms.FileInput(
+            attrs={
+                "accept": "image/jpeg,image/png,image/gif,image/webp",
+                "class": "form-control",
+            }
+        ),
+    )

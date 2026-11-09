@@ -285,3 +285,131 @@ class DeleteAccountRateLimitServiceTests(TestCase):
         self.assertTrue(services.is_delete_account_rate_limited(user_id=user_id))
         services.clear_delete_account_failures(user_id=user_id)
         self.assertFalse(services.is_delete_account_rate_limited(user_id=user_id))
+
+
+class UserAvatarServiceTests(RegistrationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = self.register()
+
+    def make_image_file(self, format="JPEG", size=(50, 50), filename="avatar.jpg"):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        buf = io.BytesIO()
+        img = Image.new("RGB", size, color="blue")
+        img.save(buf, format=format)
+        ext = format.lower()
+        content = buf.getvalue()
+        return SimpleUploadedFile(
+            filename or f"avatar.{ext}", content, content_type=f"image/{ext}"
+        )
+
+    def test_update_avatar_saves_file_and_updates_user(self):
+        from django.core.files.storage import default_storage
+
+        image_file = self.make_image_file(format="PNG")
+        updated_user = services.update_user_avatar(user=self.user, file=image_file)
+
+        self.assertIsNotNone(updated_user.avatar)
+        self.assertTrue(updated_user.avatar.startswith("avatars/"))
+        self.assertTrue(default_storage.exists(updated_user.avatar))
+        self.addCleanup(default_storage.delete, updated_user.avatar)
+
+    def test_update_avatar_replaces_old_avatar_in_storage(self):
+        from django.core.files.storage import default_storage
+
+        img1 = self.make_image_file(format="JPEG")
+        updated_user = services.update_user_avatar(user=self.user, file=img1)
+        old_path = updated_user.avatar
+        self.assertTrue(default_storage.exists(old_path))
+
+        img2 = self.make_image_file(format="PNG")
+        updated_user = services.update_user_avatar(user=self.user, file=img2)
+        new_path = updated_user.avatar
+        self.addCleanup(default_storage.delete, new_path)
+
+        self.assertNotEqual(old_path, new_path)
+        self.assertFalse(default_storage.exists(old_path))
+        self.assertTrue(default_storage.exists(new_path))
+
+    def test_update_avatar_rejects_file_exceeding_max_size(self):
+        from unittest.mock import patch
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Create a file whose size attribute > 2MB
+        big_content = b"x" * 100
+        image_file = SimpleUploadedFile(
+            "big.jpg", big_content, content_type="image/jpeg"
+        )
+        with patch.object(image_file, "size", services.MAX_AVATAR_SIZE_BYTES + 1):
+            with self.assertRaises(ValidationError) as cm:
+                services.update_user_avatar(user=self.user, file=image_file)
+            self.assertIn("ขนาดไฟล์ต้องไม่เกิน", str(cm.exception))
+
+    def test_update_avatar_rejects_corrupted_or_non_image(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        fake_file = SimpleUploadedFile(
+            "fake.jpg", b"not-a-real-image-bytes", content_type="image/jpeg"
+        )
+        with self.assertRaises(ValidationError) as cm:
+            services.update_user_avatar(user=self.user, file=fake_file)
+        self.assertIn("ไฟล์ที่อัปโหลดไม่ใช่รูปภาพที่ถูกต้อง", str(cm.exception))
+
+    def test_update_avatar_rejects_unsupported_format(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        import io
+        from PIL import Image
+
+        buf = io.BytesIO()
+        img = Image.new("RGB", (30, 30), color="red")
+        img.save(buf, format="BMP")
+        bmp_file = SimpleUploadedFile(
+            "avatar.bmp", buf.getvalue(), content_type="image/bmp"
+        )
+
+        with self.assertRaises(ValidationError) as cm:
+            services.update_user_avatar(user=self.user, file=bmp_file)
+        self.assertIn("รองรับเฉพาะไฟล์ภาพนามสกุล", str(cm.exception))
+
+    def test_delete_avatar_removes_file_and_clears_user_field(self):
+        from django.core.files.storage import default_storage
+
+        img = self.make_image_file()
+        updated_user = services.update_user_avatar(user=self.user, file=img)
+        path = updated_user.avatar
+        self.assertTrue(default_storage.exists(path))
+
+        cleared_user = services.delete_user_avatar(user=self.user)
+        self.assertIsNone(cleared_user.avatar)
+        self.assertFalse(default_storage.exists(path))
+
+    def test_delete_avatar_when_no_avatar_succeeds(self):
+        self.assertIsNone(self.user.avatar)
+        cleared_user = services.delete_user_avatar(user=self.user)
+        self.assertIsNone(cleared_user.avatar)
+
+    def test_update_avatar_cleans_up_file_on_db_error(self):
+        from unittest.mock import patch
+        from django.core.files.storage import default_storage
+        from django.db import IntegrityError
+
+        img = self.make_image_file()
+        deleted_paths = []
+        original_delete = default_storage.delete
+
+        def record_delete(path):
+            deleted_paths.append(path)
+            return original_delete(path)
+
+        with patch.object(default_storage, "delete", side_effect=record_delete):
+            with patch.object(User, "save", side_effect=IntegrityError("DB failure")):
+                with self.assertRaises(IntegrityError):
+                    services.update_user_avatar(user=self.user, file=img)
+
+        self.assertIsNone(self.user.avatar)
+        self.assertEqual(len(deleted_paths), 1)
+        self.assertTrue(deleted_paths[0].startswith("avatars/user_"))
+        self.assertFalse(default_storage.exists(deleted_paths[0]))

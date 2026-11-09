@@ -6,13 +6,22 @@
     <div class="retro-widget__body module-body compact-copy">
         {% if request.user.is_authenticated %}
             <div class="member-card">
-                <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
+                {% if request.user.avatar %}
+                    <img src="{% url 'accounts:user_avatar' user_id=request.user.pk %}"
+                         alt="{{ request.user.nickname }}"
+                         width="42" height="42"
+                         class="profile-bubble"
+                         style="object-fit: cover; padding: 0;">
+                {% else %}
+                    <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
+                {% endif %}
                 <div>
                     <p class="member-name">{{ request.user.nickname }}</p>
                     <p class="member-status"><span class="status-dot" aria-hidden="true"></span> ออนไลน์</p>
                 </div>
             </div>
             <ul class="member-links">
+                <li><a href="{% url 'accounts:profile' %}">ตั้งค่าโปรไฟล์</a></li>
                 <li><a href="{% url 'materials:vault' %}">เปิดคลังเอกสาร</a></li>
                 <li><a href="{% url 'materials:upload' %}">อัปโหลดชีทใหม่</a></li>
             </ul>
