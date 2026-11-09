@@ -240,16 +240,17 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 ---
 
-## 8. Roadmap (ร่าง — ปรับทุก Sprint Planning ตาม Velocity จริง)
+## 8. Roadmap และสรุปผลลัพธ์จริง (Agile Velocity)
 
-| Sprint | Sprint Goal (ร่าง) | Epic หลัก |
-|---|---|---|
-| **Sprint 1** | นักศึกษา CN สมัคร ล็อกอิน อัปโหลดชีท และค้นหาชีทที่ Moderator อนุมัติแล้วได้ | E1, E2, E3, E4, E5 (US-1 – US-7) |
-| **Sprint 2** | Must story ทั้ง 7 ของ Sprint 1 ใช้งานได้ครบทั้งหน้าเว็บและหลังบ้าน: Super Admin ตั้งค่าภาค รุ่น และวิชาผ่านหน้าเว็บได้ Moderator เปิดดู PDF ก่อนอนุมัติหรือปฏิเสธพร้อมเหตุผล และทุก story ผ่าน DoD ของ Sprint 2 (มี unit test, coverage รวม ≥ 80%) | เนื้อหาถึงสัปดาห์ที่ 11 · Velocity อ้างอิง 21 · US-2, US-3, US-4, US-6 (ยกมาจาก Sprint 1) + TD 5 แต้ม (#93, #67, TD-9) |
-| **Sprint 3** | คลังพร้อมใช้งานจริงบน Cloud: ปลอดภัยตาม OWASP และเจ้าของลิขสิทธิ์แจ้งลบเนื้อหาได้ | เนื้อหาสัปดาห์ที่ 12 ขึ้นไป · E7, E1, SP-4, TD-1 (CI), TD-8 |
-| **Final (สัปดาห์ 14)** | Live Demo + Agile Metrics (Velocity, Burndown) | — |
+| Sprint | Sprint Goal | Epic หลัก | Planned | Done (DoD) | Actual Velocity | สัดส่วน Tech Debt |
+|---|---|---|---|---|---|---|
+| **Sprint 1** | นักศึกษา CN สมัคร ล็อกอิน อัปโหลดชีท และค้นหาชีทที่ Moderator อนุมัติแล้วได้ | E1, E2, E3, E4, E5 (US-1 – US-7) | 28 pts | 21 pts | **21** | ~14% (TD-2 seed data) |
+| **Sprint 2** | Must story ทั้ง 7 ของ Sprint 1 ใช้งานได้ครบทั้งหน้าเว็บและหลังบ้าน: Super Admin ตั้งค่าภาค รุ่น และวิชาผ่านหน้าเว็บได้ Moderator เปิดดู PDF ก่อนอนุมัติหรือปฏิเสธพร้อมเหตุผล และทุก story ผ่าน DoD ของ Sprint 2 (มี unit test, coverage รวม ≥ 80%) | US-2, US-3, US-4, US-6 (ยกมาจาก Sprint 1) + TD (#93, #67, TD-9) | 21 pts | 21 pts | **21** | 24% (TD 5 pts: #93, #67, TD-9) |
+| **Sprint 3** | คลังพร้อมใช้งานจริงบน Cloud: ปลอดภัยตาม OWASP ครบถ้วน CI/CD และเจ้าของลิขสิทธิ์แจ้งลบเนื้อหาได้ | E1, E3, E7, SP-4, TD-1 (CI), TD-8 (Static Analysis) | 21 pts | 24 pts | **24** | ~21% (TD-1, TD-8, SP-4) |
+| **Final (สัปดาห์ 14)** | Live Demo + Production Readiness & Agile Metrics (Average Velocity = 22 pts/Sprint, Coverage 96%, 660+ Automated Tests) | E1–E7 ครบสมบูรณ์พร้อม Production Release v1.0.0 | — | — | **เฉลี่ย 22** | **≥ 20% ทุก Sprint** |
 
-Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็นประโยคเดียวที่ **เน้นผู้ใช้, สาธิตได้ใน Sprint Review, และแต้มรวมไม่เกิน Velocity**
+> **หมายเหตุการคำนวณ Velocity:**
+> Velocity คำนวณจากผลรวมของ Story Points เฉพาะชิ้นงานที่เสร็จสมบูรณ์ 100% ตามเกณฑ์ Definition of Done (DoD) และ merge เข้าสู่ branch หลักแล้วเท่านั้น งานที่ไม่ผ่าน DoD หรือยังไม่เสร็จสมบูรณ์จะไม่ถูกนับแต้มในรอบนั้นๆ ตามหลักการ Empirical Process Control ของ Agile Scrum
 
 ---
 
