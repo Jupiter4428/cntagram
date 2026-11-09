@@ -222,3 +222,71 @@ class ReportForm(forms.Form):
         ).Report.Reason.choices,
     )
     reason = forms.CharField(label="เหตุผล", max_length=2000, widget=forms.Textarea)
+
+
+class HideDocumentForm(forms.Form):
+    """ฟอร์มสำหรับ Moderator / Super Admin ซ่อนไฟล์ที่เผยแพร่แล้ว (US-15)"""
+
+    reason = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "ระบุเหตุผลในการซ่อนเอกสาร (จำเป็นต้องกรอก)",
+            }
+        ),
+        required=True,
+        label="เหตุผลในการซ่อน",
+        error_messages={"required": "กรุณาระบุเหตุผลในการซ่อนเอกสาร"},
+    )
+
+    def clean_reason(self):
+        reason = (self.cleaned_data.get("reason") or "").strip()
+        if not reason:
+            raise forms.ValidationError("กรุณาระบุเหตุผลในการซ่อนเอกสาร")
+        return reason
+
+
+class BulkImportForm(forms.Form):
+    """ฟอร์มสำหรับ Super Admin นำเข้าเอกสารจำนวนมากด้วย CSV และไฟล์ ZIP (US-17)"""
+
+    csv_file = forms.FileField(
+        label="ไฟล์ข้อมูล CSV",
+        help_text=(
+            "ไฟล์ .csv ตามรูปแบบที่กำหนด (คอลัมน์: file_path, department, "
+            "batch, course, doc_type, title, description, exam_period, exam_year_be)"
+        ),
+        widget=forms.FileInput(
+            attrs={"class": "form-control", "accept": ".csv,text/csv"}
+        ),
+        error_messages={"required": "กรุณาเลือกไฟล์ CSV"},
+    )
+    zip_file = forms.FileField(
+        label="ไฟล์เอกสาร ZIP",
+        help_text="ไฟล์ .zip ที่บรรจุไฟล์ PDF ตามชื่อและ path ที่ระบุใน CSV",
+        widget=forms.FileInput(
+            attrs={"class": "form-control", "accept": ".zip,application/zip"}
+        ),
+        error_messages={"required": "กรุณาเลือกไฟล์ ZIP"},
+    )
+    dry_run = forms.BooleanField(
+        label="โหมดทดลองรัน (Dry Run)",
+        help_text="ตรวจสอบความถูกต้องของข้อมูลทั้งหมดโดยไม่บันทึกลงระบบ",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def clean_csv_file(self):
+        file = self.cleaned_data.get("csv_file")
+        if file:
+            if not file.name.lower().endswith(".csv"):
+                raise forms.ValidationError("กรุณาอัปโหลดไฟล์ที่มีนามสกุล .csv")
+        return file
+
+    def clean_zip_file(self):
+        file = self.cleaned_data.get("zip_file")
+        if file:
+            if not file.name.lower().endswith(".zip"):
+                raise forms.ValidationError("กรุณาอัปโหลดไฟล์ที่มีนามสกุล .zip")
+        return file

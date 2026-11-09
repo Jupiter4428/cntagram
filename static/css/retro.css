@@ -1396,6 +1396,13 @@ body:has(.site-frame) {
     max-height: 140px;
     overflow-y: auto;
 }
+@media (max-width: 768px) {
+    .msn-palette {
+        max-height: 110px;
+        padding: 4px;
+        gap: 3px;
+    }
+}
 .msn-btn {
     background: #ffffff;
     border: 1px outset #d4d0c8;

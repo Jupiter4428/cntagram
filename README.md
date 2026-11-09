@@ -17,9 +17,26 @@
 
 ## Live Production
 
-> ยังไม่มี URL บน Render — ใส่ลิงก์ที่นี่หลัง deploy สำเร็จ (SP-4)
+**Production URL:** [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) (Render — Singapore Region)
 
-<!-- ## Live Production: https://<ชื่อ-service>.onrender.com -->
+### บัญชีทดสอบสำหรับผู้ประเมิน (Super Admin Credentials)
+
+| รายการ | ข้อมูลเข้าสู่ระบบ |
+|---|---|
+| **ID (Email)** | `6710535011@student.tu.ac.th` |
+| **PASS** | `CntagramAdmin2026!` |
+| **บทบาท** | Super Admin / Superuser (เข้าได้ทั้งหน้าเว็บหลัก คิวอนุมัติเอกสาร จัดการภาควิชา/รุ่น/วิชา จัดการ Moderator และ `/admin/`) |
+
+> สรุปฟังก์ชันทั้งหมดของระบบและรายการ Product Backlog ดูได้ที่ [Product Backlog (`_docs/requirements.md`)](./_docs/requirements.md)
+
+---
+
+## ฟีเจอร์ที่มีในระบบปัจจุบัน (Current Features)
+
+- **ระบบยืนยันตัวตนและความปลอดภัย (`accounts`):** สมัครสมาชิกด้วยอีเมลคณะวิศวกรรมศาสตร์ (`@student.tu.ac.th` รหัสคณะ `10`), เข้าสู่ระบบ/ออกจากระบบพร้อม Two-bucket Rate Limiting (จำกัดตามบัญชีและ IP), แต่งตั้ง/ถอดถอน Moderator ประจำภาควิชา และลบบัญชีตนเองตาม PDPA (`/account/delete/` แบบ Anonymize)
+- **การจัดการโครงสร้างหลักสูตร (`catalog`):** Super Admin จัดการภาควิชา (`Department`), รุ่น (`Batch`), รายวิชา (`Course`) และการผูกวิชาเข้ากับรุ่น (`BatchCourse`) พร้อมค่ากำหนดระบบ (`SystemSetting`)
+- **คลังเอกสารและการคัดกรอง (`materials`):** อัปโหลดชีทสรุป/สไลด์/ข้อสอบเก่า (PDF) พร้อมตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, ค้นหาและกรองเอกสารในคลัง (Vault), เปิดดูตัวอย่าง (Inline PDF Preview) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog`, ระบบคิวอนุมัติแยกตามกฎ `DocTypeRequiredRole` (ชีททั่วไปใช้ Moderator หรือ Super Admin 1 คน / ข้อสอบเก่าต้องผ่านทั้งสองฝ่าย)
+- **ชุมชนและเว็บบอร์ดเรโทรยุค 2000s (`webboard` & `accounts`):** กระดานสนทนาแยกหมวดหมู่ (`BoardCategory`), ตั้งกระทู้ (`Thread`) ผูกรายวิชา, ตอบกลับ (`Post`), แปลงรหัสอีโมติคอน MSN (เช่น `:D`, `(L)`) และฝังภาพ `[img]...[/img]` แบบปลอดภัย, ปักหมุด/ล็อก/ลบกระทู้และคอมเมนต์ รวมถึงวิดเจ็ตหน้าแรก (Shoutbox สดแบบ AJAX, โพลประจำสัปดาห์แบบ AJAX, ตัวนับผู้เข้าชม LCD 6 หลัก, เครื่องเล่นเพลง BGM Player ยุค 2000s)
 
 ---
 
@@ -31,32 +48,26 @@
 
 ### 1. C4 Model — Level 1: System Context
 
-ภาพรวมความสัมพันธ์ระหว่างผู้ใช้งานระบบกลุ่มต่างๆ และระบบภายนอก
+ภาพรวมความสัมพันธ์ระหว่างผู้ใช้งานระบบกลุ่มต่างๆ
 
 ```mermaid
 flowchart LR
     G["👤 Guest<br/>ยังไม่ล็อกอิน"]
-    S["👤 Student / Alumni<br/>ค้นหา อ่าน อัปโหลด"]
+    S["👤 Student / Alumni<br/>ค้นหา อ่าน อัปโหลด พูดคุย"]
     M["👤 Moderator<br/>คัดกรองเอกสารของภาค"]
     A["👤 Super Admin<br/>ดูแลระบบส่วนกลาง"]
-    C["👤 อาจารย์ / เจ้าของลิขสิทธิ์<br/>แจ้งลบเนื้อหา"]
-    SYS["📚 CNtagram<br/>คลังชีทสรุปและข้อสอบเก่า<br/>คณะวิศวกรรมศาสตร์"]
-    MAIL["✉️ Email Service<br/>ยืนยันอีเมล / แจ้งเตือน"]
+    SYS["📚 CNtagram<br/>คลังชีทสรุป ข้อสอบเก่า และเว็บบอร์ด<br/>คณะวิศวกรรมศาสตร์"]
 
     G -- "HTTPS" --> SYS
     S -- "HTTPS" --> SYS
     M -- "HTTPS" --> SYS
     A -- "HTTPS" --> SYS
-    C -. "HTTPS (แบบฟอร์มสาธารณะ)" .-> SYS
-    SYS -. "SMTP / API (SP-2)" .-> MAIL
 ```
 
-- **Guest:** ค้นหาและดูตัวอย่างเอกสารสาธารณะได้บางส่วน ต้องล็อกอินเพื่ออ่านฉบับเต็ม
-- **Student / Alumni:** นักศึกษาและศิษย์เก่า เข้าสู่ระบบด้วยอีเมลมหาวิทยาลัย ค้นหา อ่าน ให้คะแนน และอัปโหลดชีท/ข้อสอบ
-- **Moderator:** ผู้ตรวจคัดกรองเอกสารประจำภาควิชา ตรวจสอบความถูกต้องและอนุมัติเอกสารก่อนเผยแพร่
-- **Super Admin:** ผู้ดูแลระบบระดับคณะ จัดการผู้ใช้ ค่ากำหนดระบบ (System Settings) และภาพรวมความปลอดภัย
-- **อาจารย์ / เจ้าของลิขสิทธิ์:** ผู้ร้องเรียนหรือแจ้งลบเอกสารผ่านฟอร์ม
-- **Email Service:** ส่งอีเมลยืนยันตัวตนและการแจ้งเตือนสถานะเอกสาร
+- **Guest:** เข้าดูหน้าแรก สมัครสมาชิก และเข้าสู่ระบบ (ต้องล็อกอินเพื่อเข้าใช้งานคลังเอกสารและเว็บบอร์ด)
+- **Student / Alumni:** นักศึกษาและศิษย์เก่า เข้าสู่ระบบด้วยอีเมลมหาวิทยาลัย ค้นหา อ่าน ดาวน์โหลด อัปโหลดชีท/ข้อสอบ และร่วมพูดคุยในเว็บบอร์ด/วิดเจ็ตชุมชน
+- **Moderator:** ผู้ตรวจคัดกรองเอกสารประจำภาควิชา ตรวจสอบความถูกต้องและอนุมัติเอกสารก่อนเผยแพร่ รวมถึงดูแลความเรียบร้อยในเว็บบอร์ด
+- **Super Admin:** ผู้ดูแลระบบระดับคณะ จัดการโครงสร้างภาควิชา/รุ่น/รายวิชา แต่งตั้ง Moderator และดูแลภาพรวมระบบ
 
 ---
 
@@ -66,7 +77,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    U["👤 ผู้ใช้<br/>Web Browser<br/>HTML + Bootstrap 5"]
+    U["👤 ผู้ใช้<br/>Web Browser<br/>HTML + Bootstrap 5 + JS"]
     subgraph APP["Django 6.x Application (Modular Monolith)"]
         V["views.py / forms.py<br/>Presentation"]
         SV["services.py / selectors.py<br/>Business Logic / Data Access"]
@@ -75,34 +86,32 @@ flowchart LR
             CAT["catalog"]
             ACC["accounts"]
             MAT["materials"]
+            WEB["webboard"]
         end
         SV --> APPS
     end
     DB["🗄️ Database<br/>SQLite (dev) / PostgreSQL (prod)"]
     FS["📁 File Storage<br/>PDF ใน media/vault/ (MEDIA_ROOT)<br/>ส่งผ่าน view ที่ตรวจสิทธิ์ ไม่มี Direct URL"]
-    MAIL["✉️ Email Service"]
-    AV["🛡️ Virus Scanner"]
 
     U -- "HTTPS" --> V
     APPS -- "SQL / Django ORM" --> DB
     SV -- "อ่าน/เขียนไฟล์" --> FS
-    SV -. "SMTP / API (SP-2)" .-> MAIL
-    SV -. "สแกนไฟล์ (SP-1)" .-> AV
 ```
 
 ---
 
 ### 3. Application Boundaries & Dependency Rule
 
-ระบบแบ่งออกเป็น 3 Django Apps หลักตาม Bounded Context มีทิศทางการพึ่งพา (Dependency) ทางเดียว ([ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md)):
+ระบบแบ่งออกเป็น 4 Django Apps หลักตาม Bounded Context มีทิศทางการพึ่งพา (Dependency) ทางเดียว ([ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md)):
 
-$$\text{catalog} \longleftarrow \text{accounts} \longleftarrow \text{materials}$$
+$$\text{catalog} \longleftarrow \text{accounts} \longleftarrow (\text{materials}, \text{webboard})$$
 
 | Django App | หน้าที่และความรับผิดชอบหลัก | กฎการพึ่งพา (Dependency Rule) |
 |---|---|---|
 | `catalog` | โครงสร้างภาควิชา (`Department`), รุ่น (`Batch`), รายวิชา (`Course`, `BatchCourse`) และค่ากำหนดระบบ (`SystemSetting`) | **ไม่ import app อื่นเลย** เป็นรากฐานของระบบ |
-| `accounts` | ผู้ใช้ (`AppUser`), บทบาท (`Role`), สิทธิ์ตามภาควิชา (`UserRole`) และการยืนยันตัวตน | import พึ่งพา `catalog` ได้ ห้าม import `materials` |
-| `materials` | เอกสาร (`Document`, `DocType`), เวอร์ชันไฟล์ (`DocumentVersion`), ข้อสอบ (`ExamDetail`), การอนุมัติ (`Approval`, `DocTypeRequiredRole`), สถิติและประวัติ (`DownloadLog`, `AuditLog`) | import พึ่งพาได้ทั้ง `catalog` และ `accounts` |
+| `accounts` | ผู้ใช้ (`User`), บทบาท (`Role`), สิทธิ์ตามภาควิชา (`UserRole`), ยอดสะสมผู้ใช้ (`UserCounter`), โพลและ Shoutbox หน้าแรก (`PollVote`, `ShoutboxMessage`) | import พึ่งพา `catalog` ได้ ห้าม import `materials` หรือ `webboard` |
+| `materials` | เอกสาร (`Document`, `DocType`), เวอร์ชันไฟล์ (`DocumentVersion`), ข้อสอบ (`ExamDetail`, `ExamPeriod`), การอนุมัติ (`Approval`, `DocTypeRequiredRole`), สถิติการดาวน์โหลด (`DownloadLog`) | import พึ่งพาได้ทั้ง `catalog` และ `accounts` |
+| `webboard` | กระดานสนทนาชุมชน: หมวดหมู่ (`BoardCategory`), กระทู้ (`Thread` ผูกรายวิชาได้), ข้อความตอบกลับ (`Post`), ตัวแปลงอีโมติคอน MSN และฝังภาพ GIF | import พึ่งพาได้ทั้ง `catalog` และ `accounts` |
 
 - การอ้างอิง Foreign Key ข้าม app ใช้ String reference เสมอ เช่น `"catalog.BatchCourse"` และ `settings.AUTH_USER_MODEL`
 - ห้าม Circular Import เด็ดขาด หากมีการอ่านข้อมูลข้าม app ให้ใช้ Selectors อ่านผ่าน Reverse Relation หรือใช้ Custom Template Tags
@@ -157,6 +166,8 @@ erDiagram
     course ||--o{ batch_course : "offered in"
     department ||--o{ app_user : "belongs to"
     app_user ||--o{ user_role : has
+    app_user ||--o| poll_vote : casts
+    app_user ||--o{ shoutbox_message : posts
     role ||--o{ user_role : granted
     department |o--o{ user_role : "scope (moderator)"
     batch_course ||--o{ document : contains
@@ -171,17 +182,15 @@ erDiagram
     app_user ||--o{ approval : decides
     document ||--o{ download_log : "downloaded"
     app_user ||--o{ download_log : ""
-    document ||--o{ report : "reported"
-    app_user ||--o{ report : files
-    app_user ||--o{ audit_log : acts
-    document ||--o{ comment : ""
-    app_user ||--o{ comment : writes
-    document ||--o{ rating : ""
-    app_user ||--o{ rating : gives
+    board_category ||--o{ thread : groups
+    course |o--o{ thread : "related to"
+    app_user ||--o{ thread : authors
+    thread ||--o{ post : has
+    app_user ||--o{ post : replies
 ```
 
-- **Data Integrity:** Foreign Key ทุกเส้นกำหนด `on_delete=models.PROTECT` เพื่อป้องกันการลบข้อมูลที่เชื่อมโยง
-- **PDPA Anonymization:** ผู้ใช้ที่ขอลบบัญชีจะใช้วิธี Anonymize ล้างข้อมูลระบุตัวตนและปิด `is_active` แทนการลบแถว เพื่อรักษาประวัติการอัปโหลดและ Audit Trail
+- **Data Integrity:** Foreign Key ของตารางหลักกำหนด `on_delete=models.PROTECT` เพื่อป้องกันการลบข้อมูลโครงสร้างและเอกสารที่เชื่อมโยง (ส่วนตารางกิจกรรมชุมชนอย่าง `PollVote`, `ShoutboxMessage`, `Thread`, `Post` ใช้ `CASCADE` / `SET_NULL` ตามความเหมาะสม)
+- **PDPA Anonymization:** ผู้ใช้ที่ขอลบบัญชีจะใช้วิธี Anonymize ล้างข้อมูลระบุตัวตนและปิด `is_active` แทนการลบแถว เพื่อรักษาประวัติการอัปโหลดและข้อมูลที่เชื่อมโยง
 - **Flexible Approvals:** กฎการอนุมัติเอกสารกำหนดผ่านตาราง `DocTypeRequiredRole` ทำให้ปรับเปลี่ยนเกณฑ์การอนุมัติได้โดยไม่ต้องแก้โค้ด
 
 ---
@@ -192,10 +201,11 @@ erDiagram
 
 | ADR | ชื่อเรื่อง | สถานะ | สาระสำคัญ |
 |---|---|---|---|
-| [ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md) | Modular Monolith และขอบเขต Django Apps | Accepted | รวมศูนย์บนโปรเจคเดียว แบ่ง 3 app (`catalog` ← `accounts` ← `materials`) ทิศทางพึ่งพาทางเดียว |
+| [ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md) | Modular Monolith และขอบเขต Django Apps | Accepted | รวมศูนย์บนโปรเจคเดียว แบ่ง 4 app (`catalog` ← `accounts` ← `materials`, `webboard`) ทิศทางพึ่งพาทางเดียว |
 | [ADR 0002](./_docs/adr/0002-service-layer-and-selectors.md) | Service Layer และ Selectors | Accepted | แยก Presentation, Business Logic (`services.py`), และ Data Access (`selectors.py`) ออกจากกันอย่างเด็ดขาด |
 | [ADR 0003](./_docs/adr/0003-document-storage-and-protected-preview.md) | การเก็บไฟล์เอกสารและ Preview ผ่าน View ที่ตรวจสิทธิ์ | Proposed | ไม่ตั้ง `MEDIA_URL`, จัดเก็บใน vault ที่เข้าถึงได้ผ่าน view ที่ตรวจสิทธิ์เท่านั้น, preview ผ่าน iframe ปลอดภัย |
 | [ADR 0004](./_docs/adr/0004-approval-tables-in-materials.md) | ตารางการอนุมัติอยู่ใน app `materials` | Proposed | จัดวาง `Approval` และ `DocTypeRequiredRole` ไว้ใน `materials` ตามกฎทิศทาง dependency |
+| [ADR 0005](./_docs/adr/0005-production-deployment-and-backup.md) | การเลือกแพลตฟอร์ม Deploy, ฐานข้อมูล Production, การจัดเก็บไฟล์เอกสาร และกลยุทธ์การสำรองข้อมูล | Accepted | Deploy บน Render (Singapore) ด้วย Gunicorn + WhiteNoise + Managed PostgreSQL และกำหนดแนวทางสำรอง/กู้คืนข้อมูล |
 
 ---
 
@@ -204,30 +214,35 @@ erDiagram
 ```text
 cntagram/
 ├── _docs/                  # เอกสารทั้งหมดที่ไม่ใช่โค้ด (Product Backlog, ADR, C4, Database Design)
-│   ├── requirements.md     # Product Backlog: Epics & User Stories
-│   ├── database-design.md  # ออกแบบฐานข้อมูล (ERD 3NF)
-│   ├── known-limitations.md# ข้อจำกัดของระบบ
+│   ├── requirements.md     # Product Backlog: Epics, User Stories, สถานะปัจจุบันและ Backlog
+│   ├── database-design.md  # ออกแบบฐานข้อมูล (ERD 3NF ของตารางที่มีจริงในระบบ)
+│   ├── known-limitations.md# ข้อจำกัดของระบบรุ่นปัจจุบัน
+│   ├── backup-operations.md# ขั้นตอนและสถานะการสำรอง/กู้คืนข้อมูล Production
 │   ├── deployment-prep-checklist.md
-│   ├── adr/                # Architectural Decision Records (ADR 0001 - 0004)
+│   ├── adr/                # Architectural Decision Records (ADR 0001 - 0005)
 │   ├── architecture/       # C4 Model diagrams
 │   ├── lecture-notes/      # สรุปเนื้อหาวิชา CN331
 │   ├── research/           # รายงานวิจัยและวิเคราะห์ผล
 │   └── archive/            # เอกสารเดิม (SRS v1)
-├── portal/                 # Django project config (settings, urls, wsgi/asgi)
-├── accounts/               # ผู้ใช้, สิทธิ์, บทบาท (User, Role, UserRole)
+├── portal/                 # Django project config (settings, urls, permissions, wsgi/asgi)
+├── accounts/               # ผู้ใช้, สิทธิ์, บทบาท และวิดเจ็ตหน้าแรก (User, Role, UserRole, UserCounter, PollVote, ShoutboxMessage)
 ├── catalog/                # โครงสร้างหลักสูตร (Department, Batch, Course, BatchCourse, SystemSetting)
-├── materials/              # เอกสารและไฟล์ (Document, DocType, DocumentVersion, ExamDetail, Approval)
+├── materials/              # เอกสารและไฟล์ (Document, DocType, DocumentVersion, ExamDetail, Approval, DownloadLog)
+├── webboard/               # กระดานสนทนาชุมชนเรโทร (BoardCategory, Thread, Post, MSN emoticons & GIF embeds)
+├── scripts/                # สคริปต์สำรองและกู้คืนข้อมูล (backup_restore.sh)
 ├── media/                  # ไฟล์เอกสารอัปโหลด (MEDIA_ROOT) ไม่อยู่ใน Git และเข้าถึงผ่าน view ที่ตรวจสิทธิ์เท่านั้น
 ├── static/                 # CSS, JavaScript และ assets ส่วนกลาง
 ├── templates/              # Base templates และ shared components
-├── .github/                # Workflows (CI), Issue & PR templates
+├── .github/                # Workflows (CI, Daily Backup), Issue & PR templates
+├── build.sh                # สคริปต์เตรียมสภาพแวดล้อม Production บน Render
+├── Procfile                # คำสั่งรัน Gunicorn บน PaaS
 ├── manage.py
 ├── requirements.txt
 ├── CONTRIBUTING.md
 └── README.md
 ```
 
-โครงสร้างไฟล์ภายในแต่ละ Django App (`catalog`, `accounts`, `materials`) ตาม [ADR 0002](./_docs/adr/0002-service-layer-and-selectors.md):
+โครงสร้างไฟล์ภายในแต่ละ Django App (`catalog`, `accounts`, `materials`, `webboard`) ตาม [ADR 0002](./_docs/adr/0002-service-layer-and-selectors.md):
 
 ```text
 <app>/
@@ -304,7 +319,8 @@ coverage report -m --fail-under=80
 | [`_docs/known-limitations.md`](./_docs/known-limitations.md) | ข้อจำกัดของระบบรุ่นที่ส่งมอบ | ตรวจสอบขอบเขตที่ยังไม่รองรับในรุ่นปัจจุบัน |
 | [`_docs/database-design.md`](./_docs/database-design.md) | ออกแบบฐานข้อมูล (ERD 3NF) และเหตุผลการออกแบบตาราง | ก่อนแก้ `models.py` |
 | [`_docs/architecture/c4.md`](./_docs/architecture/c4.md) | ไดอะแกรม C4 Model ระดับ 1–2 (System Context, Container) | ตรวจสอบภาพรวมระบบและ Container |
-| [`_docs/adr/`](./_docs/adr/) | Architectural Decision Records (ADR 0001–0004) บันทึกเหตุผลการเลือกสถาปัตยกรรม | ก่อนเพิ่ม app หรือปรับโครงสร้างระบบ |
+| [`_docs/adr/`](./_docs/adr/) | Architectural Decision Records (ADR 0001–0005) บันทึกเหตุผลการเลือกสถาปัตยกรรม | ก่อนเพิ่ม app หรือปรับโครงสร้างระบบ |
+| [`_docs/backup-operations.md`](./_docs/backup-operations.md) | ขั้นตอนปฏิบัติการสำรองและกู้คืนข้อมูล Production (PostgreSQL & Offsite Backup) | ก่อนรันสคริปต์สำรอง/กู้คืนฐานข้อมูลจริง |
 | [`_docs/deployment-prep-checklist.md`](./_docs/deployment-prep-checklist.md) | เช็กลิสต์เตรียมความพร้อมก่อน Deploy สู่ Production (Render, PostgreSQL, WhiteNoise) | ก่อนขึ้น Cloud หรือเตรียมส่งมอบระบบ |
 | [`_docs/lecture-notes/`](./_docs/lecture-notes/) | สรุปเนื้อหาและทฤษฎีรายวิชา CN331 (ORM, Architecture, Testing, CI/CD, Web Security) | ศึกษาแนวทางและมาตรฐานวิศวกรรมซอฟต์แวร์ |
 | [`_docs/research/`](./_docs/research/) | ร่างรายงานเล่มสมบูรณ์ (บทที่ 1–5, บรรณานุกรม, ภาคผนวก) | เขียนหรือแก้ไขเล่มรายงานโครงงาน |

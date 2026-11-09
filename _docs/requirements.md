@@ -110,7 +110,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 |---|---|
 | **Authentication** | US-1 สมัคร (อีเมลคณะ + PDPA consent), US-2 login/logout/rate limit/บล็อก Guest, US-3 `super_admin_required` + seed `role` + Super Admin คนแรก, US-10 Moderator ตามภาค |
 | **Forms** (Django Form/ModelForm, validation ฝั่ง server เรียกกฎใน model ตัวเดียว) | US-1 `RegisterForm`, US-2 `LoginForm`, US-3 `DepartmentForm`, US-4 `BatchForm`/`CourseForm`/`BatchCourseForm`, US-5 `UploadForm`, US-6 `ReviewForm`, US-7 `SearchForm` |
-| **Core Models** | SP-0 ERD; model ที่สร้างแล้ว: `accounts` (User, Role, UserRole), `catalog` (Department, Batch, Course, BatchCourse, SystemSetting), `materials` (DocType, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval จาก US-6, DocTypeRequiredRole จาก US-9); ที่เหลือ: download_log (US-8); ข้อมูลตั้งต้น: `role` ใน US-3, รุ่น/วิชาตัวอย่าง (`seed_catalog`) ใน US-4, `doc_type`/`exam_period`/`system_setting` ใน US-5 |
+| **Core Models** | SP-0 ERD; model ที่สร้างแล้ว: `accounts` (`User`, `Role`, `UserRole`, `UserCounter`, `PollVote`, `ShoutboxMessage`), `catalog` (`Department`, `Batch`, `Course`, `BatchCourse`, `SystemSetting`), `materials` (`DocType`, `ExamPeriod`, `Document`, `ExamDetail`, `DocumentVersion`, `Approval`, `DocTypeRequiredRole`, `DownloadLog`), และ `webboard` (`BoardCategory`, `Thread`, `Post`); ข้อมูลตั้งต้น: `role` ใน US-3, รุ่น/วิชาตัวอย่าง (`seed_catalog`) ใน US-4, `doc_type`/`exam_period`/`system_setting` ใน US-5, หมวดหมู่เว็บบอร์ดใน `webboard` migration `0002_seed_categories` |
 | **Dashboard** | US-2 หน้าแรก Guest + navbar, US-3 Dashboard หน้าแรก (เมนู Admin), US-6 Approval Queue ใน dashboard — ส่วน "ไฟล์ของฉัน + สถานะ" และจำนวนไฟล์รออนุมัติ (US-34) อยู่ใน Product Backlog รอ Sprint 2 |
 
 > **ปรับ 2026-10-13 ตามหลักใน lecture 05:** งานที่ค้นพบระหว่าง Sprint ไม่เพิ่มเป็น story ใหม่เข้า Sprint 1 (กัน Scope Creep และงานที่ยังไม่ผ่าน DoR) งานที่เป็น Blocker ของ story ใน Sprint (seed ข้อมูลตั้งต้น) ใส่เป็นงานย่อยของ story นั้นแทน ส่วนงานใหม่รอ Sprint 2 Planning ตาม Velocity จริง
@@ -138,7 +138,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 
 | ID | Story | MoSCoW (เสนอ) |
 |---|---|---|
-| US-17 | **As a** Super Admin **I want** นำเข้าไฟล์เดิมจำนวนมากด้วย CSV พร้อมโหมดทดลองรัน (dry run) **so that** ย้ายข้อมูล CN21–CN25 เข้าระบบได้ครบโดยไม่ต้องอัปโหลดทีละไฟล์ | Must |
+| US-17 | **As a** Super Admin **I want** นำเข้าไฟล์เดิมจำนวนมากด้วย CSV พร้อมโหมดทดลองรัน (dry run) **so that** ย้ายข้อมูล CN21–CN25 เข้าระบบได้ครบโดยไม่ต้องอัปโหลดทีละไฟล์ | Must · Done (CLI & Web UI) |
 | US-18 | **As a** Super Admin **I want** ตั้งรุ่นจุดตัดของข้อสอบแยกตามภาควิชา **so that** ข้อสอบรุ่นเก่าถูกคุมโดยผู้ดูแลส่วนกลาง | Should |
 | US-19 | **As a** ผู้อัปโหลด **I want** ขอเพิ่มรายวิชาที่ยังไม่มีในระบบ **so that** อัปโหลดชีทของวิชานั้นได้ | Could |
 | US-20 | **As a** Super Admin **I want** เปิดภาควิชาใหม่พร้อมกฎจับคู่ปีเข้ากับเลขรุ่น **so that** ขยายระบบไปภาคอื่นได้โดยไม่แก้โค้ด | Could |
@@ -302,3 +302,38 @@ Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็น
 | 2026-10-28 | DoD ของ Sprint 2 (coverage): issue ที่เข้า Sprint 2 ขึ้นไปโดยไม่ได้ยกมาจาก Sprint 1 และยังไม่มี PR เปิดอยู่ (#42, #107, #111, #115) เพิ่มข้อ "แนบผล `coverage report -m --fail-under=80` ใน PR, coverage รวมไม่ต่ำกว่า 80%" ตาม lecture 06 (#108 มีข้อนี้อยู่แล้ว); ตั้ง coverage.py ด้วย `.coveragerc` และ `coverage==7.17.0` ใน requirements (TD-9, #108) วัดบน `develop` (`14b4da1`) ได้ 264 tests ผ่าน, coverage รวม 94% |
 | 2026-11-03 | Sprint 3 (ส่งงาน 2026-11-09 ต้องเสร็จ 2026-11-08): ดึง story ที่ผูกกับฟีเจอร์หลักและเล็กพอทำทันเข้า Sprint 3 แล้วเลื่อนเลข story ให้ต่อจาก US-10 ไม่ชนกัน (US-22 และ US-34 คงเลขเดิมเพราะมี issue แล้ว) — เข้า Sprint 3: เดิม US-26 → **US-11** ([#142](https://github.com/Jupiter4428/cntagram/issues/142)), US-21 ส่วนไฟล์ซ้ำ → **US-12** ([#143](https://github.com/Jupiter4428/cntagram/issues/143)), US-13 คงเดิม ([#144](https://github.com/Jupiter4428/cntagram/issues/144)); ที่เหลือเลื่อน: 11→14, 12→15, 14→16, 15→17, 16→18, 17→19, 18→20, 19→21, 20→23, US-21 ส่วนสแกนไวรัส → 24, 23→25, 24→26, 25→27, 27→28, 28→29, 29→30, 30→31, 31→32, 32→33, 33→35; เลขในตารางและประวัติข้างบนใช้เลขใหม่แล้ว |
 | 2026-11-08 | เพิ่ม User Story ของฟังก์ชันชุมชนและเรโทรวิดเจ็ตหน้าแรกใน E6 ตามการพัฒนาจริงใน PR #180 (Refs #89, #161): **US-36** (Shoutbox ทักทายสดแบบ AJAX), **US-37** (โพลประจำสัปดาห์แบบ AJAX), **US-38** (ตัวนับสถิติผู้เข้าชมเว็บไซต์แบบเรียลไทม์), และ **US-39** (เครื่องเล่นเพลงประกอบเว็บบอร์ด BGM Player ยุค 2000s) พร้อมระบุ Acceptance Criteria ละเอียดครบถ้วน |
+| 2026-11-09 | เพิ่มแอป `webboard` (กระดานสนทนาชุมชนเรโทรยุค 2000s พร้อม MSN emoticons และ GIF embeds, PR #202, #226), อัปเดต §10 สรุปสถานะฟังก์ชันที่มีจริงในโค้ดปัจจุบันควบคู่กับรายการฟีเจอร์ที่กำลังพัฒนาต่อ (Open Issues / PRs #192–#228) และเพิ่ม Production URL |
+
+---
+
+## 10. สถานะฟังก์ชันที่มีจริงและสิ่งที่กำลังจะตามมา
+
+ตารางนี้สรุปฟังก์ชันที่เปิดใช้งานแล้วบน `main` อ้างอิงจาก URL routes ใน `accounts/urls.py`, `catalog/urls.py`, `materials/urls.py`, `webboard/urls.py` และชั้น `services.py` / `selectors.py` รวมถึงรายการฟีเจอร์ที่กำลังพัฒนาอยู่ (Open Issues และ Pull Requests)
+
+**Production URL:** [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) (Render — Singapore Region)
+
+### 10.1 ฟังก์ชันที่มีในโค้ดปัจจุบัน (`main`)
+
+| หมวด | ฟังก์ชันที่มีในโค้ด | Story / Issue | หลักฐานในโค้ด |
+|---|---|---|---|
+| **บัญชีและความปลอดภัย** | สมัครสมาชิกด้วยอีเมลคณะ (`@student.tu.ac.th` รหัสคณะ `10`), เข้าสู่ระบบ/ออกจากระบบ, จำกัดอัตราการเดารหัสผ่านแบบ Two-bucket (ตามบัญชีและ IP), ลบบัญชีตนเองตาม PDPA ที่ `/account/delete/` (Anonymize) | US-1, US-2, US-13, #172 | `accounts/urls.py`, `accounts/services.py`, `accounts/models.py` |
+| **สิทธิ์และบทบาท** | แต่งตั้ง/ถอดถอน Moderator ประจำภาควิชา, แดชบอร์ดผู้ดูแลระบบส่วนกลาง และ Django Admin ครบทุกแอป | US-3, US-10, TD-3 | `accounts/urls.py`, `portal/permissions.py`, `*/admin.py` |
+| **โครงสร้างหลักสูตร** | จัดการภาควิชา (ดู/เพิ่ม/แก้/ลบ), รุ่น (ดู/เพิ่ม/ลบ), ผูก/ถอดรายวิชาในรุ่น (`BatchCourse`), รายวิชา (ดู/เพิ่ม), ค่ากำหนดระบบ (`SystemSetting`) | US-3, US-4 | `catalog/urls.py`, `catalog/services.py`, `catalog/selectors.py` |
+| **คลังเอกสารและการค้นหา** | อัปโหลด PDF พร้อมตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, คลังเอกสารแยก Lecture / Exam Vault, ค้นหาด้วยรหัสวิชาพร้อมกรองภาควิชา/รุ่น/ประเภทเอกสาร/ช่วงสอบ/ปี พ.ศ., เปิดอ่านตัวอย่าง PDF แบบ Inline (`<iframe>`) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog` | US-5, US-7, US-8, US-11, US-12 | `materials/urls.py`, `materials/services.py`, `materials/selectors.py`, `materials/downloads.py` |
+| **การคัดกรองและอนุมัติ** | คิวรออนุมัติแยกตามสิทธิ์, รีวิว/อนุมัติ/ปฏิเสธพร้อมเหตุผลตามกฎ `DocTypeRequiredRole` (ชีททั่วไปใช้ 1 ฝ่าย / ข้อสอบเก่าต้องครบทั้ง Moderator และ Super Admin), พรีวิวและดาวน์โหลดไฟล์ระหว่างรอพิจารณา | US-6, US-9, #205 | `materials/urls.py`, `materials/views.py`, `materials/services.py` |
+| **ชุมชนหน้าแรก** | กล่องทักทายสด Shoutbox แบบ AJAX (`ShoutboxMessage`), โพลสำรวจประจำสัปดาห์แบบ AJAX 1 เสียงต่อบัญชี (`PollVote`), ตัวนับสถิติผู้เข้าชม LCD 6 หลัก, เครื่องเล่นเพลงประกอบ BGM Player ยุค 2000s | US-36 – US-39 (#89, #161) | `accounts/urls.py`, `accounts/services.py`, `static/js/home_widgets.js`, `static/js/bgm_player.js` |
+| **กระดานสนทนาเว็บบอร์ด** | หมวดหมู่เว็บบอร์ด (`BoardCategory`), ตั้งกระทู้ถาม-ตอบ (`Thread`) ผูกรายวิชาได้, ตอบกลับ (`Post`), แปลงรหัสอีโมติคอน MSN (เช่น `:D`, `(L)`) และฝังภาพ `[img]...[/img]` ปลอดภัย, ปักหมุด/ล็อกกระทู้, ลบกระทู้และข้อความตอบกลับตามสิทธิ์ | E6 (#202, #210) | `webboard/urls.py`, `webboard/services.py`, `webboard/selectors.py`, `webboard/emoticons.py` |
+| **Production & CI/CD** | CI Pipeline (`black`, `flake8`, `bandit`, `manage.py check`, `makemigrations --check`, `coverage ≥ 80%`), Deploy บน Render ด้วย Gunicorn + WhiteNoise + Managed PostgreSQL, สคริปต์และเวิร์กโฟลว์สำรองข้อมูล | TD-1, TD-8, TD-9, SP-4 (#107, #108, #139, #141, #169) | `.github/workflows/ci.yml`, `portal/settings.py`, `build.sh`, `scripts/backup_restore.sh` |
+
+### 10.2 ฟีเจอร์และงานที่กำลังพัฒนาต่อ (Upcoming / Open Issues & PRs)
+
+| หมวด | รายละเอียดงานที่กำลังพัฒนา | Story / Issue / PR | สถานะ |
+|---|---|---|---|
+| **คลังเอกสารและการอัปโหลด** | Super Admin นำเข้าเอกสารเดิมจำนวนมากด้วยไฟล์ CSV พร้อมโหมดทดลองรัน (Dry-run) | US-17 · Issue [#215](https://github.com/Jupiter4428/cntagram/issues/215) · PR [#223](https://github.com/Jupiter4428/cntagram/pull/223) | เปิด PR รอตรวจ |
+| **การคัดกรองและดูแลคลัง** | Moderator และ Super Admin ซ่อนเอกสารที่เผยแพร่แล้วแต่พบปัญหา (`status = hidden`) | US-25 · Issue [#216](https://github.com/Jupiter4428/cntagram/issues/216) · PR [#227](https://github.com/Jupiter4428/cntagram/pull/227) | เปิด PR รอตรวจ |
+| **การจัดการเอกสารของผู้อัปโหลด** | ผู้อัปโหลดส่งไฟล์เวอร์ชันใหม่ แก้ไขคำอธิบาย หรือลบเอกสารของตนเอง | US-21 · Issue [#217](https://github.com/Jupiter4428/cntagram/issues/217) | กำลังพัฒนา (Open Issue) |
+| **UX การอัปโหลดและพิจารณาเอกสาร** | ช่องค้นหาและเลือกรายวิชาแบบพิมพ์ค้นหาได้ (Searchable Course Combobox) ในฟอร์มอัปโหลด และปรับหน้าพิจารณาอนุมัติให้ดาวน์โหลดไฟล์ระหว่างรอตรวจได้ | Issue [#224](https://github.com/Jupiter4428/cntagram/issues/224) · PR [#225](https://github.com/Jupiter4428/cntagram/pull/225), PR [#228](https://github.com/Jupiter4428/cntagram/pull/228) | เปิด PR รอตรวจ |
+| **ลิขสิทธิ์และการร้องเรียน (E7)** | ผู้ใช้รายงานเอกสารที่มีปัญหา (US-32), แบบฟอร์มสาธารณะให้อาจารย์/เจ้าของลิขสิทธิ์แจ้งลบเนื้อหา (US-33), และหน้าให้ Super Admin ตรวจเรื่องร้องเรียนแล้วตัดสินชี้ขาด (US-35) | US-32, US-33, US-35 · Issue [#218](https://github.com/Jupiter4428/cntagram/issues/218), [#219](https://github.com/Jupiter4428/cntagram/issues/219), [#220](https://github.com/Jupiter4428/cntagram/issues/220) | กำลังพัฒนา (Open Issues) |
+| **กระดานสนทนาเว็บบอร์ดและ UI** | แก้ไขกระทู้/ความคิดเห็นพร้อมแสดงเวลาแก้ไข ([#212](https://github.com/Jupiter4428/cntagram/issues/212)), แบ่งหน้า Pagination และกันปั๊มยอดวิว ([#211](https://github.com/Jupiter4428/cntagram/issues/211)), ป้องกันการแปลงอีโมติคอน MSN ซ้อนในคำ/URL ([#213](https://github.com/Jupiter4428/cntagram/issues/213)), รองรับ URL GIF ภายนอกและแผงอีโมติคอนบนมือถือ ([#209](https://github.com/Jupiter4428/cntagram/issues/209) / PR [#222](https://github.com/Jupiter4428/cntagram/pull/222)), ปรับปรุงฟอนต์แถบตัววิ่งประกาศ ([#208](https://github.com/Jupiter4428/cntagram/issues/208) / PR [#214](https://github.com/Jupiter4428/cntagram/pull/214)) | Issue [#208](https://github.com/Jupiter4428/cntagram/issues/208), [#209](https://github.com/Jupiter4428/cntagram/issues/209), [#211](https://github.com/Jupiter4428/cntagram/issues/211), [#212](https://github.com/Jupiter4428/cntagram/issues/212), [#213](https://github.com/Jupiter4428/cntagram/issues/213) | เปิด PR / กำลังพัฒนา |
+| **ความมั่นคงและการสำรองข้อมูล** | ซ้อมกู้คืนฐานข้อมูล PostgreSQL จริงบนฐานข้อมูลแยก (`_restore_test`) และตั้งค่าสำรองข้อมูลรายวันแบบ Offsite ([`backup-operations.md`](./backup-operations.md)) รวมถึงชุดทดสอบความพร้อม Production | SP-4 · Issue [#192](https://github.com/Jupiter4428/cntagram/issues/192) · PR [#199](https://github.com/Jupiter4428/cntagram/pull/199), PR [#204](https://github.com/Jupiter4428/cntagram/pull/204) | เปิด PR รอตรวจ |
+| **Backlog ระยะถัดไป** | ยืนยันอีเมลด้วยลิงก์/OTP (US-14, SP-2), ผูกอีเมลส่วนตัวสำหรับศิษย์เก่า (US-15), สแกนไวรัสไฟล์ PDF (US-24, SP-1), เรียงลำดับผลค้นหาตามยอดดาวน์โหลด/คะแนน (US-28) | US-14, US-15, US-24, US-28 | รอเข้า Sprint ถัดไป |

@@ -7,15 +7,26 @@ from django.urls import reverse
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_http_methods
 
+import zipfile
+
 from catalog.models import Batch
+from portal.permissions import super_admin_required
 
 from . import selectors
 from .approval_ui import attach_approval_ui
-from .forms import ReviewForm, SearchForm, UploadForm
+from .forms import (
+    BulkImportForm,
+    HideDocumentForm,
+    ReviewForm,
+    SearchForm,
+    UploadForm,
+)
 from .models import Document, max_upload_mb
 from .services import (
+    bulk_import_documents_from_csv,
     ensure_can_upload_to,
     file_too_large_message,
+    hide_document,
     review_document,
     upload_document,
 )
@@ -38,6 +49,7 @@ def document_detail(request, document_id):
         selectors.published_document_with_download_count(),
         pk=document_id,
     )
+    can_hide = selectors.can_hide_document(document=document, user=request.user)
     return render(
         request,
         "materials/document_detail.html",
@@ -49,6 +61,8 @@ def document_detail(request, document_id):
                 if document.current_version
                 else None
             ),
+            "can_hide": can_hide,
+            "hide_form": HideDocumentForm() if can_hide else None,
         },
     )
 
@@ -66,15 +80,21 @@ def open_document_pdf(document):
     return stream, version
 
 
-def _inline_pdf_response(document):
-    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสารแบบ inline (ไม่มี Direct URL)
+def _pdf_response(document, *, as_attachment=False):
+    """ส่งไฟล์ PDF เวอร์ชันล่าสุดของเอกสาร (ไม่มี Direct URL)
 
     ผู้เรียกต้องตรวจสิทธิ์มาก่อนแล้ว
     """
     file, version = open_document_pdf(document)
-    return FileResponse(
-        file, content_type="application/pdf", filename=version.original_name
+    response = FileResponse(
+        file,
+        as_attachment=as_attachment,
+        content_type="application/pdf",
+        filename=version.original_name,
     )
+    if as_attachment:
+        response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าเอกสารของเว็บเราเองแสดงได้
@@ -84,7 +104,7 @@ def document_preview(request, document_id):
     ผ่าน view ที่ตรวจสิทธิ์
     """
     document = get_object_or_404(selectors.published_documents(), pk=document_id)
-    return _inline_pdf_response(document)
+    return _pdf_response(document)
 
 
 @xframe_options_sameorigin  # ให้ <iframe> ในหน้าพิจารณาของเว็บเราเองแสดงได้
@@ -104,7 +124,21 @@ def approval_document_preview(request, document_id):
         )
     except Document.DoesNotExist:
         raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
-    return _inline_pdf_response(document)
+    return _pdf_response(document)
+
+
+@require_GET
+def approval_document_download(request, document_id):
+    """ดาวน์โหลดไฟล์ PDF ของเอกสารที่รอพิจารณา (pending)
+    สำหรับผู้ตรวจที่มีสิทธิ์เท่านั้น (Moderator ประจำภาค หรือ Super Admin)
+    """
+    try:
+        document = selectors.get_document_for_review(
+            document_id=document_id, user=request.user
+        )
+    except Document.DoesNotExist:
+        raise Http404("ไม่พบเอกสารนี้ในระบบ หรือคุณไม่มีสิทธิ์เข้าถึง")
+    return _pdf_response(document, as_attachment=True)
 
 
 def _add_service_errors(form, exc):
@@ -266,4 +300,85 @@ def open_reports(request):
         request,
         "materials/open_reports.html",
         {"reports": selectors.open_reports_for_reviewer(user=request.user)},
+    )
+
+
+@require_http_methods(["POST"])
+def document_hide(request, document_id):
+    """ซ่อนไฟล์ที่เผยแพร่แล้วแต่มีปัญหา (US-15)"""
+    document = get_object_or_404(Document, pk=document_id)
+    if not selectors.can_hide_document(document=document, user=request.user):
+        raise PermissionDenied("คุณไม่มีสิทธิ์ซ่อนเอกสารนี้")
+
+    form = HideDocumentForm(request.POST)
+    if not form.is_valid():
+        reason_err = form.errors.get("reason")
+        err_msg = reason_err[0] if reason_err else "ข้อมูลไม่ถูกต้อง"
+        messages.error(request, err_msg)
+        return redirect("materials:document_detail", document_id=document.pk)
+
+    try:
+        hide_document(
+            document=document,
+            user=request.user,
+            reason=form.cleaned_data["reason"],
+        )
+    except ValidationError as err:
+        messages.error(request, str(err))
+        return redirect("materials:document_detail", document_id=document.pk)
+
+    messages.success(request, f"ซ่อนเอกสาร '{document.title}' เรียบร้อยแล้ว")
+    return redirect("materials:vault")
+
+
+@super_admin_required
+@require_http_methods(["GET", "POST"])
+def bulk_import(request):
+    """หน้าสำหรับ Super Admin นำเข้าเอกสารเดิมจำนวนมากด้วย CSV และไฟล์ ZIP (US-17)"""
+    summary = None
+    has_run = False
+    dry_run = True
+
+    if request.method == "POST":
+        form = BulkImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = form.cleaned_data["csv_file"]
+            zip_file = form.cleaned_data["zip_file"]
+            dry_run = form.cleaned_data["dry_run"]
+
+            try:
+                csv_content = csv_file.read().decode("utf-8-sig")
+            except Exception:
+                try:
+                    csv_content = csv_file.read().decode("cp874")
+                except Exception as e:
+                    form.add_error("csv_file", f"ไม่สามารถถอดรหัสไฟล์ CSV ได้: {e}")
+                    csv_content = None
+
+            if csv_content is not None:
+                try:
+                    with zipfile.ZipFile(zip_file) as zf:
+                        summary = bulk_import_documents_from_csv(
+                            csv_content=csv_content,
+                            zip_archive=zf,
+                            user=request.user,
+                            dry_run=dry_run,
+                        )
+                        has_run = True
+                except zipfile.BadZipFile:
+                    form.add_error("zip_file", "ไฟล์ ZIP เสียหายหรือไม่ถูกต้อง")
+                except Exception as e:
+                    form.add_error(None, f"เกิดข้อผิดพลาดในการประมวลผล: {e}")
+    else:
+        form = BulkImportForm()
+
+    return render(
+        request,
+        "materials/bulk_import.html",
+        {
+            "form": form,
+            "summary": summary,
+            "has_run": has_run,
+            "dry_run": dry_run,
+        },
     )

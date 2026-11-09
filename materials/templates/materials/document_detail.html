@@ -44,6 +44,31 @@
     {% url 'materials:document_preview' document.pk as preview_url %}
     {% include "materials/_pdf_preview.html" %}
   </section>
+
+  {% if can_hide %}
+    <section class="card shadow-sm border-danger mt-4 dv-panel" aria-labelledby="moderator-heading">
+      <div class="card-header bg-danger bg-opacity-10 border-danger d-flex align-items-center justify-content-between">
+        <h2 class="h6 mb-0 text-danger fw-bold" id="moderator-heading">
+          <span aria-hidden="true">🛡️</span> พื้นที่สำหรับผู้ดูแลเนื้อหา (Moderator / Super Admin)
+        </h2>
+      </div>
+      <div class="card-body">
+        <p class="small text-secondary mb-3">
+          หากพบว่าเอกสารนี้มีปัญหาเรื่องลิขสิทธิ์ ข้อสอบหลุด หรือเนื้อหาที่ไม่เหมาะสม สามารถสั่งซ่อนเอกสารนี้ได้ทันที โดยเอกสารจะไม่แสดงในหน้าค้นหาและผู้ใช้ทั่วไปจะไม่สามารถเข้าถึงได้
+        </p>
+        <form method="post" action="{% url 'materials:document_hide' document.pk %}" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการซ่อนเอกสารนี้? เมื่อซ่อนแล้วผู้ใช้ทั่วไปจะไม่สามารถเข้าถึงเอกสารได้');">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_reason" class="form-label fw-semibold">ระบุเหตุผลในการซ่อนเอกสาร <span class="text-danger">*</span></label>
+            {{ hide_form.reason }}
+          </div>
+          <button type="submit" class="btn btn-danger">
+            <span aria-hidden="true">🚫</span> ยืนยันการซ่อนเอกสาร
+          </button>
+        </form>
+      </div>
+    </section>
+  {% endif %}
 </article>
 </div>
 {% endblock %}

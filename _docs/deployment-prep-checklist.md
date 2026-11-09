@@ -221,6 +221,11 @@ git push origin v1.0.0
 ## อ้างอิงสั้นๆ
 
 - Lecture ฉบับเต็ม: [`lecture-notes/08-web-security-and-production-deployment.md`](./lecture-notes/08-web-security-and-production-deployment.md)
-- Spike deploy ของทีม: [`.scratch/backlog/sp-4-deployment.md`](../.scratch/backlog/sp-4-deployment.md)
+- ADR การ Deploy และ Backup: [`adr/0005-production-deployment-and-backup.md`](./adr/0005-production-deployment-and-backup.md)
+- ขั้นตอนปฏิบัติการ Backup: [`backup-operations.md`](./backup-operations.md)
 - Django: [Deployment checklist](https://docs.djangoproject.com/en/stable/howto/deployment/checklist/)
 - Render: [Deploy Django](https://render.com/docs/deploy-django)
+
+## สถานะปัจจุบัน (พฤศจิกายน 2026)
+- **Production URL:** [https://cntagram-h195.onrender.com/](https://cntagram-h195.onrender.com/) (Render — Singapore Region)
+- สรุปฟังก์ชันที่มีบน `main` และ Product Backlog ทั้งหมดดูที่ [`requirements.md`](./requirements.md)

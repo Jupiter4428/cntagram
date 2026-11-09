@@ -7,8 +7,15 @@ from django.core.files.storage import default_storage
 from catalog.models import SystemSetting
 
 from ..models import Document, DownloadLog
-from ..services import record_download, upload_document
-from .base import PDF_BYTES, SearchTestCase, UploadTestCase, pdf_file, stored_file_count
+from ..services import hide_document, record_download, upload_document
+from .base import (
+    PDF_BYTES,
+    ApprovalBaseTestCase,
+    SearchTestCase,
+    UploadTestCase,
+    pdf_file,
+    stored_file_count,
+)
 
 
 class RecordDownloadServiceTests(SearchTestCase):
@@ -158,3 +165,80 @@ class UploadDocumentServiceTests(UploadTestCase):
             self.upload(batch_course=self.me21_cn200)
 
         self.assertFalse(Document.objects.exists())
+
+
+class HideDocumentServiceTests(ApprovalBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.doc_cn = self.create_document(
+            batch_course=self.bc_cn,
+            status=Document.Status.PUBLISHED,
+        )
+        self.doc_me = self.create_document(
+            batch_course=self.bc_me,
+            status=Document.Status.PUBLISHED,
+        )
+
+    def test_super_admin_can_hide_published_document_with_reason(self):
+        doc = hide_document(
+            document=self.doc_cn,
+            user=self.super_admin,
+            reason="พบการละเมิดลิขสิทธิ์เนื้อหา",
+        )
+        self.doc_cn.refresh_from_db()
+        self.assertEqual(self.doc_cn.status, Document.Status.HIDDEN)
+        self.assertEqual(doc.status, Document.Status.HIDDEN)
+
+    def test_moderator_can_hide_own_department_document(self):
+        hide_document(
+            document=self.doc_cn,
+            user=self.mod_cn,
+            reason="ข้อสอบเก่าไม่อนุญาตให้เผยแพร่",
+        )
+        self.doc_cn.refresh_from_db()
+        self.assertEqual(self.doc_cn.status, Document.Status.HIDDEN)
+
+    def test_moderator_cannot_hide_other_department_document(self):
+        with self.assertRaises(PermissionDenied):
+            hide_document(
+                document=self.doc_me,
+                user=self.mod_cn,
+                reason="ข้ามภาควิชา",
+            )
+        self.doc_me.refresh_from_db()
+        self.assertEqual(self.doc_me.status, Document.Status.PUBLISHED)
+
+    def test_normal_student_cannot_hide_document(self):
+        with self.assertRaises(PermissionDenied):
+            hide_document(
+                document=self.doc_cn,
+                user=self.normal_student,
+                reason="อยากซ่อน",
+            )
+        self.doc_cn.refresh_from_db()
+        self.assertEqual(self.doc_cn.status, Document.Status.PUBLISHED)
+
+    def test_hiding_without_reason_fails_validation(self):
+        for empty_reason in ("", "   ", None):
+            with self.assertRaises(ValidationError):
+                hide_document(
+                    document=self.doc_cn,
+                    user=self.super_admin,
+                    reason=empty_reason,
+                )
+            self.doc_cn.refresh_from_db()
+            self.assertEqual(self.doc_cn.status, Document.Status.PUBLISHED)
+
+    def test_cannot_hide_non_published_document(self):
+        pending_doc = self.create_document(
+            batch_course=self.bc_cn,
+            status=Document.Status.PENDING,
+        )
+        with self.assertRaises(ValidationError):
+            hide_document(
+                document=pending_doc,
+                user=self.super_admin,
+                reason="ยังไม่อนุมัติแต่สั่งซ่อน",
+            )
+        pending_doc.refresh_from_db()
+        self.assertEqual(pending_doc.status, Document.Status.PENDING)

@@ -25,6 +25,9 @@
         <a class="admin-menu__link{% if url_name|slice:':9' == 'moderator' %} is-active{% endif %}" href="{% url 'accounts:moderator_manage' %}">
             <span aria-hidden="true">⚑</span> จัดการ Moderator
         </a>
+        <a class="admin-menu__link{% if url_name == 'bulk_import' %} is-active{% endif %}" href="{% url 'materials:bulk_import' %}">
+            <span aria-hidden="true">📥</span> นำเข้าไฟล์จำนวนมาก
+        </a>
 
         <p class="admin-menu__label">ระบบ</p>
         <a class="admin-menu__link" href="{% url 'materials:vault' %}">

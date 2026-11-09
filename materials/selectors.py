@@ -149,6 +149,25 @@ def can_review_any(*, user):
     )
 
 
+def can_hide_document(*, document, user) -> bool:
+    """ตรวจสอบว่าผู้ใช้มีสิทธิ์ซ่อนเอกสารนี้หรือไม่ (US-15)
+
+    - Super Admin: ซ่อนเอกสารได้ทุกภาควิชา
+    - Moderator: ซ่อนเอกสารได้เฉพาะในภาควิชาที่ตนเองดูแล
+    - ผู้ใช้อื่นๆ: ไม่มีสิทธิ์
+    """
+    if not user or not user.is_authenticated:
+        return False
+    if is_super_admin(user):
+        return True
+    department_id = document.batch_course.batch.department_id
+    return UserRole.objects.filter(
+        user=user,
+        role__code=Role.MODERATOR,
+        department_id=department_id,
+    ).exists()
+
+
 def pending_documents_for_moderator(*, user):
     """ดึงรายการเอกสารรออนุมัติ (pending) ของภาควิชาที่ผู้ใช้ดูแล
     (หรือทุกภาคถ้าเป็น Super Admin)

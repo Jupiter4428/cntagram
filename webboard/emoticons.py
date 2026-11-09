@@ -331,13 +331,13 @@ MSN_EMOTICONS = [
 ]
 
 IMG_TAG_REGEX = re.compile(
-    r"\[img\]\s*(https://[^\s\"'<>]+?\."
+    r"\[img\]\s*(https?://[^\s\"'<>]+?\."
     r"(?:gif|png|jpe?g|webp|bmp)(?:\?[^\s\"'<>]*)?)\s*\[/img\]",
     re.IGNORECASE,
 )
 
 BARE_IMG_REGEX = re.compile(
-    r"(?<!src=\")(https://[^\s\"'<>]+?\.(?:gif|png|jpe?g|webp)(?:\?[^\s\"'<>]*)?)",
+    r"(?<!src=\")(https?://[^\s\"'<>]+?\.(?:gif|png|jpe?g|webp)(?:\?[^\s\"'<>]*)?)",
     re.IGNORECASE,
 )
 

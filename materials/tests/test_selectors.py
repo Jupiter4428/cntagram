@@ -7,6 +7,7 @@ from catalog.models import Batch, BatchCourse
 
 from ..models import Approval, DocType, Document
 from ..selectors import (
+    can_hide_document,
     moderator_pending_summary,
     pending_documents_without_rules,
     pending_documents_without_rules_summary,
@@ -253,3 +254,43 @@ class PendingDocumentsWithoutRulesTests(ApprovalBaseTestCase):
             status=Document.Status.PENDING,
         )
         self.assertEqual(pending_documents_without_rules_summary()["count"], 0)
+
+
+class CanHideDocumentSelectorTests(ApprovalBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.doc_cn = self.create_document(
+            batch_course=self.bc_cn,
+            status=Document.Status.PUBLISHED,
+        )
+        self.doc_me = self.create_document(
+            batch_course=self.bc_me,
+            status=Document.Status.PUBLISHED,
+        )
+
+    def test_super_admin_can_hide_any_department_document(self):
+        self.assertTrue(can_hide_document(document=self.doc_cn, user=self.super_admin))
+        self.assertTrue(can_hide_document(document=self.doc_me, user=self.super_admin))
+
+    def test_moderator_can_hide_own_department_document(self):
+        self.assertTrue(can_hide_document(document=self.doc_cn, user=self.mod_cn))
+        self.assertTrue(can_hide_document(document=self.doc_me, user=self.mod_me))
+
+    def test_moderator_cannot_hide_other_department_document(self):
+        self.assertFalse(can_hide_document(document=self.doc_me, user=self.mod_cn))
+        self.assertFalse(can_hide_document(document=self.doc_cn, user=self.mod_me))
+
+    def test_normal_student_cannot_hide_document(self):
+        self.assertFalse(
+            can_hide_document(document=self.doc_cn, user=self.normal_student)
+        )
+        self.assertFalse(
+            can_hide_document(document=self.doc_me, user=self.normal_student)
+        )
+
+    def test_uploader_cannot_hide_document_without_permission(self):
+        self.assertFalse(can_hide_document(document=self.doc_cn, user=self.uploader_cn))
+
+    def test_anonymous_user_cannot_hide_document(self):
+        anon = AnonymousUser()
+        self.assertFalse(can_hide_document(document=self.doc_cn, user=anon))

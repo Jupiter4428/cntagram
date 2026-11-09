@@ -2,7 +2,7 @@
 
 เอกสารนี้ใช้เป็น **SP-0 (ERD 3NF)** ของ Sprint 1 และอัปเดตใน PR เดียวกับที่แก้ `models.py` เสมอ
 Requirement ที่ตารางเหล่านี้รองรับอยู่ใน [`requirements.md`](./requirements.md) (อ้างด้วยรหัส story เช่น US-5) ขอบเขต app และการแยกชั้นโค้ดดู [ADR 0001](./adr/0001-modular-monolith-and-app-boundaries.md) และ [ADR 0002](./adr/0002-service-layer-and-selectors.md)
-สมมติฐาน: ใช้ RDBMS แบบ relational (MySQL/PostgreSQL) กับ Django และ FK ทุกเส้นเป็น `on_delete=PROTECT`
+สภาพแวดล้อมปัจจุบัน: Django ใช้ SQLite สำหรับการพัฒนา และ PostgreSQL สำหรับ Production บน Render; FK ของตารางโครงสร้างและเอกสารใช้ `on_delete=PROTECT` (ส่วนตารางกิจกรรมชุมชนบางตารางใช้ `CASCADE` / `SET_NULL` ตามที่ระบุในหัวข้อที่ 3)
 แนะนำ **PostgreSQL**: `user_role` ใช้ partial unique index ซึ่ง MySQL ไม่รองรับ (Django จะข้าม constraint นี้ จึงมีเช็กซ้ำใน model ด้วย)
 
 ---
@@ -34,6 +34,8 @@ erDiagram
     course ||--o{ batch_course : "offered in"
     department ||--o{ app_user : "belongs to"
     app_user ||--o{ user_role : has
+    app_user ||--o| poll_vote : casts
+    app_user ||--o{ shoutbox_message : posts
     role ||--o{ user_role : granted
     department |o--o{ user_role : "scope (moderator)"
     batch_course ||--o{ document : contains
@@ -48,13 +50,11 @@ erDiagram
     app_user ||--o{ approval : decides
     document ||--o{ download_log : "downloaded"
     app_user ||--o{ download_log : ""
-    document ||--o{ report : "reported"
-    app_user ||--o{ report : files
-    app_user ||--o{ audit_log : acts
-    document ||--o{ comment : ""
-    app_user ||--o{ comment : writes
-    document ||--o{ rating : ""
-    app_user ||--o{ rating : gives
+    board_category ||--o{ thread : groups
+    course |o--o{ thread : "related to"
+    app_user ||--o{ thread : authors
+    thread ||--o{ post : has
+    app_user ||--o{ post : replies
 ```
 
 ---
@@ -165,6 +165,24 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 > signal `post_save` ของ `User` บวกทีละหนึ่งทุกครั้งที่สร้างผู้ใช้ ไม่ลดเมื่อลบ ตอนสร้างตารางตั้งค่าเริ่มจากจำนวนผู้ใช้ที่มีอยู่
 
+**poll_vote** (โพลหน้าแรก US-37 · 1 เสียงต่อบัญชี)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| user_id | BIGINT | FK → app_user, NN, **UQ**, ON DELETE CASCADE |
+| choice | VARCHAR(20) | NN (ตรวจกับ `POLL_CHOICES` ใน service) |
+| created_at | TIMESTAMP | NN |
+
+**shoutbox_message** (Shoutbox หน้าแรก US-36)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| user_id | BIGINT | FK → app_user, NN, ON DELETE CASCADE |
+| text | VARCHAR(200) | NN |
+| created_at | TIMESTAMP | NN |
+
+> สองตารางนี้ใช้ CASCADE เพราะเป็นข้อมูลวิดเจ็ตชุมชนหน้าแรก ส่วนตัวนับผู้เข้าชมเว็บไซต์ (US-38) เก็บใน Django cache (`DatabaseCache`) จึงไม่มีตารางแยกใน ERD
+
 ### 3.3 เอกสารและไฟล์ (Sprint 1)
 
 **doc_type**
@@ -253,7 +271,7 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ### 3.5 การอนุมัติและการตรวจสอบ (Sprint 1–2)
 
-> `approval` สร้างใน Sprint 1 กับ US-6 · `download_log` กับ US-8 (Stretch) · `report`, `audit_log` ใน Sprint 2
+> `approval` สร้างใน Sprint 1 กับ US-6 · `download_log` กับ US-8
 
 **approval**
 | Column | Type | Constraint |
@@ -275,34 +293,41 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | user_id | BIGINT | FK → app_user, NN |
 | downloaded_at | TIMESTAMP | NN |
 
-**report**
-| Column | Type | Constraint |
-|---|---|---|
-| id | BIGINT | PK |
-| document_id | BIGINT | FK → document, NN |
-| reporter_id | BIGINT | FK → app_user, NN |
-| reason | TEXT | NN |
-| status | VARCHAR(15) | NN (`open`, `hidden`, `rechecking`, `resolved`) |
-| handled_by | BIGINT | FK → app_user, NULL |
-| created_at / resolved_at | TIMESTAMP | NN / NULL |
+### 3.6 ชุมชนและกระดานสนทนาเว็บบอร์ด (`webboard` — Sprint 3)
 
-**audit_log** (เขียนอย่างเดียว ห้ามแก้/ลบ)
+**board_category** (`webboard_boardcategory` — หมวดหมู่กระดานสนทนา)
 | Column | Type | Constraint |
 |---|---|---|
 | id | BIGINT | PK |
-| actor_id | BIGINT | FK → app_user, NN |
-| action | VARCHAR(40) | NN (`approve`, `reject`, `hide`, `delete`, `grant_role`, …) |
-| target_type | VARCHAR(30) | NN |
-| target_id | BIGINT | NN |
-| reason | TEXT | NN |
+| name | VARCHAR(100) | NN |
+| slug | VARCHAR(100) | UQ, NN |
+| description | TEXT | NN (blank ได้) |
+| icon | VARCHAR(50) | NN, default `💬` |
+| order | INTEGER | NN, ≥ 0, default 0 |
 | created_at | TIMESTAMP | NN |
 
-> `target_type` + `target_id` เป็น polymorphic reference จึงไม่มี FK จริง (เลือกเพราะ log ต้องเก็บได้ทุกชนิด และต้องไม่หายแม้ target ถูกลบ) ข้อเสียคือ DB ไม่บังคับความถูกต้องให้ ต้องควบคุมที่ service layer
+**thread** (`webboard_thread` — กระทู้สนทนา)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| category_id | BIGINT | FK → board_category, NN, ON DELETE CASCADE |
+| course_id | BIGINT | FK → course, NULL, ON DELETE SET_NULL (ผูกวิชาที่เกี่ยวข้องได้) |
+| author_id | BIGINT | FK → app_user, NN, ON DELETE CASCADE |
+| title | VARCHAR(200) | NN |
+| content | TEXT | NN |
+| views_count | INTEGER | NN, ≥ 0, default 0 |
+| is_pinned | BOOLEAN | NN, default false |
+| is_locked | BOOLEAN | NN, default false |
+| created_at / updated_at | TIMESTAMP | NN |
 
-### 3.6 ชุมชน (Sprint 3+)
-
-**comment**: `id` PK · `document_id` FK · `user_id` FK · `body` · `is_pinned` · `created_at`
-**rating**: PK (`document_id`, `user_id`) · `stars` CHECK 1–5 · `review` · `created_at`
+**post** (`webboard_post` — ความคิดเห็นตอบกลับกระทู้)
+| Column | Type | Constraint |
+|---|---|---|
+| id | BIGINT | PK |
+| thread_id | BIGINT | FK → thread, NN, ON DELETE CASCADE |
+| author_id | BIGINT | FK → app_user, NN, ON DELETE CASCADE |
+| content | TEXT | NN |
+| created_at / updated_at | TIMESTAMP | NN |
 
 ---
 
@@ -350,10 +375,9 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 ### 4.5 จุดที่ตั้งใจไม่ normalize (ต้องรู้ไว้)
 
-1. `audit_log.target_type/target_id` — polymorphic reference ไม่มี FK (เหตุผลในหัวข้อ 3.5)
-2. `document.status` เป็นค่า enum ในตาราง ไม่แยกเป็น lookup table (ค่าน้อยและตายตัว ลด join)
-3. `approval.approver_role_id` — เก็บ "ตัดสินในบทบาทใด" เพราะผู้ใช้คนเดียวอาจมีหลาย role (ไม่ซ้ำซ้อน เพราะไม่ได้ derive จาก user ได้ตรงๆ)
-4. `user_counter.total` — เก็บยอดสะสมแยกไว้ เพราะนับจาก `app_user` ไม่ได้หลังมีการลบผู้ใช้
+1. `document.status` เป็นค่า enum ในตาราง ไม่แยกเป็น lookup table (ค่าน้อยและตายตัว ลด join)
+2. `approval.approver_role_id` — เก็บ "ตัดสินในบทบาทใด" เพราะผู้ใช้คนเดียวอาจมีหลาย role (ไม่ซ้ำซ้อน เพราะไม่ได้ derive จาก user ได้ตรงๆ)
+3. `user_counter.total` — เก็บยอดสะสมแยกไว้ เพราะนับจาก `app_user` ไม่ได้หลังมีการลบผู้ใช้
 
 ---
 
@@ -367,11 +391,10 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 | batch_course | UQ (batch_id, course_id), IDX (course_id) | รวมวิชาเดียวกันจากทุกรุ่น |
 | document | IDX (batch_course_id, status), IDX (doc_type_id, status), IDX (uploader_id) | ค้นหา/กรอง, คิวอนุมัติ |
 | exam_detail | IDX (exam_period_id, exam_year_be) | กรองตามช่วงสอบ/ปี |
-| document_version | UQ (document_id, version_no), UQ (storage_path), IDX (sha256) | กันเวอร์ชัน/ไฟล์ซ้ำ, ตรวจไฟล์ที่ถูกรายงาน |
+| document_version | UQ (document_id, version_no), UQ (storage_path), IDX (sha256) | กันเวอร์ชัน/ไฟล์ซ้ำ |
 | approval | UQ (document_id, approver_id) | กันอนุมัติซ้ำ |
 | user_role | UQ (user_id, role_id, department_id), IDX (role_id, department_id) | หา Moderator ของภาค |
-| download_log | IDX (document_id) | นับจำนวนดาวน์โหลด |
-| audit_log | IDX (actor_id), IDX (target_type, target_id), IDX (created_at) | filter หน้า Audit Log |
+| download_log | IDX (document_id, downloaded_at) | นับจำนวนดาวน์โหลด |
 
 > **การค้นหาของ US-7** (`materials.selectors.search_documents`) ใช้ index ที่มีอยู่แล้วทั้งหมด จึงไม่ต้องเพิ่ม migration: เทียบ `course.code` แบบตรงตัว (ตัวพิมพ์ใหญ่) เพื่อใช้ UQ (code) → `batch_course` ผ่าน IDX (course_id) → `document` ผ่าน IDX (batch_course_id, status) / IDX (doc_type_id, status) ส่วนรุ่นไม่ได้เก็บรหัส `CN21` จึงกรองผ่าน `batch_course__batch` ผลค้นหาทั้งหน้าโหลดด้วย query เดียว (`select_related`) ตรวจด้วย `assertNumQueries(1)`
 
@@ -379,33 +402,32 @@ FK ทุกเส้นใช้ `ON DELETE PROTECT/RESTRICT` ยกเว้�
 
 - ลบ Department / Batch / Course ที่ยังมี batch_course หรือ document ผูกอยู่ไม่ได้ (FK RESTRICT/`PROTECT`)
 - รุ่นซ้ำในภาคเดียวกัน, วิชาซ้ำในรุ่นเดียวกัน, ผู้อนุมัติซ้ำคนเดิมในเอกสารเดียวกัน → ถูกบล็อกด้วย UQ
-- `size_bytes` ≤ 0 หรือเกิน 50 MB, `exam_year_be` นอก 2500–2700, `batch.number` < 1, `stars` นอก 1–5, `status` นอกค่าที่กำหนด → ถูกบล็อกด้วย CHECK
+- `size_bytes` ≤ 0 หรือเกิน 50 MB, `exam_year_be` นอก 2500–2700, `batch.number` < 1, `status` นอกค่าที่กำหนด → ถูกบล็อกด้วย CHECK
 - `storage_path` ซ้ำ → ถูกบล็อกด้วย UQ
 
 **ที่ต้องเขียนใน application (DB ทำไม่ได้):**
 - ใน **model** (`clean()`/`save()` ตรวจความถูกต้องของแถว): กฎของ `app_user` (โดเมนอีเมล = student_id), moderator ต้องมีภาค / role อื่นห้ามมีภาค, `exam_detail` เฉพาะข้อสอบ, ขนาดไฟล์ตาม `max_upload_mb`
-- ใน **service** (`services.py` กฎธุรกิจที่ต้องดูข้อมูลอื่น): ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้, Super Admin ต้องมีอย่างน้อย 2 คน, เขียน `audit_log` ใน transaction เดียวกับการกระทำ
+- ใน **service** (`services.py` กฎธุรกิจที่ต้องดูข้อมูลอื่น): ผู้ใช้อัปโหลดเข้าได้เฉพาะภาควิชาตนเอง, กฎ "รุ่น ≤ `legacy_batch_max` ให้ Super Admin เท่านั้น", เช็กว่าครบ `doc_type_required_role` แล้วจึงเปลี่ยนสถานะเป็น `published`, ผู้อัปโหลดอนุมัติไฟล์ตัวเองไม่ได้, Super Admin ต้องมีอย่างน้อย 2 คน
 
-## 7. ลำดับสร้างตาราง (ตาม story)
+## 7. ตารางที่สร้างแล้วในระบบปัจจุบัน
 
-ตารางถูกสร้างเมื่อ story ที่ใช้ถูกดึงเข้า Sprint (ไม่สร้างล่วงหน้า) ลำดับด้านล่างเป็นแผนปัจจุบัน ปรับได้ตอน Sprint Planning
-
-- **สร้างแล้ว (Sprint 1):** department, batch, course, batch_course, role, app_user, user_role, doc_type, exam_period, document, exam_detail, document_version, system_setting, approval, doc_type_required_role
-  *(US-1/US-2 → app_user/role, US-3 → department, US-4 → batch/course/batch_course, US-5 → document ชุดนี้, US-6 → approval, US-9 → doc_type_required_role)*
-  ข้อมูลตั้งต้น: `role` seed ใน US-3, `doc_type` / `exam_period` / `system_setting` seed ใน US-5 · รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4) · แถวกฎ `doc_type_required_role`: migration `0005` seed ให้ `doc_type` ที่มีอยู่ตอน migrate ส่วน `doc_type` ที่ seed ทีหลังใช้ `seed_approval_rules` (US-9)
-- **Sprint 1:** download_log (US-8) เพิ่มใน migration ของฟีเจอร์ดาวน์โหลดแล้ว
-- **ถัดไป:** audit_log (US-26), report (US-32)
-- **ภายหลัง:** comment / rating (US-29 – US-31), email verification token (US-14), คำขอถอนไฟล์ของ Alumni (ยังเป็นประเด็นที่ต้องคุยใน E1)
+- **ตารางทั้งหมดที่มีในโค้ดปัจจุบัน (`main`):**
+  - `catalog`: `department`, `batch`, `course`, `batch_course`, `system_setting`
+  - `accounts`: `app_user`, `role`, `user_role`, `user_counter`, `poll_vote`, `shoutbox_message`
+  - `materials`: `doc_type`, `doc_type_required_role`, `exam_period`, `document`, `exam_detail`, `document_version`, `approval`, `download_log`
+  - `webboard`: `webboard_boardcategory`, `webboard_thread`, `webboard_post`
+  - ข้อมูลตั้งต้น: `role` seed ใน migration `accounts.0004_seed_roles`, รุ่น/วิชาตัวอย่างด้วย `seed_catalog` (US-4), `doc_type` / `exam_period` / `system_setting` / `doc_type_required_role` ด้วย `seed_materials` และ `seed_approval_rules`, หมวดหมู่เว็บบอร์ดตั้งต้นด้วย migration `webboard.0002_seed_categories`
 
 ## 8. Django app ↔ ตาราง
 
 | App | Model | ตารางใน DB |
 |---|---|---|
 | `catalog` | Department, Batch, Course, BatchCourse, SystemSetting | department, batch, course, batch_course, system_setting |
-| `accounts` | User, Role, UserRole | app_user, role, user_role |
-| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, Approval | doc_type, doc_type_required_role, exam_period, document, exam_detail, document_version, approval |
+| `accounts` | User, Role, UserRole, UserCounter, PollVote, ShoutboxMessage | app_user, role, user_role, user_counter, poll_vote, shoutbox_message |
+| `materials` | DocType, DocTypeRequiredRole, ExamPeriod, Document, ExamDetail, DocumentVersion, DownloadLog, Approval | doc_type, doc_type_required_role, exam_period, document, exam_detail, document_version, download_log, approval |
+| `webboard` | BoardCategory, Thread, Post | webboard_boardcategory, webboard_thread, webboard_post |
 
 - แอป `materials` ชื่อเดิมคือ `documents` ชื่อตารางไม่เปลี่ยนเพราะตั้ง `db_table` ไว้ทุก model ตรงกับ ERD
 - ตั้ง `AUTH_USER_MODEL = "accounts.User"` ก่อน `migrate` ครั้งแรก
-- ลำดับ migration: `catalog` → `accounts` → `materials`
+- ลำดับ dependency ของแอป: `catalog` → `accounts` → (`materials`, `webboard`)
 - ตาราง `auth_group`, `auth_permission` และ M2M ของ `PermissionsMixin` ถูกสร้างโดย Django เพิ่มเติม ไม่อยู่ใน ERD นี้ (สิทธิ์ของระบบใช้ `role` + `user_role` เป็นหลัก)

@@ -20,6 +20,11 @@ urlpatterns = [
     path("vault/", views.vault, name="vault"),
     path("documents/<int:document_id>/", views.document_detail, name="document_detail"),
     path(
+        "documents/<int:document_id>/hide/",
+        views.document_hide,
+        name="document_hide",
+    ),
+    path(
         "documents/<int:document_id>/preview/",
         views.document_preview,
         name="document_preview",
@@ -38,4 +43,10 @@ urlpatterns = [
         views.approval_document_preview,
         name="approval_preview",
     ),
+    path(
+        "approvals/<int:document_id>/download/",
+        views.approval_document_download,
+        name="approval_download",
+    ),
+    path("bulk-import/", views.bulk_import, name="bulk_import"),
 ]
