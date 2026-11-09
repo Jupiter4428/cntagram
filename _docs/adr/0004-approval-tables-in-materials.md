@@ -5,12 +5,12 @@
 - **Issue:** #33
 
 ## Context
-ADR 0001 ให้ตกลงว่าตาราง Sprint 2 อยู่ app ไหนแล้วเขียน ADR ใหม่ US-6 (#30) สร้าง `approval` และ US-9 (#33) สร้าง `doc_type_required_role` ไว้ใน `materials` ไปแล้ว ADR นี้บันทึกเหตุผลของสองตารางนี้เท่านั้น ส่วน `download_log`, `audit_log`, `report` ยังต้องตกลงแยก
+ADR 0001 ให้ตกลงว่าตารางที่เกี่ยวกับการอนุมัติ การดาวน์โหลด และการร้องเรียนอยู่ app ไหน US-6 (#30) สร้าง `approval` และ US-9 (#33) สร้าง `doc_type_required_role` ไว้ใน `materials` ตามด้วย `download_log` (US-8), `report` (US-32) และ `takedown_request` (US-33)
 
-ทั้งสองตารางอ้าง `document` / `doc_type` (อยู่ใน `materials`) และ `role` (อยู่ใน `accounts`) และกฎ "ครบตามกฎแล้วเปลี่ยนเป็น `published`" ต้องเขียน `approval` กับ `document.status` ใน transaction เดียวกัน
+ตารางเหล่านี้อ้าง `document` / `doc_type` (อยู่ใน `materials`) และ `role` / `app_user` (อยู่ใน `accounts`) และกฎ "ครบตามกฎแล้วเปลี่ยนเป็น `published`" หรือ "ตัดสินเรื่องร้องเรียนแล้วซ่อนเอกสารเป็น `hidden`" ต้องเขียนตารางดังกล่าวกับ `document.status` ใน transaction เดียวกัน
 
 ## Decision
-`Approval` และ `DocTypeRequiredRole` อยู่ใน `materials/models.py` กฎอนุมัติ (เขียน) อยู่ใน `materials/services.py` และการอ่านกฎ/สถานะอนุมัติอยู่ใน `materials/selectors.py`
+`Approval`, `DocTypeRequiredRole`, `DownloadLog`, `Report` และ `TakedownRequest` อยู่ใน `materials/models.py` กฎการเขียนอยู่ใน `materials/services.py` และการอ่านสถานะอยู่ใน `materials/selectors.py`
 
 ## Alternatives considered
 - **app ใหม่ `approvals`**: แยกชัด แต่ `approvals` ต้อง import `materials` (เพื่อเปลี่ยน `document.status`) และ `materials` ไม่ควร import กลับ ได้ app ที่เล็กมากและทุก story อนุมัติต้องแก้สอง app

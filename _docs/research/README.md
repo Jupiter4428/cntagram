@@ -42,7 +42,7 @@
 - [ ] Story ที่ commit เข้า Sprint และ Story Points (แผน vs เสร็จจริง → Velocity)
 - [ ] ภาพ Burndown Chart (capture จาก GitHub Project Insights ก่อนปิด Sprint)
 - [ ] ผล Sprint Review: PO รับงานไหน ไม่รับงานไหน เพราะอะไร
-- [ ] ผล Retrospective (`_docs/sprintN_retro.md` ตาม CONTRIBUTING) และ Action Items
+- [ ] ผล Retrospective และ Action Items
 - [ ] จำนวน PR / commit / issue ที่ปิด (`gh pr list --state merged --search "milestone:..."`)
 - [ ] สัดส่วนแต้ม Tech Debt (เป้า ≥ 20% ตั้งแต่ Sprint 2)
 

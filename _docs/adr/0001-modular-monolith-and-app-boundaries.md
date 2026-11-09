@@ -14,18 +14,18 @@
 - แบ่ง app ตามโดเมน แต่ละ app อธิบายได้ในประโยคเดียว:
   - `catalog`: โครงสร้างภาควิชา รุ่น รายวิชา และค่ากำหนดระบบ
   - `accounts`: ผู้ใช้ บทบาท สิทธิ์ และวิดเจ็ตชุมชนหน้าแรก (Shoutbox, Poll, Counter)
-  - `materials`: เอกสาร ไฟล์ เวอร์ชัน การอนุมัติ และบันทึกการดาวน์โหลด
-  - `webboard` (เพิ่มใน Sprint 3, PR #202): กระดานสนทนาชุมชน หมวดหมู่ กระทู้ถาม-ตอบ (ผูกรายวิชาได้) ข้อความตอบกลับ อีโมติคอน MSN และฝังภาพ GIF
+  - `materials`: เอกสาร ไฟล์ เวอร์ชัน การอนุมัติ บันทึกการดาวน์โหลด และการร้องเรียน/แจ้งลบ (`Report`, `TakedownRequest`)
+  - `webboard` (เพิ่มใน Sprint 3, PR #202): กระดานสนทนาชุมชน หมวดหมู่ กระทู้ถาม-ตอบ (ผูกรายวิชาได้) ข้อความตอบกลับ แก้ไข/ลบ/ปักหมุด/ล็อก อีโมติคอน MSN และฝังภาพ GIF
 - **ทิศทาง Dependency ทางเดียว:** `catalog` ← `accounts` ← (`materials`, `webboard`) (ลูกศรชี้ไปที่ app ที่ถูกพึ่ง)
   - `catalog` ไม่ import app ใดเลย
   - `accounts` พึ่ง `catalog` ได้
   - `materials` และ `webboard` พึ่งได้ทั้ง `catalog` และ `accounts` (โดย `materials` กับ `webboard` ไม่ import กันเอง)
 - FK ข้าม app อ้างด้วย string (`"catalog.BatchCourse"`) และอ้างผู้ใช้ด้วย `settings.AUTH_USER_MODEL`
 - **ข้อยกเว้นสำหรับการอ่านข้อมูล (เพิ่ม 2026-10-26, #65):** app ต้นทางใช้ข้อมูลของ app ปลายทางได้ 2 ทาง โดยโค้ด Python ของ app ต้นทางไม่ต้อง import app ปลายทาง
-  - template ของ app ต้นทาง `{% load %}` template tag ของ app ปลายทางได้ (เช่น `accounts/index_admin.html` ใช้ `materials_stats`) tag ต้องเรียก selector และอ่านอย่างเดียว
+  - template ของ app ต้นทาง `{% load %}` template tag ของ app ปลายทางได้ (เช่น `accounts/index_admin.html` และ `accounts/index.html` ใช้ `materials_stats`) tag ต้องเรียก selector และอ่านอย่างเดียว
   - selector ของ app ต้นทางนับหรือกรองผ่าน reverse relation ได้ (เช่น `Count("documents")` ใน `accounts/selectors.py`)
-- การทำงานที่ต้องประสานหลาย app (เช่น อนุมัติเอกสารแล้วบันทึก Audit Log) เขียนใน `services.py` ของ app ที่อยู่ปลายทาง dependency ไม่ให้ app ต้นทางเรียกย้อนกลับ
-- ตารางของ Sprint 2 (`approval`, `download_log`, `audit_log`, `report`, `doc_type_required_role`) จะอยู่ app ไหน ให้ตกลงใน Sprint 2 Planning แล้วเขียน ADR ใหม่
+- การทำงานที่ต้องประสานหลาย app เขียนใน `services.py` ของ app ที่อยู่ปลายทาง dependency ไม่ให้ app ต้นทางเรียกย้อนกลับ
+- ตารางการอนุมัติ การดาวน์โหลด และการร้องเรียน (`approval`, `doc_type_required_role`, `download_log`, `report`, `takedown_request`) อยู่ใน `materials` ตาม [ADR 0004](./0004-approval-tables-in-materials.md)
 
 ## Alternatives considered
 - **App เดียว (`core`)**: เริ่มเร็วแต่กลายเป็น God App และทุกคนชนไฟล์เดียวกัน
