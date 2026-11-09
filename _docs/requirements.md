@@ -121,6 +121,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | ID | Story | MoSCoW | Issue / PR |
 |---|---|---|---|
 | US-13 | **As a** ผู้ใช้ **I want** ขอลบบัญชีของตัวเอง **so that** ข้อมูลส่วนบุคคลของฉันถูกลบตาม PDPA (`User.anonymize()`) | Should | [#144](https://github.com/Jupiter4428/cntagram/issues/144) |
+| US-41 | **As a** สมาชิกที่เข้าสู่ระบบ **I want** อัปโหลด ลบรูปประจำตัว (Avatar) และดูข้อมูลโปรไฟล์บัญชีของฉัน **so that** แสดงตัวตนในชุมชนเว็บบอร์ดและตรวจสอบข้อมูลสังกัดของตนเองได้ | Should | PR [#237](https://github.com/Jupiter4428/cntagram/pull/237) |
 
 #### E2 โครงสร้างคลัง
 
@@ -135,6 +136,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | US-12 | **As a** ผู้ใช้ **I want** ระบบปฏิเสธไฟล์ที่ซ้ำกับไฟล์ในคลังด้วย SHA-256 **so that** คลังไม่มีไฟล์ขยะซ้ำกันหลายฉบับ | Should | [#143](https://github.com/Jupiter4428/cntagram/issues/143) |
 | US-21 | **As a** ผู้อัปโหลด **I want** ส่งไฟล์เวอร์ชันใหม่ แก้คำอธิบาย หรือลบไฟล์ของตัวเอง **so that** ชีทของฉันถูกต้องและทันสมัย | Should | [#217](https://github.com/Jupiter4428/cntagram/issues/217) · PR [#234](https://github.com/Jupiter4428/cntagram/pull/234) |
 | US-34 | **As a** ผู้อัปโหลดและ Moderator **I want** เห็นรายการ "ไฟล์ของฉัน" พร้อมสถานะและเหตุผลที่ไม่ผ่านอนุมัติ รวมถึงจำนวนไฟล์รออนุมัติบนหน้าแรก **so that** ติดตามสถานะเอกสารและคิวตรวจได้ทันที (รวม US-22) | Should | [#34](https://github.com/Jupiter4428/cntagram/issues/34) |
+| US-42 | **As a** ผู้อัปโหลด **I want** พิมพ์ค้นหาและเลือกรายวิชาแบบไดนามิก (Combobox) ในฟอร์มอัปโหลด **so that** เลือกวิชาที่ต้องการอัปโหลดได้อย่างสะดวกรวดเร็วโดยไม่ต้องเลื่อนหารายวิชาในดรอปดาวน์ขนาดยาว | Could | [#224](https://github.com/Jupiter4428/cntagram/issues/224) · PR [#225](https://github.com/Jupiter4428/cntagram/pull/225) |
 
 #### E4 คัดกรองคุณภาพ
 
@@ -156,7 +158,7 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 | US-37 | **As a** ผู้ใช้งานเว็บบอร์ด **I want** โหวตโพลประจำสัปดาห์และเห็นกราฟผลคะแนนทันทีโดยไม่รีเฟรชหน้าเว็บ **so that** ร่วมแสดงความคิดเห็นในประเด็นการเรียนของชาววิศวะได้สะดวก | Should | [#89](https://github.com/Jupiter4428/cntagram/issues/89) · PR [#180](https://github.com/Jupiter4428/cntagram/pull/180) |
 | US-38 | **As a** ผู้ใช้งานเว็บบอร์ด **I want** เห็นยอดผู้เข้าชมเว็บไซต์สะสมที่นับเพิ่มจริงในรูปแบบ LCD 6 หลัก **so that** ทราบสถิติความเคลื่อนไหวและความนิยมของเว็บบอร์ดในสไตล์เรโทร | Could | [#89](https://github.com/Jupiter4428/cntagram/issues/89) · PR [#180](https://github.com/Jupiter4428/cntagram/pull/180) |
 | US-39 | **As an** นักศึกษา **I want** เปิดฟังเพลงประกอบ BGM Player ยุค 2000s พร้อมเลือกเพลงและปรับระดับเสียงได้ **so that** สร้างบรรยากาศ Nostalgia และผ่อนคลายขณะอ่านชีทเตรียมสอบ | Could | [#161](https://github.com/Jupiter4428/cntagram/issues/161) · PR [#180](https://github.com/Jupiter4428/cntagram/pull/180) |
-| E6-WB | **As a** นักศึกษาและ Moderator **I want** ตั้งกระทู้ถาม-ตอบแยกหมวดหมู่และผูกรายวิชา ตอบกลับ แก้ไข/ลบข้อความ ปักหมุด/ล็อกกระทู้ และใช้อีโมติคอน MSN / ฝังภาพ GIF **so that** แลกเปลี่ยนความรู้ในบรรยากาศเว็บบอร์ดยุค 2000s | Should | PR [#202](https://github.com/Jupiter4428/cntagram/pull/202), [#222](https://github.com/Jupiter4428/cntagram/pull/222), [#226](https://github.com/Jupiter4428/cntagram/pull/226), [#232](https://github.com/Jupiter4428/cntagram/pull/232), [#233](https://github.com/Jupiter4428/cntagram/pull/233) |
+| US-40 | **As an** สมาชิกในชุมชน **I want** พูดคุย แลกเปลี่ยน ตั้งกระทู้ถาม-ตอบแยกหมวดหมู่และผูกรายวิชา ตอบกลับ แก้ไข/ลบข้อความ ปักหมุด/ล็อกกระทู้ และใช้อีโมติคอน MSN / ฝังภาพ GIF **so that** แลกเปลี่ยนความรู้ในบรรยากาศเว็บบอร์ดยุค 2000s | Should | [#203](https://github.com/Jupiter4428/cntagram/issues/203) · PR [#202](https://github.com/Jupiter4428/cntagram/pull/202), [#209](https://github.com/Jupiter4428/cntagram/pull/209), [#210](https://github.com/Jupiter4428/cntagram/pull/210), [#211](https://github.com/Jupiter4428/cntagram/pull/211), [#212](https://github.com/Jupiter4428/cntagram/pull/212), [#213](https://github.com/Jupiter4428/cntagram/pull/213), [#222](https://github.com/Jupiter4428/cntagram/pull/222), [#226](https://github.com/Jupiter4428/cntagram/pull/226), [#232](https://github.com/Jupiter4428/cntagram/pull/232), [#233](https://github.com/Jupiter4428/cntagram/pull/233), [#235](https://github.com/Jupiter4428/cntagram/pull/235) |
 
 ##### รายละเอียด Acceptance Criteria ของฟังก์ชันชุมชนและเรโทรวิดเจ็ต (US-36 – US-39)
 
@@ -187,6 +189,71 @@ Epic คือกลุ่มคุณค่าใหญ่ที่แตกเ
 - **AC 3 (Curated Playlist):** บรรจุเพลย์ลิสต์เพลงย้อนยุคและเพลงชิปจูนประจำคณะ สามารถเปิด-ปิดดูรายชื่อเพลงและกดเลือกเพลงที่ต้องการได้
 - **AC 4 (Volume & Mute Control):** มีแถบเลื่อนปรับระดับเสียง และปุ่มปิด/เปิดเสียง (Mute/Unmute)
 - **AC 5 (Y2K / Winamp Aesthetic):** มีแอนิเมชันแผ่นดิสก์หมุนขณะเล่นเพลง และสไตล์กรอบตามธีม Windows Classic / Y2K
+
+###### US-40: กระดานสนทนาเว็บบอร์ดเด็กวิศวะ (Webboard Discussion Forum & Emoticons)
+- **AC 1 (Category & Course Scoping):** จัดกลุ่มกระทู้ตามหมวดหมู่ (`BoardCategory`) พร้อมไอคอนเรโทร และรองรับการเลือกผูกกระทู้เข้ากับรายวิชาในหลักสูตร (`Course`) หรือตั้งเป็นกระทู้ทั่วไปได้
+- **AC 2 (Authenticated Contribution):** เฉพาะสมาชิกที่เข้าสู่ระบบเท่านั้นที่สามารถกดปุ่ม "ตั้งกระทู้ใหม่" หรือ "ตอบกระทู้" ได้ หากเป็น Guest จะแสดงปุ่มนำทางไปหน้าเข้าสู่ระบบ
+- **AC 3 (Safe MSN Emoticons & Image Formatting):** แปลงโค้ดอีโมติคอน MSN คลาสสิก (เช่น `:)`, `:-D`, `(L)`, `(K)`, `(H)`) เป็นรูปภาพสติกเกอร์เรโทรอย่างแม่นยำ โดยมี Regular Expression ป้องกันการแปลงผิดพลาดกลางคำศัพท์ภาษาอังกฤษหรือ URL และรองรับแท็ก `[img]URL[/img]` หรือลิงก์ภาพ GIF ปลอดภัย
+- **AC 4 (Thread & Post Lifecycle):** เจ้าของกระทู้และเจ้าของข้อความตอบกลับสามารถแก้ไขเนื้อหาของตนเองได้ โดยระบบจะบันทึกเวลาแก้ไขและแสดงป้าย `(แก้ไขล่าสุดเมื่อ dd/mm/yyyy hh:mm)` อัตโนมัติ
+- **AC 5 (Moderation & Authority):** Moderator และ Super Admin สามารถสั่งปักหมุดกระทู้สำคัญ (`is_pinned`), ล็อกกระทู้ห้ามตอบเพิ่ม (`is_locked`), และลบกระทู้หรือข้อความตอบกลับที่ไม่เหมาะสมได้
+- **AC 6 (Pagination & Anti-Spam View Count):** หน้ารายการกระทู้แบ่งหน้าละ 15 กระทู้ และหน้ากระทู้แบ่งหน้าละ 20 ข้อความตอบกลับ พร้อมระบบนับยอดวิวแบบ Debounce ผ่าน Session Tracking (นับเพิ่มไม่เกิน 1 ครั้งต่อกระทู้ในรอบ 1 ชั่วโมงต่อผู้ใช้) ป้องกันการปั๊มยอดเข้าชม
+
+##### รายละเอียด Acceptance Criteria ของระบบโปรไฟล์และรูปประจำตัว (US-41)
+
+###### US-41: การตั้งค่าโปรไฟล์และรูปประจำตัว (User Profile Settings & Avatar Management)
+- **AC 1 (File Type & Magic Byte Validation):** รองรับไฟล์รูปภาพนามสกุล `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif` ขนาดไม่เกิน 2 MB และตรวจสอบ MIME Type / Magic Bytes จริงด้วย `Pillow` เพื่อป้องกันการอัปโหลดสคริปต์อันตรายปลอมแปลงนามสกุล
+- **AC 2 (Dimension & Resolution Guard):** ตรวจสอบความกว้างและความสูงของรูปภาพต้องไม่เกิน 2048×2048 พิกเซล และขนาดไฟล์ต้องมากกว่า 0 byte
+- **AC 3 (Protected Serving Endpoint):** เสิร์ฟรูปภาพผ่าน URL เฉพาะ `/account/profile/avatar/<user_id>/` พร้อมกำหนด `Content-Type` และ cache headers อย่างถูกต้อง หากผู้ใช้ยังไม่มีรูปให้ส่งกลับภาพ fallback อัตโนมัติ (HTTP 200)
+- **AC 4 (Avatar Deletion):** สมาชิกสามารถกดลบรูปโปรไฟล์ของตนเองได้ โดยระบบจะลบไฟล์รูปภาพออกจากพื้นที่จัดเก็บบนดิสก์และรีเซ็ตฟิลด์ `avatar` เป็น `None`
+- **AC 5 (Ubiquitous UI Integration):** แสดงผลรูปโปรไฟล์ในแถบนำทาง (Navbar Profile Bubble), การ์ดสมาชิกในเมนูด้านข้าง (Member Sidebar), เมนูผู้ดูแล (Admin Sidebar), หน้าโปรไฟล์ส่วนตัว, และการ์ดข้อมูลผู้เขียนกระทู้/ผู้ตอบข้อความในเว็บบอร์ด
+- **AC 6 (Account Overview):** หน้าตั้งค่าโปรไฟล์ `/account/profile/` แสดงข้อมูลยืนยันตัวตน ได้แก่ อีเมลนักศึกษา, รหัสนักศึกษา, ภาควิชา และอีเมลส่วนตัว (หากมี) เพื่อความโปร่งใสตามหลัก PDPA
+
+##### รายละเอียด Acceptance Criteria ของฟังก์ชันค้นหารายวิชาในฟอร์มอัปโหลด (US-42)
+
+###### US-42: ช่องค้นหาและเลือกรายวิชาแบบไดนามิกในฟอร์มอัปโหลด (Searchable Course Combobox)
+- **AC 1 (Combobox Presentation):** ในหน้าฟอร์มอัปโหลดชีท (`/materials/upload/`) ช่องเลือกรายวิชามีฟังก์ชันพิมพ์ค้นหา (Search input) ควบคู่กับรายการดรอปดาวน์
+- **AC 2 (Real-time Filtering):** เมื่อผู้ใช้พิมพ์ข้อความ ระบบจะกรองรายวิชาที่ตรงกับรหัสวิชา (เช่น `CN101`) หรือชื่อวิชาภาษาไทย/อังกฤษทันทีโดยไม่ต้องโหลดหน้าใหม่
+- **AC 3 (Form Binding & Validation):** เมื่อเลือกวิชาจากรายการ ค่า `batch_course_id` จะถูกผูกเข้ากับฟอร์มหลักอย่างถูกต้อง และผ่านการตรวจสอบความถูกต้องฝั่งเซิร์ฟเวอร์แบบเดียวกับดรอปดาวน์ปกติ
+- **AC 4 (Keyboard Navigation & Accessibility):** รองรับการใช้แป้นพิมพ์เลื่อนลูกศรขึ้น-ลงเพื่อเลือกวิชาและกด Enter เพื่อยืนยัน พร้อมแสดงผลลัพธ์การค้นหาที่ชัดเจนบนทุกขนาดหน้าจอ
+
+##### รายละเอียด Acceptance Criteria ของการจัดการเอกสารของผู้อัปโหลด (US-21)
+
+###### US-21: ผู้อัปโหลดจัดการเอกสารของตนเอง (Manage Own Documents)
+- **AC 1 (Upload New Version):** เจ้าของเอกสารสามารถส่งไฟล์ PDF เวอร์ชันใหม่สำหรับเอกสารของตนเองได้ โดยได้รับเลขเวอร์ชันถัดไป (`version_no + 1`) และไฟล์ใหม่จะกลายเป็นเวอร์ชันปัจจุบันทันที
+- **AC 2 (Edit Document Metadata):** เจ้าของเอกสารสามารถแก้ไขชื่อเอกสารและคำอธิบายเพิ่มเติมได้โดยตรงผ่านหน้าแก้ไขเอกสาร
+- **AC 3 (Document Deletion):** เจ้าของเอกสารสามารถขอลบเอกสารของตนเองได้ โดยระบบจะยืนยันความตั้งใจก่อนลบ เมื่อลบแล้วเอกสารและไฟล์ทุกเวอร์ชันจะถูกลบออกจากคลังและหน้าเอกสารตอบ 404
+- **AC 4 (Strict Authorization):** ผู้ใช้ที่ไม่ใช่เจ้าของเอกสารและไม่ใช่ Super Admin จะถูกปฏิเสธสิทธิ์ (HTTP 403) ทันทีหากพยายามเข้าถึงหน้าแก้ไข เวอร์ชันใหม่ หรือส่งคำขอลบ
+
+##### รายละเอียด Acceptance Criteria ของการกำกับดูแลและซ่อนเอกสาร (US-25)
+
+###### US-25: การซ่อนเอกสารที่เผยแพร่แล้วแต่มีปัญหา (Hide Problematic Document)
+- **AC 1 (Authorized Suspension):** Moderator (เฉพาะภาควิชาของตน) และ Super Admin (ทุกภาควิชา) สามารถสั่งซ่อนเอกสารที่มีสถานะ `published` ได้ พร้อมระบุเหตุผลในการซ่อน
+- **AC 2 (Vault Exclusion):** เอกสารที่ถูกซ่อน (`status = hidden`) จะถูกกรองออกจากหน้าค้นหาและคลังเอกสารทันที
+- **AC 3 (Direct Access Prevention):** ผู้ใช้ทั่วไปที่พยายามเข้าถึงเอกสารที่ถูกซ่อนผ่าน URL ตรงหรือลิงก์พรีวิวจะได้รับข้อผิดพลาด HTTP 404
+
+##### รายละเอียด Acceptance Criteria ของการนำเข้าเอกสารจำนวนมาก (US-17)
+
+###### US-17: การนำเข้าเอกสารจำนวนมากด้วย CSV พร้อมโหมดทดลองรัน (Bulk Import with Dry-run)
+- **AC 1 (Dual Interface):** รองรับการนำเข้าไฟล์เอกสารผ่าน CLI Management Command (`python manage.py import_documents`) และหน้าเว็บ Super Admin (`/materials/bulk-import/`) ควบคู่กับไฟล์บีบอัด ZIP
+- **AC 2 (Dry-Run Simulation):** มีโหมดทดลองรัน (`--dry-run` หรือเลือกเช็กบ็อกซ์บนเว็บ) ที่ทำการตรวจสอบความถูกต้องของข้อมูลทุกแถวและตรวจไฟล์ PDF โดยไม่บันทึกลงฐานข้อมูลและไม่คัดลอกไฟล์จริงลงดิสก์
+- **AC 3 (Row-by-Row Validation Report):** แสดงสรุปผลการนำเข้าอย่างละเอียด ระบุจำนวนแถวที่ผ่าน (PASS), แถวที่ข้ามเนื่องจากเป็นไฟล์ซ้ำ (SKIP - ตรวจสอบด้วย SHA-256), และแถวที่ผิดพลาด (FAIL) พร้อมข้อความแจ้งสาเหตุเฉพาะจุด
+
+##### รายละเอียด Acceptance Criteria ของระบบร้องเรียนและคุ้มครองลิขสิทธิ์ (US-32, US-33, US-35)
+
+###### US-32: การรายงานเอกสารที่มีปัญหา (Report Published Document)
+- **AC 1 (Authenticated Report):** ผู้ใช้ที่เข้าสู่ระบบสามารถรายงานเอกสารที่เผยแพร่แล้ว โดยระบุประเภทของปัญหา (ลิขสิทธิ์, ข้อสอบห้ามเผยแพร่, ข้อมูลผิดพลาด, หรืออื่นๆ) พร้อมพิมพ์คำอธิบายเหตุผล
+- **AC 2 (Duplicate Report Prevention):** ผู้ใช้คนเดิมไม่สามารถส่งรายงานซ้ำสำหรับเอกสารชิ้นเดิมได้ขณะที่รายงานฉบับแรกยังอยู่ระหว่างการพิจารณา (`status = open`)
+- **AC 3 (Reporter Privacy):** ข้อมูลตัวตนของผู้รายงานจะถูกเก็บเป็นความลับและไม่แสดงต่อผู้อัปโหลดเอกสาร
+
+###### US-33: แบบฟอร์มสาธารณะแจ้งลบเนื้อหาลิขสิทธิ์ (Public Copyright Takedown Request)
+- **AC 1 (Guest Accessible):** บุคคลภายนอกหรืออาจารย์ที่ไม่มีบัญชีสามารถเข้าถึงแบบฟอร์มแจ้งลบเนื้อหาที่ `/materials/takedown/` ได้โดยไม่ต้องล็อกอิน
+- **AC 2 (Claimant Verification & Reference):** ผู้ร้องเรียนต้องระบุชื่อ, อีเมลติดต่อ, ลิงก์หรือข้อมูลระบุเนื้อหา, เหตุผล และกดยืนยันการเป็นเจ้าของลิขสิทธิ์ เมื่อส่งคำร้องสำเร็จระบบจะสร้างรหัสอ้างอิงเฉพาะ (UUID Reference) ให้ผู้ร้องเรียนใช้ติดตามเรื่อง
+- **AC 3 (Rate Limiting & Abuse Prevention):** กำหนดอัตราการส่งคำขอแบบ Two-bucket ต่อ IP Address เพื่อป้องกันการสแปมแบบฟอร์ม
+
+###### US-35: การตรวจสอบและตัดสินเรื่องร้องเรียน (Review & Resolve Reports)
+- **AC 1 (Comprehensive Reports Dashboard):** Super Admin สามารถดูรายการเรื่องร้องเรียนทั้งหมดทั้งจากสมาชิกในระบบและจากแบบฟอร์มสาธารณะ พร้อมสถานะและเวลาที่ได้รับเรื่อง
+- **AC 2 (Three-Way Decision Engine):** Super Admin สามารถตัดสินเรื่องร้องเรียนได้ 3 รูปแบบ: (1) นำเอกสารลง (`remove` - ซ่อนเอกสารอัตโนมัติ), (2) ยกคำร้อง (`dismiss`), หรือ (3) แจ้งให้ผู้อัปโหลดแก้ไข (`request_changes`) พร้อมบันทึกเหตุผลและเวลาที่ตัดสิน
+- **AC 3 (Atomic Resolution Transaction):** การบันทึกผลการตัดสินและการปรับสถานะเอกสารถูกประมวลผลภายใน Database Transaction เดียวกัน ป้องกันข้อมูลไม่สอดคล้อง
 
 #### E7 ลิขสิทธิ์และความไว้วางใจ
 
@@ -266,6 +333,7 @@ Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็น
 | 2026-11-03 | Sprint 3 (ส่งงาน 2026-11-09 ต้องเสร็จ 2026-11-08): ดึง story ที่ผูกกับฟีเจอร์หลักและเล็กพอทำทันเข้า Sprint 3 แล้วเลื่อนเลข story ให้ต่อจาก US-10 ไม่ชนกัน (US-22 และ US-34 คงเลขเดิมเพราะมี issue แล้ว) — เข้า Sprint 3: เดิม US-26 → **US-11** ([#142](https://github.com/Jupiter4428/cntagram/issues/142)), US-21 ส่วนไฟล์ซ้ำ → **US-12** ([#143](https://github.com/Jupiter4428/cntagram/issues/143)), US-13 คงเดิม ([#144](https://github.com/Jupiter4428/cntagram/issues/144)); ที่เหลือเลื่อน: 11→14, 12→15, 14→16, 15→17, 16→18, 17→19, 18→20, 19→21, 20→23, US-21 ส่วนสแกนไวรัส → 24, 23→25, 24→26, 25→27, 27→28, 28→29, 29→30, 30→31, 31→32, 32→33, 33→35; เลขในตารางและประวัติข้างบนใช้เลขใหม่แล้ว |
 | 2026-11-08 | เพิ่ม User Story ของฟังก์ชันชุมชนและเรโทรวิดเจ็ตหน้าแรกใน E6 ตามการพัฒนาจริงใน PR #180 (Refs #89, #161): **US-36** (Shoutbox ทักทายสดแบบ AJAX), **US-37** (โพลประจำสัปดาห์แบบ AJAX), **US-38** (ตัวนับสถิติผู้เข้าชมเว็บไซต์แบบเรียลไทม์), และ **US-39** (เครื่องเล่นเพลงประกอบเว็บบอร์ด BGM Player ยุค 2000s) พร้อมระบุ Acceptance Criteria ละเอียดครบถ้วน |
 | 2026-11-09 | เพิ่มแอป `webboard` (กระดานสนทนาชุมชนเรโทรยุค 2000s พร้อม MSN emoticons, GIF embeds และการแก้ไข/ลบกระทู้และข้อความ), ระบบนำเข้าไฟล์จำนวนมาก (US-17), การซ่อนเอกสารที่เผยแพร่แล้ว (US-25), ระบบรายงานปัญหาและแจ้งลบเนื้อหาละเมิดลิขสิทธิ์ (US-32, US-33, US-35) และอัปเดต §6 และ §10 ให้แสดงเฉพาะฟีเจอร์ที่มีอยู่จริงในระบบปัจจุบัน |
+| 2026-11-09 | เพิ่ม User Story ระบบโปรไฟล์และรูปประจำตัว (**US-41**), ช่องค้นหารายวิชาแบบไดนามิกในฟอร์มอัปโหลด (**US-42**), และกระดานสนทนาเว็บบอร์ด (**US-40**) พร้อมระบุ Acceptance Criteria ของฟีเจอร์ที่พัฒนาแล้วครบถ้วน (US-17, US-21, US-25, US-32, US-33, US-35, US-40, US-41, US-42) และปรับปรุงเอกสาร C4 Architecture |
 
 ---
 
@@ -277,12 +345,12 @@ Sprint Goal ตัวจริงตั้งใน Sprint Planning เป็น
 
 | หมวด | ฟังก์ชันที่มีในโค้ด | Story / Issue | หลักฐานในโค้ด |
 |---|---|---|---|
-| **บัญชีและความปลอดภัย** | สมัครสมาชิกด้วยอีเมลคณะ (`@student.tu.ac.th` รหัสคณะ `10`), เข้าสู่ระบบ/ออกจากระบบ, จำกัดอัตราการเดารหัสผ่านแบบ Two-bucket (ตามบัญชีและ IP), ลบบัญชีตนเองตาม PDPA ที่ `/account/delete/` (Anonymize), แสดงรายการ "ไฟล์ของฉัน + เหตุผลที่ถูกปฏิเสธ" และแจ้งเตือนคิวตรวจบนหน้าแรก | US-1, US-2, US-13, US-34 (#34, #172) | `accounts/urls.py`, `accounts/services.py`, `accounts/models.py`, `materials/templatetags/materials_stats.py` |
+| **บัญชีและความปลอดภัย** | สมัครสมาชิกด้วยอีเมลคณะ (`@student.tu.ac.th` รหัสคณะ `10`), เข้าสู่ระบบ/ออกจากระบบ, จำกัดอัตราการเดารหัสผ่านแบบ Two-bucket (ตามบัญชีและ IP), ลบบัญชีตนเองตาม PDPA ที่ `/account/delete/` (Anonymize), ตั้งค่าโปรไฟล์และอัปโหลด/ลบรูปประจำตัว (Avatar) ที่ `/account/profile/` พร้อมเสิร์ฟผ่านเอนด์พอยต์ที่มีการป้องกันสิทธิ์, แสดงรายการ "ไฟล์ของฉัน + เหตุผลที่ถูกปฏิเสธ" และแจ้งเตือนคิวตรวจบนหน้าแรก | US-1, US-2, US-13, US-34, US-41 (#34, #172, #237) | `accounts/urls.py`, `accounts/services.py`, `accounts/models.py`, `accounts/views.py`, `materials/templatetags/materials_stats.py` |
 | **สิทธิ์และบทบาท** | แต่งตั้ง/ถอดถอน Moderator ประจำภาควิชา, แดชบอร์ดผู้ดูแลระบบส่วนกลาง และ Django Admin ครบทุกแอป | US-3, US-10, TD-3 | `accounts/urls.py`, `portal/permissions.py`, `*/admin.py` |
 | **โครงสร้างหลักสูตร** | จัดการภาควิชา (ดู/เพิ่ม/แก้/ลบ), รุ่น (ดู/เพิ่ม/ลบ), ผูก/ถอดรายวิชาในรุ่น (`BatchCourse`), รายวิชา (ดู/เพิ่ม), ค่ากำหนดระบบ (`SystemSetting`) | US-3, US-4 | `catalog/urls.py`, `catalog/services.py`, `catalog/selectors.py` |
-| **คลังเอกสารและการค้นหา** | อัปโหลด PDF พร้อมช่องค้นหารายวิชาแบบ Combobox และตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, ผู้อัปโหลดแก้ไขชื่อ/คำอธิบาย อัปโหลดเวอร์ชันใหม่ หรือลบเอกสารของตนเองได้ (`document_edit`, `document_new_version`, `document_delete`), นำเข้าเอกสารจำนวนมากด้วย CSV + ZIP ทั้งทาง CLI (`import_documents`) และหน้าเว็บ (`/materials/bulk-import/` พร้อมโหมดทดลองรัน), คลังเอกสารแยก Lecture / Exam Vault, ค้นหาด้วยรหัสวิชาพร้อมกรองภาควิชา/รุ่น/ประเภทเอกสาร/ช่วงสอบ/ปี พ.ศ., เปิดอ่านตัวอย่าง PDF แบบ Inline (`<iframe>`) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog` | US-5, US-7, US-8, US-11, US-12, US-17, US-21 (#215, #217, #224) | `materials/urls.py`, `materials/services.py`, `materials/selectors.py`, `materials/downloads.py`, `materials/management/commands/import_documents.py` |
+| **คลังเอกสารและการค้นหา** | อัปโหลด PDF พร้อมช่องค้นหารายวิชาแบบ Combobox และตรวจ SHA-256 ป้องกันไฟล์ซ้ำ, ผู้อัปโหลดแก้ไขชื่อ/คำอธิบาย อัปโหลดเวอร์ชันใหม่ หรือลบเอกสารของตนเองได้ (`document_edit`, `document_new_version`, `document_delete`), นำเข้าเอกสารจำนวนมากด้วย CSV + ZIP ทั้งทาง CLI (`import_documents`) และหน้าเว็บ (`/materials/bulk-import/` พร้อมโหมดทดลองรัน), คลังเอกสารแยก Lecture / Exam Vault, ค้นหาด้วยรหัสวิชาพร้อมกรองภาควิชา/รุ่น/ประเภทเอกสาร/ช่วงสอบ/ปี พ.ศ., เปิดอ่านตัวอย่าง PDF แบบ Inline (`<iframe>`) และดาวน์โหลดแบบตรวจสิทธิ์พร้อมบันทึก `DownloadLog` | US-5, US-7, US-8, US-11, US-12, US-17, US-21, US-42 (#215, #217, #224, #225) | `materials/urls.py`, `materials/services.py`, `materials/selectors.py`, `materials/downloads.py`, `materials/management/commands/import_documents.py` |
 | **การคัดกรองและอนุมัติ** | คิวรออนุมัติแยกตามสิทธิ์, รีวิว/อนุมัติ/ปฏิเสธพร้อมเหตุผลตามกฎ `DocTypeRequiredRole` (ชีททั่วไปใช้ 1 ฝ่าย / ข้อสอบเก่าต้องครบทั้ง Moderator และ Super Admin / ข้อสอบรุ่น ≤ `legacy_batch_max` ใช้ Super Admin), พรีวิวและดาวน์โหลดไฟล์ระหว่างรอพิจารณา, ซ่อนเอกสารที่เผยแพร่แล้วพร้อมเหตุผล (`document_hide`) | US-6, US-9, US-25 (#205, #216) | `materials/urls.py`, `materials/views.py`, `materials/services.py` |
 | **ลิขสิทธิ์และการร้องเรียน** | ผู้ใช้รายงานเอกสารที่มีปัญหา (`Report`), แบบฟอร์มสาธารณะให้อาจารย์/เจ้าของลิขสิทธิ์แจ้งลบเนื้อหาที่ `/materials/takedown/` (`TakedownRequest`), หน้าดูรายงานที่เปิดอยู่สำหรับ Moderator (`/materials/reports/`) และหน้าพิจารณาตัดสินชี้ขาดของ Super Admin (`/materials/reports/review/`) | US-32, US-33, US-35 (#218, #219, #220) | `materials/urls.py`, `materials/models.py`, `materials/services.py`, `materials/selectors.py` |
 | **ชุมชนหน้าแรก** | กล่องทักทายสด Shoutbox แบบ AJAX (`ShoutboxMessage`), โพลสำรวจประจำสัปดาห์แบบ AJAX 1 เสียงต่อบัญชี (`PollVote`), ตัวนับสถิติผู้เข้าชม LCD 6 หลัก, เครื่องเล่นเพลงประกอบ BGM Player ยุค 2000s | US-36 – US-39 (#89, #161) | `accounts/urls.py`, `accounts/services.py`, `static/js/home_widgets.js`, `static/js/bgm_player.js` |
-| **กระดานสนทนาเว็บบอร์ด** | หมวดหมู่เว็บบอร์ด (`BoardCategory`), ตั้งกระทู้ถาม-ตอบ (`Thread`) ผูกรายวิชาได้, ตอบกลับ (`Post`), แบ่งหน้า Pagination และกันปั๊มยอดวิวด้วย Session, แก้ไขกระทู้/ข้อความพร้อมป้ายกำกับแก้ไขแล้ว (`is_edited`), แปลงรหัสอีโมติคอน MSN (เช่น `:D`, `(L)`) และฝังภาพ `[img]...[/img]` หรือลิงก์ GIF ปลอดภัย, ปักหมุด/ล็อกกระทู้, ลบกระทู้และข้อความตอบกลับตามสิทธิ์ | E6 (#202, #209, #210, #211, #212, #213) | `webboard/urls.py`, `webboard/services.py`, `webboard/selectors.py`, `webboard/emoticons.py` |
+| **กระดานสนทนาเว็บบอร์ด** | หมวดหมู่เว็บบอร์ด (`BoardCategory`), ตั้งกระทู้ถาม-ตอบ (`Thread`) ผูกรายวิชาได้, ตอบกลับ (`Post`), แสดงรูปโปรไฟล์ Avatar ของผู้ตั้งกระทู้และผู้ตอบข้อความ, แบ่งหน้า Pagination และกันปั๊มยอดวิวด้วย Session, แก้ไขกระทู้/ข้อความพร้อมป้ายกำกับแก้ไขแล้ว (`is_edited`), แปลงรหัสอีโมติคอน MSN (เช่น `:D`, `(L)`) และฝังภาพ `[img]...[/img]` หรือลิงก์ GIF ปลอดภัย, ปักหมุด/ล็อกกระทู้, ลบกระทู้และข้อความตอบกลับตามสิทธิ์ | US-40 (#202, #203, #209, #210, #211, #212, #213, #222, #226, #232, #233, #235) | `webboard/urls.py`, `webboard/services.py`, `webboard/selectors.py`, `webboard/emoticons.py` |
 | **Production & CI/CD** | CI Pipeline (`black`, `flake8`, `bandit`, `manage.py check`, `makemigrations --check`, `coverage ≥ 80%`), Deploy บน Render ด้วย Gunicorn + WhiteNoise + Managed PostgreSQL, สคริปต์สำรองข้อมูลและตรวจความพร้อม Production | TD-1, TD-8, TD-9, SP-4 (#107, #108, #139, #141, #169, #192) | `.github/workflows/ci.yml`, `portal/settings.py`, `build.sh`, `scripts/backup_restore.sh`, `scripts/check_production_readiness.py` |
