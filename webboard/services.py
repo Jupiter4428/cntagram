@@ -62,9 +62,7 @@ def create_post(
     return post
 
 
-def increment_thread_views(
-    *, thread_id: int, session: Optional[Any] = None
-) -> int:
+def increment_thread_views(*, thread_id: int, session: Optional[Any] = None) -> int:
     """Increment a thread view count atomically with session debounce."""
     if session is not None:
         viewed_threads = session.get("viewed_threads", [])
@@ -84,16 +82,12 @@ def increment_thread_views(
 
         if hasattr(session, "modified"):
             session.modified = True
-        return Thread.objects.values_list("views_count", flat=True).get(
-            pk=thread_id
-        )
+        return Thread.objects.values_list("views_count", flat=True).get(pk=thread_id)
 
     Thread.objects.filter(pk=thread_id).update(
         views_count=F("views_count") + 1,
     )
-    return Thread.objects.values_list("views_count", flat=True).get(
-        pk=thread_id
-    )
+    return Thread.objects.values_list("views_count", flat=True).get(pk=thread_id)
 
 
 @transaction.atomic

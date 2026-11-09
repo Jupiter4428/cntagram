@@ -637,9 +637,7 @@ class WebboardViewsTests(TestCase):
         self.assertEqual(response.context["page_obj"].paginator.num_pages, 2)
 
         # Page 2
-        response_page2 = self.client.get(
-            reverse("webboard:board_index"), {"page": 2}
-        )
+        response_page2 = self.client.get(reverse("webboard:board_index"), {"page": 2})
         self.assertEqual(response_page2.status_code, 200)
         # 25 new threads + 1 setUp thread = 26 threads total -> 15 on p1, 11 on p2
         self.assertEqual(len(response_page2.context["threads"]), 11)
@@ -704,9 +702,7 @@ class WebboardViewsTests(TestCase):
 
     def test_thread_detail_view_counter_debounces_on_refresh(self):
         """Viewing thread multiple times in same session only increments view count."""
-        detail_url = reverse(
-            "webboard:thread_detail", kwargs={"pk": self.thread.pk}
-        )
+        detail_url = reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk})
         self.thread.refresh_from_db()
         initial_views = self.thread.views_count
 
