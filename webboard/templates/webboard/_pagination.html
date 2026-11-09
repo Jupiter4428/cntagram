@@ -1,0 +1,31 @@
+{% if page_obj.has_other_pages %}
+<div class="webboard-pagination d-flex justify-content-center align-items-center flex-wrap gap-1 my-3 text-monospace small" aria-label="Pagination">
+    {% if page_obj.has_previous %}
+        <a href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}page=1" class="chrome-button chrome-button--quiet py-0 px-2" title="หน้าแรก">&laquo; หน้าแรก</a>
+        <a href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}" class="chrome-button chrome-button--quiet py-0 px-2" title="หน้าก่อนหน้า">&lsaquo; ก่อนหน้า</a>
+    {% else %}
+        <span class="text-muted px-1">&laquo; หน้าแรก</span>
+        <span class="text-muted px-1">&lsaquo; ก่อนหน้า</span>
+    {% endif %}
+
+    <span class="text-muted px-1">|</span>
+
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+            <span class="fw-bold text-navy px-1 bg-warning bg-opacity-25 border border-warning">[ {{ num }} ]</span>
+        {% elif num > page_obj.number|add:'-4' and num < page_obj.number|add:'4' %}
+            <a href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}page={{ num }}" class="chrome-button chrome-button--quiet py-0 px-2">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    <span class="text-muted px-1">|</span>
+
+    {% if page_obj.has_next %}
+        <a href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}" class="chrome-button chrome-button--quiet py-0 px-2" title="หน้าถัดไป">ถัดไป &rsaquo;</a>
+        <a href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}page={{ page_obj.paginator.num_pages }}" class="chrome-button chrome-button--quiet py-0 px-2" title="หน้าสุดท้าย">ท้ายสุด &raquo;</a>
+    {% else %}
+        <span class="text-muted px-1">ถัดไป &rsaquo;</span>
+        <span class="text-muted px-1">ท้ายสุด &raquo;</span>
+    {% endif %}
+</div>
+{% endif %}
