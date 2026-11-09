@@ -1,3 +1,4 @@
+{% load static %}
 <footer class="site-footer">
     <div class="site-footer__inner">
         <p class="mb-0">
@@ -12,6 +13,11 @@
             {% endif %}
         </p>
         <p class="mb-0">พื้นที่ส่งต่อความรู้ของชุมชนวิศวกรรมธรรมศาสตร์</p>
+        <div class="footer-buttons my-1">
+            <a href="{% url 'accounts:home' %}" title="CNtagram ชีทสรุปวิศวะ มธ.">
+                <img src="{% static 'img/cntagram-button-88x31.png' %}" alt="CNtagram ชีทสรุปวิศวะ มธ." width="88" height="31" class="site-footer__button">
+            </a>
+        </div>
         <p class="mb-0 footer-meta">Copyright © 2026 CNTAGRAM · ดูได้ดีที่สุดที่ความละเอียด 1024×768 ขึ้นไป</p>
     </div>
 </footer>
