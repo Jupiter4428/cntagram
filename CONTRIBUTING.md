@@ -58,7 +58,7 @@ flowchart LR
 | **Sprint Planning** | คำนวณ Velocity, ตั้ง Sprint Goal, ดึง story ที่ผ่าน DoR เข้า Sprint (แต้มรวม ≤ Velocity) | Sprint Goal + Sprint Backlog บน GitHub |
 | **Daily Standup** (15 นาที) | ตอบ 3 คำถาม (เมื่อวาน / วันนี้ / ติดอะไร) | แผนวันนี้ + blocker |
 | **Sprint Review** | Live demo ซอฟต์แวร์ที่ merge แล้ว ตรวจกับ PO ตาม AC และ DoD | Backlog ที่ปรับลำดับแล้ว |
-| **Sprint Retrospective** | Start/Stop/Continue หรือ 4Ls แบบ Blameless | Action Items 1–2 ข้อ + `_docs/sprintN_retro.md` |
+| **Sprint Retrospective** | Start/Stop/Continue หรือ 4Ls แบบ Blameless | Action Items 1–2 ข้อ (เปิดเป็น issue ใน Sprint ถัดไป) |
 
 ### แผน 3 Sprint (ร่าง ปรับทุก Sprint Planning ตาม Velocity จริง)
 | Sprint | เนื้อหาหลัก | สิ่งที่ส่งมอบ |
@@ -328,7 +328,7 @@ issue ส่วนใหญ่มีทั้งงาน Frontend และ Bac
 - **Start / Stop / Continue** — อะไรควรเริ่มทำ / หยุดทำ / ทำต่อ
 - **4Ls** — Liked / Learned / Lacked / Longed For
 
-สรุปเป็น **Action Items ที่จับต้องได้ 1–2 ข้อ** เปิดเป็น issue ใน Sprint ถัดไป แล้วบันทึกที่ `_docs/sprintN_retro.md` (เช่น `_docs/sprint1_retro.md`):
+สรุปเป็น **Action Items ที่จับต้องได้ 1–2 ข้อ** แล้วเปิดเป็น issue ใน Sprint ถัดไป:
 ```markdown
 # Sprint N Retrospective
 
@@ -1005,8 +1005,8 @@ AI เขียนโค้ดเร็วขึ้นมาก แต่ **ค�
 |---|---|---|
 | `accounts` | `User`, `Role`, `UserRole`, `UserCounter`, `PollVote`, `ShoutboxMessage` | US-1, US-2, US-10, US-13, US-36 – US-38 |
 | `catalog` | `Department`, `Batch`, `Course`, `BatchCourse`, `SystemSetting` | US-3, US-4 |
-| `materials` | `DocType`, `DocTypeRequiredRole`, `ExamPeriod`, `Document`, `ExamDetail`, `DocumentVersion`, `DownloadLog`, `Approval` | US-5, US-6, US-7, US-8, US-9, US-11, US-12 |
-| `webboard` | `BoardCategory`, `Thread`, `Post` | E6 กระดานสนทนาชุมชน (#202, #210) |
+| `materials` | `DocType`, `DocTypeRequiredRole`, `ExamPeriod`, `Document`, `ExamDetail`, `DocumentVersion`, `DownloadLog`, `Approval`, `Report`, `TakedownRequest` | US-5 – US-9, US-11, US-12, US-17, US-25, US-32 – US-35 |
+| `webboard` | `BoardCategory`, `Thread`, `Post` | E6 กระดานสนทนาชุมชน (#202, #209, #210, #212, #213) |
 
 - ลำดับพึ่งพา: `catalog` ไม่พึ่ง app ใดเลย → `accounts` พึ่ง `catalog` → `materials` และ `webboard` พึ่ง `catalog` และ `accounts` ([ADR 0001](./_docs/adr/0001-modular-monolith-and-app-boundaries.md))
 - อ้างข้าม app ด้วย **string** เช่น `"catalog.Department"` และอ้างผู้ใช้ด้วย `settings.AUTH_USER_MODEL` ถ้าจำเป็นต้อง import ข้าม app ที่หัวไฟล์ `models.py` ให้ import ได้เฉพาะ app ที่อยู่ก่อนในลำดับพึ่งพาเท่านั้น (ตอนนี้มีจุดเดียวคือ `materials/models.py` import `SystemSetting` จาก `catalog`) ห้าม import ย้อนทาง (กัน circular import)
@@ -1052,7 +1052,7 @@ legacy_max = SystemSetting.get_int("legacy_batch_max", 23)   # คืนค่�
 รุ่น/วิชาตัวอย่าง (US-4) seed ได้ด้วย `python manage.py seed_catalog` (ภาค CN/CE/ME/EE, รุ่น CN21–CN25, วิชา CN101/CN200/CN201/SC135 ผูกทุกรุ่น รันซ้ำได้) กฎอนุมัติ (US-9) `seed_materials` seed ให้ด้วย ส่วน `doc_type` ที่เพิ่มทีหลังรัน `python manage.py seed_approval_rules` หรือตั้งกฎที่หน้า DocType ใน Django admin (ข้อสอบต้องทั้ง moderator และ super_admin ชีทใช้คนใดคนหนึ่ง รันซ้ำได้ ถ้าไม่ seed จะไม่มีใครอนุมัติได้ ส่วน `doc_type` ที่มีอยู่แล้วตอน `migrate` ได้กฎจาก migration `0005` อัตโนมัติ ดู [ADR 0004](_docs/adr/0004-approval-tables-in-materials.md)) ส่วนตารางอื่นยังไม่มี script seed ให้ใส่ผ่าน Django admin (`/admin/`, TD-3 [#36](https://github.com/Jupiter4428/cntagram/issues/36)) ไปก่อน ยกเว้น User ที่ต้องสร้างด้วย `create_user()` / `createsuperuser` ตาราง `role` ถูก seed อัตโนมัติด้วย data migration `accounts` 0004_seed_roles ตอน `migrate` (`seed_roles` ยังใช้ผูก super_admin ให้ superuser) และ seed `doc_type` / `exam_period` / `system_setting` เป็นงานย่อยของ US-5
 
 ### Migration ที่มีอยู่
-- `0001_initial` ของ `accounts`, `catalog`, `materials` สร้างและ merge แล้ว (ล่าสุด: `accounts` 0004, `catalog` 0002, `materials` 0005: 0003 จาก US-6, 0004–0005 จาก US-9) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
+- Migrations ของทุก app สร้างและ merge แล้ว (`accounts` 0001–0007, `catalog` 0001–0003, `materials` 0001–0012, `webboard` 0001–0002) คนที่เพิ่งเข้าทีมแค่ `pull` + `migrate` **ห้ามลบแล้วสร้าง 0001 ใหม่**
   ```bash
   python manage.py migrate
   python manage.py createcachetable
@@ -1183,6 +1183,7 @@ cntagram/
 │   ├── known-limitations.md
 │   ├── backup-operations.md
 │   ├── deployment-prep-checklist.md
+│   ├── production-demo-readiness.md
 │   ├── database-design.md
 │   ├── adr/
 │   ├── architecture/
