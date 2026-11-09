@@ -1,5 +1,7 @@
 """Business logic mutations and services for the webboard domain."""
 
+from typing import Any, Optional
+
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import F
@@ -60,12 +62,38 @@ def create_post(
     return post
 
 
-def increment_thread_views(*, thread_id: int) -> int:
-    """Increment a thread view count atomically and return the current count."""
+def increment_thread_views(
+    *, thread_id: int, session: Optional[Any] = None
+) -> int:
+    """Increment a thread view count atomically with session debounce."""
+    if session is not None:
+        viewed_threads = session.get("viewed_threads", [])
+        if thread_id in viewed_threads:
+            return Thread.objects.values_list("views_count", flat=True).get(
+                pk=thread_id
+            )
+
+        Thread.objects.filter(pk=thread_id).update(
+            views_count=F("views_count") + 1,
+        )
+        if isinstance(viewed_threads, list):
+            viewed_threads.append(thread_id)
+            session["viewed_threads"] = viewed_threads
+        else:
+            session["viewed_threads"] = [thread_id]
+
+        if hasattr(session, "modified"):
+            session.modified = True
+        return Thread.objects.values_list("views_count", flat=True).get(
+            pk=thread_id
+        )
+
     Thread.objects.filter(pk=thread_id).update(
         views_count=F("views_count") + 1,
     )
-    return Thread.objects.values_list("views_count", flat=True).get(pk=thread_id)
+    return Thread.objects.values_list("views_count", flat=True).get(
+        pk=thread_id
+    )
 
 
 @transaction.atomic

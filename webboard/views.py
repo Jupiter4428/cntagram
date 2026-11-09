@@ -3,6 +3,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
@@ -10,18 +11,25 @@ from portal.permissions import can_moderate_content
 from webboard import selectors, services
 from webboard.forms import PostEditForm, PostForm, ThreadEditForm, ThreadForm
 
+THREADS_PER_PAGE = 15
+POSTS_PER_PAGE = 20
+
 
 def board_index(request):
     """Display webboard main hub with categories and recent threads."""
     query = request.GET.get("q", "").strip()
     categories = selectors.list_board_categories()
-    threads = selectors.list_threads(search_query=query)
+    threads_qs = selectors.list_threads(search_query=query)
+    paginator = Paginator(threads_qs, THREADS_PER_PAGE)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
     return render(
         request,
         "webboard/board_index.html",
         {
             "categories": categories,
-            "threads": threads,
+            "threads": page_obj,
+            "page_obj": page_obj,
             "search_query": query,
             "active_category": None,
         },
@@ -36,13 +44,17 @@ def category_threads(request, slug):
 
     query = request.GET.get("q", "").strip()
     categories = selectors.list_board_categories()
-    threads = selectors.list_threads(category_slug=slug, search_query=query)
+    threads_qs = selectors.list_threads(category_slug=slug, search_query=query)
+    paginator = Paginator(threads_qs, THREADS_PER_PAGE)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
     return render(
         request,
         "webboard/board_index.html",
         {
             "categories": categories,
-            "threads": threads,
+            "threads": page_obj,
+            "page_obj": page_obj,
             "search_query": query,
             "active_category": category,
         },
@@ -55,15 +67,21 @@ def thread_detail(request, pk):
     if not thread:
         raise Http404("ไม่พบกระทู้ที่ต้องการ")
 
-    thread.views_count = services.increment_thread_views(thread_id=thread.pk)
-    posts = selectors.list_posts_for_thread(thread_id=thread.pk)
+    thread.views_count = services.increment_thread_views(
+        thread_id=thread.pk, session=request.session
+    )
+    posts_qs = selectors.list_posts_for_thread(thread_id=thread.pk)
+    paginator = Paginator(posts_qs, POSTS_PER_PAGE)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
     form = PostForm()
     return render(
         request,
         "webboard/thread_detail.html",
         {
             "thread": thread,
-            "posts": posts,
+            "posts": page_obj,
+            "page_obj": page_obj,
             "form": form,
             "can_moderate": can_moderate_content(request.user),
         },

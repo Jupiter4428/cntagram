@@ -617,3 +617,123 @@ class WebboardViewsTests(TestCase):
             response, reverse("webboard:post_edit", kwargs={"pk": post.pk})
         )
         self.assertContains(response, "แก้ไขล่าสุดเมื่อ")
+
+    def test_board_index_pagination_15_threads_per_page(self):
+        """board_index paginates threads at 15 items per page."""
+        # Create 25 threads
+        for i in range(25):
+            Thread.objects.create(
+                category=self.category,
+                author=self.student,
+                title=f"กระทู้ทดสอบ {i}",
+                content="เนื้อหาทดสอบ",
+            )
+
+        # Page 1
+        response = self.client.get(reverse("webboard:board_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["threads"]), 15)
+        self.assertTrue(response.context["page_obj"].has_next())
+        self.assertEqual(response.context["page_obj"].paginator.num_pages, 2)
+
+        # Page 2
+        response_page2 = self.client.get(
+            reverse("webboard:board_index"), {"page": 2}
+        )
+        self.assertEqual(response_page2.status_code, 200)
+        # 25 new threads + 1 setUp thread = 26 threads total -> 15 on p1, 11 on p2
+        self.assertEqual(len(response_page2.context["threads"]), 11)
+        self.assertTrue(response_page2.context["page_obj"].has_previous())
+
+    def test_category_threads_pagination(self):
+        """category_threads paginates threads at 15 items per page."""
+        for i in range(20):
+            Thread.objects.create(
+                category=self.category,
+                author=self.student,
+                title=f"กระทู้หมวดหมู่ {i}",
+                content="เนื้อหาทดสอบ",
+            )
+
+        response = self.client.get(
+            reverse(
+                "webboard:category_threads",
+                kwargs={"slug": self.category.slug},
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["threads"]), 15)
+        self.assertTrue(response.context["page_obj"].has_next())
+
+        response_page2 = self.client.get(
+            reverse(
+                "webboard:category_threads",
+                kwargs={"slug": self.category.slug},
+            ),
+            {"page": 2},
+        )
+        self.assertEqual(response_page2.status_code, 200)
+        # 20 new threads + 1 setUp thread = 21 threads -> 15 on p1, 6 on p2
+        self.assertEqual(len(response_page2.context["threads"]), 6)
+
+    def test_thread_detail_post_pagination_20_posts_per_page(self):
+        """thread_detail paginates replies at 20 posts per page."""
+        for i in range(25):
+            Post.objects.create(
+                thread=self.thread,
+                author=self.student,
+                content=f"ความคิดเห็นที่ {i}",
+            )
+
+        # Page 1
+        response = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["posts"]), 20)
+        self.assertTrue(response.context["page_obj"].has_next())
+
+        # Page 2
+        response_page2 = self.client.get(
+            reverse("webboard:thread_detail", kwargs={"pk": self.thread.pk}),
+            {"page": 2},
+        )
+        self.assertEqual(response_page2.status_code, 200)
+        self.assertEqual(len(response_page2.context["posts"]), 5)
+        self.assertTrue(response_page2.context["page_obj"].has_previous())
+
+    def test_thread_detail_view_counter_debounces_on_refresh(self):
+        """Viewing thread multiple times in same session only increments view count."""
+        detail_url = reverse(
+            "webboard:thread_detail", kwargs={"pk": self.thread.pk}
+        )
+        self.thread.refresh_from_db()
+        initial_views = self.thread.views_count
+
+        # First visit: increments view count
+        res1 = self.client.get(detail_url)
+        self.assertEqual(res1.status_code, 200)
+        self.thread.refresh_from_db()
+        self.assertEqual(self.thread.views_count, initial_views + 1)
+
+        # Second visit (refresh in same session): does NOT increment
+        res2 = self.client.get(detail_url)
+        self.assertEqual(res2.status_code, 200)
+        self.thread.refresh_from_db()
+        self.assertEqual(self.thread.views_count, initial_views + 1)
+
+    def test_retro_pagination_ui_renders_links(self):
+        """Retro pagination partial renders navigation controls on multiple pages."""
+        for i in range(25):
+            Thread.objects.create(
+                category=self.category,
+                author=self.student,
+                title=f"กระทู้แบ่งหน้า {i}",
+                content="เนื้อหา",
+            )
+        response = self.client.get(reverse("webboard:board_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "webboard/_pagination.html")
+        self.assertContains(response, "หน้าแรก")
+        self.assertContains(response, "ถัดไป")
+        self.assertContains(response, "[ 1 ]")
