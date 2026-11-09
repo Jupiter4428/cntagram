@@ -5,8 +5,11 @@
 
 {% block content %}
 <section class="retro-widget profile-settings" aria-labelledby="profile-title">
-    <header class="retro-widget__header">
-        <h1 id="profile-title">ตั้งค่าโปรไฟล์ <em>Profile Settings</em></h1>
+    <header class="retro-widget__header retro-widget__titlebar">
+        <span aria-hidden="true">👤</span>
+        <h1 id="profile-title" class="text-white mb-0 fs-6 fw-bold">
+            ตั้งค่าโปรไฟล์ <small class="text-white-50 ms-1 fw-normal">Profile Settings</small>
+        </h1>
     </header>
     <div class="retro-widget__body">
         <div class="row g-4 align-items-start">
