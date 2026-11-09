@@ -106,3 +106,69 @@ def delete_post(*, post: Post, actor) -> None:
         raise PermissionDenied("คุณไม่มีสิทธิ์ในการลบความคิดเห็นนี้")
 
     post.delete()
+
+
+@transaction.atomic
+def update_thread(
+    *,
+    thread: Thread,
+    actor,
+    title: str,
+    content: str,
+    category: BoardCategory | None = None,
+    course=None,
+) -> Thread:
+    """Update a discussion thread after verifying author and lock status."""
+    locked_thread = Thread.objects.select_for_update().get(pk=thread.pk)
+
+    if actor != locked_thread.author:
+        raise PermissionDenied("คุณไม่มีสิทธิ์ในการแก้ไขกระทู้นี้")
+
+    if locked_thread.is_locked:
+        raise PermissionDenied("กระทู้นี้ถูกล็อกแล้ว ไม่อนุญาตให้แก้ไข")
+
+    cleaned_title = title.strip()
+    cleaned_content = content.strip()
+
+    if not cleaned_title:
+        raise ValidationError({"title": "กรุณาระบุหัวข้อกระทู้"})
+
+    if not cleaned_content:
+        raise ValidationError({"content": "กรุณาระบุเนื้อหากระทู้"})
+
+    locked_thread.title = cleaned_title
+    locked_thread.content = cleaned_content
+    if category is not None:
+        locked_thread.category = category
+    if course is not None:
+        locked_thread.course = course
+
+    locked_thread.save()
+    return locked_thread
+
+
+@transaction.atomic
+def update_post(
+    *,
+    post: Post,
+    actor,
+    content: str,
+) -> Post:
+    """Update a reply post after verifying author and parent thread lock status."""
+    locked_post = (
+        Post.objects.select_for_update().select_related("thread").get(pk=post.pk)
+    )
+
+    if actor != locked_post.author:
+        raise PermissionDenied("คุณไม่มีสิทธิ์ในการแก้ไขความคิดเห็นนี้")
+
+    if locked_post.thread.is_locked:
+        raise PermissionDenied("กระทู้นี้ถูกล็อกแล้ว ไม่อนุญาตให้แก้ไขความคิดเห็น")
+
+    cleaned_content = content.strip()
+    if not cleaned_content:
+        raise ValidationError({"content": "กรุณาระบุข้อความตอบกลับ"})
+
+    locked_post.content = cleaned_content
+    locked_post.save()
+    return locked_post

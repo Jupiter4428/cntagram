@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+{% load webboard_tags %}
+
+{% block title %}แก้ไขกระทู้: {{ thread.title }} — เว็บบอร์ด CNTAGRAM{% endblock %}
+
+{% block content %}
+<div class="webboard-edit-page">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb m-0 small">
+                <li class="breadcrumb-item"><a href="{% url 'accounts:home' %}">หน้าแรก</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'webboard:board_index' %}">เว็บบอร์ด</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'webboard:thread_detail' pk=thread.pk %}">{{ thread.title|truncatechars:30 }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">แก้ไขกระทู้</li>
+            </ol>
+        </nav>
+        <a href="{% url 'webboard:thread_detail' pk=thread.pk %}" class="chrome-button chrome-button--quiet">
+            &larr; ยกเลิก
+        </a>
+    </div>
+
+    <div class="section-titlebar mb-3">
+        <h1 class="h5 m-0 d-flex align-items-center gap-1">
+            <span>✏️ แก้ไขกระทู้สนทนา</span>
+        </h1>
+    </div>
+
+    <div class="card p-3 border border-line bg-light">
+        <form method="post" action="{% url 'webboard:thread_edit' pk=thread.pk %}">
+            {% csrf_token %}
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small text-navy">{{ form.category.label }} <span class="text-danger">*</span></label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <div class="text-danger small mt-1">{{ form.category.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small text-navy">{{ form.course.label }}</label>
+                    {{ form.course }}
+                    {% if form.course.errors %}
+                        <div class="text-danger small mt-1">{{ form.course.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold small text-navy">{{ form.title.label }} <span class="text-danger">*</span></label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold small text-navy">{{ form.content.label }} <span class="text-danger">*</span></label>
+                {% include "webboard/_emoticon_bar.html" with target_id="thread-content-textarea" %}
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <div class="text-danger small mt-1">{{ form.content.errors }}</div>
+                {% endif %}
+                <div class="form-text small text-muted">
+                    สามารถคลิกเลือกสติ๊กเกอร์ MSN เพื่อแทรกในเนื้อหา หรือกดปุ่ม <strong>"🖼️ แทรก GIF ภายนอก"</strong> เพื่อวางลิงก์ภาพ GIF
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <a href="{% url 'webboard:thread_detail' pk=thread.pk %}" class="chrome-button chrome-button--quiet">ยกเลิก</a>
+                <button type="submit" class="chrome-button chrome-button--brand">
+                    💾 บันทึกการแก้ไขกระทู้
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

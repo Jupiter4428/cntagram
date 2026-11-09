@@ -82,3 +82,15 @@ class PostForm(forms.Form):
         if not content:
             raise forms.ValidationError("กรุณาระบุข้อความตอบกลับ")
         return content
+
+
+class ThreadEditForm(ThreadForm):
+    """Form for editing an existing discussion thread."""
+
+    pass
+
+
+class PostEditForm(PostForm):
+    """Form for editing an existing reply post."""
+
+    pass
