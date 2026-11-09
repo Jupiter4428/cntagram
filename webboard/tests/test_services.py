@@ -320,22 +320,34 @@ class WebboardServicesTests(TestCase):
         self.assertFalse(Post.objects.filter(pk=post.pk).exists())
 
     def test_author_can_update_thread(self):
-        """Author can update their thread title and content."""
+        """Author can update their thread title, content, and clear course."""
+        from catalog.models import Course
+
+        course = Course.objects.create(
+            code="CN101",
+            name_th="วิชาทดสอบ",
+            name_en="Test Course",
+        )
         thread = services.create_thread(
             author=self.author,
             category=self.category,
             title="หัวข้อเดิม",
             content="เนื้อหาเดิม",
+            course=course,
         )
+        self.assertEqual(thread.course, course)
+
         updated_thread = services.update_thread(
             thread=thread,
             actor=self.author,
             title="หัวข้อใหม่ที่แก้ไขแล้ว",
             content="เนื้อหาใหม่ที่แก้ไขแล้ว",
+            course=None,
         )
         thread.refresh_from_db()
         self.assertEqual(thread.title, "หัวข้อใหม่ที่แก้ไขแล้ว")
         self.assertEqual(thread.content, "เนื้อหาใหม่ที่แก้ไขแล้ว")
+        self.assertIsNone(thread.course)
         self.assertEqual(updated_thread.pk, thread.pk)
 
     def test_non_author_cannot_update_thread(self):

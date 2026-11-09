@@ -8,7 +8,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 from portal.permissions import can_moderate_content
 from webboard import selectors, services
-from webboard.forms import PostForm, ThreadForm
+from webboard.forms import PostEditForm, PostForm, ThreadEditForm, ThreadForm
 
 
 def board_index(request):
@@ -207,7 +207,7 @@ def thread_edit(request, pk):
         raise PermissionDenied("กระทู้นี้ถูกล็อกแล้ว ไม่อนุญาตให้แก้ไข")
 
     if request.method == "POST":
-        form = ThreadForm(request.POST)
+        form = ThreadEditForm(request.POST)
         if form.is_valid():
             try:
                 services.update_thread(
@@ -223,7 +223,7 @@ def thread_edit(request, pk):
             except (PermissionDenied, ValidationError) as err:
                 messages.error(request, str(err))
     else:
-        form = ThreadForm(
+        form = ThreadEditForm(
             initial={
                 "category": thread.category_id,
                 "course": thread.course_id,
@@ -256,7 +256,7 @@ def post_edit(request, pk):
         raise PermissionDenied("กระทู้นี้ถูกล็อกแล้ว ไม่อนุญาตให้แก้ไขความคิดเห็น")
 
     if request.method == "POST":
-        form = PostForm(request.POST)
+        form = PostEditForm(request.POST)
         if form.is_valid():
             try:
                 services.update_post(
@@ -269,7 +269,7 @@ def post_edit(request, pk):
             except (PermissionDenied, ValidationError) as err:
                 messages.error(request, str(err))
     else:
-        form = PostForm(initial={"content": post.content})
+        form = PostEditForm(initial={"content": post.content})
 
     return render(
         request,

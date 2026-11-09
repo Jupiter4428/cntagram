@@ -108,6 +108,9 @@ def delete_post(*, post: Post, actor) -> None:
     post.delete()
 
 
+_UNSET = object()
+
+
 @transaction.atomic
 def update_thread(
     *,
@@ -116,7 +119,7 @@ def update_thread(
     title: str,
     content: str,
     category: BoardCategory | None = None,
-    course=None,
+    course=_UNSET,
 ) -> Thread:
     """Update a discussion thread after verifying author and lock status."""
     locked_thread = Thread.objects.select_for_update().get(pk=thread.pk)
@@ -140,7 +143,7 @@ def update_thread(
     locked_thread.content = cleaned_content
     if category is not None:
         locked_thread.category = category
-    if course is not None:
+    if course is not _UNSET:
         locked_thread.course = course
 
     locked_thread.save()
