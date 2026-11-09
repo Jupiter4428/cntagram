@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_not_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import FileResponse, Http404, JsonResponse
@@ -299,7 +300,54 @@ def open_reports(request):
     return render(
         request,
         "materials/open_reports.html",
-        {"reports": selectors.open_reports_for_reviewer(user=request.user)},
+        {
+            "reports": selectors.open_reports_for_reviewer(user=request.user),
+            "takedowns": selectors.open_takedown_requests_for_reviewer(
+                user=request.user
+            ),
+        },
+    )
+
+
+@login_not_required
+@require_http_methods(["GET", "POST"])
+def public_takedown(request):
+    from django.conf import settings
+    from . import services as materials_services
+    from .forms import TakedownRequestForm
+    from .services import submit_takedown_request
+
+    if request.method == "POST":
+        ip = request.META.get("REMOTE_ADDR", "")
+        if materials_services.is_takedown_rate_limited(ip):
+            response = render(
+                request,
+                "materials/public_takedown.html",
+                {
+                    "form": TakedownRequestForm(),
+                    "rate_limited": True,
+                },
+                status=429,
+            )
+            response["Retry-After"] = str(settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
+            return response
+        materials_services.record_takedown_attempt(ip)
+    form = TakedownRequestForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        takedown = submit_takedown_request(**form.cleaned_data)
+        request.session["last_takedown_reference"] = str(takedown.reference)
+        return redirect("materials:takedown_submitted")
+    return render(request, "materials/public_takedown.html", {"form": form})
+
+
+@login_not_required
+@require_GET
+def takedown_submitted(request):
+    reference = request.session.pop("last_takedown_reference", None)
+    if not reference:
+        return redirect("materials:public_takedown")
+    return render(
+        request, "materials/takedown_submitted.html", {"reference": reference}
     )
 
 

@@ -6,6 +6,8 @@ from .downloads import document_download
 app_name = "materials"
 
 urlpatterns = [
+    path("takedown/submitted/", views.takedown_submitted, name="takedown_submitted"),
+    path("takedown/", views.public_takedown, name="public_takedown"),
     path(
         "documents/<int:document_id>/report/",
         views.report_document_view,

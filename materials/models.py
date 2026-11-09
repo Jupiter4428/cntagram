@@ -1,6 +1,7 @@
 # ..\materials\models.py
 # Create your models here.
 import unicodedata
+import uuid
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -450,3 +451,23 @@ class Report(models.Model):
 
     def __str__(self):
         return f"Report #{self.pk} on {self.document_id} ({self.status})"
+
+
+class TakedownRequest(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "รอดำเนินการ"
+        RESOLVED = "resolved", "ดำเนินการแล้ว"
+
+    reference = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    claimant_name = models.CharField(max_length=200)
+    contact_email = models.EmailField()
+    content_identifier = models.CharField(max_length=500)
+    reason = models.TextField()
+    rights_confirmed = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.OPEN
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "takedown_request"

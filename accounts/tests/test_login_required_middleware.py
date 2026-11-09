@@ -25,7 +25,17 @@ class LoginRequiredMiddlewareTests(TestCase):
             if not route.startswith("admin/")
             and not getattr(view, "login_required", True)
         }
-        self.assertEqual(public, {"", "login/", "logout/", "register/"})
+        self.assertEqual(
+            public,
+            {
+                "",
+                "login/",
+                "logout/",
+                "register/",
+                "materials/takedown/",
+                "materials/takedown/submitted/",
+            },
+        )
 
     def test_public_pages_are_accessible_to_guests(self):
         for name in ("accounts:home", "accounts:register", "accounts:login"):

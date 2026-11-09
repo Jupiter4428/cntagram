@@ -253,6 +253,61 @@ def report_document(*, document, reporter, reason_type, reason):
         raise ValidationError("คุณมีรายงานที่รอดำเนินการสำหรับเอกสารนี้แล้ว") from exc
 
 
+def submit_takedown_request(
+    *, claimant_name, contact_email, content_identifier, reason, rights_confirmed
+):
+    from django.core.exceptions import ValidationError
+    from .models import TakedownRequest
+
+    if (
+        not rights_confirmed
+        or not claimant_name.strip()
+        or not contact_email.strip()
+        or not content_identifier.strip()
+        or not reason.strip()
+    ):
+        raise ValidationError("กรุณาระบุรายละเอียดและยืนยันสิทธิ์")
+    return TakedownRequest.objects.create(
+        claimant_name=claimant_name.strip(),
+        contact_email=contact_email,
+        content_identifier=content_identifier.strip(),
+        reason=reason.strip(),
+        rights_confirmed=True,
+    )
+
+
+def _takedown_rate_key(ip):
+    import time
+    from django.conf import settings
+    from django.core import signing
+
+    bucket = int(time.time() // settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS)
+    digest = signing.salted_hmac(
+        "materials.takedown-throttle", ip or "unknown", algorithm="sha256"
+    ).hexdigest()
+    return f"takedown-attempts:{digest}:{bucket}"
+
+
+def is_takedown_rate_limited(ip):
+    from django.conf import settings
+    from django.core.cache import cache
+
+    return cache.get(_takedown_rate_key(ip), 0) >= settings.REGISTER_RATE_LIMIT_ATTEMPTS
+
+
+def record_takedown_attempt(ip):
+    from django.conf import settings
+    from django.core.cache import cache
+
+    key = _takedown_rate_key(ip)
+    window = settings.REGISTER_RATE_LIMIT_WINDOW_SECONDS
+    if not cache.add(key, 1, timeout=window):
+        try:
+            cache.incr(key)
+        except ValueError:
+            cache.set(key, 1, timeout=window)
+
+
 @transaction.atomic
 def hide_document(*, document, user, reason):
     """ซ่อนไฟล์ที่เผยแพร่แล้วแต่มีปัญหา (US-15)

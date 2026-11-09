@@ -224,6 +224,36 @@ class ReportForm(forms.Form):
     reason = forms.CharField(label="เหตุผล", max_length=2000, widget=forms.Textarea)
 
 
+class TakedownRequestForm(forms.Form):
+    claimant_name = forms.CharField(
+        label="ชื่อผู้แจ้ง",
+        max_length=200,
+        error_messages={"required": "กรุณาระบุชื่อ"},
+    )
+    contact_email = forms.EmailField(
+        label="อีเมลติดต่อ",
+        error_messages={
+            "required": "กรุณาระบุอีเมล",
+            "invalid": "รูปแบบอีเมลไม่ถูกต้อง",
+        },
+    )
+    content_identifier = forms.CharField(
+        label="รหัสวิชา / ชื่อเอกสาร / ลิงก์",
+        max_length=500,
+        error_messages={"required": "กรุณาระบุเนื้อหาที่ต้องการแจ้ง"},
+    )
+    reason = forms.CharField(
+        label="เหตุผล",
+        max_length=3000,
+        widget=forms.Textarea,
+        error_messages={"required": "กรุณาระบุเหตุผล"},
+    )
+    rights_confirmed = forms.BooleanField(
+        label="ข้าพเจ้ายืนยันว่าเป็นเจ้าของสิทธิ์หรือผู้รับมอบอำนาจ",
+        error_messages={"required": "กรุณายืนยันสิทธิ์"},
+    )
+
+
 class HideDocumentForm(forms.Form):
     """ฟอร์มสำหรับ Moderator / Super Admin ซ่อนไฟล์ที่เผยแพร่แล้ว (US-15)"""
 
