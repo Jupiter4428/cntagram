@@ -7,6 +7,12 @@ app_name = "materials"
 
 urlpatterns = [
     path("takedown/submitted/", views.takedown_submitted, name="takedown_submitted"),
+    path("reports/review/", views.review_reports, name="review_reports"),
+    path(
+        "reports/review/<str:kind>/<int:report_id>/",
+        views.resolve_report_view,
+        name="resolve_report",
+    ),
     path("takedown/", views.public_takedown, name="public_takedown"),
     path(
         "documents/<int:document_id>/report/",

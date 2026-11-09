@@ -254,6 +254,19 @@ class TakedownRequestForm(forms.Form):
     )
 
 
+class ResolveReportForm(forms.Form):
+    DECISIONS = [
+        ("remove", "นำลง / ซ่อนเอกสาร"),
+        ("dismiss", "ยกคำร้อง"),
+        ("request_changes", "ให้ผู้อัปโหลดแก้ไข"),
+    ]
+    decision = forms.ChoiceField(label="ผลการตัดสิน", choices=DECISIONS)
+    resolution_reason = forms.CharField(label="เหตุผลการตัดสิน", widget=forms.Textarea)
+    document_id = forms.IntegerField(
+        label="รหัสเอกสาร (สำหรับคำร้องภายนอก)", required=False, min_value=1
+    )
+
+
 class HideDocumentForm(forms.Form):
     """ฟอร์มสำหรับ Moderator / Super Admin ซ่อนไฟล์ที่เผยแพร่แล้ว (US-15)"""
 

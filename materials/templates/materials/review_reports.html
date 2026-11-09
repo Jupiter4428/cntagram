@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}จัดการเรื่องร้องเรียน{% endblock %}
+{% block content %}
+<h1>จัดการเรื่องร้องเรียน</h1>
+<nav><a href="?status=open">รอดำเนินการ</a> |
+<a href="?status=resolved">ดำเนินการแล้ว</a> | <a href="?status=all">ทั้งหมด</a></nav>
+<h2>รายงานจากผู้ใช้</h2>
+{% for item in reports %}
+<article><p>{{ item.document.title }} — {{ item.get_reason_type_display }}</p>
+<p>{{ item.reason }} | ส่งเมื่อ {{ item.created_at }} ({{ item.created_at|timesince }} ที่แล้ว)</p>
+{% if item.created_at < deadline and item.status == "open" %}<strong>เกิน 72 ชั่วโมง</strong>{% endif %}
+<a href="{% url 'materials:resolve_report' 'report' item.pk %}">ดูและตัดสิน</a></article>
+{% empty %}<p>ไม่มีรายการ</p>{% endfor %}
+<h2>คำขอจากบุคคลภายนอก</h2>
+{% for item in takedowns %}
+<article><p>{{ item.content_identifier }} — {{ item.claimant_name }}</p>
+<p>{{ item.reason }} | ส่งเมื่อ {{ item.created_at }} ({{ item.created_at|timesince }})</p>
+{% if item.created_at < deadline and item.status == "open" %}<strong>เกิน 72 ชั่วโมง</strong>{% endif %}
+<a href="{% url 'materials:resolve_report' 'takedown' item.pk %}">ดูและตัดสิน</a></article>
+{% empty %}<p>ไม่มีรายการ</p>{% endfor %}
+{% endblock %}

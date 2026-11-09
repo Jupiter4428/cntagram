@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}ตัดสินเรื่องร้องเรียน{% endblock %}
+{% block content %}
+<h1>ตัดสินเรื่องร้องเรียน #{{ report.pk }}</h1>
+{% if report.document %}
+<p>เอกสาร: <a href="{% url 'materials:document_detail' report.document_id %}">{{ report.document.title }}</a> (#{{ report.document_id }} — สถานะ: {{ report.document.get_status_display }})</p>
+{% endif %}
+{% if kind == "report" %}
+<p>ประเภท: {{ report.get_reason_type_display }}</p>
+{% else %}
+<p>ผู้ร้องเรียน: {{ report.claimant_name }} ({{ report.contact_email }})</p>
+<p>ข้อมูลระบุเนื้อหา: {{ report.content_identifier }}</p>
+{% endif %}
+<p>ส่งเมื่อ: {{ report.created_at }} ({{ report.created_at|timesince }} ที่แล้ว)</p>
+<p>{{ report.reason }}</p>
+{% if report.status == "open" %}
+<form method="post">{% csrf_token %}{{ form.as_p }}
+<button type="submit">บันทึกผล</button></form>
+{% else %}
+<p>ตัดสินแล้ว: {{ report.decision }} — {{ report.resolution_reason }}</p>
+{% endif %}
+{% endblock %}
