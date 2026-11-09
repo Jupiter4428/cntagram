@@ -41,7 +41,15 @@
 
 <section class="retro-widget glass-module side-module">
     <div class="retro-widget__body module-body compact-copy admin-account">
-        <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
+        {% if request.user.avatar %}
+            <img src="{% url 'accounts:user_avatar' user_id=request.user.pk %}"
+                 alt="{{ request.user.nickname }}"
+                 width="42" height="42"
+                 class="profile-bubble"
+                 style="object-fit: cover; padding: 0;">
+        {% else %}
+            <div class="profile-bubble" aria-hidden="true">{{ request.user.nickname|first|upper }}</div>
+        {% endif %}
         <div>
             <p class="member-name mb-0">{{ request.user.nickname }}</p>
             <p class="tech-label mb-0">SUPER ADMIN</p>

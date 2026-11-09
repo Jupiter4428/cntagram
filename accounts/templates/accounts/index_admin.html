@@ -134,7 +134,15 @@
                             <tr>
                                 <td>
                                     <button class="admin-person" type="button" popovertarget="user-{{ user.pk }}" title="ดูข้อมูลผู้ใช้">
-                                        <span class="admin-person__avatar" aria-hidden="true">{{ user.nickname|first|upper }}</span>
+                                        {% if user.avatar %}
+                                            <img src="{% url 'accounts:user_avatar' user_id=user.pk %}"
+                                                 alt=""
+                                                 width="24" height="24"
+                                                 class="admin-person__avatar"
+                                                 style="object-fit: cover; padding: 0;">
+                                        {% else %}
+                                            <span class="admin-person__avatar" aria-hidden="true">{{ user.nickname|first|upper }}</span>
+                                        {% endif %}
                                         <span><strong>{{ user.nickname }}</strong><small>{{ user.department.code }}</small></span>
                                     </button>
                                 </td>
